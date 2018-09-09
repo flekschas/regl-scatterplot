@@ -1,10 +1,10 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 
-module.exports = {
+module.exports = (env, argv) => ({
   entry: './example/index.js',
   output: {
     path: `${__dirname}/docs`,
-    publicPath: '/',
+    publicPath: argv.mode === 'production' ? './' : '/',
     filename: 'webgl-scatterplot-example.js',
   },
   devServer: {
@@ -27,4 +27,4 @@ module.exports = {
       template: 'example/index.html',
     }),
   ],
-};
+});
