@@ -3,7 +3,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 module.exports = {
   entry: './example/index.js',
   output: {
-    path: `${__dirname}/example-live`,
+    path: `${__dirname}/docs`,
     publicPath: '/',
     filename: 'webgl-scatterplot-example.js',
   },
