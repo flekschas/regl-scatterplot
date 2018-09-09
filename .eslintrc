@@ -1,0 +1,19 @@
+{
+  "env": {
+    "browser": true,
+    "es6": true
+  },
+  "extends": [
+    "eslint:recommended",
+    "airbnb/base",
+  ],
+  "parserOptions": {
+    "ecmaVersion": 2018,
+    "sourceType": "module",
+  },
+  "rules": {
+    "consistent-return": 0,
+    "no-param-reassign": ["error", { "props": false }],
+    "no-plusplus": 0,
+  }
+}

@@ -1,0 +1,5 @@
+coverage
+node_modules
+*.zip
+*.log
+*.DS_cache

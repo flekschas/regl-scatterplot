@@ -1,0 +1,31 @@
+language: node_js
+node_js:
+- '8'
+branches:
+  only:
+  - master
+  - develop
+  - "/^v.*$/"
+before_script:
+- npm install
+before_deploy:
+- npm run prerelease
+deploy:
+  - provider: releases
+    skip_cleanup: true
+    api_key:
+      secure: Ntp/+YWKTfEMpulXwJEdwcLMPqdU4KT5x+slcVFYhr7Z2ho+L0JpRi3RW0mheqXxMxKV0fVFI6eNfjlOoNMcEvCLDjjua6jgwdU+2yM1RDMu1EmFHv/ECKoF0g5flJiIs4UZwpX6RlYS4a75Vr3lB0kd8rX71uqw6H3OUljJqUz6apFlb2gSrp8NpgFUMpBmCrFFCiEjKN/YNenCyyO8m6WgWSPUCGZwcnyklawfuc6xzTmJmTbnIDRQer1zvs8Yhr6c8HBgge9XIotKmrwMGe7Gub+r0DHiIjjfk73+zpYZ4hm0VYbOYoDQFpeGnEVOKzSZEzHxBm004IPkrnmuZgMvv+fFNf3D6vPcmpAh6brVLPQyBb2UYET4R+dKFw0I5u4AmEGLJbOzH8B/ZJs1kvvFu+bzDql9qtwrseS5D6rQp2ojpHVTqjw2n0P2/zpUpv2uzvXdXf9k66CNV+ag0q0JzOtwsgARIqPVLgtr+90qKEcKBVEG6lpkZYpiwz71ui/zi5m8WrtZs8Arf847j1gaAGMEK4Bxmtk/riTmUtySrKDYtLja1NdpDxN7lkYkuE/eXaUTrvrvfQ5alImQA6mDcVw5Qo5tyDZrxRXyP76Ka6ygfgQhPWKOSqxAPdD2Lla2Rcw9Q0PPH6Al3pllFUXvWHuNheJfamrGi+fz6b4=
+    file: dist.zip
+    on:
+      branch: master
+      tags: true
+      repo: flekschas/webgl-scatterplot
+  - provider: npm
+    skip_cleanup: true
+    email: service@lekschas.de
+    api_key:
+      secure: vLBzLaHEGGXCjvqFB5DXp8ox1qx/5wHDiLVZQ0tzYRkiizcqr/xHt9j4CB+CvOMDsqBsXV00qlYdk6lBtRffB2SYXAcMqbDO+jfmu8DC+sLTXS2NOAyy1FVRjk6VdgZqTlBa1MxK1O9ScJSxNiJrwO4zu3IIAkP2v9xqulxD9C9kAJLfRmAtxwtpm1PpGwFL7j5j+DjF/rNEfUq9BUJVwCCGgD847/q07t7zqQ3eDG7VAZKAtU3wgwfComjIiYffzibK9D8U6ILcvCBDeE36jACrmfx+KbQESENeSxotuY/I6w9dGa/gmnS35u2P6K1SuAGgj9IRkkvnhc+krETV22LQi0qfg5ZOzsC8vcWRdJhverwI1aeSz9WxSmKEtY/SlMWaQvt2lxQEJ5n4816fdj1LJuUjy7lUspTW8J/nry4YSc+z/iJtAMKzhJpp40EJEECUSPQq9i0GNBXte7aLrwRABt+oquTuougNTcGAVmULyXkF2xVVOAlvCOcdPmZg/rSR1JLTo4PaeVhMychnwJiaOp5W81MPrVak0yZ+YXoNGyohTssJ3WTxzqVSHYh9NaRnPalKOasQEarBqJav0MUc3GBPVHmfQclAzvmfAmJ5aSNdaj6SWK9Un8CKZeRcIO7XIzSY1j0UGlixE+ZDPrihU3C6UJE6o0IkT612aOI=
+    on:
+      branch: master
+      tags: true
+      repo: flekschas/webgl-scatterplot
