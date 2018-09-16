@@ -1,13 +1,15 @@
 import canvasCamera2d from 'canvas-camera-2d';
 import createMousePos from 'mouse-position';
-import createMousePrs from 'mouse-pressed';
+import createMousePressed from 'mouse-pressed';
 import createPubSub from 'pub-sub-es';
 import createRegl from 'regl';
 import createScroll from 'scroll-speed';
 import withRaf from 'with-raf';
 
-import FRAG_SHADER from './fragment.fs';
-import VERT_SHADER from './vertex.vs';
+import FSHADER_DRAW from './draw.fshader';
+import VSHADER_DRAW from './draw.vshader';
+import FSHADER_UPDATE from './update.fshader';
+import VSHADER_QUAD from './quad.vshader';
 
 const DEFAULT_POINT_SIZE = 3;
 const DEFAULT_POINT_SIZE_HIGHLIGHT = 3;
@@ -49,6 +51,12 @@ const Scatterplot = ({
   let mouseDownY;
   let points = [];
   let numHighlight = [];
+  let numParticles = 0;
+  let particlesRes = 0;
+  let prevParticleState;
+  let currParticleState;
+  let particleIndex;
+  let isInit = false;
 
   canvas.width = width * window.devicePixelRatio;
   canvas.height = height * window.devicePixelRatio;
@@ -99,14 +107,17 @@ const Scatterplot = ({
   };
 
   const initRegl = (c = canvas) => {
-    regl = createRegl({ canvas: c, extensions: ['OES_standard_derivatives'] });
+    regl = createRegl({
+      canvas: c,
+      extensions: ['OES_standard_derivatives', 'OES_texture_float'],
+    });
     camera = canvasCamera2d(c, {
       target: DEFAULT_TARGET,
       distance: DEFAULT_DISTANCE,
     });
     scroll = createScroll(c);
     mousePosition = createMousePos(c);
-    mousePressed = createMousePrs(c);
+    mousePressed = createMousePressed(c);
 
     scroll.on('scroll', () => { drawRaf(); });  // eslint-disable-line
     mousePosition.on('move', () => { if (mouseDown) drawRaf(); }); // eslint-disable-line
@@ -158,9 +169,9 @@ const Scatterplot = ({
 
   initRegl(canvas);
 
-  const drawPoints = pointsToBeDrawn => regl({
-    frag: FRAG_SHADER,
-    vert: VERT_SHADER,
+  const drawPoints = regl({
+    frag: FSHADER_DRAW,
+    vert: VSHADER_DRAW,
 
     blend: {
       enable: true,
@@ -175,24 +186,40 @@ const Scatterplot = ({
     depth: { enable: false },
 
     attributes: {
-      // each of these gets mapped to a single entry for each of the points.
-      // this means the vertex shader will receive just the relevant value for
-      // a given point.
-      position: pointsToBeDrawn.map(d => d.slice(0, 2)),
-      color: pointsToBeDrawn.map(d => d[2]),
-      extraPointSize: pointsToBeDrawn.map(d => d[3] | 0), // eslint-disable-line no-bitwise
+      aIndex: { buffer: regl.prop('particleIndex'), size: 1 },
     },
 
     uniforms: {
-      // Total area that is being used. Value must be in [0, 1]
-      span: regl.prop('span'),
-      basePointSize: regl.prop('basePointSize'),
-      camera: regl.prop('camera'),
+      uCamera: regl.prop('camera'),
+      uParticlesRes: regl.prop('particlesRes'),
+      uParticleState: () => currParticleState,
+      uPointSize: regl.prop('pointSize'),
+      uSpan: regl.prop('span'),
     },
 
-    count: pointsToBeDrawn.length,
+    count: regl.prop('numParticles'),
 
     primitive: 'points',
+  });
+
+  // regl command that updates particles state based on previous two
+  const updatePoints = regl({
+    // write to a framebuffer instead of to the screen
+    framebuffer: () => prevParticleState,
+
+    vert: VSHADER_QUAD,
+    frag: FSHADER_UPDATE,
+
+    attributes: {
+      // a square covering the entire webgl space
+      aPosition: [-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1],
+    },
+
+    uniforms: {
+      uParticleState: () => currParticleState,
+    },
+
+    count: 6,
   });
 
   const highlightPoints = (pointsToBeDrawn, numHighlights) => {
@@ -219,11 +246,63 @@ const Scatterplot = ({
     return highlightedPoints;
   };
 
-  const draw = (newPoints = points, newNumHighlight = numHighlight) => {
-    points = newPoints;
-    numHighlight = newNumHighlight;
+  const createFrameBuffer = (newState, res) => {
+    const texture = regl.texture({
+      data: newState,
+      shape: [res, res, 4],
+      type: 'float',
+    });
 
-    if (points.length === 0) return;
+    return regl.framebuffer({
+      color: texture,
+      depth: false,
+      stencil: false,
+    });
+  };
+
+  const createParticleIndex = (texNumParticles) => {
+    const particleIndices = new Float32Array(texNumParticles);
+    for (let i = 0; i < texNumParticles; i++) particleIndices[i] = i;
+    return regl.buffer({
+      data: particleIndices,
+      usage: 'static',
+      type: 'float',
+      length: texNumParticles,
+    });
+  };
+
+  const initParticleState = (newPoints, texNumParticles) => {
+    const particleState = new Float32Array(texNumParticles * 4);
+    for (let i = 0; i < newPoints.length; ++i) {
+      // store x then y and then leave 2 spots empty
+      particleState[i * 4] = newPoints[i][0]; // x
+      particleState[i * 4 + 1] = newPoints[i][1]; // y
+    }
+    return particleState;
+  };
+
+  const init = (newPoints) => {
+    numParticles = newPoints.length;
+    particlesRes = Math.ceil(Math.sqrt(numParticles));
+    const texNumParticles = particlesRes ** 2;
+
+    const particleState = initParticleState(newPoints, texNumParticles);
+    particleIndex = createParticleIndex(texNumParticles);
+    prevParticleState = createFrameBuffer(particleState, particlesRes);
+    currParticleState = createFrameBuffer(particleState, particlesRes);
+
+    isInit = true;
+  };
+
+  const swapParticleStates = () => {
+    const tmp = prevParticleState;
+    prevParticleState = currParticleState;
+    currParticleState = tmp;
+  };
+
+  const draw = (newPoints) => {
+    if (newPoints) init(newPoints);
+    if (!isInit) return;
 
     // clear the buffer
     regl.clear({
@@ -235,12 +314,21 @@ const Scatterplot = ({
     // Update camera
     const isCameraChanged = camera.tick();
 
-    // arguments are available via `regl.prop`.
-    drawPoints(highlightPoints(points, numHighlight))({
-      span: 1 - padding,
-      basePointSize: pointSize,
+    // Draw the points
+    drawPoints({
       camera: camera.view(),
+      numParticles,
+      particleIndex,
+      particlesRes,
+      pointSize,
+      span: 1 - padding,
     });
+
+    // Update position of points in the frame buffers
+    updatePoints();
+
+    // Swap frame buffers (i.e., states)
+    swapParticleStates();
 
     // Publish camera change
     if (isCameraChanged) pubSub.publish('camera', camera.position);
