@@ -5,7 +5,7 @@ module.exports = (env, argv) => ({
   output: {
     path: `${__dirname}/docs`,
     publicPath: argv.mode === 'production' ? './' : '/',
-    filename: 'webgl-scatterplot-example.js',
+    filename: 'regl-scatterplot-example.js',
   },
   devServer: {
     contentBase: './example',

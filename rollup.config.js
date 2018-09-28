@@ -32,6 +32,6 @@ const config = (file, format, plugins) => ({
 });
 
 export default [
-  config('dist/webgl-scatterplot.js', 'umd', [buble()]),
-  config('dist/webgl-scatterplot.min.js', 'umd', [buble(), terser()]),
+  config('dist/regl-scatterplot.js', 'umd', [buble()]),
+  config('dist/regl-scatterplot.min.js', 'umd', [buble(), terser()]),
 ];

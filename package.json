@@ -1,20 +1,21 @@
 {
-  "name": "webgl-scatterplot",
+  "name": "regl-scatterplot",
   "version": "0.1.0",
   "description": "WebGL-based 2D Scatterplot",
   "author": "Fritz Lekschas",
   "keywords": [
     "scatterplot",
     "2d",
+    "regl",
     "webgl"
   ],
   "license": "MIT",
-  "main": "dist/webgl-scatterplot.js",
+  "main": "dist/regl-scatterplot.js",
   "module": "src/index.js",
   "files": [
     "src/index.js",
-    "dist/webgl-scatterplot.js",
-    "dist/webgl-scatterplot.min.js"
+    "dist/regl-scatterplot.js",
+    "dist/regl-scatterplot.min.js"
   ],
   "scripts": {
     "build": "rollup -c; webpack --config ./webpack.config.js --mode production",
@@ -28,6 +29,7 @@
   "dependencies": {
     "camera-2d-simple": "^1.0.0",
     "canvas-camera-2d": "^v0.1.0",
+    "just-debounce": "^1.0.0",
     "key-pressed": "flekschas/key-pressed",
     "mouse-position": "^2.1.0",
     "mouse-pressed": "^1.0.0",
@@ -67,12 +69,12 @@
     "webpack-cli": "^3.1.0",
     "webpack-dev-server": "^3.1.7"
   },
-  "homepage": "https://github.com/flekschas/webgl-scatterplot",
+  "homepage": "https://github.com/flekschas/regl-scatterplot",
   "repository": {
     "type": "git",
-    "url": "git://github.com/flekschas/webgl-scatterplot.git"
+    "url": "git://github.com/flekschas/regl-scatterplot.git"
   },
   "bugs": {
-    "url": "https://github.com/flekschas/webgl-scatterplot/issues"
+    "url": "https://github.com/flekschas/regl-scatterplot/issues"
   }
 }
