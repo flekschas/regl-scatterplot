@@ -1,19 +1,19 @@
-# WebGL-based Scatterplot
+# Regl-based 2D Scatterplot
 
-[![Build Status](https://travis-ci.org/flekschas/webgl-scatterplot.svg?branch=master)](https://travis-ci.org/flekschas/webgl-scatterplot)
+[![Build Status](https://travis-ci.org/flekschas/regl-scatterplot.svg?branch=master)](https://travis-ci.org/flekschas/regl-scatterplot)
 
-> A highly scalable scatterplot rendered with WebGL using [Regl]()
+> A highly scalable scatterplot rendered with WebGL using [Regl](https://github.com/regl-project/regl)
 
 ## Install
 
 ```
-npm -i webgl-scatterplot
+npm -i regl-scatterplot
 ```
 
 ## Getting started
 
 ```javascript
-import createScatterplot from 'webgl-scatterplot';
+import createScatterplot from 'regl-scatterplot';
 
 const canvas = document.querySelector('#canvas');
 
