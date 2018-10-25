@@ -29,7 +29,7 @@
   },
   "dependencies": {
     "camera-2d-simple": "^2.0.0-rc1",
-    "canvas-camera-2d": "^0.5.1",
+    "canvas-camera-2d": "^0.5.2",
     "gl-matrix": "^2.8.1",
     "key-pressed": "flekschas/key-pressed",
     "kdbush": "^3.0.0",
