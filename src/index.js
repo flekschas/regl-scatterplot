@@ -25,7 +25,7 @@ const DEFAULT_DISTANCE = 1;
 const DEFAULT_ROTATION = 0;
 const CLICK_DELAY = 250;
 const LASSO_MIN_DELAY = 25;
-const LASSO_MIN_DIST = 16;
+const LASSO_MIN_DIST = 8;
 
 const dist = (x1, y1, x2, y2) => Math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2);
 
@@ -61,7 +61,7 @@ const Scatterplot = ({
   let mouseDownX;
   let mouseDownY;
   let points = [];
-  let highlights = [];
+  let selection = [];
   let lassoGlPos = [];
   let lassoPrevMousePos;
   let searchIndex;
@@ -73,7 +73,13 @@ const Scatterplot = ({
   canvas.width = width * window.devicePixelRatio;
   canvas.height = height * window.devicePixelRatio;
 
-  window.addEventListener("blur", mouseUpHandler, false);
+  const keyUpHandler = ({ key }) => {
+    switch (key) {
+      case "Escape":
+        unselect();
+        break;
+    }
+  };
 
   const getMousePos = () => {
     mousePosition.flush();
@@ -198,10 +204,28 @@ const Scatterplot = ({
     // const t0 = performance.now();
     const ptsInLasso = findPointsInLasso(lassoGlPos);
     // console.log(`found ${ptsInLasso.length} in ${performance.now() - t0} msec`);
-    highlights = ptsInLasso;
+    select(ptsInLasso);
     lassoGlPos = [];
     lassoPrevMousePos = undefined;
     lasso.clear();
+    drawRaf();
+  };
+
+  const unselect = () => {
+    if (selection.length) {
+      pubSub.publish("unselect");
+      selection = [];
+      drawRaf();
+    }
+  };
+
+  const select = points => {
+    selection = points;
+
+    pubSub.publish("select", {
+      points: selection
+    });
+
     drawRaf();
   };
 
@@ -230,9 +254,9 @@ const Scatterplot = ({
       camera.config({ isFixed: false });
       lassoEnd();
     } else if (performance.now() - mouseDownTime <= CLICK_DELAY) {
-      pubSub.publish("click", {
-        selectedPoint: raycast(mouseDownX, mouseDownY)
-      });
+      const clostestPoint = raycast(mouseDownX, mouseDownY);
+      if (clostestPoint) select([clostestPoint]);
+      else unselect();
     }
   };
 
@@ -305,7 +329,7 @@ const Scatterplot = ({
     pointSize = +newPointSize || DEFAULT_POINT_SIZE;
   };
   const pointSizeHighlightGetter = () => pointSizeHighlight;
-  const pointSizeHighlightSetter = newPointSizeHighlight => {
+  const pointSizeselectionetter = newPointSizeHighlight => {
     pointSizeHighlight = +newPointSizeHighlight || DEFAULT_POINT_SIZE_HIGHLIGHT;
   };
   const widthGetter = () => width;
@@ -360,11 +384,11 @@ const Scatterplot = ({
     });
   };
 
-  const highlightPoints = (pointsToBeDrawn, newHighlights) => {
+  const highlightPoints = (pointsToBeDrawn, newSelection) => {
     const highlightedPoints = [...pointsToBeDrawn];
 
-    for (let i = 0; i < newHighlights.length; i++) {
-      const pt = highlightedPoints[newHighlights[i]];
+    for (let i = 0; i < newSelection.length; i++) {
+      const pt = highlightedPoints[newSelection[i]];
       const ptColor = [...pt[2].slice(0, 3)];
       const ptSize = pointSize * pointSizeHighlight;
       // Update color and point size to the outer most black outline
@@ -384,10 +408,10 @@ const Scatterplot = ({
     searchIndex = new KDBush(points);
   };
 
-  const draw = (newPoints, newHighlights = highlights) => {
+  const draw = (newPoints, newSelection = selection) => {
     if (newPoints) setPoints(newPoints);
 
-    highlights = newHighlights;
+    selection = newSelection;
 
     if (points.length === 0) return;
 
@@ -402,7 +426,7 @@ const Scatterplot = ({
 
     if (isViewChanged) mat4.invert(viewInv, camera.view);
 
-    drawPoints(highlightPoints(points, highlights))({
+    drawPoints(highlightPoints(points, selection))({
       span: 1 - padding,
       basePointSize: pointSize,
       camera: camera.view
@@ -425,6 +449,9 @@ const Scatterplot = ({
     drawRaf();
     pubSub.publish("camera", camera.position);
   };
+
+  window.addEventListener("keyup", keyUpHandler, false);
+  window.addEventListener("blur", mouseUpHandler, false);
 
   return {
     get canvas() {
@@ -461,7 +488,7 @@ const Scatterplot = ({
       return pointSizeHighlightGetter();
     },
     set pointSizeHighlight(arg) {
-      return pointSizeHighlightSetter(arg);
+      return pointSizeselectionetter(arg);
     },
     get width() {
       return widthGetter();
