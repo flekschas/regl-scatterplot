@@ -256,7 +256,7 @@ const Scatterplot = ({
     } else if (performance.now() - mouseDownTime <= CLICK_DELAY) {
       const clostestPoint = raycast(mouseDownX, mouseDownY);
       if (clostestPoint) select([clostestPoint]);
-      else unselect();
+      else deselect();
     }
   };
 
