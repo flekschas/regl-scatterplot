@@ -7,7 +7,7 @@ import createRegl from "regl";
 import createScroll from "scroll-speed";
 import { throttle as withThrottle } from "lodash";
 import withRaf from "with-raf";
-import { mat4 } from "gl-matrix";
+import { mat4, vec4 } from "gl-matrix";
 
 import createLine from "regl-line";
 
@@ -39,6 +39,9 @@ const Scatterplot = ({
   padding: initPadding = DEFAULT_PADDING
 } = {}) => {
   const pubSub = createPubSub();
+  const scratch = new Float32Array(16);
+  const viewInv = new Float32Array(16);
+
   let canvas = initCanvas;
   let width = initWidth;
   let height = initHeight;
@@ -65,6 +68,7 @@ const Scatterplot = ({
   let aspectRatio = width / height;
   let projection = mat4.fromScaling([], [1 / aspectRatio, 1, 1]);
   let model = mat4.fromScaling([], [aspectRatio, 1, 1]);
+  let isViewChanged = false;
 
   canvas.width = width * window.devicePixelRatio;
   canvas.height = height * window.devicePixelRatio;
@@ -77,7 +81,25 @@ const Scatterplot = ({
   };
 
   const getMouseGlPos = ([x, y] = getMousePos()) => {
-    return camera.getGlPos(x, y, width, height);
+    // Get relative WebGL position
+    const relX = -1 + (x / width) * 2;
+    const relY = 1 + (y / height) * -2;
+
+    // Homogeneous vector
+    const v = [relX, relY, 1, 1];
+
+    // projection^-1 * view^-1 * model^-1 is the same as
+    // model * view^-1 * projection
+    const mvp = mat4.multiply(
+      scratch,
+      model,
+      mat4.multiply(scratch, viewInv, projection)
+    );
+
+    // Translate vector
+    vec4.transformMat4(v, v, mvp);
+
+    return v.slice(0, 2);
   };
 
   const raycast = () => {
@@ -233,10 +255,12 @@ const Scatterplot = ({
 
     scroll.on("scroll", () => {
       drawRaf();
-    }); // eslint-disable-line
+    });
     mousePosition.on("move", mouseMoveHandler);
     mousePressed.on("down", mouseDownHandler);
     mousePressed.on("up", mouseUpHandler);
+
+    mat4.invert(viewInv, camera.view);
   };
 
   const destroy = () => {
@@ -374,19 +398,20 @@ const Scatterplot = ({
     });
 
     // Update camera
-    const isCameraChanged = camera.tick();
-    const view = camera.view;
+    isViewChanged = camera.tick();
+
+    if (isViewChanged) mat4.invert(viewInv, camera.view);
 
     drawPoints(highlightPoints(points, highlights))({
       span: 1 - padding,
       basePointSize: pointSize,
-      camera: view
+      camera: camera.view
     });
 
-    lasso.draw({ view });
+    lasso.draw({ view: camera.view });
 
     // Publish camera change
-    if (isCameraChanged) pubSub.publish("camera", camera.position);
+    if (isViewChanged) pubSub.publish("camera", camera.position);
   };
 
   const drawRaf = withRaf(draw);
