@@ -76,7 +76,7 @@ const Scatterplot = ({
   const keyUpHandler = ({ key }) => {
     switch (key) {
       case "Escape":
-        unselect();
+        deselect();
         break;
     }
   };
@@ -211,9 +211,9 @@ const Scatterplot = ({
     drawRaf();
   };
 
-  const unselect = () => {
+  const deselect = () => {
     if (selection.length) {
-      pubSub.publish("unselect");
+      pubSub.publish("deselect");
       selection = [];
       drawRaf();
     }
