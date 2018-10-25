@@ -22,7 +22,7 @@ void main() {
 
   // scale to normalized device coordinates gl_Position is a special variable
   // that holds the position of a vertex
-  gl_Position = view * vec4(position, 0.0, 1.0);
+  gl_Position = projection * view * model * vec4(position, 0.0, 1.0);
 }
 `;
 
