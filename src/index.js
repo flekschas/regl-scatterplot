@@ -15,7 +15,7 @@ import FRAG_SHADER from "./point.fs";
 import VERT_SHADER from "./point.vs";
 
 const DEFAULT_POINT_SIZE = 3;
-const DEFAULT_POINT_SIZE_HIGHLIGHT = 3;
+const DEFAULT_POINT_SIZE_HIGHLIGHT = 1;
 const DEFAULT_WIDTH = 100;
 const DEFAULT_HEIGHT = 100;
 const DEFAULT_PADDING = 0;
@@ -40,7 +40,6 @@ const Scatterplot = ({
 } = {}) => {
   const pubSub = createPubSub();
   const scratch = new Float32Array(16);
-  const viewInv = new Float32Array(16);
 
   let canvas = initCanvas;
   let width = initWidth;
@@ -62,7 +61,8 @@ const Scatterplot = ({
   let mouseDownY;
   let points = [];
   let selection = [];
-  let lassoGlPos = [];
+  let lassoPos = [];
+  let lassoScatterPos = [];
   let lassoPrevMousePos;
   let searchIndex;
   let aspectRatio = width / height;
@@ -88,18 +88,27 @@ const Scatterplot = ({
 
   const getMouseGlPos = ([x, y] = getMousePos()) => {
     // Get relative WebGL position
-    const relX = -1 + (x / width) * 2;
-    const relY = 1 + (y / height) * -2;
+    const xGl = -1 + (x / width) * 2;
+    const yGl = 1 + (y / height) * -2;
+
+    return [xGl, yGl];
+  };
+
+  const getScatterGlPos = ([x, y] = getMousePos()) => {
+    const [xGl, yGl] = getMouseGlPos([x, y]);
 
     // Homogeneous vector
-    const v = [relX, relY, 1, 1];
+    const v = [xGl, yGl, 1, 1];
 
     // projection^-1 * view^-1 * model^-1 is the same as
     // model * view^-1 * projection
-    const mvp = mat4.multiply(
+    const mvp = mat4.invert(
       scratch,
-      model,
-      mat4.multiply(scratch, viewInv, projection)
+      mat4.multiply(
+        scratch,
+        projection,
+        mat4.multiply(scratch, camera.view, model)
+      )
     );
 
     // Translate vector
@@ -109,7 +118,7 @@ const Scatterplot = ({
   };
 
   const raycast = () => {
-    const [x, y] = getMouseGlPos();
+    const [x, y] = getScatterGlPos();
 
     // Find the closest point
     let minDist = Infinity;
@@ -129,16 +138,18 @@ const Scatterplot = ({
     const currMousePos = getMousePos();
 
     if (!lassoPrevMousePos) {
-      lassoGlPos.push(...getMouseGlPos(currMousePos));
+      lassoPos.push(...getMouseGlPos(currMousePos));
+      lassoScatterPos.push(...getScatterGlPos(currMousePos));
       lassoPrevMousePos = currMousePos;
     } else {
       const d = dist(...currMousePos, ...lassoPrevMousePos);
 
       if (d > LASSO_MIN_DIST) {
-        lassoGlPos.push(...getMouseGlPos(currMousePos));
+        lassoPos.push(...getMouseGlPos(currMousePos));
+        lassoScatterPos.push(...getScatterGlPos(currMousePos));
         lassoPrevMousePos = currMousePos;
-        if (lassoGlPos.length > 2) {
-          lasso.setPoints(lassoGlPos);
+        if (lassoPos.length > 2) {
+          lasso.setPoints(lassoPos);
           drawRaf();
         }
       }
@@ -191,7 +202,7 @@ const Scatterplot = ({
     const bBox = getBBox(lassoPolygon);
     // ...to efficiently preselect potentially selected points
     const pointsInBBox = searchIndex.range(...bBox);
-    // next we text each point in the bounding box if it is in the polygon too
+    // next we test each point in the bounding box if it is in the polygon too
     const ptsInPoly = [];
     pointsInBBox.forEach(pointIdx => {
       if (pointInPoly(points[pointIdx], lassoPolygon)) ptsInPoly.push(pointIdx);
@@ -202,13 +213,13 @@ const Scatterplot = ({
 
   const lassoEnd = () => {
     // const t0 = performance.now();
-    const ptsInLasso = findPointsInLasso(lassoGlPos);
+    const ptsInLasso = findPointsInLasso(lassoScatterPos);
     // console.log(`found ${ptsInLasso.length} in ${performance.now() - t0} msec`);
     select(ptsInLasso);
-    lassoGlPos = [];
+    lassoPos = [];
+    lassoScatterPos = [];
     lassoPrevMousePos = undefined;
     lasso.clear();
-    drawRaf();
   };
 
   const deselect = () => {
@@ -283,8 +294,6 @@ const Scatterplot = ({
     mousePosition.on("move", mouseMoveHandler);
     mousePressed.on("down", mouseDownHandler);
     mousePressed.on("up", mouseUpHandler);
-
-    mat4.invert(viewInv, camera.view);
   };
 
   const destroy = () => {
@@ -391,11 +400,11 @@ const Scatterplot = ({
       const pt = highlightedPoints[newSelection[i]];
       const ptColor = [...pt[2].slice(0, 3)];
       const ptSize = pointSize * pointSizeHighlight;
-      // Update color and point size to the outer most black outline
-      pt[2] = [0, 0, 0, 0.33];
-      pt[3] = ptSize + 6;
-      // Add second white outline
-      highlightedPoints.push([pt[0], pt[1], [1, 1, 1, 1], ptSize + 2]);
+
+      // Add white outline
+      highlightedPoints.push([pt[0], pt[1], [1, 1, 1, 1], ptSize + 6]);
+      // Add inbetween border to make the outline appear as an outline
+      highlightedPoints.push([pt[0], pt[1], [0, 0, 0, 1], ptSize + 2]);
       // Finally add the point itself again to be on top
       highlightedPoints.push([pt[0], pt[1], [...ptColor, 1], ptSize]);
     }
@@ -424,15 +433,13 @@ const Scatterplot = ({
     // Update camera
     isViewChanged = camera.tick();
 
-    if (isViewChanged) mat4.invert(viewInv, camera.view);
-
     drawPoints(highlightPoints(points, selection))({
       span: 1 - padding,
       basePointSize: pointSize,
       camera: camera.view
     });
 
-    lasso.draw({ view: camera.view });
+    lasso.draw();
 
     // Publish camera change
     if (isViewChanged) pubSub.publish("camera", camera.position);
