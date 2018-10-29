@@ -1,30 +1,30 @@
-const HtmlWebpackPlugin = require('html-webpack-plugin');
+const HtmlWebpackPlugin = require("html-webpack-plugin");
 
 module.exports = (env, argv) => ({
-  entry: './example/index.js',
+  entry: "./example/index.js",
   output: {
     path: `${__dirname}/docs`,
-    publicPath: argv.mode === 'production' ? './' : '/',
-    filename: 'webgl-scatterplot-example.js',
+    publicPath: argv.mode === "production" ? "./" : "/",
+    filename: "example.js"
   },
   devServer: {
-    contentBase: './example',
+    contentBase: "./example"
   },
   module: {
     rules: [
       {
         test: /\.(js|fs|vs)$/,
         exclude: /node_modules/,
-        use: ['babel-loader'],
-      },
-    ],
+        use: ["babel-loader"]
+      }
+    ]
   },
   resolve: {
-    extensions: ['*', '.js', '.fs', '.vs'],
+    extensions: ["*", ".js", ".fs", ".vs"]
   },
   plugins: [
     new HtmlWebpackPlugin({
-      template: 'example/index.html',
-    }),
-  ],
+      template: "example/index.html"
+    })
+  ]
 });

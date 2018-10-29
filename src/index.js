@@ -1,38 +1,49 @@
-import canvasCamera2d from 'canvas-camera-2d';
-import createMousePos from 'mouse-position';
-import createMousePressed from 'mouse-pressed';
-import createPubSub from 'pub-sub-es';
-import createRegl from 'regl';
-import createScroll from 'scroll-speed';
-import withRaf from 'with-raf';
+import canvasCamera2d from "canvas-camera-2d";
+import KDBush from "kdbush";
+import createMousePos from "mouse-position";
+import createMousePressed from "mouse-pressed";
+import createPubSub from "pub-sub-es";
+import createRegl from "regl";
+import createScroll from "scroll-speed";
+import { throttle as withThrottle } from "lodash";
+import withRaf from "with-raf";
+import { mat4, vec4 } from "gl-matrix";
 
-import FSHADER_DRAW from './draw.fshader';
-import VSHADER_DRAW from './draw.vshader';
-import FSHADER_UPDATE from './update.fshader';
-import VSHADER_QUAD from './quad.vshader';
+import createLine from "regl-line";
+
+import POINT_FS from "./point.fs";
+import POINT_VS from "./point.vs";
 
 const DEFAULT_POINT_SIZE = 3;
-const DEFAULT_POINT_SIZE_HIGHLIGHT = 3;
+const DEFAULT_POINT_SIZE_HIGHLIGHT = 1;
 const DEFAULT_WIDTH = 100;
 const DEFAULT_HEIGHT = 100;
 const DEFAULT_PADDING = 0;
 const DEFAULT_COLORMAP = [];
 const DEFAULT_TARGET = [0, 0];
 const DEFAULT_DISTANCE = 1;
+const DEFAULT_ROTATION = 0;
 const CLICK_DELAY = 250;
+const LASSO_MIN_DELAY = 25;
+const LASSO_MIN_DIST = 8;
 
-const dist = (x1, x2, y1, y2) => Math.sqrt(((x1 - x2) ** 2) + ((y1 - y2) ** 2));
+const FLOAT_BYTES = Float32Array.BYTES_PER_ELEMENT;
+const UINT8_BYTES = Uint8ClampedArray.BYTES_PER_ELEMENT;
+
+const dist = (x1, y1, x2, y2) => Math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2);
 
 const Scatterplot = ({
-  canvas: initCanvas = document.createElement('canvas'),
+  canvas: initCanvas = document.createElement("canvas"),
   colorMap: initColorMap = DEFAULT_COLORMAP,
   pointSize: initPointSize = DEFAULT_POINT_SIZE,
   pointSizeHighlight: initPointSizeHighlight = DEFAULT_POINT_SIZE_HIGHLIGHT,
   width: initWidth = DEFAULT_WIDTH,
   height: initHeight = DEFAULT_HEIGHT,
-  padding: initPadding = DEFAULT_PADDING,
+  padding: initPadding = DEFAULT_PADDING
 } = {}) => {
   const pubSub = createPubSub();
+  const scratch = new Float32Array(16);
+
   let canvas = initCanvas;
   let width = initWidth;
   let height = initHeight;
@@ -41,330 +52,537 @@ const Scatterplot = ({
   let pointSizeHighlight = initPointSizeHighlight;
   let colorMap = initColorMap;
   let camera;
+  let lasso;
   let regl;
   let scroll;
   let mousePosition;
   let mousePressed;
   let mouseDown;
+  let mouseDownShift = false;
   let mouseDownTime;
   let mouseDownX;
   let mouseDownY;
-  let points = [];
-  let numHighlight = [];
-  let numParticles = 0;
-  let particlesRes = 0;
-  let prevParticleState;
-  let currParticleState;
-  let particleIndex;
+  let numPoints = 0;
+  let pointBuffer;
   let isInit = false;
+  let selection = [];
+  let lassoPos = [];
+  let lassoScatterPos = [];
+  let lassoPrevMousePos;
+  let searchIndex;
+  let aspectRatio = width / height;
+  let projection = mat4.fromScaling([], [1 / aspectRatio, 1, 1]);
+  let model = mat4.fromScaling([], [aspectRatio, 1, 1]);
+  let isViewChanged = false;
+  let colorTex;
+  let colorTexRes = 0;
+  let colorTexSize = 0;
+  let colorIndex;
+  let colorIndexBuffer;
+
+  let colors = {
+    normal: [0.66, 0.66, 0.66, 1],
+    active: [0, 0.55, 1, 1],
+    inactive: [0.2, 0.2, 0.2, 1]
+  };
 
   canvas.width = width * window.devicePixelRatio;
   canvas.height = height * window.devicePixelRatio;
 
-  const raycast = () => {
-    // Get the mouse cursor position
+  const keyUpHandler = ({ key }) => {
+    switch (key) {
+      case "Escape":
+        deselect();
+        break;
+    }
+  };
+
+  const getMousePos = () => {
     mousePosition.flush();
-    const [x, y] = camera.getGlPos(
-      mousePosition[0],
-      mousePosition[1],
-      width,
-      height,
+    return [mousePosition[0], mousePosition[1]];
+  };
+
+  const getMouseGlPos = ([x, y] = getMousePos()) => {
+    // Get relative WebGL position
+    const xGl = -1 + (x / width) * 2;
+    const yGl = 1 + (y / height) * -2;
+
+    return [xGl, yGl];
+  };
+
+  const getScatterGlPos = ([x, y] = getMousePos()) => {
+    const [xGl, yGl] = getMouseGlPos([x, y]);
+
+    // Homogeneous vector
+    const v = [xGl, yGl, 1, 1];
+
+    // projection^-1 * view^-1 * model^-1 is the same as
+    // model * view^-1 * projection
+    const mvp = mat4.invert(
+      scratch,
+      mat4.multiply(
+        scratch,
+        projection,
+        mat4.multiply(scratch, camera.view, model)
+      )
     );
+
+    // Translate vector
+    vec4.transformMat4(v, v, mvp);
+
+    return v.slice(0, 2);
+  };
+
+  const raycast = () => {
+    const [x, y] = getScatterGlPos();
+    const pointGlSize = pointSize / width;
+
+    // Get all points within a close range
+    const pointsInBBox = searchIndex.range(
+      x - pointGlSize,
+      y - pointGlSize,
+      x + pointGlSize,
+      y + pointGlSize
+    );
+
     // Find the closest point
     let minDist = Infinity;
     let clostestPoint;
-    points.forEach(([ptX, ptY], i) => {
-      const d = dist(ptX, x, ptY, y);
+    pointsInBBox.forEach(idx => {
+      const [ptX, ptY] = searchIndex.points[idx];
+      const d = dist(ptX, ptY, x, y);
       if (d < minDist) {
         minDist = d;
-        clostestPoint = i;
+        clostestPoint = idx;
       }
     });
-    if (minDist < pointSize / width * 2) return clostestPoint;
+
+    if (minDist < (pointSize / width) * 2) return clostestPoint;
   };
 
-  const mouseDownHandler = () => {
+  const lassoExtend = () => {
+    const currMousePos = getMousePos();
+
+    if (!lassoPrevMousePos) {
+      lassoPos.push(...getMouseGlPos(currMousePos));
+      lassoScatterPos.push(...getScatterGlPos(currMousePos));
+      lassoPrevMousePos = currMousePos;
+    } else {
+      const d = dist(...currMousePos, ...lassoPrevMousePos);
+
+      if (d > LASSO_MIN_DIST) {
+        lassoPos.push(...getMouseGlPos(currMousePos));
+        lassoScatterPos.push(...getScatterGlPos(currMousePos));
+        lassoPrevMousePos = currMousePos;
+        if (lassoPos.length > 2) {
+          lasso.setPoints(lassoPos);
+          drawRaf();
+        }
+      }
+    }
+  };
+  const lassoDb = withThrottle(lassoExtend, LASSO_MIN_DELAY, true);
+
+  const getBBox = pos => {
+    let xMin = Infinity;
+    let xMax = -Infinity;
+    let yMin = Infinity;
+    let yMax = -Infinity;
+
+    for (let i = 0; i < pos.length; i += 2) {
+      xMin = pos[i] < xMin ? pos[i] : xMin;
+      xMax = pos[i] > xMax ? pos[i] : xMax;
+      yMin = pos[i + 1] < yMin ? pos[i + 1] : yMin;
+      yMax = pos[i + 1] > yMax ? pos[i + 1] : yMax;
+    }
+
+    return [xMin, yMin, xMax, yMax];
+  };
+
+  /**
+   * From: https://wrf.ecse.rpi.edu//Research/Short_Notes/pnpoly.html
+   * @param   {Array}  point  Tuple of the form `[x,y]` to be tested.
+   * @param   {Array}  polygon  1D list of vertices defining the polygon.
+   * @return  {boolean}  If `true` point lies within the polygon.
+   */
+  const pointInPoly = ([px, py] = [], polygon) => {
+    let x1;
+    let y1;
+    let x2;
+    let y2;
+    let isWithin = false;
+    for (let i = 0, j = polygon.length - 2; i < polygon.length; i += 2) {
+      x1 = polygon[i];
+      y1 = polygon[i + 1];
+      x2 = polygon[j];
+      y2 = polygon[j + 1];
+      if (y1 > py !== y2 > py && px < ((x2 - x1) * (py - y1)) / (y2 - y1) + x1)
+        isWithin = !isWithin;
+      j = i;
+    }
+    return isWithin;
+  };
+
+  const findPointsInLasso = lassoPolygon => {
+    // get the bounding box of the lasso selection...
+    const bBox = getBBox(lassoPolygon);
+    // ...to efficiently preselect potentially selected points
+    const pointsInBBox = searchIndex.range(...bBox);
+    // next we test each point in the bounding box if it is in the polygon too
+    const ptsInPoly = [];
+    pointsInBBox.forEach(pointIdx => {
+      if (pointInPoly(searchIndex.points[pointIdx], lassoPolygon))
+        ptsInPoly.push(pointIdx);
+    });
+
+    return ptsInPoly;
+  };
+
+  const lassoEnd = () => {
+    // const t0 = performance.now();
+    const ptsInLasso = findPointsInLasso(lassoScatterPos);
+    // console.log(`found ${ptsInLasso.length} in ${performance.now() - t0} msec`);
+    select(ptsInLasso);
+    lassoPos = [];
+    lassoScatterPos = [];
+    lassoPrevMousePos = undefined;
+    lasso.clear();
+  };
+
+  const deselect = () => {
+    if (selection.length) {
+      pubSub.publish("deselect");
+      selection.forEach(point => {
+        colorIndex[point] = 0;
+      });
+      colorIndexBuffer.subdata(colorIndex, 0);
+      selection = [];
+      drawRaf();
+    }
+  };
+
+  const select = points => {
+    selection.forEach(i => {
+      colorIndex[i] = 0;
+    });
+
+    selection = points;
+
+    selection.forEach(i => {
+      colorIndex[i] = 1;
+    });
+    colorIndexBuffer.subdata(colorIndex, 0);
+
+    pubSub.publish("select", {
+      points: selection
+    });
+
+    drawRaf();
+  };
+
+  const mouseDownHandler = event => {
     mouseDown = true;
+    mouseDownShift = event.shiftKey;
     mouseDownTime = performance.now();
+
+    // fix camera
+    if (mouseDownShift) camera.config({ isFixed: true });
 
     // Get the mouse cursor position
     mousePosition.flush();
 
     // Get relative webgl coordinates
     const { 0: x, 1: y } = mousePosition;
-    mouseDownX = -1 + (x / width * 2);
-    mouseDownY = 1 + (y / height * -2);
+    mouseDownX = -1 + (x / width) * 2;
+    mouseDownY = 1 + (y / height) * -2;
   };
 
   const mouseUpHandler = () => {
     mouseDown = false;
-    if (performance.now() - mouseDownTime <= CLICK_DELAY) {
-      pubSub.publish(
-        'click',
-        { selectedPoint: raycast(mouseDownX, mouseDownY) },
-      );
+
+    if (mouseDownShift) {
+      mouseDownShift = false;
+      camera.config({ isFixed: false });
+      lassoEnd();
+    } else if (performance.now() - mouseDownTime <= CLICK_DELAY) {
+      const clostestPoint = raycast(mouseDownX, mouseDownY);
+      if (clostestPoint) select([clostestPoint]);
+      else deselect();
     }
   };
 
-  const initRegl = (c = canvas) => {
+  const mouseMoveHandler = () => {
+    if (mouseDown) drawRaf();
+    if (mouseDownShift) lassoDb();
+  };
+
+  const setColors = () => {
+    const numColors = Object.values(colors).length;
+    colorTexRes = Math.max(2, Math.floor(Math.sqrt(numColors)));
+    colorTexSize = colorTexRes ** 2;
+    const tmp = new Float32Array(colorTexSize * 4);
+    Object.values(colors).forEach((color, i) => {
+      tmp[i * 4] = color[0]; // r
+      tmp[i * 4 + 1] = color[1]; // g
+      tmp[i * 4 + 2] = color[2]; // b
+      tmp[i * 4 + 3] = color[3]; // a
+    });
+
+    colorTex = regl.texture({
+      data: tmp,
+      shape: [colorTexRes, colorTexRes, 4],
+      type: "float"
+    });
+  };
+
+  const init = (c = canvas) => {
     regl = createRegl({
       canvas: c,
-      extensions: ['OES_standard_derivatives', 'OES_texture_float'],
+      extensions: ["OES_standard_derivatives", "OES_texture_float"]
     });
     camera = canvasCamera2d(c, {
       target: DEFAULT_TARGET,
       distance: DEFAULT_DISTANCE,
+      rotation: DEFAULT_ROTATION
     });
+    lasso = createLine(regl, { width: 3, is2d: true });
     scroll = createScroll(c);
     mousePosition = createMousePos(c);
     mousePressed = createMousePressed(c);
 
-    scroll.on('scroll', () => { drawRaf(); });  // eslint-disable-line
-    mousePosition.on('move', () => { if (mouseDown) drawRaf(); }); // eslint-disable-line
-    mousePressed.on('down', mouseDownHandler);
-    mousePressed.on('up', mouseUpHandler);
+    scroll.on("scroll", () => {
+      drawRaf();
+    });
+    mousePosition.on("move", mouseMoveHandler);
+    mousePressed.on("down", mouseDownHandler);
+    mousePressed.on("up", mouseUpHandler);
+
+    pointBuffer = regl.buffer();
+    colorIndexBuffer = regl.buffer();
+
+    setColors();
   };
 
   const destroy = () => {
     canvas = undefined;
     camera = undefined;
     regl = undefined;
+    lasso.destroy();
     scroll.dispose();
     mousePosition.dispose();
     mousePressed.dispose();
   };
 
+  const updateRatio = () => {
+    aspectRatio = width / height;
+    projection = mat4.fromScaling([], [1 / aspectRatio, 1, 1]);
+    model = mat4.fromScaling([], [aspectRatio, 1, 1]);
+  };
+
   const canvasGetter = () => canvas;
-  const canvasSetter = (newCanvas) => {
+  const canvasSetter = newCanvas => {
     canvas = newCanvas;
-    initRegl(canvas);
+    init(canvas);
   };
   const colorMapGetter = () => colorMap;
-  const colorMapSetter = (newColorMap) => {
+  const colorMapSetter = newColorMap => {
     colorMap = newColorMap || DEFAULT_COLORMAP;
   };
   const heightGetter = () => height;
-  const heightSetter = (newHeight) => {
+  const heightSetter = newHeight => {
     height = +newHeight || DEFAULT_HEIGHT;
     canvas.height = height * window.devicePixelRatio;
+    updateRatio();
+    camera.refresh();
   };
   const paddingGetter = () => padding;
-  const paddingSetter = (newPadding) => {
+  const paddingSetter = newPadding => {
     padding = +newPadding || DEFAULT_PADDING;
     padding = Math.max(0, Math.min(0.5, padding));
   };
   const pointSizeGetter = () => pointSize;
-  const pointSizeSetter = (newPointSize) => {
+  const pointSizeSetter = newPointSize => {
     pointSize = +newPointSize || DEFAULT_POINT_SIZE;
   };
   const pointSizeHighlightGetter = () => pointSizeHighlight;
-  const pointSizeHighlightSetter = (newPointSizeHighlight) => {
+  const pointSizeselectionetter = newPointSizeHighlight => {
     pointSizeHighlight = +newPointSizeHighlight || DEFAULT_POINT_SIZE_HIGHLIGHT;
   };
   const widthGetter = () => width;
-  const widthSetter = (newWidth) => {
+  const widthSetter = newWidth => {
     width = +newWidth || DEFAULT_WIDTH;
     canvas.width = width * window.devicePixelRatio;
+    updateRatio();
+    camera.refresh();
   };
 
-  initRegl(canvas);
+  init(canvas);
 
   const drawPoints = regl({
-    frag: FSHADER_DRAW,
-    vert: VSHADER_DRAW,
+    frag: POINT_FS,
+    vert: POINT_VS,
 
     blend: {
       enable: true,
       func: {
-        srcRGB: 'src alpha',
-        srcAlpha: 'one',
-        dstRGB: 'one minus src alpha',
-        dstAlpha: 'one minus src alpha',
-      },
+        srcRGB: "src alpha",
+        srcAlpha: "one",
+        dstRGB: "one minus src alpha",
+        dstAlpha: "one minus src alpha"
+      }
     },
 
     depth: { enable: false },
 
     attributes: {
-      aIndex: { buffer: regl.prop('particleIndex'), size: 1 },
+      position: {
+        buffer: () => pointBuffer,
+        offset: 0,
+        stride: FLOAT_BYTES * 2
+      },
+      colorIndex: {
+        buffer: () => colorIndexBuffer,
+        size: 1
+      }
     },
 
     uniforms: {
-      uCamera: regl.prop('camera'),
-      uParticlesRes: regl.prop('particlesRes'),
-      uParticleState: () => currParticleState,
-      uPointSize: regl.prop('pointSize'),
-      uSpan: regl.prop('span'),
+      projection: () => projection,
+      model: () => model,
+      view: () => camera.view,
+      pointSize: () => pointSize,
+      colorTex: () => colorTex,
+      colorTexRes: () => colorTexRes
     },
 
-    count: regl.prop('numParticles'),
+    count: () => numPoints,
 
-    primitive: 'points',
+    primitive: "points"
   });
 
-  // regl command that updates particles state based on previous two
-  const updatePoints = regl({
-    // write to a framebuffer instead of to the screen
-    framebuffer: () => prevParticleState,
+  const createColorIndex = numPoints => new Uint8ClampedArray(numPoints);
 
-    vert: VSHADER_QUAD,
-    frag: FSHADER_UPDATE,
-
-    attributes: {
-      // a square covering the entire webgl space
-      aPosition: [-1, -1, 1, -1, -1, 1, -1, 1, 1, -1, 1, 1],
-    },
-
-    uniforms: {
-      uParticleState: () => currParticleState,
-    },
-
-    count: 6,
-  });
-
-  const highlightPoints = (pointsToBeDrawn, numHighlights) => {
-    const N = pointsToBeDrawn.length;
-    const highlightedPoints = [...pointsToBeDrawn];
-
-    for (let i = 0; i < numHighlights; i++) {
-      const pt = highlightedPoints[N - numHighlights + i];
-      const ptColor = [...pt[2].slice(0, 3)];
-      const ptSize = pointSize * pointSizeHighlight;
-      // Update color and point size to the outer most black outline
-      pt[2] = [0, 0, 0, 0.33];
-      pt[3] = ptSize + 6;
-      // Add second white outline
-      highlightedPoints.push([
-        pt[0], pt[1], [1, 1, 1, 1], ptSize + 2,
-      ]);
-      // Finally add the point itself again to be on top
-      highlightedPoints.push([
-        pt[0], pt[1], [...ptColor, 1], ptSize,
-      ]);
-    }
-
-    return highlightedPoints;
-  };
-
-  const createFrameBuffer = (newState, res) => {
-    const texture = regl.texture({
-      data: newState,
-      shape: [res, res, 4],
-      type: 'float',
-    });
-
-    return regl.framebuffer({
-      color: texture,
-      depth: false,
-      stencil: false,
-    });
-  };
-
-  const createParticleIndex = (texNumParticles) => {
-    const particleIndices = new Float32Array(texNumParticles);
-    for (let i = 0; i < texNumParticles; i++) particleIndices[i] = i;
-    return regl.buffer({
-      data: particleIndices,
-      usage: 'static',
-      type: 'float',
-      length: texNumParticles,
-    });
-  };
-
-  const initParticleState = (newPoints, texNumParticles) => {
-    const particleState = new Float32Array(texNumParticles * 4);
+  const createPointState = newPoints => {
+    const pointState = new Float32Array(newPoints.length * 2);
     for (let i = 0; i < newPoints.length; ++i) {
       // store x then y and then leave 2 spots empty
-      particleState[i * 4] = newPoints[i][0]; // x
-      particleState[i * 4 + 1] = newPoints[i][1]; // y
+      pointState[i * 2] = newPoints[i][0]; // x
+      pointState[i * 2 + 1] = newPoints[i][1]; // y
     }
-    return particleState;
+    return pointState;
   };
 
-  const init = (newPoints) => {
-    numParticles = newPoints.length;
-    particlesRes = Math.ceil(Math.sqrt(numParticles));
-    const texNumParticles = particlesRes ** 2;
+  const setPoints = newPoints => {
+    numPoints = newPoints.length;
 
-    const particleState = initParticleState(newPoints, texNumParticles);
-    particleIndex = createParticleIndex(texNumParticles);
-    prevParticleState = createFrameBuffer(particleState, particlesRes);
-    currParticleState = createFrameBuffer(particleState, particlesRes);
+    const tmp = createPointState(newPoints);
+    pointBuffer({
+      usage: "static",
+      type: "float",
+      // 2 because its a 2-vector
+      length: numPoints * 2 * FLOAT_BYTES,
+      data: tmp
+    });
+
+    colorIndex = createColorIndex(numPoints);
+    colorIndexBuffer({
+      usage: "dynamic",
+      type: "uint8",
+      length: UINT8_BYTES,
+      data: colorIndex
+    });
+
+    searchIndex = new KDBush(newPoints);
 
     isInit = true;
   };
 
-  const swapParticleStates = () => {
-    const tmp = prevParticleState;
-    prevParticleState = currParticleState;
-    currParticleState = tmp;
-  };
-
-  const draw = (newPoints) => {
-    if (newPoints) init(newPoints);
+  const draw = newPoints => {
+    if (newPoints) setPoints(newPoints);
     if (!isInit) return;
 
-    // clear the buffer
     regl.clear({
       // background color (transparent)
       color: [0, 0, 0, 0],
-      depth: 1,
+      depth: 1
     });
 
     // Update camera
-    const isCameraChanged = camera.tick();
+    isViewChanged = camera.tick();
 
     // Draw the points
-    drawPoints({
-      camera: camera.view(),
-      numParticles,
-      particleIndex,
-      particlesRes,
-      pointSize,
-      span: 1 - padding,
-    });
+    drawPoints();
 
-    // Update position of points in the frame buffers
-    updatePoints();
-
-    // Swap frame buffers (i.e., states)
-    swapParticleStates();
+    lasso.draw();
 
     // Publish camera change
-    if (isCameraChanged) pubSub.publish('camera', camera.position);
+    if (isViewChanged) pubSub.publish("camera", camera.position);
   };
 
   const drawRaf = withRaf(draw);
 
-  const refresh = () => { regl.poll(); };
+  const refresh = () => {
+    regl.poll();
+  };
 
   const reset = () => {
     camera.lookAt([...DEFAULT_TARGET], DEFAULT_DISTANCE);
     drawRaf();
-    pubSub.publish('camera', camera.position);
+    pubSub.publish("camera", camera.position);
   };
 
+  window.addEventListener("keyup", keyUpHandler, false);
+  window.addEventListener("blur", mouseUpHandler, false);
+
   return {
-    get canvas() { return canvasGetter(); },
-    set canvas(arg) { return canvasSetter(arg); },
-    get colorMap() { return colorMapGetter(); },
-    set colorMap(arg) { return colorMapSetter(arg); },
-    get height() { return heightGetter(); },
-    set height(arg) { return heightSetter(arg); },
-    get padding() { return paddingGetter(); },
-    set padding(arg) { return paddingSetter(arg); },
-    get pointSize() { return pointSizeGetter(); },
-    set pointSize(arg) { return pointSizeSetter(arg); },
-    get pointSizeHighlight() { return pointSizeHighlightGetter(); },
-    set pointSizeHighlight(arg) { return pointSizeHighlightSetter(arg); },
-    get width() { return widthGetter(); },
-    set width(arg) { return widthSetter(arg); },
+    get canvas() {
+      return canvasGetter();
+    },
+    set canvas(arg) {
+      return canvasSetter(arg);
+    },
+    get colorMap() {
+      return colorMapGetter();
+    },
+    set colorMap(arg) {
+      return colorMapSetter(arg);
+    },
+    get height() {
+      return heightGetter();
+    },
+    set height(arg) {
+      return heightSetter(arg);
+    },
+    get padding() {
+      return paddingGetter();
+    },
+    set padding(arg) {
+      return paddingSetter(arg);
+    },
+    get pointSize() {
+      return pointSizeGetter();
+    },
+    set pointSize(arg) {
+      return pointSizeSetter(arg);
+    },
+    get pointSizeHighlight() {
+      return pointSizeHighlightGetter();
+    },
+    set pointSizeHighlight(arg) {
+      return pointSizeselectionetter(arg);
+    },
+    get width() {
+      return widthGetter();
+    },
+    set width(arg) {
+      return widthSetter(arg);
+    },
     draw: drawRaf,
     refresh,
     destroy,
     reset,
     subscribe: pubSub.subscribe,
-    unsubscribe: pubSub.unsubscribe,
+    unsubscribe: pubSub.unsubscribe
   };
 };
 

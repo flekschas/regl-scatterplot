@@ -1,15 +1,15 @@
 const SHADER = `
 precision mediump float;
 
-attribute vec2 aPosition;
+attribute vec2 position;
 
-varying vec2 vTextureIndex;
+varying vec2 index;
 
 void main() {
   // map normalized device coords to texture coords
-  vTextureIndex = 0.5 * (1.0 + aPosition);
+  index = 0.5 * (1.0 + position);
 
-  gl_Position = vec4(aPosition, 0, 1);
+  gl_Position = vec4(position, 0, 1);
 }
 `;
 

@@ -1,26 +1,33 @@
-# WebGL-based Scatterplot
+# WebGl 2D Scatterplot with Regl
 
-[![Build Status](https://travis-ci.org/flekschas/webgl-scatterplot.svg?branch=master)](https://travis-ci.org/flekschas/webgl-scatterplot)
+[![npm version](https://img.shields.io/npm/v/regl-scatterplot.svg)](https://www.npmjs.com/package/regl-scatterplot)
+[![node stability](https://img.shields.io/badge/stability-experimental-EC5314.svg)](https://nodejs.org/api/documentation.html#documentation_stability_index)
+[![build status](https://travis-ci.org/flekschas/regl-scatterplot.svg?branch=master)](https://travis-ci.org/flekschas/regl-scatterplot)
+[![code style prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
+[![regl-scatterplot demo](https://img.shields.io/badge/demo-online-6ae3c7.svg)](https://flekschas.github.io/regl-scatterplot/)
 
-> A highly scalable scatterplot rendered with WebGL using [Regl]()
+> A highly scalable scatterplot rendered with WebGL using [Regl](https://github.com/regl-project/regl)
 
 ## Install
 
 ```
-npm -i webgl-scatterplot
+npm -i regl-scatterplot
 ```
 
 ## Getting started
 
 ```javascript
-import createScatterplot from 'webgl-scatterplot';
+import createScatterplot from "regl-scatterplot";
 
-const canvas = document.querySelector('#canvas');
+const canvas = document.querySelector("#canvas");
 
 let { width, height } = canvas.getBoundingClientRect();
 
 const scatterplot = createScatterplot({
-  canvas, width, height, pointSize: 5,
+  canvas,
+  width,
+  height,
+  pointSize: 5
 });
 
 const points = new Array(10000)
