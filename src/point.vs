@@ -1,22 +1,17 @@
 const VERTEX_SHADER = `
 precision mediump float;
 
-// per vertex attributes
 attribute vec2 position;
 attribute vec4 color;
 attribute float extraPointSize;
 
-// variables to send to the fragment shader
 varying vec4 fragColor;
 
-// values that are the same for all vertices
-uniform float span;
 uniform float basePointSize;
-uniform mat4 camera;
-
-vec2 normalizeCoords(vec2 position) {
-  return vec2(position[0] * span, position[1] * span);
-}
+uniform float aspectRatio;
+uniform mat4 projection;
+uniform mat4 model;
+uniform mat4 view;
 
 void main() {
   // update the size of a point based on the prop base and extra point size
@@ -27,7 +22,7 @@ void main() {
 
   // scale to normalized device coordinates gl_Position is a special variable
   // that holds the position of a vertex
-  gl_Position = camera * vec4(normalizeCoords(position), 0.0, 1.0);
+  gl_Position = projection * view * model * vec4(position, 0.0, 1.0);
 }
 `;
 

@@ -1,36 +1,46 @@
-import canvasCamera2d from 'canvas-camera-2d';
-import createMousePos from 'mouse-position';
-import createMousePrs from 'mouse-pressed';
-import createPubSub from 'pub-sub-es';
-import createRegl from 'regl';
-import createScroll from 'scroll-speed';
-import withRaf from 'with-raf';
+import canvasCamera2d from "canvas-camera-2d";
+import KDBush from "kdbush";
+import createMousePos from "mouse-position";
+import createMousePrs from "mouse-pressed";
+import createPubSub from "pub-sub-es";
+import createRegl from "regl";
+import createScroll from "scroll-speed";
+import { throttle as withThrottle } from "lodash";
+import withRaf from "with-raf";
+import { mat4, vec4 } from "gl-matrix";
 
-import FRAG_SHADER from './fragment.fs';
-import VERT_SHADER from './vertex.vs';
+import createLine from "regl-line";
+
+import FRAG_SHADER from "./point.fs";
+import VERT_SHADER from "./point.vs";
 
 const DEFAULT_POINT_SIZE = 3;
-const DEFAULT_POINT_SIZE_HIGHLIGHT = 3;
+const DEFAULT_POINT_SIZE_HIGHLIGHT = 1;
 const DEFAULT_WIDTH = 100;
 const DEFAULT_HEIGHT = 100;
 const DEFAULT_PADDING = 0;
 const DEFAULT_COLORMAP = [];
 const DEFAULT_TARGET = [0, 0];
 const DEFAULT_DISTANCE = 1;
+const DEFAULT_ROTATION = 0;
 const CLICK_DELAY = 250;
+const LASSO_MIN_DELAY = 25;
+const LASSO_MIN_DIST = 8;
 
-const dist = (x1, x2, y1, y2) => Math.sqrt(((x1 - x2) ** 2) + ((y1 - y2) ** 2));
+const dist = (x1, y1, x2, y2) => Math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2);
 
 const Scatterplot = ({
-  canvas: initCanvas = document.createElement('canvas'),
+  canvas: initCanvas = document.createElement("canvas"),
   colorMap: initColorMap = DEFAULT_COLORMAP,
   pointSize: initPointSize = DEFAULT_POINT_SIZE,
   pointSizeHighlight: initPointSizeHighlight = DEFAULT_POINT_SIZE_HIGHLIGHT,
   width: initWidth = DEFAULT_WIDTH,
   height: initHeight = DEFAULT_HEIGHT,
-  padding: initPadding = DEFAULT_PADDING,
+  padding: initPadding = DEFAULT_PADDING
 } = {}) => {
   const pubSub = createPubSub();
+  const scratch = new Float32Array(16);
+
   let canvas = initCanvas;
   let width = initWidth;
   let height = initHeight;
@@ -39,244 +49,466 @@ const Scatterplot = ({
   let pointSizeHighlight = initPointSizeHighlight;
   let colorMap = initColorMap;
   let camera;
+  let lasso;
   let regl;
   let scroll;
   let mousePosition;
   let mousePressed;
   let mouseDown;
+  let mouseDownShift = false;
   let mouseDownTime;
   let mouseDownX;
   let mouseDownY;
   let points = [];
-  let numHighlight = [];
+  let selection = [];
+  let lassoPos = [];
+  let lassoScatterPos = [];
+  let lassoPrevMousePos;
+  let searchIndex;
+  let aspectRatio = width / height;
+  let projection = mat4.fromScaling([], [1 / aspectRatio, 1, 1]);
+  let model = mat4.fromScaling([], [aspectRatio, 1, 1]);
+  let isViewChanged = false;
 
   canvas.width = width * window.devicePixelRatio;
   canvas.height = height * window.devicePixelRatio;
 
-  const raycast = () => {
-    // Get the mouse cursor position
+  const keyUpHandler = ({ key }) => {
+    switch (key) {
+      case "Escape":
+        deselect();
+        break;
+    }
+  };
+
+  const getMousePos = () => {
     mousePosition.flush();
-    const [x, y] = camera.getGlPos(
-      mousePosition[0],
-      mousePosition[1],
-      width,
-      height,
+    return [mousePosition[0], mousePosition[1]];
+  };
+
+  const getMouseGlPos = ([x, y] = getMousePos()) => {
+    // Get relative WebGL position
+    const xGl = -1 + (x / width) * 2;
+    const yGl = 1 + (y / height) * -2;
+
+    return [xGl, yGl];
+  };
+
+  const getScatterGlPos = ([x, y] = getMousePos()) => {
+    const [xGl, yGl] = getMouseGlPos([x, y]);
+
+    // Homogeneous vector
+    const v = [xGl, yGl, 1, 1];
+
+    // projection^-1 * view^-1 * model^-1 is the same as
+    // model * view^-1 * projection
+    const mvp = mat4.invert(
+      scratch,
+      mat4.multiply(
+        scratch,
+        projection,
+        mat4.multiply(scratch, camera.view, model)
+      )
     );
+
+    // Translate vector
+    vec4.transformMat4(v, v, mvp);
+
+    return v.slice(0, 2);
+  };
+
+  const raycast = () => {
+    const [x, y] = getScatterGlPos();
+
     // Find the closest point
     let minDist = Infinity;
     let clostestPoint;
     points.forEach(([ptX, ptY], i) => {
-      const d = dist(ptX, x, ptY, y);
+      const d = dist(ptX, ptY, x, y);
       if (d < minDist) {
         minDist = d;
         clostestPoint = i;
       }
     });
-    if (minDist < pointSize / width * 2) return clostestPoint;
+
+    if (minDist < (pointSize / width) * 2) return clostestPoint;
   };
 
-  const mouseDownHandler = () => {
+  const lassoExtend = () => {
+    const currMousePos = getMousePos();
+
+    if (!lassoPrevMousePos) {
+      lassoPos.push(...getMouseGlPos(currMousePos));
+      lassoScatterPos.push(...getScatterGlPos(currMousePos));
+      lassoPrevMousePos = currMousePos;
+    } else {
+      const d = dist(...currMousePos, ...lassoPrevMousePos);
+
+      if (d > LASSO_MIN_DIST) {
+        lassoPos.push(...getMouseGlPos(currMousePos));
+        lassoScatterPos.push(...getScatterGlPos(currMousePos));
+        lassoPrevMousePos = currMousePos;
+        if (lassoPos.length > 2) {
+          lasso.setPoints(lassoPos);
+          drawRaf();
+        }
+      }
+    }
+  };
+  const lassoDb = withThrottle(lassoExtend, LASSO_MIN_DELAY, true);
+
+  const getBBox = pos => {
+    let xMin = Infinity;
+    let xMax = -Infinity;
+    let yMin = Infinity;
+    let yMax = -Infinity;
+
+    for (let i = 0; i < pos.length; i += 2) {
+      xMin = pos[i] < xMin ? pos[i] : xMin;
+      xMax = pos[i] > xMax ? pos[i] : xMax;
+      yMin = pos[i + 1] < yMin ? pos[i + 1] : yMin;
+      yMax = pos[i + 1] > yMax ? pos[i + 1] : yMax;
+    }
+
+    return [xMin, yMin, xMax, yMax];
+  };
+
+  /**
+   * From: https://wrf.ecse.rpi.edu//Research/Short_Notes/pnpoly.html
+   * @param   {Array}  point  Tuple of the form `[x,y]` to be tested.
+   * @param   {Array}  polygon  1D list of vertices defining the polygon.
+   * @return  {boolean}  If `true` point lies within the polygon.
+   */
+  const pointInPoly = ([px, py] = [], polygon) => {
+    let x1;
+    let y1;
+    let x2;
+    let y2;
+    let isWithin = false;
+    for (let i = 0, j = polygon.length - 2; i < polygon.length; i += 2) {
+      x1 = polygon[i];
+      y1 = polygon[i + 1];
+      x2 = polygon[j];
+      y2 = polygon[j + 1];
+      if (y1 > py !== y2 > py && px < ((x2 - x1) * (py - y1)) / (y2 - y1) + x1)
+        isWithin = !isWithin;
+      j = i;
+    }
+    return isWithin;
+  };
+
+  const findPointsInLasso = lassoPolygon => {
+    // get the bounding box of the lasso selection...
+    const bBox = getBBox(lassoPolygon);
+    // ...to efficiently preselect potentially selected points
+    const pointsInBBox = searchIndex.range(...bBox);
+    // next we test each point in the bounding box if it is in the polygon too
+    const ptsInPoly = [];
+    pointsInBBox.forEach(pointIdx => {
+      if (pointInPoly(points[pointIdx], lassoPolygon)) ptsInPoly.push(pointIdx);
+    });
+
+    return ptsInPoly;
+  };
+
+  const lassoEnd = () => {
+    // const t0 = performance.now();
+    const ptsInLasso = findPointsInLasso(lassoScatterPos);
+    // console.log(`found ${ptsInLasso.length} in ${performance.now() - t0} msec`);
+    select(ptsInLasso);
+    lassoPos = [];
+    lassoScatterPos = [];
+    lassoPrevMousePos = undefined;
+    lasso.clear();
+  };
+
+  const deselect = () => {
+    if (selection.length) {
+      pubSub.publish("deselect");
+      selection = [];
+      drawRaf();
+    }
+  };
+
+  const select = points => {
+    selection = points;
+
+    pubSub.publish("select", {
+      points: selection
+    });
+
+    drawRaf();
+  };
+
+  const mouseDownHandler = event => {
     mouseDown = true;
+    mouseDownShift = event.shiftKey;
     mouseDownTime = performance.now();
+
+    // fix camera
+    if (mouseDownShift) camera.config({ isFixed: true });
 
     // Get the mouse cursor position
     mousePosition.flush();
 
     // Get relative webgl coordinates
     const { 0: x, 1: y } = mousePosition;
-    mouseDownX = -1 + (x / width * 2);
-    mouseDownY = 1 + (y / height * -2);
+    mouseDownX = -1 + (x / width) * 2;
+    mouseDownY = 1 + (y / height) * -2;
   };
 
   const mouseUpHandler = () => {
     mouseDown = false;
-    if (performance.now() - mouseDownTime <= CLICK_DELAY) {
-      pubSub.publish(
-        'click',
-        { selectedPoint: raycast(mouseDownX, mouseDownY) },
-      );
+
+    if (mouseDownShift) {
+      mouseDownShift = false;
+      camera.config({ isFixed: false });
+      lassoEnd();
+    } else if (performance.now() - mouseDownTime <= CLICK_DELAY) {
+      const clostestPoint = raycast(mouseDownX, mouseDownY);
+      if (clostestPoint) select([clostestPoint]);
+      else deselect();
     }
   };
 
-  const initRegl = (c = canvas) => {
-    regl = createRegl({ canvas: c, extensions: ['OES_standard_derivatives'] });
+  const mouseMoveHandler = () => {
+    if (mouseDown) drawRaf();
+    if (mouseDownShift) lassoDb();
+  };
+
+  const init = (c = canvas) => {
+    regl = createRegl({ canvas: c, extensions: ["OES_standard_derivatives"] });
     camera = canvasCamera2d(c, {
       target: DEFAULT_TARGET,
       distance: DEFAULT_DISTANCE,
+      rotation: DEFAULT_ROTATION
     });
+    lasso = createLine(regl, { width: 3, is2d: true });
     scroll = createScroll(c);
     mousePosition = createMousePos(c);
     mousePressed = createMousePrs(c);
 
-    scroll.on('scroll', () => { drawRaf(); });  // eslint-disable-line
-    mousePosition.on('move', () => { if (mouseDown) drawRaf(); }); // eslint-disable-line
-    mousePressed.on('down', mouseDownHandler);
-    mousePressed.on('up', mouseUpHandler);
+    scroll.on("scroll", () => {
+      drawRaf();
+    });
+    mousePosition.on("move", mouseMoveHandler);
+    mousePressed.on("down", mouseDownHandler);
+    mousePressed.on("up", mouseUpHandler);
   };
 
   const destroy = () => {
     canvas = undefined;
     camera = undefined;
     regl = undefined;
+    lasso.destroy();
     scroll.dispose();
     mousePosition.dispose();
     mousePressed.dispose();
   };
 
+  const updateRatio = () => {
+    aspectRatio = width / height;
+    projection = mat4.fromScaling([], [1 / aspectRatio, 1, 1]);
+    model = mat4.fromScaling([], [aspectRatio, 1, 1]);
+  };
+
   const canvasGetter = () => canvas;
-  const canvasSetter = (newCanvas) => {
+  const canvasSetter = newCanvas => {
     canvas = newCanvas;
-    initRegl(canvas);
+    init(canvas);
   };
   const colorMapGetter = () => colorMap;
-  const colorMapSetter = (newColorMap) => {
+  const colorMapSetter = newColorMap => {
     colorMap = newColorMap || DEFAULT_COLORMAP;
   };
   const heightGetter = () => height;
-  const heightSetter = (newHeight) => {
+  const heightSetter = newHeight => {
     height = +newHeight || DEFAULT_HEIGHT;
     canvas.height = height * window.devicePixelRatio;
+    updateRatio();
+    camera.refresh();
   };
   const paddingGetter = () => padding;
-  const paddingSetter = (newPadding) => {
+  const paddingSetter = newPadding => {
     padding = +newPadding || DEFAULT_PADDING;
     padding = Math.max(0, Math.min(0.5, padding));
   };
   const pointSizeGetter = () => pointSize;
-  const pointSizeSetter = (newPointSize) => {
+  const pointSizeSetter = newPointSize => {
     pointSize = +newPointSize || DEFAULT_POINT_SIZE;
   };
   const pointSizeHighlightGetter = () => pointSizeHighlight;
-  const pointSizeHighlightSetter = (newPointSizeHighlight) => {
+  const pointSizeselectionetter = newPointSizeHighlight => {
     pointSizeHighlight = +newPointSizeHighlight || DEFAULT_POINT_SIZE_HIGHLIGHT;
   };
   const widthGetter = () => width;
-  const widthSetter = (newWidth) => {
+  const widthSetter = newWidth => {
     width = +newWidth || DEFAULT_WIDTH;
     canvas.width = width * window.devicePixelRatio;
+    updateRatio();
+    camera.refresh();
   };
 
-  initRegl(canvas);
+  init(canvas);
 
-  const drawPoints = pointsToBeDrawn => regl({
-    frag: FRAG_SHADER,
-    vert: VERT_SHADER,
+  const drawPoints = pointsToBeDrawn => {
+    return regl({
+      frag: FRAG_SHADER,
+      vert: VERT_SHADER,
 
-    blend: {
-      enable: true,
-      func: {
-        srcRGB: 'src alpha',
-        srcAlpha: 'one',
-        dstRGB: 'one minus src alpha',
-        dstAlpha: 'one minus src alpha',
+      blend: {
+        enable: true,
+        func: {
+          srcRGB: "src alpha",
+          srcAlpha: "one",
+          dstRGB: "one minus src alpha",
+          dstAlpha: "one minus src alpha"
+        }
       },
-    },
 
-    depth: { enable: false },
+      depth: { enable: false },
 
-    attributes: {
-      // each of these gets mapped to a single entry for each of the points.
-      // this means the vertex shader will receive just the relevant value for
-      // a given point.
-      position: pointsToBeDrawn.map(d => d.slice(0, 2)),
-      color: pointsToBeDrawn.map(d => d[2]),
-      extraPointSize: pointsToBeDrawn.map(d => d[3] | 0), // eslint-disable-line no-bitwise
-    },
+      attributes: {
+        // each of these gets mapped to a single entry for each of the points.
+        // this means the vertex shader will receive just the relevant value for
+        // a given point.
+        position: pointsToBeDrawn.map(d => d.slice(0, 2)),
+        color: pointsToBeDrawn.map(d => d[2]),
+        extraPointSize: pointsToBeDrawn.map(d => d[3] || 0)
+      },
 
-    uniforms: {
-      // Total area that is being used. Value must be in [0, 1]
-      span: regl.prop('span'),
-      basePointSize: regl.prop('basePointSize'),
-      camera: regl.prop('camera'),
-    },
+      uniforms: {
+        // Total area that is being used. Value must be in [0, 1]
+        basePointSize: regl.prop("basePointSize"),
+        projection: () => projection,
+        model: () => model,
+        view: () => camera.view,
+        aspectRatio: ({ viewportWidth, viewportHeight }) =>
+          viewportWidth / viewportHeight
+      },
 
-    count: pointsToBeDrawn.length,
+      count: pointsToBeDrawn.length,
 
-    primitive: 'points',
-  });
+      primitive: "points"
+    });
+  };
 
-  const highlightPoints = (pointsToBeDrawn, numHighlights) => {
-    const N = pointsToBeDrawn.length;
+  const highlightPoints = (pointsToBeDrawn, newSelection) => {
     const highlightedPoints = [...pointsToBeDrawn];
 
-    for (let i = 0; i < numHighlights; i++) {
-      const pt = highlightedPoints[N - numHighlights + i];
+    for (let i = 0; i < newSelection.length; i++) {
+      const pt = highlightedPoints[newSelection[i]];
       const ptColor = [...pt[2].slice(0, 3)];
       const ptSize = pointSize * pointSizeHighlight;
-      // Update color and point size to the outer most black outline
-      pt[2] = [0, 0, 0, 0.33];
-      pt[3] = ptSize + 6;
-      // Add second white outline
-      highlightedPoints.push([
-        pt[0], pt[1], [1, 1, 1, 1], ptSize + 2,
-      ]);
+
+      // Add white outline
+      highlightedPoints.push([pt[0], pt[1], [1, 1, 1, 1], ptSize + 6]);
+      // Add inbetween border to make the outline appear as an outline
+      highlightedPoints.push([pt[0], pt[1], [0, 0, 0, 1], ptSize + 2]);
       // Finally add the point itself again to be on top
-      highlightedPoints.push([
-        pt[0], pt[1], [...ptColor, 1], ptSize,
-      ]);
+      highlightedPoints.push([pt[0], pt[1], [...ptColor, 1], ptSize]);
     }
 
     return highlightedPoints;
   };
 
-  const draw = (newPoints = points, newNumHighlight = numHighlight) => {
+  const setPoints = newPoints => {
     points = newPoints;
-    numHighlight = newNumHighlight;
+    searchIndex = new KDBush(points);
+  };
+
+  const draw = (newPoints, newSelection = selection) => {
+    if (newPoints) setPoints(newPoints);
+
+    selection = newSelection;
 
     if (points.length === 0) return;
 
-    // clear the buffer
     regl.clear({
       // background color (transparent)
       color: [0, 0, 0, 0],
-      depth: 1,
+      depth: 1
     });
 
     // Update camera
-    const isCameraChanged = camera.tick();
+    isViewChanged = camera.tick();
 
-    // arguments are available via `regl.prop`.
-    drawPoints(highlightPoints(points, numHighlight))({
+    drawPoints(highlightPoints(points, selection))({
       span: 1 - padding,
       basePointSize: pointSize,
-      camera: camera.view(),
+      camera: camera.view
     });
 
+    lasso.draw();
+
     // Publish camera change
-    if (isCameraChanged) pubSub.publish('camera', camera.position);
+    if (isViewChanged) pubSub.publish("camera", camera.position);
   };
 
   const drawRaf = withRaf(draw);
 
-  const refresh = () => { regl.poll(); };
+  const refresh = () => {
+    regl.poll();
+  };
 
   const reset = () => {
     camera.lookAt([...DEFAULT_TARGET], DEFAULT_DISTANCE);
     drawRaf();
-    pubSub.publish('camera', camera.position);
+    pubSub.publish("camera", camera.position);
   };
 
+  window.addEventListener("keyup", keyUpHandler, false);
+  window.addEventListener("blur", mouseUpHandler, false);
+
   return {
-    get canvas() { return canvasGetter(); },
-    set canvas(arg) { return canvasSetter(arg); },
-    get colorMap() { return colorMapGetter(); },
-    set colorMap(arg) { return colorMapSetter(arg); },
-    get height() { return heightGetter(); },
-    set height(arg) { return heightSetter(arg); },
-    get padding() { return paddingGetter(); },
-    set padding(arg) { return paddingSetter(arg); },
-    get pointSize() { return pointSizeGetter(); },
-    set pointSize(arg) { return pointSizeSetter(arg); },
-    get pointSizeHighlight() { return pointSizeHighlightGetter(); },
-    set pointSizeHighlight(arg) { return pointSizeHighlightSetter(arg); },
-    get width() { return widthGetter(); },
-    set width(arg) { return widthSetter(arg); },
+    get canvas() {
+      return canvasGetter();
+    },
+    set canvas(arg) {
+      return canvasSetter(arg);
+    },
+    get colorMap() {
+      return colorMapGetter();
+    },
+    set colorMap(arg) {
+      return colorMapSetter(arg);
+    },
+    get height() {
+      return heightGetter();
+    },
+    set height(arg) {
+      return heightSetter(arg);
+    },
+    get padding() {
+      return paddingGetter();
+    },
+    set padding(arg) {
+      return paddingSetter(arg);
+    },
+    get pointSize() {
+      return pointSizeGetter();
+    },
+    set pointSize(arg) {
+      return pointSizeSetter(arg);
+    },
+    get pointSizeHighlight() {
+      return pointSizeHighlightGetter();
+    },
+    set pointSizeHighlight(arg) {
+      return pointSizeselectionetter(arg);
+    },
+    get width() {
+      return widthGetter();
+    },
+    set width(arg) {
+      return widthSetter(arg);
+    },
     draw: drawRaf,
     refresh,
     destroy,
     reset,
     subscribe: pubSub.subscribe,
-    unsubscribe: pubSub.unsubscribe,
+    unsubscribe: pubSub.unsubscribe
   };
 };
 
