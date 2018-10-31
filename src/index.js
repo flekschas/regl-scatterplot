@@ -8,7 +8,6 @@ import createScroll from "scroll-speed";
 import { throttle as withThrottle } from "lodash";
 import withRaf from "with-raf";
 import { mat4, vec4 } from "gl-matrix";
-
 import createLine from "regl-line";
 
 import POINT_FS from "./point.fs";
@@ -30,7 +29,7 @@ const LASSO_MIN_DIST = 8;
 const FLOAT_BYTES = Float32Array.BYTES_PER_ELEMENT;
 const UINT8_BYTES = Uint8ClampedArray.BYTES_PER_ELEMENT;
 
-const dist = (x1, y1, x2, y2) => Math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2);
+import { dist } from "./utils.js";
 
 const Scatterplot = ({
   canvas: initCanvas = document.createElement("canvas"),
