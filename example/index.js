@@ -7,9 +7,9 @@ const pointSizeEl = document.querySelector("#point-size");
 const pointSizeValEl = document.querySelector("#point-size-value");
 const opacityEl = document.querySelector("#opacity");
 const opacityValEl = document.querySelector("#opacity-value");
+const resetEl = document.querySelector("#reset");
 
 let { width, height } = canvas.getBoundingClientRect();
-let points;
 
 const resizeHandler = () => {
   ({ width, height } = canvas.getBoundingClientRect());
@@ -36,7 +36,7 @@ const scatterplot = createScatterplot({
   canvas,
   width,
   height,
-  pointSize: 20
+  pointSize: 10
 });
 
 scatterplot.subscribe("select", selectHandler);
@@ -56,8 +56,7 @@ numPointsEl.addEventListener("input", numPointsInputHandler);
 
 const numPointsChangeHandler = event => {
   numPointsValEl.innerHTML = +event.target.value;
-  points = generatePoints(+event.target.value);
-  scatterplot.draw(points);
+  scatterplot.draw(generatePoints(+event.target.value));
 };
 
 numPointsEl.addEventListener("change", numPointsChangeHandler);
@@ -78,5 +77,10 @@ const opacityInputHandler = event => {
 
 opacityEl.addEventListener("input", opacityInputHandler);
 
-points = generatePoints(1000);
-scatterplot.draw(points);
+const resetClickHandler = () => {
+  scatterplot.reset();
+};
+
+resetEl.addEventListener("click", resetClickHandler);
+
+scatterplot.draw(generatePoints(1000));
