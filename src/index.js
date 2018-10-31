@@ -60,7 +60,6 @@ const Scatterplot = ({
   let mouseDownX;
   let mouseDownY;
   let numPoints = 0;
-  let pointBuffer;
   let isInit = false;
   let selection = [];
   let lassoPos = [];
@@ -71,16 +70,24 @@ const Scatterplot = ({
   let projection = mat4.fromScaling([], [1 / aspectRatio, 1, 1]);
   let model = mat4.fromScaling([], [aspectRatio, 1, 1]);
   let isViewChanged = false;
-  let colorTex;
-  let colorTexRes = 0;
-  let colorTexSize = 0;
+
+  let positionTex; // Stores the point texture
+  let positionTexRes = 0; // Width and height of the texture
+  let positionIndex;
+  let positionIndexBuffer;
+
+  let colorTex; // Stores the color texture
+  let colorTexRes = 0; // Width and height of the texture
   let colorIndex;
   let colorIndexBuffer;
+
+  let highlightIndexBuffer;
 
   let colors = {
     normal: [0.66, 0.66, 0.66, 1],
     active: [0, 0.55, 1, 1],
-    inactive: [0.2, 0.2, 0.2, 1]
+    inactive: [0.2, 0.2, 0.2, 1],
+    background: [0, 0, 0, 1]
   };
 
   canvas.width = width * window.devicePixelRatio;
@@ -132,7 +139,7 @@ const Scatterplot = ({
 
   const raycast = () => {
     const [x, y] = getScatterGlPos();
-    const pointGlSize = pointSize / width;
+    const pointGlSize = (pointSize / width) * window.devicePixelRatio;
 
     // Get all points within a close range
     const pointsInBBox = searchIndex.range(
@@ -265,10 +272,17 @@ const Scatterplot = ({
 
     selection = points;
 
-    selection.forEach(i => {
-      colorIndex[i] = 1;
+    highlightIndexBuffer({
+      usage: "dynamic",
+      type: "float",
+      length: FLOAT_BYTES,
+      data: new Float32Array(selection)
     });
-    colorIndexBuffer.subdata(colorIndex, 0);
+
+    // selection.forEach((point) => {
+    //   colorIndex[point] = 1;
+    // });
+    // colorIndexBuffer.subdata(colorIndex, 0);
 
     pubSub.publish("select", {
       points: selection
@@ -316,8 +330,7 @@ const Scatterplot = ({
   const setColors = () => {
     const numColors = Object.values(colors).length;
     colorTexRes = Math.max(2, Math.floor(Math.sqrt(numColors)));
-    colorTexSize = colorTexRes ** 2;
-    const tmp = new Float32Array(colorTexSize * 4);
+    const tmp = new Float32Array(colorTexRes ** 2 * 4);
     Object.values(colors).forEach((color, i) => {
       tmp[i * 4] = color[0]; // r
       tmp[i * 4 + 1] = color[1]; // g
@@ -332,7 +345,7 @@ const Scatterplot = ({
     });
   };
 
-  const init = (c = canvas) => {
+  const initRegl = (c = canvas) => {
     regl = createRegl({
       canvas: c,
       extensions: ["OES_standard_derivatives", "OES_texture_float"]
@@ -347,6 +360,7 @@ const Scatterplot = ({
     mousePosition = createMousePos(c);
     mousePressed = createMousePressed(c);
 
+    // Event listeners
     scroll.on("scroll", () => {
       drawRaf();
     });
@@ -354,8 +368,10 @@ const Scatterplot = ({
     mousePressed.on("down", mouseDownHandler);
     mousePressed.on("up", mouseUpHandler);
 
-    pointBuffer = regl.buffer();
+    // Buffers
     colorIndexBuffer = regl.buffer();
+    positionIndexBuffer = regl.buffer();
+    highlightIndexBuffer = regl.buffer();
 
     setColors();
   };
@@ -379,7 +395,7 @@ const Scatterplot = ({
   const canvasGetter = () => canvas;
   const canvasSetter = newCanvas => {
     canvas = newCanvas;
-    init(canvas);
+    initRegl(canvas);
   };
   const colorMapGetter = () => colorMap;
   const colorMapSetter = newColorMap => {
@@ -408,77 +424,156 @@ const Scatterplot = ({
     camera.refresh();
   };
 
-  init(canvas);
+  initRegl(canvas);
 
-  const drawPoints = regl({
-    frag: POINT_FS,
-    vert: POINT_VS,
+  const getColorIndexBuffer = () => colorIndexBuffer;
+  const getColorTex = () => colorTex;
+  const getColorTexRes = () => colorTexRes;
+  const getPositionIndexBuffer = () => positionIndexBuffer;
+  const getHighlightIndexBuffer = () => highlightIndexBuffer;
+  const getPointSize = () => pointSize * window.devicePixelRatio;
+  const getPositionTex = () => positionTex;
+  const getPositionTexRes = () => positionTexRes;
+  const getProjection = () => projection;
+  const getView = () => camera.view;
+  const getModel = () => model;
+  const getNumPoints = () => numPoints;
 
-    blend: {
-      enable: true,
-      func: {
-        srcRGB: "src alpha",
-        srcAlpha: "one",
-        dstRGB: "one minus src alpha",
-        dstAlpha: "one minus src alpha"
-      }
-    },
+  const drawPoints = (
+    getPointSize,
+    getNumPoints,
+    getPositionIndexBuffer,
+    globalState = 0
+  ) =>
+    regl({
+      frag: POINT_FS,
+      vert: POINT_VS,
 
-    depth: { enable: false },
-
-    attributes: {
-      position: {
-        buffer: () => pointBuffer,
-        offset: 0,
-        stride: FLOAT_BYTES * 2
+      blend: {
+        enable: true,
+        func: {
+          srcRGB: "src alpha",
+          srcAlpha: "one",
+          dstRGB: "one minus src alpha",
+          dstAlpha: "one minus src alpha"
+        }
       },
-      colorIndex: {
-        buffer: () => colorIndexBuffer,
-        size: 1
-      }
-    },
 
-    uniforms: {
-      projection: () => projection,
-      model: () => model,
-      view: () => camera.view,
-      pointSize: () => pointSize,
-      colorTex: () => colorTex,
-      colorTexRes: () => colorTexRes
-    },
+      depth: { enable: false },
 
-    count: () => numPoints,
+      attributes: {
+        colorIndex: {
+          buffer: getColorIndexBuffer,
+          size: 1
+        },
+        positionIndex: {
+          buffer: getPositionIndexBuffer,
+          size: 1
+        }
+      },
 
-    primitive: "points"
-  });
+      uniforms: {
+        projection: getProjection,
+        model: getModel,
+        view: getView,
+        pointSize: getPointSize,
+        globalState,
+        colorTex: getColorTex,
+        colorTexRes: getColorTexRes,
+        positionTex: getPositionTex,
+        positionTexRes: getPositionTexRes
+      },
+
+      count: getNumPoints,
+
+      primitive: "points"
+    });
+
+  const drawPointBodies = drawPoints(
+    getPointSize,
+    getNumPoints,
+    getPositionIndexBuffer
+  );
+
+  const drawPointOutlines = () => {
+    const numOutlinedPoints = selection.length;
+
+    // Draw outer outline
+    drawPoints(
+      () => pointSize + 4,
+      () => numOutlinedPoints,
+      getHighlightIndexBuffer,
+      1
+    )();
+    // Draw inner outline
+    drawPoints(
+      () => pointSize + 2,
+      () => numOutlinedPoints,
+      getHighlightIndexBuffer,
+      3
+    )();
+    // Draw body
+    drawPoints(
+      getPointSize,
+      () => numOutlinedPoints,
+      getHighlightIndexBuffer,
+      1
+    )();
+  };
 
   const createColorIndex = numPoints => new Uint8ClampedArray(numPoints);
 
-  const createPointState = newPoints => {
-    const pointState = new Float32Array(newPoints.length * 2);
-    for (let i = 0; i < newPoints.length; ++i) {
-      // store x then y and then leave 2 spots empty
-      pointState[i * 2] = newPoints[i][0]; // x
-      pointState[i * 2 + 1] = newPoints[i][1]; // y
+  // const createPointState = newPoints => {
+  //   const state = new Float32Array(newPoints.length * 2);
+  //   for (let i = 0; i < newPoints.length; ++i) {
+  //     state[i * 2] = newPoints[i][0]; // x
+  //     state[i * 2 + 1] = newPoints[i][1]; // y
+  //   }
+  //   return state;
+  // };
+
+  const createPositionIndex = numPoints => {
+    const index = new Float32Array(numPoints);
+
+    for (let i = 0; i < numPoints; ++i) {
+      index[i] = i;
     }
-    return pointState;
+
+    return index;
+  };
+
+  const createPositionTexture = newPoints => {
+    positionTexRes = Math.max(2, Math.ceil(Math.sqrt(numPoints)));
+    const data = new Float32Array(positionTexRes ** 2 * 2);
+
+    for (let i = 0; i < numPoints; ++i) {
+      data[i * 2] = newPoints[i][0]; // x
+      data[i * 2 + 1] = newPoints[i][1]; // y
+    }
+
+    return regl.texture({
+      data: data,
+      shape: [positionTexRes, positionTexRes, 2],
+      type: "float"
+    });
   };
 
   const setPoints = newPoints => {
     numPoints = newPoints.length;
 
-    const tmp = createPointState(newPoints);
-    pointBuffer({
+    positionTex = createPositionTexture(newPoints);
+
+    positionIndex = createPositionIndex(numPoints);
+    positionIndexBuffer({
       usage: "static",
       type: "float",
-      // 2 because its a 2-vector
-      length: numPoints * 2 * FLOAT_BYTES,
-      data: tmp
+      length: FLOAT_BYTES,
+      data: positionIndex
     });
 
     colorIndex = createColorIndex(numPoints);
     colorIndexBuffer({
-      usage: "dynamic",
+      usage: "static",
       type: "uint8",
       length: UINT8_BYTES,
       data: colorIndex
@@ -503,7 +598,8 @@ const Scatterplot = ({
     isViewChanged = camera.tick();
 
     // Draw the points
-    drawPoints();
+    drawPointBodies();
+    if (selection.length) drawPointOutlines();
 
     lasso.draw();
 
