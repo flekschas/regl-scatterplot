@@ -18,7 +18,6 @@ const DEFAULT_POINT_SIZE = 3;
 const DEFAULT_POINT_SIZE_HIGHLIGHT = 1;
 const DEFAULT_WIDTH = 100;
 const DEFAULT_HEIGHT = 100;
-const DEFAULT_PADDING = 0;
 const DEFAULT_COLORMAP = [];
 const DEFAULT_TARGET = [0, 0];
 const DEFAULT_DISTANCE = 1;
@@ -38,8 +37,7 @@ const Scatterplot = ({
   pointSize: initPointSize = DEFAULT_POINT_SIZE,
   pointSizeHighlight: initPointSizeHighlight = DEFAULT_POINT_SIZE_HIGHLIGHT,
   width: initWidth = DEFAULT_WIDTH,
-  height: initHeight = DEFAULT_HEIGHT,
-  padding: initPadding = DEFAULT_PADDING
+  height: initHeight = DEFAULT_HEIGHT
 } = {}) => {
   const pubSub = createPubSub();
   const scratch = new Float32Array(16);
@@ -47,7 +45,6 @@ const Scatterplot = ({
   let canvas = initCanvas;
   let width = initWidth;
   let height = initHeight;
-  let padding = initPadding;
   let pointSize = initPointSize;
   let pointSizeHighlight = initPointSizeHighlight;
   let colorMap = initColorMap;
@@ -395,11 +392,6 @@ const Scatterplot = ({
     updateRatio();
     camera.refresh();
   };
-  const paddingGetter = () => padding;
-  const paddingSetter = newPadding => {
-    padding = +newPadding || DEFAULT_PADDING;
-    padding = Math.max(0, Math.min(0.5, padding));
-  };
   const pointSizeGetter = () => pointSize;
   const pointSizeSetter = newPointSize => {
     pointSize = +newPointSize || DEFAULT_POINT_SIZE;
@@ -552,12 +544,6 @@ const Scatterplot = ({
     },
     set height(arg) {
       return heightSetter(arg);
-    },
-    get padding() {
-      return paddingGetter();
-    },
-    set padding(arg) {
-      return paddingSetter(arg);
     },
     get pointSize() {
       return pointSizeGetter();
