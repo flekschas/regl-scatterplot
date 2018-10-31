@@ -38,7 +38,7 @@
     "mouse-pressed": "^1.0.0",
     "pub-sub-es": "^1.0.0",
     "regl": "^1.3.7",
-    "regl-line": "^0.1.1",
+    "regl-line": "^0.1.2",
     "scroll-speed": "flekschas/scroll-speed",
     "with-raf": "^1.0.0"
   },
