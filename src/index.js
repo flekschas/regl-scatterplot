@@ -14,8 +14,9 @@ import createLine from "regl-line";
 import POINT_FS from "./point.fs";
 import POINT_VS from "./point.vs";
 
-const DEFAULT_POINT_SIZE = 3;
-const DEFAULT_POINT_SIZE_HIGHLIGHT = 1;
+const DEFAULT_POINT_SIZE = 6;
+const DEFAULT_POINT_SIZE_SELECTED = 2;
+const DEFAULT_POINT_OUTLINE_WIDTH = 2;
 const DEFAULT_WIDTH = 100;
 const DEFAULT_HEIGHT = 100;
 const DEFAULT_COLORMAP = [];
@@ -35,7 +36,8 @@ const Scatterplot = ({
   canvas: initCanvas = document.createElement("canvas"),
   colorMap: initColorMap = DEFAULT_COLORMAP,
   pointSize: initPointSize = DEFAULT_POINT_SIZE,
-  pointSizeHighlight: initPointSizeHighlight = DEFAULT_POINT_SIZE_HIGHLIGHT,
+  pointSizeSelected: initPointSizeSelected = DEFAULT_POINT_SIZE_SELECTED,
+  pointOutlineWidth: initPointOutlineWidth = DEFAULT_POINT_OUTLINE_WIDTH,
   width: initWidth = DEFAULT_WIDTH,
   height: initHeight = DEFAULT_HEIGHT
 } = {}) => {
@@ -46,7 +48,8 @@ const Scatterplot = ({
   let width = initWidth;
   let height = initHeight;
   let pointSize = initPointSize;
-  let pointSizeHighlight = initPointSizeHighlight;
+  let pointSizeSelected = initPointSizeSelected;
+  let pointOutlineWidth = initPointOutlineWidth;
   let colorMap = initColorMap;
   let camera;
   let lasso;
@@ -279,11 +282,6 @@ const Scatterplot = ({
       data: new Float32Array(selection)
     });
 
-    // selection.forEach((point) => {
-    //   colorIndex[point] = 1;
-    // });
-    // colorIndexBuffer.subdata(colorIndex, 0);
-
     pubSub.publish("select", {
       points: selection
     });
@@ -412,9 +410,13 @@ const Scatterplot = ({
   const pointSizeSetter = newPointSize => {
     pointSize = +newPointSize || DEFAULT_POINT_SIZE;
   };
-  const pointSizeHighlightGetter = () => pointSizeHighlight;
-  const pointSizeselectionetter = newPointSizeHighlight => {
-    pointSizeHighlight = +newPointSizeHighlight || DEFAULT_POINT_SIZE_HIGHLIGHT;
+  const pointSizeSelectedGetter = () => pointSizeSelected;
+  const pointSizeSelectedSetter = newPointSizeSelected => {
+    pointSizeSelected = +newPointSizeSelected || DEFAULT_POINT_SIZE_SELECTED;
+  };
+  const pointOutlineWidthGetter = () => pointOutlineWidth;
+  const pointOutlineWidthSetter = newPointOutlineWidth => {
+    pointOutlineWidth = +newPointOutlineWidth || DEFAULT_POINT_OUTLINE_WIDTH;
   };
   const widthGetter = () => width;
   const widthSetter = newWidth => {
@@ -495,26 +497,29 @@ const Scatterplot = ({
     getPositionIndexBuffer
   );
 
-  const drawPointOutlines = () => {
+  const drawSelectedPoint = () => {
     const numOutlinedPoints = selection.length;
+    const size = pointSize + pointSizeSelected;
 
     // Draw outer outline
     drawPoints(
-      () => pointSize + 4,
+      () => (size + pointOutlineWidth * 2) * window.devicePixelRatio,
       () => numOutlinedPoints,
       getHighlightIndexBuffer,
       1
     )();
+
     // Draw inner outline
     drawPoints(
-      () => pointSize + 2,
+      () => (size + pointOutlineWidth) * window.devicePixelRatio,
       () => numOutlinedPoints,
       getHighlightIndexBuffer,
       3
     )();
+
     // Draw body
     drawPoints(
-      getPointSize,
+      () => size * window.devicePixelRatio,
       () => numOutlinedPoints,
       getHighlightIndexBuffer,
       1
@@ -599,7 +604,7 @@ const Scatterplot = ({
 
     // Draw the points
     drawPointBodies();
-    if (selection.length) drawPointOutlines();
+    if (selection.length) drawSelectedPoint();
 
     lasso.draw();
 
@@ -647,11 +652,11 @@ const Scatterplot = ({
     set pointSize(arg) {
       return pointSizeSetter(arg);
     },
-    get pointSizeHighlight() {
-      return pointSizeHighlightGetter();
+    get pointOutlineWidth() {
+      return pointOutlineWidthGetter();
     },
-    set pointSizeHighlight(arg) {
-      return pointSizeselectionetter(arg);
+    set pointOutlineWidth(arg) {
+      return pointOutlineWidthSetter(arg);
     },
     get width() {
       return widthGetter();
