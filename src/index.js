@@ -13,32 +13,28 @@ import createLine from "regl-line";
 import POINT_FS from "./point.fs";
 import POINT_VS from "./point.vs";
 
-const DEFAULT_POINT_SIZE = 6;
-const DEFAULT_POINT_SIZE_SELECTED = 2;
-const DEFAULT_POINT_OUTLINE_WIDTH = 2;
-const DEFAULT_WIDTH = 100;
-const DEFAULT_HEIGHT = 100;
-const DEFAULT_COLORMAP = [];
-const DEFAULT_TARGET = [0, 0];
-const DEFAULT_DISTANCE = 1;
-const DEFAULT_ROTATION = 0;
-const CLICK_DELAY = 250;
-const LASSO_MIN_DELAY = 25;
-const LASSO_MIN_DIST = 8;
-
-const FLOAT_BYTES = Float32Array.BYTES_PER_ELEMENT;
-const UINT8_BYTES = Uint8ClampedArray.BYTES_PER_ELEMENT;
+import DEFAULT from "./defaults.js";
 
 import { dist } from "./utils.js";
 
-const Scatterplot = ({
+const CLICK_DELAY = 250;
+const LASSO_MIN_DELAY = 25;
+const LASSO_MIN_DIST = 8;
+const COLOR_NORMAL_IDX = 0;
+const COLOR_ACTIVE_IDX = 1;
+// const COLOR_HOVER_IDX = 2;
+const COLOR_BG_IDX = 3;
+const FLOAT_BYTES = Float32Array.BYTES_PER_ELEMENT;
+const UINT8_BYTES = Uint8ClampedArray.BYTES_PER_ELEMENT;
+
+const createScatterplot = ({
   canvas: initCanvas = document.createElement("canvas"),
-  colorMap: initColorMap = DEFAULT_COLORMAP,
-  pointSize: initPointSize = DEFAULT_POINT_SIZE,
-  pointSizeSelected: initPointSizeSelected = DEFAULT_POINT_SIZE_SELECTED,
-  pointOutlineWidth: initPointOutlineWidth = DEFAULT_POINT_OUTLINE_WIDTH,
-  width: initWidth = DEFAULT_WIDTH,
-  height: initHeight = DEFAULT_HEIGHT
+  colorMap: initColorMap = DEFAULT.COLORMAP,
+  pointSize: initPointSize = DEFAULT.POINT_SIZE,
+  pointSizeSelected: initPointSizeSelected = DEFAULT.POINT_SIZE_SELECTED,
+  pointOutlineWidth: initPointOutlineWidth = DEFAULT.POINT_OUTLINE_WIDTH,
+  width: initWidth = DEFAULT.WIDTH,
+  height: initHeight = DEFAULT.HEIGHT
 } = {}) => {
   const pubSub = createPubSub();
   const scratch = new Float32Array(16);
@@ -324,33 +320,47 @@ const Scatterplot = ({
     if (mouseDownShift) lassoDb();
   };
 
-  const setColors = () => {
-    const numColors = Object.values(colors).length;
-    colorTexRes = Math.max(2, Math.floor(Math.sqrt(numColors)));
-    const tmp = new Float32Array(colorTexRes ** 2 * 4);
-    Object.values(colors).forEach((color, i) => {
-      tmp[i * 4] = color[0]; // r
-      tmp[i * 4 + 1] = color[1]; // g
-      tmp[i * 4 + 2] = color[2]; // b
-      tmp[i * 4 + 3] = color[3]; // a
+  const createColorTexture = (colors = Object.values(DEFAULT.COLORS)) => {
+    const numColors = colors.length;
+    colorTexRes = Math.max(2, Math.ceil(Math.sqrt(numColors)));
+    const rgba = new Float32Array(colorTexRes ** 2 * 4);
+    colors.forEach((color, i) => {
+      rgba[i * 4] = color[0]; // r
+      rgba[i * 4 + 1] = color[1]; // g
+      rgba[i * 4 + 2] = color[2]; // b
+      rgba[i * 4 + 3] = color[3]; // a
     });
 
-    colorTex = regl.texture({
-      data: tmp,
+    return regl.texture({
+      data: rgba,
       shape: [colorTexRes, colorTexRes, 4],
       type: "float"
     });
   };
 
   const initRegl = (c = canvas) => {
-    regl = createRegl({
-      canvas: c,
-      extensions: ["OES_standard_derivatives", "OES_texture_float"]
-    });
+    const gl = c.getContext("webgl");
+    const extensions = [];
+
+    // Needed to run the tests properly as the headless-gl doesn't support all
+    // extensions, which is fine for the functional tests.
+    if (gl.getExtension("OES_standard_derivatives")) {
+      extensions.push("OES_standard_derivatives");
+    } else {
+      console.warn("WebGL: OES_standard_derivatives extension not supported.");
+    }
+
+    if (gl.getExtension("OES_texture_float")) {
+      extensions.push("OES_texture_float");
+    } else {
+      console.warn("WebGL: OES_texture_float extension not supported.");
+    }
+
+    regl = createRegl({ gl, extensions });
     camera = canvasCamera2d(c, {
-      target: DEFAULT_TARGET,
-      distance: DEFAULT_DISTANCE,
-      rotation: DEFAULT_ROTATION
+      target: DEFAULT.TARGET,
+      distance: DEFAULT.DISTANCE,
+      rotation: DEFAULT.ROTATION
     });
     lasso = createLine(regl, { width: 3, is2d: true });
     scroll = createScroll(c);
@@ -370,7 +380,7 @@ const Scatterplot = ({
     positionIndexBuffer = regl.buffer();
     highlightIndexBuffer = regl.buffer();
 
-    setColors();
+    colorTex = createColorTexture();
   };
 
   const destroy = () => {
@@ -394,32 +404,47 @@ const Scatterplot = ({
     canvas = newCanvas;
     initRegl(canvas);
   };
+  const colorsGetter = () => colors;
+  const colorsSetter = newColors => {
+    if (Array.isArray(newColors)) {
+      for (let i = 0; i < 4; i++) {
+        colors[i] = newColors[i] || DEFAULT.COLORS[i];
+      }
+    }
+    try {
+      colorTex = createColorIndex();
+    } catch (e) {
+      colors = DEFAULT.COLORS;
+      colorTex = createColorIndex();
+      console.error("Invalid colors. Switching back to default colors.");
+    }
+  };
   const colorMapGetter = () => colorMap;
   const colorMapSetter = newColorMap => {
-    colorMap = newColorMap || DEFAULT_COLORMAP;
+    colorMap = newColorMap || DEFAULT.COLORMAP;
   };
   const heightGetter = () => height;
   const heightSetter = newHeight => {
-    height = +newHeight || DEFAULT_HEIGHT;
+    height = +newHeight || DEFAULT.HEIGHT;
     canvas.height = height * window.devicePixelRatio;
     updateRatio();
     camera.refresh();
   };
   const pointSizeGetter = () => pointSize;
   const pointSizeSetter = newPointSize => {
-    pointSize = +newPointSize || DEFAULT_POINT_SIZE;
+    pointSize = +newPointSize || DEFAULT.POINT_SIZE;
   };
   const pointSizeSelectedGetter = () => pointSizeSelected;
   const pointSizeSelectedSetter = newPointSizeSelected => {
-    pointSizeSelected = +newPointSizeSelected || DEFAULT_POINT_SIZE_SELECTED;
+    pointSizeSelected = +newPointSizeSelected || DEFAULT.POINT_SIZE_SELECTED;
   };
   const pointOutlineWidthGetter = () => pointOutlineWidth;
   const pointOutlineWidthSetter = newPointOutlineWidth => {
-    pointOutlineWidth = +newPointOutlineWidth || DEFAULT_POINT_OUTLINE_WIDTH;
+    pointOutlineWidth = +newPointOutlineWidth || DEFAULT.POINT_OUTLINE_WIDTH;
   };
   const widthGetter = () => width;
   const widthSetter = newWidth => {
-    width = +newWidth || DEFAULT_WIDTH;
+    width = +newWidth || DEFAULT.WIDTH;
     canvas.width = width * window.devicePixelRatio;
     updateRatio();
     camera.refresh();
@@ -444,7 +469,7 @@ const Scatterplot = ({
     getPointSize,
     getNumPoints,
     getPositionIndexBuffer,
-    globalState = 0
+    globalState = COLOR_NORMAL_IDX
   ) =>
     regl({
       frag: POINT_FS,
@@ -505,7 +530,7 @@ const Scatterplot = ({
       () => (size + pointOutlineWidth * 2) * window.devicePixelRatio,
       () => numOutlinedPoints,
       getHighlightIndexBuffer,
-      1
+      COLOR_ACTIVE_IDX
     )();
 
     // Draw inner outline
@@ -513,7 +538,7 @@ const Scatterplot = ({
       () => (size + pointOutlineWidth) * window.devicePixelRatio,
       () => numOutlinedPoints,
       getHighlightIndexBuffer,
-      3
+      COLOR_BG_IDX
     )();
 
     // Draw body
@@ -521,7 +546,7 @@ const Scatterplot = ({
       () => size * window.devicePixelRatio,
       () => numOutlinedPoints,
       getHighlightIndexBuffer,
-      1
+      COLOR_ACTIVE_IDX
     )();
   };
 
@@ -618,7 +643,7 @@ const Scatterplot = ({
   };
 
   const reset = () => {
-    camera.lookAt([...DEFAULT_TARGET], DEFAULT_DISTANCE);
+    camera.lookAt([...DEFAULT.TARGET], DEFAULT.DISTANCE);
     drawRaf();
     pubSub.publish("camera", camera.position);
   };
@@ -632,6 +657,12 @@ const Scatterplot = ({
     },
     set canvas(arg) {
       return canvasSetter(arg);
+    },
+    get colors() {
+      return colorsGetter();
+    },
+    set colors(arg) {
+      return colorsSetter(arg);
     },
     get colorMap() {
       return colorMapGetter();
@@ -650,6 +681,12 @@ const Scatterplot = ({
     },
     set pointSize(arg) {
       return pointSizeSetter(arg);
+    },
+    get pointSizeSelected() {
+      return pointSizeSelectedGetter();
+    },
+    set pointSizeSelected(arg) {
+      return pointSizeSelectedSetter(arg);
     },
     get pointOutlineWidth() {
       return pointOutlineWidthGetter();
@@ -672,4 +709,4 @@ const Scatterplot = ({
   };
 };
 
-export default Scatterplot;
+export default createScatterplot;
