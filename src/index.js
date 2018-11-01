@@ -29,7 +29,7 @@ const UINT8_BYTES = Uint8ClampedArray.BYTES_PER_ELEMENT;
 
 const createScatterplot = ({
   canvas: initCanvas = document.createElement("canvas"),
-  colorMap: initColorMap = DEFAULT.COLORMAP,
+  colors: initColors = DEFAULT.COLORS,
   pointSize: initPointSize = DEFAULT.POINT_SIZE,
   pointSizeSelected: initPointSizeSelected = DEFAULT.POINT_SIZE_SELECTED,
   pointOutlineWidth: initPointOutlineWidth = DEFAULT.POINT_OUTLINE_WIDTH,
@@ -45,7 +45,6 @@ const createScatterplot = ({
   let pointSize = initPointSize;
   let pointSizeSelected = initPointSizeSelected;
   let pointOutlineWidth = initPointOutlineWidth;
-  let colorMap = initColorMap;
   let camera;
   let lasso;
   let regl;
@@ -81,12 +80,7 @@ const createScatterplot = ({
 
   let highlightIndexBuffer;
 
-  let colors = {
-    normal: [0.66, 0.66, 0.66, 1],
-    active: [0, 0.55, 1, 1],
-    inactive: [0.2, 0.2, 0.2, 1],
-    background: [0, 0, 0, 1]
-  };
+  let colors = initColors;
 
   canvas.width = width * window.devicePixelRatio;
   canvas.height = height * window.devicePixelRatio;
@@ -419,10 +413,6 @@ const createScatterplot = ({
       console.error("Invalid colors. Switching back to default colors.");
     }
   };
-  const colorMapGetter = () => colorMap;
-  const colorMapSetter = newColorMap => {
-    colorMap = newColorMap || DEFAULT.COLORMAP;
-  };
   const heightGetter = () => height;
   const heightSetter = newHeight => {
     height = +newHeight || DEFAULT.HEIGHT;
@@ -663,12 +653,6 @@ const createScatterplot = ({
     },
     set colors(arg) {
       return colorsSetter(arg);
-    },
-    get colorMap() {
-      return colorMapGetter();
-    },
-    set colorMap(arg) {
-      return colorMapSetter(arg);
     },
     get height() {
       return heightGetter();
