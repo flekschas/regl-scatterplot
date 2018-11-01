@@ -40,7 +40,11 @@ export const normNumArray = a => a.map(x => x / a.reduce(arrayMax, -Infinity));
 
 export const toRgba = (color, isNormalize) => {
   if (isRgba(color)) return isNormalize ? normNumArray(color) : color;
-  if (isRgb(color)) return (isNormalize ? normNumArray(color) : color).push(1);
+  if (isRgb(color))
+    return [
+      ...(isNormalize ? normNumArray(color) : color),
+      Math.pow(255, !isNormalize)
+    ];
   if (isHex(color)) return hexToRgba(color, isNormalize);
   console.warn(
     "Only HEX, RGB, and RGBA are handled by this function. Returning white instead."
