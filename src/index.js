@@ -15,7 +15,7 @@ import POINT_VS from "./point.vs";
 
 import DEFAULT from "./defaults.js";
 
-import { dist } from "./utils.js";
+import { dist, isRgb, isRgba, toRgba } from "./utils.js";
 
 const CLICK_DELAY = 250;
 const LASSO_MIN_DELAY = 25;
@@ -74,7 +74,7 @@ const createScatterplot = ({
   let positionIndexBuffer;
 
   let colorTex; // Stores the color texture
-  let colorTexRes = 0; // Width and height of the texture
+  let colorTexRes = 0.0; // Width and height of the texture
   let colorIndex;
   let colorIndexBuffer;
 
@@ -325,6 +325,8 @@ const createScatterplot = ({
       rgba[i * 4 + 3] = color[3]; // a
     });
 
+    console.log("colorTexRes", colorTexRes);
+
     return regl.texture({
       data: rgba,
       shape: [colorTexRes, colorTexRes, 4],
@@ -400,16 +402,32 @@ const createScatterplot = ({
   };
   const colorsGetter = () => colors;
   const colorsSetter = newColors => {
-    if (Array.isArray(newColors)) {
-      for (let i = 0; i < 4; i++) {
-        colors[i] = newColors[i] || DEFAULT.COLORS[i];
-      }
-    }
+    const tmp = [];
     try {
-      colorTex = createColorIndex();
+      newColors.forEach(color => {
+        if (Array.isArray(color) && !isRgb(color) && !isRgba(color)) {
+          for (let j = 0; j < 3; j++) {
+            tmp.push(toRgba(color[j], true));
+          }
+        } else {
+          const rgba = toRgba(color, true);
+          tmp.push(rgba, rgba, rgba); // normal, active, and hover
+        }
+        tmp.push(DEFAULT.COLOR_BG); // background
+      });
+    } catch (e) {
+      console.error(
+        e,
+        "Invalid format. Please specify an array of colors or a nested array of accents per colors."
+      );
+    }
+    colors = tmp;
+
+    try {
+      colorTex = createColorTexture(colors);
     } catch (e) {
       colors = DEFAULT.COLORS;
-      colorTex = createColorIndex();
+      colorTex = createColorTexture(colors);
       console.error("Invalid colors. Switching back to default colors.");
     }
   };
