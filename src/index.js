@@ -325,8 +325,6 @@ const createScatterplot = ({
       rgba[i * 4 + 3] = color[3]; // a
     });
 
-    console.log("colorTexRes", colorTexRes);
-
     return regl.texture({
       data: rgba,
       shape: [colorTexRes, colorTexRes, 4],
