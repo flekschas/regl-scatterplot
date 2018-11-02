@@ -30,7 +30,11 @@ const selectHandler = ({ points: selectedPoints }) => {
   selection = selectedPoints;
   if (selection.length === 1) {
     const point = points[selection[0]];
-    console.log(`Category: ${point[2]}\nValue: ${point[3]}`);
+    console.log(
+      `X: ${point[0]}\nY: ${point[1]}\nCategory: ${point[2]}\nValue: ${
+        point[3]
+      }`
+    );
   }
 };
 
@@ -66,7 +70,8 @@ numPointsEl.addEventListener("input", numPointsInputHandler);
 
 const numPointsChangeHandler = event => {
   numPointsValEl.innerHTML = +event.target.value;
-  scatterplot.draw(generatePoints(+event.target.value));
+  points = generatePoints(+event.target.value);
+  scatterplot.draw(points);
 };
 
 numPointsEl.addEventListener("change", numPointsChangeHandler);
