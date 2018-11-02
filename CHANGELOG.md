@@ -1,3 +1,8 @@
+**v0.3.1**
+
+- Fix nasty floating point issue when working with large textures (> 100.000 points)
+- Make point size dependent on zoom level
+
 **v0.3.0**
 
 - Optimize rendering: up to about 500K points render fine. Usable for up to 1M points.
