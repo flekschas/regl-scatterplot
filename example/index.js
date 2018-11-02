@@ -24,8 +24,8 @@ window.addEventListener("resize", resizeHandler);
 
 let points = [];
 let numPoints = 100000;
-let pointSize = 1;
-let opacity = 0.5;
+let pointSize = 2;
+let opacity = 0.33;
 let selection = [];
 
 const selectHandler = ({ points: selectedPoints }) => {
@@ -221,6 +221,6 @@ const colorsScale = [
 ];
 scatterplot.style({ colorBy: "value", colors: colorsScale });
 
-setNumPoint(numPoints);
 setPointSize(pointSize);
 setOpacity(opacity);
+setNumPoint(numPoints);
