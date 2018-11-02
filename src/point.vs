@@ -6,12 +6,14 @@ uniform float colorTexRes;
 uniform sampler2D stateTex;
 uniform float stateTexRes;
 uniform float pointSize;
+uniform float pointSizeExtra;
 uniform float numPoints;
 uniform float globalState;
 uniform float isColoredByCategory;
 uniform float isColoredByValue;
 uniform float maxColor;
 uniform float numColorStates;
+uniform float scaling;
 uniform mat4 projection;
 uniform mat4 model;
 uniform mat4 view;
@@ -56,7 +58,7 @@ void main() {
 
   color = texture2D(colorTex, colorTexIndex);
 
-  gl_PointSize = pointSize;
+  gl_PointSize = pointSize * (1.0 + log(scaling)) + pointSizeExtra;
 }
 `;
 

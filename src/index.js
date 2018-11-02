@@ -478,11 +478,13 @@ const createScatterplot = ({
   const getStateIndexBuffer = () => stateIndexBuffer;
   const getHighlightIndexBuffer = () => highlightIndexBuffer;
   const getPointSize = () => pointSize * window.devicePixelRatio;
+  const getPointSizeExtra = () => 0;
   const getStateTex = () => stateTex;
   const getStateTexRes = () => stateTexRes;
   const getProjection = () => projection;
   const getView = () => camera.view;
   const getModel = () => model;
+  const getScaling = () => camera.scaling;
   const getNumPoints = () => numPoints;
   const getIsColoredByCategory = () => (colorBy === "category") * 1;
   const getIsColoredByValue = () => (colorBy === "value") * 1;
@@ -490,7 +492,7 @@ const createScatterplot = ({
   const getNumColorStates = () => COLOR_NUM_STATES;
 
   const drawPoints = (
-    getPointSize,
+    getPointSizeExtra,
     getNumPoints,
     getStateIndexBuffer,
     globalState = COLOR_NORMAL_IDX
@@ -522,7 +524,9 @@ const createScatterplot = ({
         projection: getProjection,
         model: getModel,
         view: getView,
+        scaling: getScaling,
         pointSize: getPointSize,
+        pointSizeExtra: getPointSizeExtra,
         globalState,
         colorTex: getColorTex,
         colorTexRes: getColorTexRes,
@@ -540,18 +544,18 @@ const createScatterplot = ({
     });
 
   const drawPointBodies = drawPoints(
-    getPointSize,
+    getPointSizeExtra,
     getNumPoints,
     getStateIndexBuffer
   );
 
   const drawSelectedPoint = () => {
     const numOutlinedPoints = selection.length;
-    const size = pointSize + pointSizeSelected;
 
     // Draw outer outline
     drawPoints(
-      () => (size + pointOutlineWidth * 2) * window.devicePixelRatio,
+      () =>
+        (pointSizeSelected + pointOutlineWidth * 2) * window.devicePixelRatio,
       () => numOutlinedPoints,
       getHighlightIndexBuffer,
       COLOR_ACTIVE_IDX
@@ -559,7 +563,7 @@ const createScatterplot = ({
 
     // Draw inner outline
     drawPoints(
-      () => (size + pointOutlineWidth) * window.devicePixelRatio,
+      () => (pointSizeSelected + pointOutlineWidth) * window.devicePixelRatio,
       () => numOutlinedPoints,
       getHighlightIndexBuffer,
       COLOR_BG_IDX
@@ -567,7 +571,7 @@ const createScatterplot = ({
 
     // Draw body
     drawPoints(
-      () => size * window.devicePixelRatio,
+      () => pointSizeSelected,
       () => numOutlinedPoints,
       getHighlightIndexBuffer,
       COLOR_ACTIVE_IDX
