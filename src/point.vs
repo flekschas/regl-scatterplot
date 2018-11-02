@@ -26,7 +26,7 @@ void main() {
   float eps = 0.5 / stateTexRes;
   float stateRowIndex = floor((stateIndex + eps) / stateTexRes);
   vec2 stateTexIndex = vec2(
-    (stateIndex / stateTexRes) - stateRowIndex,
+    (stateIndex / stateTexRes) - stateRowIndex + eps,
     stateRowIndex / stateTexRes
   );
 
@@ -50,7 +50,7 @@ void main() {
   float colorRowIndex = floor((colorLinearIndex + eps) / colorTexRes);
 
   vec2 colorTexIndex = vec2(
-    (colorLinearIndex / colorTexRes) - colorRowIndex,
+    (colorLinearIndex / colorTexRes) - colorRowIndex + eps,
     colorRowIndex / colorTexRes
   );
 
