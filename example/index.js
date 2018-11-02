@@ -28,7 +28,10 @@ let selection = [];
 const selectHandler = ({ points: selectedPoints }) => {
   console.log("Selected:", selectedPoints);
   selection = selectedPoints;
-  if (selection.length === 1) console.log(points[selection[0]].slice(2));
+  if (selection.length === 1) {
+    const point = points[selection[0]];
+    console.log(`Category: ${point[2]}\nValue: ${point[3]}`);
+  }
 };
 
 const deselectHandler = () => {
@@ -71,7 +74,6 @@ numPointsEl.addEventListener("change", numPointsChangeHandler);
 const pointSizeInputHandler = event => {
   pointSizeValEl.innerHTML = +event.target.value;
   scatterplot.pointSize = +event.target.value;
-  scatterplot.draw();
 };
 
 pointSizeEl.addEventListener("input", pointSizeInputHandler);
@@ -79,7 +81,6 @@ pointSizeEl.addEventListener("input", pointSizeInputHandler);
 const opacityInputHandler = event => {
   opacityValEl.innerHTML = +event.target.value;
   scatterplot.style({ opacity: +event.target.value });
-  scatterplot.draw();
 };
 
 opacityEl.addEventListener("input", opacityInputHandler);
