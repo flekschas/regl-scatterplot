@@ -23,6 +23,9 @@ const resizeHandler = () => {
 window.addEventListener("resize", resizeHandler);
 
 let points = [];
+let numPoints = 100000;
+let pointSize = 1;
+let opacity = 0.5;
 let selection = [];
 
 const selectHandler = ({ points: selectedPoints }) => {
@@ -47,7 +50,7 @@ const scatterplot = createScatterplot({
   canvas,
   width,
   height,
-  pointSize: 10
+  pointSize
 });
 
 scatterplot.subscribe("select", selectHandler);
@@ -61,6 +64,14 @@ const generatePoints = num =>
     Math.random() // value
   ]);
 
+const setNumPoint = newNumPoints => {
+  numPoints = newNumPoints;
+  numPointsEl.value = numPoints;
+  numPointsValEl.innerHTML = numPoints;
+  points = generatePoints(numPoints);
+  scatterplot.draw(points);
+};
+
 const numPointsInputHandler = event => {
   numPointsValEl.innerHTML = `${+event.target
     .value} <em>release to redraw</em>`;
@@ -68,25 +79,29 @@ const numPointsInputHandler = event => {
 
 numPointsEl.addEventListener("input", numPointsInputHandler);
 
-const numPointsChangeHandler = event => {
-  numPointsValEl.innerHTML = +event.target.value;
-  points = generatePoints(+event.target.value);
-  scatterplot.draw(points);
-};
+const numPointsChangeHandler = event => setNumPoint(+event.target.value);
 
 numPointsEl.addEventListener("change", numPointsChangeHandler);
 
-const pointSizeInputHandler = event => {
-  pointSizeValEl.innerHTML = +event.target.value;
-  scatterplot.pointSize = +event.target.value;
+const setPointSize = newPointSize => {
+  pointSize = newPointSize;
+  pointSizeEl.value = pointSize;
+  pointSizeValEl.innerHTML = pointSize;
+  scatterplot.style({ pointSize });
 };
+
+const pointSizeInputHandler = event => setPointSize(+event.target.value);
 
 pointSizeEl.addEventListener("input", pointSizeInputHandler);
 
-const opacityInputHandler = event => {
-  opacityValEl.innerHTML = +event.target.value;
-  scatterplot.style({ opacity: +event.target.value });
+const setOpacity = newOpacity => {
+  opacity = newOpacity;
+  opacityEl.value = opacity;
+  opacityValEl.innerHTML = opacity;
+  scatterplot.style({ opacity });
 };
+
+const opacityInputHandler = event => setOpacity(+event.target.value);
 
 opacityEl.addEventListener("input", opacityInputHandler);
 
@@ -96,13 +111,13 @@ const resetClickHandler = () => {
 
 resetEl.addEventListener("click", resetClickHandler);
 
-scatterplot.colors = [
+const colorsCat = [
   ["#3a78aa", "#008dff", "#008dff"],
   ["#aa3a99", "#ff00da", "#ff00da"]
 ];
-scatterplot.colorBy("category");
+scatterplot.style({ colorBy: "category", colors: colorsCat });
 
-scatterplot.colors = [
+const colorsScale = [
   "#8b0000",
   "#8e0006",
   "#91000a",
@@ -204,6 +219,8 @@ scatterplot.colors = [
   "#fffddb",
   "#ffffe0"
 ];
-scatterplot.colorBy("value");
-points = generatePoints(1000);
-scatterplot.draw(points);
+scatterplot.style({ colorBy: "value", colors: colorsScale });
+
+setNumPoint(numPoints);
+setPointSize(pointSize);
+setOpacity(opacity);
