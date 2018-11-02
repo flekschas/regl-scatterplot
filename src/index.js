@@ -711,10 +711,12 @@ const createScatterplot = ({
       return canvas;
     },
     attr,
+    deselect,
     destroy,
     draw: drawRaf,
     refresh,
     reset: withDraw(reset),
+    select,
     style,
     subscribe: pubSub.subscribe,
     unsubscribe: pubSub.unsubscribe
