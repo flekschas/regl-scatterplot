@@ -450,13 +450,6 @@ const createScatterplot = ({
     camera.refresh();
   };
 
-  const withDraw = f => {
-    return (...args) => {
-      f(...args);
-      drawRaf();
-    };
-  };
-
   initRegl(canvas);
 
   const getColorTex = () => colorTex;
@@ -628,6 +621,13 @@ const createScatterplot = ({
   };
 
   const drawRaf = withRaf(draw);
+
+  const withDraw = f => {
+    return (...args) => {
+      f(...args);
+      drawRaf();
+    };
+  };
 
   const colorBy = (type, newColors) => {
     if (newColors) colorsSetter(newColors);
