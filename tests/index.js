@@ -6,6 +6,9 @@ import createRegl from "regl";
 
 browserEnv();
 
+// Fake RAF which is used by the scatterplot
+window.requestAnimationFrame = f => f();
+
 import createScatterplot from "../src";
 import DEFAULT from "../src/defaults";
 
