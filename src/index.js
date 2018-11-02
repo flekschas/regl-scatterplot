@@ -24,6 +24,7 @@ const COLOR_NORMAL_IDX = 0;
 const COLOR_ACTIVE_IDX = 1;
 // const COLOR_HOVER_IDX = 2;
 const COLOR_BG_IDX = 3;
+const COLOR_NUM_STATES = 4;
 const FLOAT_BYTES = Float32Array.BYTES_PER_ELEMENT;
 const UINT8_BYTES = Uint8ClampedArray.BYTES_PER_ELEMENT;
 
@@ -68,19 +69,20 @@ const createScatterplot = ({
   let model = mat4.fromScaling([], [aspectRatio, 1, 1]);
   let isViewChanged = false;
 
-  let positionTex; // Stores the point texture
-  let positionTexRes = 0; // Width and height of the texture
-  let positionIndex;
-  let positionIndexBuffer;
+  let stateTex; // Stores the point texture
+  let stateTexRes = 0; // Width and height of the texture
+  let stateIndex;
+  let stateIndexBuffer;
 
   let colorTex; // Stores the color texture
   let colorTexRes = 0.0; // Width and height of the texture
-  let colorIndex;
-  let colorIndexBuffer;
 
   let highlightIndexBuffer;
 
   let colors = initColors;
+
+  let isColoredByCategory = false;
+  let isColoredByValue = false;
 
   canvas.width = width * window.devicePixelRatio;
   canvas.height = height * window.devicePixelRatio;
@@ -248,20 +250,12 @@ const createScatterplot = ({
   const deselect = () => {
     if (selection.length) {
       pubSub.publish("deselect");
-      selection.forEach(point => {
-        colorIndex[point] = 0;
-      });
-      colorIndexBuffer.subdata(colorIndex, 0);
       selection = [];
       drawRaf();
     }
   };
 
   const select = points => {
-    selection.forEach(i => {
-      colorIndex[i] = 0;
-    });
-
     selection = points;
 
     highlightIndexBuffer({
@@ -370,8 +364,7 @@ const createScatterplot = ({
     mousePressed.on("up", mouseUpHandler);
 
     // Buffers
-    colorIndexBuffer = regl.buffer();
-    positionIndexBuffer = regl.buffer();
+    stateIndexBuffer = regl.buffer();
     highlightIndexBuffer = regl.buffer();
 
     colorTex = createColorTexture();
@@ -458,23 +451,26 @@ const createScatterplot = ({
 
   initRegl(canvas);
 
-  const getColorIndexBuffer = () => colorIndexBuffer;
   const getColorTex = () => colorTex;
   const getColorTexRes = () => colorTexRes;
-  const getPositionIndexBuffer = () => positionIndexBuffer;
+  const getStateIndexBuffer = () => stateIndexBuffer;
   const getHighlightIndexBuffer = () => highlightIndexBuffer;
   const getPointSize = () => pointSize * window.devicePixelRatio;
-  const getPositionTex = () => positionTex;
-  const getPositionTexRes = () => positionTexRes;
+  const getStateTex = () => stateTex;
+  const getStateTexRes = () => stateTexRes;
   const getProjection = () => projection;
   const getView = () => camera.view;
   const getModel = () => model;
   const getNumPoints = () => numPoints;
+  const getIsColoredByCategory = () => isColoredByCategory * 1;
+  const getIsColoredByValue = () => isColoredByValue * 1;
+  const getMaxColor = () => colors.length / COLOR_NUM_STATES - 1;
+  const getNumColorStates = () => COLOR_NUM_STATES;
 
   const drawPoints = (
     getPointSize,
     getNumPoints,
-    getPositionIndexBuffer,
+    getStateIndexBuffer,
     globalState = COLOR_NORMAL_IDX
   ) =>
     regl({
@@ -494,12 +490,8 @@ const createScatterplot = ({
       depth: { enable: false },
 
       attributes: {
-        colorIndex: {
-          buffer: getColorIndexBuffer,
-          size: 1
-        },
-        positionIndex: {
-          buffer: getPositionIndexBuffer,
+        stateIndex: {
+          buffer: getStateIndexBuffer,
           size: 1
         }
       },
@@ -512,8 +504,12 @@ const createScatterplot = ({
         globalState,
         colorTex: getColorTex,
         colorTexRes: getColorTexRes,
-        positionTex: getPositionTex,
-        positionTexRes: getPositionTexRes
+        stateTex: getStateTex,
+        stateTexRes: getStateTexRes,
+        isColoredByCategory: getIsColoredByCategory,
+        isColoredByValue: getIsColoredByValue,
+        maxColor: getMaxColor,
+        numColorStates: getNumColorStates
       },
 
       count: getNumPoints,
@@ -524,7 +520,7 @@ const createScatterplot = ({
   const drawPointBodies = drawPoints(
     getPointSize,
     getNumPoints,
-    getPositionIndexBuffer
+    getStateIndexBuffer
   );
 
   const drawSelectedPoint = () => {
@@ -556,18 +552,7 @@ const createScatterplot = ({
     )();
   };
 
-  const createColorIndex = numPoints => new Uint8ClampedArray(numPoints);
-
-  // const createPointState = newPoints => {
-  //   const state = new Float32Array(newPoints.length * 2);
-  //   for (let i = 0; i < newPoints.length; ++i) {
-  //     state[i * 2] = newPoints[i][0]; // x
-  //     state[i * 2 + 1] = newPoints[i][1]; // y
-  //   }
-  //   return state;
-  // };
-
-  const createPositionIndex = numPoints => {
+  const createStateIndex = numPoints => {
     const index = new Float32Array(numPoints);
 
     for (let i = 0; i < numPoints; ++i) {
@@ -577,18 +562,20 @@ const createScatterplot = ({
     return index;
   };
 
-  const createPositionTexture = newPoints => {
-    positionTexRes = Math.max(2, Math.ceil(Math.sqrt(numPoints)));
-    const data = new Float32Array(positionTexRes ** 2 * 2);
+  const createStateTexture = newPoints => {
+    stateTexRes = Math.max(2, Math.ceil(Math.sqrt(numPoints)));
+    const data = new Float32Array(stateTexRes ** 2 * 4);
 
     for (let i = 0; i < numPoints; ++i) {
-      data[i * 2] = newPoints[i][0]; // x
-      data[i * 2 + 1] = newPoints[i][1]; // y
+      data[i * 4] = newPoints[i][0]; // x
+      data[i * 4 + 1] = newPoints[i][1]; // y
+      data[i * 4 + 2] = newPoints[i][2] || 0; // category
+      data[i * 4 + 3] = newPoints[i][3] || 0; // value
     }
 
     return regl.texture({
       data: data,
-      shape: [positionTexRes, positionTexRes, 2],
+      shape: [stateTexRes, stateTexRes, 4],
       type: "float"
     });
   };
@@ -596,22 +583,13 @@ const createScatterplot = ({
   const setPoints = newPoints => {
     numPoints = newPoints.length;
 
-    positionTex = createPositionTexture(newPoints);
-
-    positionIndex = createPositionIndex(numPoints);
-    positionIndexBuffer({
+    stateTex = createStateTexture(newPoints);
+    stateIndex = createStateIndex(numPoints);
+    stateIndexBuffer({
       usage: "static",
       type: "float",
       length: FLOAT_BYTES,
-      data: positionIndex
-    });
-
-    colorIndex = createColorIndex(numPoints);
-    colorIndexBuffer({
-      usage: "static",
-      type: "uint8",
-      length: UINT8_BYTES,
-      data: colorIndex
+      data: stateIndex
     });
 
     searchIndex = new KDBush(newPoints);
@@ -643,6 +621,27 @@ const createScatterplot = ({
   };
 
   const drawRaf = withRaf(draw);
+
+  const colorBy = (type, newColors) => {
+    if (newColors) colorsSetter(newColors);
+
+    isColoredByCategory = false;
+    isColoredByValue = false;
+
+    switch (type) {
+      case "category":
+      case "group":
+        isColoredByCategory = true;
+        break;
+
+      case "value":
+        isColoredByValue = true;
+        break;
+
+      default:
+      // Nothing
+    }
+  };
 
   const refresh = () => {
     regl.poll();
@@ -700,6 +699,7 @@ const createScatterplot = ({
     set width(arg) {
       return widthSetter(arg);
     },
+    colorBy,
     draw: drawRaf,
     refresh,
     destroy,
