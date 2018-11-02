@@ -75,8 +75,7 @@ const createScatterplot = ({
   let colorTex; // Stores the color texture
   let colorTexRes = 0; // Width and height of the texture
 
-  let isColoredByCategory = false;
-  let isColoredByValue = false;
+  let colorBy;
   let isViewChanged = false;
   let isInit = false;
 
@@ -387,13 +386,9 @@ const createScatterplot = ({
     model = mat4.fromScaling([], [aspectRatio, 1, 1]);
   };
 
-  const canvasGetter = () => canvas;
-  const canvasSetter = newCanvas => {
-    canvas = newCanvas;
-    initRegl(canvas);
-  };
-  const colorsGetter = () => colors;
-  const colorsSetter = newColors => {
+  const setColors = newColors => {
+    if (!newColors || !newColors.length) return;
+
     const tmp = [];
     try {
       newColors.forEach(color => {
@@ -423,31 +418,57 @@ const createScatterplot = ({
       console.error("Invalid colors. Switching back to default colors.");
     }
   };
-  const heightGetter = () => height;
-  const heightSetter = newHeight => {
-    height = +newHeight || DEFAULT.HEIGHT;
+  const setHeight = newHeight => {
+    if (!+newHeight || +newHeight <= 0) return;
+
+    height = +newHeight;
     canvas.height = height * window.devicePixelRatio;
     updateRatio();
     camera.refresh();
   };
-  const pointSizeGetter = () => pointSize;
-  const pointSizeSetter = newPointSize => {
-    pointSize = +newPointSize || DEFAULT.POINT_SIZE;
+  const setPointSize = newPointSize => {
+    if (!+newPointSize || +newPointSize <= 0) return;
+    pointSize = +newPointSize;
   };
-  const pointSizeSelectedGetter = () => pointSizeSelected;
-  const pointSizeSelectedSetter = newPointSizeSelected => {
-    pointSizeSelected = +newPointSizeSelected || DEFAULT.POINT_SIZE_SELECTED;
+  const setPointSizeSelected = newPointSizeSelected => {
+    if (!+newPointSizeSelected || +newPointSizeSelected <= 0) return;
+    pointSizeSelected = +newPointSizeSelected;
   };
-  const pointOutlineWidthGetter = () => pointOutlineWidth;
-  const pointOutlineWidthSetter = newPointOutlineWidth => {
-    pointOutlineWidth = +newPointOutlineWidth || DEFAULT.POINT_OUTLINE_WIDTH;
+  const setPointOutlineWidth = newPointOutlineWidth => {
+    if (!+newPointOutlineWidth || +newPointOutlineWidth <= 0) return;
+    pointOutlineWidth = +newPointOutlineWidth;
   };
-  const widthGetter = () => width;
-  const widthSetter = newWidth => {
-    width = +newWidth || DEFAULT.WIDTH;
+  const setWidth = newWidth => {
+    if (!+newWidth || +newWidth <= 0) return;
+
+    width = +newWidth;
     canvas.width = width * window.devicePixelRatio;
     updateRatio();
     camera.refresh();
+  };
+
+  const setColorBy = (type, newColors) => {
+    if (newColors) setColors(newColors);
+
+    switch (type) {
+      case "category":
+        colorBy = "category";
+        break;
+
+      case "value":
+        colorBy = "value";
+        break;
+
+      default:
+        colorBy = undefined;
+    }
+  };
+
+  const setOpacity = newOpacity => {
+    if (!+newOpacity || +newOpacity <= 0) return;
+
+    opacity = +newOpacity;
+    colorTex = createColorTexture();
   };
 
   initRegl(canvas);
@@ -463,8 +484,8 @@ const createScatterplot = ({
   const getView = () => camera.view;
   const getModel = () => model;
   const getNumPoints = () => numPoints;
-  const getIsColoredByCategory = () => isColoredByCategory * 1;
-  const getIsColoredByValue = () => isColoredByValue * 1;
+  const getIsColoredByCategory = () => (colorBy === "category") * 1;
+  const getIsColoredByValue = () => (colorBy === "value") * 1;
   const getMaxColor = () => colors.length / COLOR_NUM_STATES - 1;
   const getNumColorStates = () => COLOR_NUM_STATES;
 
@@ -624,41 +645,53 @@ const createScatterplot = ({
 
   const withDraw = f => {
     return (...args) => {
-      f(...args);
+      const out = f(...args);
       drawRaf();
+      return out;
     };
   };
 
-  const colorBy = (type, newColors) => {
-    if (newColors) colorsSetter(newColors);
+  const style = arg => {
+    if (typeof arg === "string") {
+      if (arg === "colorBy") return colorBy;
+      if (arg === "colors") return colors;
+      if (arg === "opacity") return opacity;
+      if (arg === "pointOutlineWidth") return pointOutlineWidth;
+      if (arg === "pointSize") return pointSize;
+      if (arg === "pointSizeSelected") return pointSizeSelected;
+    }
 
-    isColoredByCategory = false;
-    isColoredByValue = false;
-
-    switch (type) {
-      case "category":
-      case "group":
-        isColoredByCategory = true;
-        break;
-
-      case "value":
-        isColoredByValue = true;
-        break;
-
-      default:
-      // Nothing
+    if (typeof arg === "object") {
+      const {
+        colorBy: newColorBy = null,
+        colors: newColors = null,
+        opacity: newOpacity = null,
+        pointOutlineWidth: newPointOutlineWidth = null,
+        pointSize: newPointSize = null,
+        pointSizeSelected: newPointSizeSelected = null
+      } = arg;
+      setColorBy(newColorBy);
+      setColors(newColors);
+      setOpacity(newOpacity);
+      setPointOutlineWidth(newPointOutlineWidth);
+      setPointSize(newPointSize);
+      setPointSizeSelected(newPointSizeSelected);
+      drawRaf();
     }
   };
 
-  const setOpacity = newOpacity => {
-    if (!+newOpacity || +newOpacity <= 0) return;
+  const attr = (arg = {}) => {
+    if (typeof arg === "string") {
+      if (arg === "width") return width;
+      if (arg === "height") return height;
+    }
 
-    opacity = +newOpacity;
-    colorTex = createColorTexture();
-  };
-
-  const style = ({ opacity: newOpacity = null } = {}) => {
-    setOpacity(newOpacity);
+    if (typeof arg === "object") {
+      const { height: newHeight = null, width: newWidth = null } = arg;
+      setHeight(newHeight);
+      setWidth(newWidth);
+      drawRaf();
+    }
   };
 
   const refresh = () => {
@@ -675,53 +708,14 @@ const createScatterplot = ({
 
   return {
     get canvas() {
-      return canvasGetter();
+      return canvas;
     },
-    set canvas(arg) {
-      return withDraw(canvasSetter)(arg);
-    },
-    get colors() {
-      return colorsGetter();
-    },
-    set colors(arg) {
-      return withDraw(colorsSetter)(arg);
-    },
-    get height() {
-      return heightGetter();
-    },
-    set height(arg) {
-      return withDraw(heightSetter)(arg);
-    },
-    get pointSize() {
-      return pointSizeGetter();
-    },
-    set pointSize(arg) {
-      return withDraw(pointSizeSetter)(arg);
-    },
-    get pointSizeSelected() {
-      return pointSizeSelectedGetter();
-    },
-    set pointSizeSelected(arg) {
-      return withDraw(pointSizeSelectedSetter)(arg);
-    },
-    get pointOutlineWidth() {
-      return pointOutlineWidthGetter();
-    },
-    set pointOutlineWidth(arg) {
-      return withDraw(pointOutlineWidthSetter)(arg);
-    },
-    get width() {
-      return widthGetter();
-    },
-    set width(arg) {
-      return withDraw(widthSetter)(arg);
-    },
-    colorBy: withDraw(colorBy),
+    attr,
     destroy,
     draw: drawRaf,
     refresh,
     reset: withDraw(reset),
-    style: withDraw(style),
+    style,
     subscribe: pubSub.subscribe,
     unsubscribe: pubSub.unsubscribe
   };

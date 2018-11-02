@@ -37,27 +37,27 @@ test("creates scatterplot with default values", t => {
 
   t.ok(scatterplot.canvas === canvas, "canvas object should equal");
   t.ok(
-    scatterplot.colors === DEFAULT.COLORS,
+    scatterplot.style("colors") === DEFAULT.COLORS,
     "scatterplot should have default colors"
   );
   t.ok(
-    scatterplot.pointSize === DEFAULT.POINT_SIZE,
+    scatterplot.style("pointSize") === DEFAULT.POINT_SIZE,
     "scatterplot should have default point size"
   );
   t.ok(
-    scatterplot.pointSizeSelected === DEFAULT.POINT_SIZE_SELECTED,
+    scatterplot.style("pointSizeSelected") === DEFAULT.POINT_SIZE_SELECTED,
     "scatterplot should have default selected point size"
   );
   t.ok(
-    scatterplot.pointOutlineWidth === DEFAULT.POINT_OUTLINE_WIDTH,
+    scatterplot.style("pointOutlineWidth") === DEFAULT.POINT_OUTLINE_WIDTH,
     "scatterplot should have default point outline width"
   );
   t.ok(
-    scatterplot.width === DEFAULT.WIDTH,
+    scatterplot.attr("width") === DEFAULT.WIDTH,
     "scatterplot should have default width"
   );
   t.ok(
-    scatterplot.height === DEFAULT.HEIGHT,
+    scatterplot.attr("height") === DEFAULT.HEIGHT,
     "scatterplot should have default height"
   );
 });
@@ -101,40 +101,42 @@ test("creates colormap", t => {
     [0, 0, 0, 1]
   ];
 
-  scatterplot.colors = [
-    ["#3a78aa", "#008dff", "#008dff"],
-    ["#aa3a99", "#ff00da", "#ff00da"]
-  ];
+  scatterplot.style({
+    colors: [
+      ["#3a78aa", "#008dff", "#008dff"],
+      ["#aa3a99", "#ff00da", "#ff00da"]
+    ]
+  });
 
   t.ok(
-    scatterplot.colors.every((color, i) =>
-      color.every((c, j) => c === rgba6[i][j])
-    ),
+    scatterplot
+      .style("colors")
+      .every((color, i) => color.every((c, j) => c === rgba6[i][j])),
     "should create 8 normalized RGBAs from 6 HEX"
   );
 
-  scatterplot.colors = ["#008dff", "#ff00da"];
+  scatterplot.style({ colors: ["#008dff", "#ff00da"] });
 
   t.ok(
-    scatterplot.colors.every((color, i) =>
-      color.every((c, j) => c === rgba2[i][j])
-    ),
+    scatterplot
+      .style("colors")
+      .every((color, i) => color.every((c, j) => c === rgba2[i][j])),
     "should create 8 normalized RGBAs from 2 HEX"
   );
 
-  scatterplot.colors = [[0, 141, 255], [255, 0, 218]];
+  scatterplot.style({ colors: [[0, 141, 255], [255, 0, 218]] });
   t.ok(
-    scatterplot.colors.every((color, i) =>
-      color.every((c, j) => c === rgba2[i][j])
-    ),
+    scatterplot
+      .style("colors")
+      .every((color, i) => color.every((c, j) => c === rgba2[i][j])),
     "should create 8 normalized RGBAs from 2 non-normalized RGB"
   );
 
-  scatterplot.colors = [[0, 141, 255, 127], [255, 0, 218, 127]];
+  scatterplot.style({ colors: [[0, 141, 255, 127], [255, 0, 218, 127]] });
   t.ok(
-    scatterplot.colors.every((color, i) =>
-      color.every((c, j) => c === rgba2a[i][j])
-    ),
+    scatterplot
+      .style("colors")
+      .every((color, i) => color.every((c, j) => c === rgba2a[i][j])),
     "should create 8 normalized RGBAs from 2 non-normalized RGBAs"
   );
 });
