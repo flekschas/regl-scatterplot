@@ -20,8 +20,8 @@
   "scripts": {
     "build": "rollup -c; webpack --config ./webpack.config.js --mode production",
     "lint": "eslint src tests rollup.config.js webpack.config.js",
-    "precommit": "pretty-quick --staged",
-    "prepublishOnly": "npm run lint",
+    "precommit": "pretty-quick --staged; npm run test",
+    "prepublishOnly": "npm run test",
     "prerelease": "rm -rf dist/*; npm run build; zip -r dist.zip dist",
     "pretest": "npm run lint",
     "start": "webpack-dev-server --config ./webpack.config.js --mode development --open",
