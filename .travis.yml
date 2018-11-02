@@ -1,15 +1,15 @@
 language: node_js
 node_js:
-- '8'
+  - "8"
 branches:
   only:
-  - master
-  - develop
-  - "/^v.*$/"
+    - master
+    - develop
+    - "/^v.*$/"
 before_script:
-- npm install
+  - npm install
 before_deploy:
-- npm run prerelease
+  - npm run prerelease
 deploy:
   - provider: releases
     skip_cleanup: true

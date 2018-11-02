@@ -5,7 +5,7 @@ const FRAGMENT_SHADER = `
 
 precision mediump float;
 
-varying vec4 fragColor;
+varying vec4 color;
 
 void main() {
   float r = 0.0, delta = 0.0, alpha = 1.0;
@@ -17,7 +17,7 @@ void main() {
     alpha = 1.0 - smoothstep(1.0 - delta, 1.0 + delta, r);
   #endif
 
-  gl_FragColor = vec4(fragColor.rgb, alpha * fragColor.a);
+  gl_FragColor = vec4(color.rgb, alpha * color.a);
 }
 `;
 
