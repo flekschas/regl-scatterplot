@@ -40,6 +40,7 @@ const createScatterplot = ({
   const scratch = new Float32Array(16);
 
   let canvas = initCanvas;
+  let colors = initColors;
   let width = initWidth;
   let height = initHeight;
   let pointSize = initPointSize;
@@ -57,7 +58,6 @@ const createScatterplot = ({
   let mouseDownX;
   let mouseDownY;
   let numPoints = 0;
-  let isInit = false;
   let selection = [];
   let lassoPos = [];
   let lassoScatterPos = [];
@@ -66,22 +66,21 @@ const createScatterplot = ({
   let aspectRatio = width / height;
   let projection = mat4.fromScaling([], [1 / aspectRatio, 1, 1]);
   let model = mat4.fromScaling([], [aspectRatio, 1, 1]);
-  let isViewChanged = false;
 
-  let stateTex; // Stores the point texture
+  let stateTex; // Stores the point texture holding x, y, category, and value
   let stateTexRes = 0; // Width and height of the texture
-  let stateIndex;
-  let stateIndexBuffer;
+  let stateIndexBuffer; // Buffer holding the indices pointing to the correct texel
+  let highlightIndexBuffer; // Used for pointing to the highlighted texels
 
   let colorTex; // Stores the color texture
-  let colorTexRes = 0.0; // Width and height of the texture
-
-  let highlightIndexBuffer;
-
-  let colors = initColors;
+  let colorTexRes = 0; // Width and height of the texture
 
   let isColoredByCategory = false;
   let isColoredByValue = false;
+  let isViewChanged = false;
+  let isInit = false;
+
+  let opacity = 1;
 
   canvas.width = width * window.devicePixelRatio;
   canvas.height = height * window.devicePixelRatio;
@@ -307,15 +306,18 @@ const createScatterplot = ({
     if (mouseDownShift) lassoDb();
   };
 
-  const createColorTexture = (colors = Object.values(DEFAULT.COLORS)) => {
-    const numColors = colors.length;
+  const createColorTexture = (newColors = colors) => {
+    const numColors = newColors.length;
     colorTexRes = Math.max(2, Math.ceil(Math.sqrt(numColors)));
     const rgba = new Float32Array(colorTexRes ** 2 * 4);
-    colors.forEach((color, i) => {
+    newColors.forEach((color, i) => {
       rgba[i * 4] = color[0]; // r
       rgba[i * 4 + 1] = color[1]; // g
       rgba[i * 4 + 2] = color[2]; // b
-      rgba[i * 4 + 3] = color[3]; // a
+      // For all normal state colors check if the global opacity is not 1 and
+      // if so use that instead.
+      rgba[i * 4 + 3] =
+        i % COLOR_NUM_STATES > 0 || opacity === 1 ? color[3] : opacity; // a
     });
 
     return regl.texture({
@@ -414,10 +416,10 @@ const createScatterplot = ({
     colors = tmp;
 
     try {
-      colorTex = createColorTexture(colors);
+      colorTex = createColorTexture();
     } catch (e) {
       colors = DEFAULT.COLORS;
-      colorTex = createColorTexture(colors);
+      colorTex = createColorTexture();
       console.error("Invalid colors. Switching back to default colors.");
     }
   };
@@ -446,6 +448,13 @@ const createScatterplot = ({
     canvas.width = width * window.devicePixelRatio;
     updateRatio();
     camera.refresh();
+  };
+
+  const withDraw = f => {
+    return (...args) => {
+      f(...args);
+      drawRaf();
+    };
   };
 
   initRegl(canvas);
@@ -583,12 +592,11 @@ const createScatterplot = ({
     numPoints = newPoints.length;
 
     stateTex = createStateTexture(newPoints);
-    stateIndex = createStateIndex(numPoints);
     stateIndexBuffer({
       usage: "static",
       type: "float",
       length: FLOAT_BYTES,
-      data: stateIndex
+      data: createStateIndex(numPoints)
     });
 
     searchIndex = new KDBush(newPoints);
@@ -642,13 +650,23 @@ const createScatterplot = ({
     }
   };
 
+  const setOpacity = newOpacity => {
+    if (!+newOpacity || +newOpacity <= 0) return;
+
+    opacity = +newOpacity;
+    colorTex = createColorTexture();
+  };
+
+  const style = ({ opacity: newOpacity = null } = {}) => {
+    setOpacity(newOpacity);
+  };
+
   const refresh = () => {
     regl.poll();
   };
 
   const reset = () => {
     camera.lookAt([...DEFAULT.TARGET], DEFAULT.DISTANCE);
-    drawRaf();
     pubSub.publish("camera", camera.position);
   };
 
@@ -660,49 +678,50 @@ const createScatterplot = ({
       return canvasGetter();
     },
     set canvas(arg) {
-      return canvasSetter(arg);
+      return withDraw(canvasSetter)(arg);
     },
     get colors() {
       return colorsGetter();
     },
     set colors(arg) {
-      return colorsSetter(arg);
+      return withDraw(colorsSetter)(arg);
     },
     get height() {
       return heightGetter();
     },
     set height(arg) {
-      return heightSetter(arg);
+      return withDraw(heightSetter)(arg);
     },
     get pointSize() {
       return pointSizeGetter();
     },
     set pointSize(arg) {
-      return pointSizeSetter(arg);
+      return withDraw(pointSizeSetter)(arg);
     },
     get pointSizeSelected() {
       return pointSizeSelectedGetter();
     },
     set pointSizeSelected(arg) {
-      return pointSizeSelectedSetter(arg);
+      return withDraw(pointSizeSelectedSetter)(arg);
     },
     get pointOutlineWidth() {
       return pointOutlineWidthGetter();
     },
     set pointOutlineWidth(arg) {
-      return pointOutlineWidthSetter(arg);
+      return withDraw(pointOutlineWidthSetter)(arg);
     },
     get width() {
       return widthGetter();
     },
     set width(arg) {
-      return widthSetter(arg);
+      return withDraw(widthSetter)(arg);
     },
-    colorBy,
+    colorBy: withDraw(colorBy),
+    destroy,
     draw: drawRaf,
     refresh,
-    destroy,
-    reset,
+    reset: withDraw(reset),
+    style: withDraw(style),
     subscribe: pubSub.subscribe,
     unsubscribe: pubSub.unsubscribe
   };
