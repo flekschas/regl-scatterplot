@@ -26,7 +26,6 @@ const COLOR_ACTIVE_IDX = 1;
 const COLOR_BG_IDX = 3;
 const COLOR_NUM_STATES = 4;
 const FLOAT_BYTES = Float32Array.BYTES_PER_ELEMENT;
-const UINT8_BYTES = Uint8ClampedArray.BYTES_PER_ELEMENT;
 
 const createScatterplot = ({
   canvas: initCanvas = document.createElement("canvas"),
