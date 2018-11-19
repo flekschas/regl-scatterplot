@@ -13,15 +13,6 @@ const resetEl = document.querySelector("#reset");
 
 let { width, height } = canvas.getBoundingClientRect();
 
-const resizeHandler = () => {
-  ({ width, height } = canvas.getBoundingClientRect());
-  scatterplot.width = width;
-  scatterplot.height = height;
-  scatterplot.draw();
-};
-
-window.addEventListener("resize", resizeHandler);
-
 let points = [];
 let numPoints = 100000;
 let pointSize = 2;
@@ -55,6 +46,15 @@ const scatterplot = createScatterplot({
 
 scatterplot.subscribe("select", selectHandler);
 scatterplot.subscribe("deselect", deselectHandler);
+
+const resizeHandler = () => {
+  ({ width, height } = canvas.getBoundingClientRect());
+  scatterplot.width = width;
+  scatterplot.height = height;
+  scatterplot.draw();
+};
+
+window.addEventListener("resize", resizeHandler);
 
 const generatePoints = num =>
   new Array(num).fill().map(() => [
