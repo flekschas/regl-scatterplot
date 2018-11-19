@@ -1,22 +1,26 @@
 /* eslint no-console: 1 */
 
-import test from "tape";
-import browserEnv from "browser-env";
+import test from "zora";
 import createRegl from "regl";
 
-browserEnv();
-
-// Fake RAF which is used by the scatterplot
-window.requestAnimationFrame = f => f();
-
 import createScatterplot from "../src";
-import DEFAULT from "../src/defaults";
+import {
+  COLORS,
+  HEIGHT,
+  POINT_OUTLINE_WIDTH,
+  POINT_SIZE,
+  POINT_SIZE_SELECTED,
+  WIDTH
+} from "../src/defaults";
 
-import createCanvas from "./create-canvas";
+const createCanvas = (width, height) => {
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  return canvas;
+};
 
 test("creates a Regl instance with a fake canvas element with a webgl context", t => {
-  t.plan(3);
-
   const dim = 200;
   const canvas = createCanvas(dim, dim);
   const gl = canvas.getContext("webgl");
@@ -30,41 +34,37 @@ test("creates a Regl instance with a fake canvas element with a webgl context", 
 });
 
 test("creates scatterplot with default values", t => {
-  t.plan(7);
-
   const canvas = createCanvas(200, 200);
   const scatterplot = createScatterplot({ canvas });
 
   t.ok(scatterplot.canvas === canvas, "canvas object should equal");
   t.ok(
-    scatterplot.style("colors") === DEFAULT.COLORS,
+    scatterplot.style("colors") === COLORS,
     "scatterplot should have default colors"
   );
   t.ok(
-    scatterplot.style("pointSize") === DEFAULT.POINT_SIZE,
+    scatterplot.style("pointSize") === POINT_SIZE,
     "scatterplot should have default point size"
   );
   t.ok(
-    scatterplot.style("pointSizeSelected") === DEFAULT.POINT_SIZE_SELECTED,
+    scatterplot.style("pointSizeSelected") === POINT_SIZE_SELECTED,
     "scatterplot should have default selected point size"
   );
   t.ok(
-    scatterplot.style("pointOutlineWidth") === DEFAULT.POINT_OUTLINE_WIDTH,
+    scatterplot.style("pointOutlineWidth") === POINT_OUTLINE_WIDTH,
     "scatterplot should have default point outline width"
   );
   t.ok(
-    scatterplot.attr("width") === DEFAULT.WIDTH,
+    scatterplot.attr("width") === WIDTH,
     "scatterplot should have default width"
   );
   t.ok(
-    scatterplot.attr("height") === DEFAULT.HEIGHT,
+    scatterplot.attr("height") === HEIGHT,
     "scatterplot should have default height"
   );
 });
 
 test("creates colormap", t => {
-  t.plan(4);
-
   const canvas = createCanvas(200, 200);
   const scatterplot = createScatterplot({ canvas });
 
