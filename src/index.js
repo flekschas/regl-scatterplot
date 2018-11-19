@@ -648,7 +648,7 @@ const createScatterplot = ({
     lasso.draw();
 
     // Publish camera change
-    if (isViewChanged) pubSub.publish("camera", camera.position);
+    if (isViewChanged) pubSub.publish("view", camera.view);
   };
 
   const drawRaf = withRaf(draw);
