@@ -80,7 +80,7 @@ export const isUint8Array = a => Array.isArray(a) && a.every(isUint8);
  *   a triple of normalized floats.
  */
 export const isRgb = rgb =>
-  rgb.length === 3 && (isNormFloat(rgb) || isUint8Array(rgb));
+  rgb.length === 3 && (isNormFloatArray(rgb) || isUint8Array(rgb));
 
 /**
  * Tests if an array is encoding an RGBA color.
@@ -89,7 +89,7 @@ export const isRgb = rgb =>
  *   a quadruple of normalized floats.
  */
 export const isRgba = rgba =>
-  rgba.length === 4 && (isNormFloat(rgba) || isUint8Array(rgba));
+  rgba.length === 4 && (isNormFloatArray(rgba) || isUint8Array(rgba));
 
 /**
  * Get the max value of an array. helper method to be used with `Array.reduce()`.
@@ -115,7 +115,10 @@ export const normNumArray = a => a.map(x => x / a.reduce(arrayMax, -Infinity));
  * @return  {array}  Quadruple defining an RGBA color.
  */
 export const toRgba = (color, isNormalize) => {
-  if (isRgba(color)) return isNormalize ? normNumArray(color) : color;
+  if (isRgba(color))
+    return isNormalize && !isNormFloatArray(color)
+      ? normNumArray(color)
+      : color;
   if (isRgb(color))
     return [
       ...(isNormalize ? normNumArray(color) : color),

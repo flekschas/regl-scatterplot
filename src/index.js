@@ -398,6 +398,7 @@ const createScatterplot = ({
     try {
       newColors.forEach(color => {
         if (Array.isArray(color) && !isRgb(color) && !isRgba(color)) {
+          // Assuming color is an array of HEX colors
           for (let j = 0; j < 3; j++) {
             tmp.push(toRgba(color[j], true));
           }
