@@ -20,7 +20,7 @@
   "scripts": {
     "build": "rollup -c; webpack --config ./webpack.config.js --mode production",
     "lint": "eslint src tests rollup.config.js webpack.config.js",
-    "precommit": "pretty-quick --staged; npm run test",
+    "precommit": "NODE_ENV=production lint-staged; npm run test",
     "prepublishOnly": "npm run test",
     "prerelease": "rm -rf dist/*; npm run build; zip -r dist.zip dist",
     "pretest": "npm run lint",
@@ -30,9 +30,9 @@
   },
   "dependencies": {
     "camera-2d-simple": "^2.0.0-rc1",
-    "canvas-camera-2d": "^0.5.3",
+    "canvas-camera-2d": "^0.5.4",
     "gl-matrix": "^2.8.1",
-    "key-pressed": "flekschas/key-pressed",
+    "is-key-down": "^0.1.0",
     "kdbush": "^3.0.0",
     "lodash-es": "^4.17.11",
     "mouse-position": "^2.1.0",
@@ -68,6 +68,7 @@
     "husky": "^1.1.4",
     "prettier": "^1.15.2",
     "pretty-quick": "^1.8.0",
+    "merge": ">=1.2.1",
     "rollup": "^0.67.3",
     "rollup-plugin-buble": "^0.19.4",
     "rollup-plugin-commonjs": "^9.2.0",
