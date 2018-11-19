@@ -20,11 +20,11 @@ export const hexToRgb = (hex, isNormalize = false) =>
   hex
     .replace(
       /^#?([a-f\d])([a-f\d])([a-f\d])$/i,
-      (m, r, g, b) => "#" + r + r + g + g + b + b
+      (m, r, g, b) => `#${r}${r}${g}${g}${b}${b}`
     )
     .substring(1)
     .match(/.{2}/g)
-    .map(x => parseInt(x, 16) / Math.pow(255, isNormalize));
+    .map(x => parseInt(x, 16) / 255 ** isNormalize);
 
 /**
  * Convert a HEX-encoded color to an RGBA-encoded color
@@ -35,7 +35,7 @@ export const hexToRgb = (hex, isNormalize = false) =>
  */
 export const hexToRgba = (hex, isNormalize = false) => [
   ...hexToRgb(hex, isNormalize),
-  Math.pow(255, !isNormalize)
+  255 ** !isNormalize
 ];
 
 /**
@@ -119,7 +119,7 @@ export const toRgba = (color, isNormalize) => {
   if (isRgb(color))
     return [
       ...(isNormalize ? normNumArray(color) : color),
-      Math.pow(255, !isNormalize)
+      255 ** !isNormalize
     ];
   if (isHex(color)) return hexToRgba(color, isNormalize);
   console.warn(

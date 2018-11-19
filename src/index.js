@@ -4,18 +4,29 @@ import createMousePos from "mouse-position";
 import createMousePressed from "mouse-pressed";
 import createPubSub from "pub-sub-es";
 import createRegl from "regl";
-import createScroll from "scroll-speed";
-import { throttle as withThrottle } from "lodash";
+import withThrottle from "lodash-es/throttle";
 import withRaf from "with-raf";
 import { mat4, vec4 } from "gl-matrix";
 import createLine from "regl-line";
+import createScroll from "scroll-speed";
 
 import POINT_FS from "./point.fs";
 import POINT_VS from "./point.vs";
 
-import DEFAULT from "./defaults.js";
+import {
+  COLOR_BG,
+  COLORS,
+  POINT_SIZE,
+  POINT_SIZE_SELECTED,
+  POINT_OUTLINE_WIDTH,
+  WIDTH,
+  HEIGHT,
+  TARGET,
+  DISTANCE,
+  ROTATION
+} from "./defaults";
 
-import { dist, isRgb, isRgba, toRgba } from "./utils.js";
+import { dist, isRgb, isRgba, toRgba } from "./utils";
 
 const CLICK_DELAY = 250;
 const LASSO_MIN_DELAY = 25;
@@ -29,12 +40,12 @@ const FLOAT_BYTES = Float32Array.BYTES_PER_ELEMENT;
 
 const createScatterplot = ({
   canvas: initCanvas = document.createElement("canvas"),
-  colors: initColors = DEFAULT.COLORS,
-  pointSize: initPointSize = DEFAULT.POINT_SIZE,
-  pointSizeSelected: initPointSizeSelected = DEFAULT.POINT_SIZE_SELECTED,
-  pointOutlineWidth: initPointOutlineWidth = DEFAULT.POINT_OUTLINE_WIDTH,
-  width: initWidth = DEFAULT.WIDTH,
-  height: initHeight = DEFAULT.HEIGHT
+  colors: initColors = COLORS,
+  pointSize: initPointSize = POINT_SIZE,
+  pointSizeSelected: initPointSizeSelected = POINT_SIZE_SELECTED,
+  pointOutlineWidth: initPointOutlineWidth = POINT_OUTLINE_WIDTH,
+  width: initWidth = WIDTH,
+  height: initHeight = HEIGHT
 } = {}) => {
   const pubSub = createPubSub();
   const scratch = new Float32Array(16);
@@ -83,14 +94,6 @@ const createScatterplot = ({
 
   canvas.width = width * window.devicePixelRatio;
   canvas.height = height * window.devicePixelRatio;
-
-  const keyUpHandler = ({ key }) => {
-    switch (key) {
-      case "Escape":
-        deselect();
-        break;
-    }
-  };
 
   const getMousePos = () => {
     mousePosition.flush();
@@ -153,6 +156,7 @@ const createScatterplot = ({
     });
 
     if (minDist < (pointSize / width) * 2) return clostestPoint;
+    return -1;
   };
 
   const lassoExtend = () => {
@@ -171,7 +175,7 @@ const createScatterplot = ({
         lassoPrevMousePos = currMousePos;
         if (lassoPos.length > 2) {
           lasso.setPoints(lassoPos);
-          drawRaf();
+          drawRaf(); // eslint-disable-line no-use-before-define
         }
       }
     }
@@ -233,22 +237,11 @@ const createScatterplot = ({
     return ptsInPoly;
   };
 
-  const lassoEnd = () => {
-    // const t0 = performance.now();
-    const ptsInLasso = findPointsInLasso(lassoScatterPos);
-    // console.log(`found ${ptsInLasso.length} in ${performance.now() - t0} msec`);
-    select(ptsInLasso);
-    lassoPos = [];
-    lassoScatterPos = [];
-    lassoPrevMousePos = undefined;
-    lasso.clear();
-  };
-
   const deselect = () => {
     if (selection.length) {
       pubSub.publish("deselect");
       selection = [];
-      drawRaf();
+      drawRaf(); // eslint-disable-line no-use-before-define
     }
   };
 
@@ -266,7 +259,18 @@ const createScatterplot = ({
       points: selection
     });
 
-    drawRaf();
+    drawRaf(); // eslint-disable-line no-use-before-define
+  };
+
+  const lassoEnd = () => {
+    // const t0 = performance.now();
+    const ptsInLasso = findPointsInLasso(lassoScatterPos);
+    // console.log(`found ${ptsInLasso.length} in ${performance.now() - t0} msec`);
+    select(ptsInLasso);
+    lassoPos = [];
+    lassoScatterPos = [];
+    lassoPrevMousePos = undefined;
+    lasso.clear();
   };
 
   const mouseDownHandler = event => {
@@ -301,7 +305,7 @@ const createScatterplot = ({
   };
 
   const mouseMoveHandler = () => {
-    if (mouseDown) drawRaf();
+    if (mouseDown) drawRaf(); // eslint-disable-line no-use-before-define
     if (mouseDownShift) lassoDb();
   };
 
@@ -346,9 +350,9 @@ const createScatterplot = ({
 
     regl = createRegl({ gl, extensions });
     camera = canvasCamera2d(c, {
-      target: DEFAULT.TARGET,
-      distance: DEFAULT.DISTANCE,
-      rotation: DEFAULT.ROTATION
+      target: TARGET,
+      distance: DISTANCE,
+      rotation: ROTATION
     });
     lasso = createLine(regl, { width: 3, is2d: true });
     scroll = createScroll(c);
@@ -357,7 +361,7 @@ const createScatterplot = ({
 
     // Event listeners
     scroll.on("scroll", () => {
-      drawRaf();
+      drawRaf(); // eslint-disable-line no-use-before-define
     });
     mousePosition.on("move", mouseMoveHandler);
     mousePressed.on("down", mouseDownHandler);
@@ -400,7 +404,7 @@ const createScatterplot = ({
           const rgba = toRgba(color, true);
           tmp.push(rgba, rgba, rgba); // normal, active, and hover
         }
-        tmp.push(DEFAULT.COLOR_BG); // background
+        tmp.push(COLOR_BG); // background
       });
     } catch (e) {
       console.error(
@@ -413,7 +417,7 @@ const createScatterplot = ({
     try {
       colorTex = createColorTexture();
     } catch (e) {
-      colors = DEFAULT.COLORS;
+      colors = COLORS;
       colorTex = createColorTexture();
       console.error("Invalid colors. Switching back to default colors.");
     }
@@ -475,17 +479,17 @@ const createScatterplot = ({
 
   const getColorTex = () => colorTex;
   const getColorTexRes = () => colorTexRes;
-  const getStateIndexBuffer = () => stateIndexBuffer;
+  const getNormalStateIndexBuffer = () => stateIndexBuffer;
   const getHighlightIndexBuffer = () => highlightIndexBuffer;
   const getPointSize = () => pointSize * window.devicePixelRatio;
-  const getPointSizeExtra = () => 0;
+  const getNormalPointSizeExtra = () => 0;
   const getStateTex = () => stateTex;
   const getStateTexRes = () => stateTexRes;
   const getProjection = () => projection;
   const getView = () => camera.view;
   const getModel = () => model;
   const getScaling = () => camera.scaling;
-  const getNumPoints = () => numPoints;
+  const getNormalNumPoints = () => numPoints;
   const getIsColoredByCategory = () => (colorBy === "category") * 1;
   const getIsColoredByValue = () => (colorBy === "value") * 1;
   const getMaxColor = () => colors.length / COLOR_NUM_STATES - 1;
@@ -544,9 +548,9 @@ const createScatterplot = ({
     });
 
   const drawPointBodies = drawPoints(
-    getPointSizeExtra,
-    getNumPoints,
-    getStateIndexBuffer
+    getNormalPointSizeExtra,
+    getNormalNumPoints,
+    getNormalStateIndexBuffer
   );
 
   const drawSelectedPoint = () => {
@@ -578,10 +582,10 @@ const createScatterplot = ({
     )();
   };
 
-  const createStateIndex = numPoints => {
-    const index = new Float32Array(numPoints);
+  const createStateIndex = numNewPoints => {
+    const index = new Float32Array(numNewPoints);
 
-    for (let i = 0; i < numPoints; ++i) {
+    for (let i = 0; i < numNewPoints; ++i) {
       index[i] = i;
     }
 
@@ -589,10 +593,11 @@ const createScatterplot = ({
   };
 
   const createStateTexture = newPoints => {
-    stateTexRes = Math.max(2, Math.ceil(Math.sqrt(numPoints)));
+    const numNewPoints = newPoints.length;
+    stateTexRes = Math.max(2, Math.ceil(Math.sqrt(numNewPoints)));
     const data = new Float32Array(stateTexRes ** 2 * 4);
 
-    for (let i = 0; i < numPoints; ++i) {
+    for (let i = 0; i < numNewPoints; ++i) {
       data[i * 4] = newPoints[i][0]; // x
       data[i * 4 + 1] = newPoints[i][1]; // y
       data[i * 4 + 2] = newPoints[i][2] || 0; // category
@@ -600,7 +605,7 @@ const createScatterplot = ({
     }
 
     return regl.texture({
-      data: data,
+      data,
       shape: [stateTexRes, stateTexRes, 4],
       type: "float"
     });
@@ -647,12 +652,10 @@ const createScatterplot = ({
 
   const drawRaf = withRaf(draw);
 
-  const withDraw = f => {
-    return (...args) => {
-      const out = f(...args);
-      drawRaf();
-      return out;
-    };
+  const withDraw = f => (...args) => {
+    const out = f(...args);
+    drawRaf();
+    return out;
   };
 
   const style = arg => {
@@ -682,6 +685,8 @@ const createScatterplot = ({
       setPointSizeSelected(newPointSizeSelected);
       drawRaf();
     }
+
+    return undefined;
   };
 
   const attr = (arg = {}) => {
@@ -696,6 +701,8 @@ const createScatterplot = ({
       setWidth(newWidth);
       drawRaf();
     }
+
+    return undefined;
   };
 
   const refresh = () => {
@@ -703,8 +710,18 @@ const createScatterplot = ({
   };
 
   const reset = () => {
-    camera.lookAt([...DEFAULT.TARGET], DEFAULT.DISTANCE);
+    camera.lookAt([...TARGET], DISTANCE);
     pubSub.publish("camera", camera.position);
+  };
+
+  const keyUpHandler = ({ key }) => {
+    switch (key) {
+      case "Escape":
+        deselect();
+        break;
+      default:
+      // Nothing
+    }
   };
 
   window.addEventListener("keyup", keyUpHandler, false);
