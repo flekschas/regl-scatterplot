@@ -6,13 +6,25 @@
   },
   "extends": [
     "eslint:recommended",
+    "plugin:react/recommended",
+    "airbnb/base",
     "prettier",
   ],
   "parserOptions": {
     "ecmaVersion": 2018,
     "sourceType": "module",
   },
+  "plugins": [
+    "prettier"
+  ],
   "rules": {
-    "no-console": ["error", { "allow": ["warn", "error"] }]
+    "no-console": ["error", { "allow": ["warn", "error"] }],
+    "no-plusplus": 0,
+    "prefer-destructuring": 0
+  },
+  "settings": {
+    "react": {
+      "version": "16"
+    }
   }
 }
