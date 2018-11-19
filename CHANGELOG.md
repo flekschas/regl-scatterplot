@@ -1,3 +1,8 @@
+**v0.3.2**
+
+- Update third party libraries
+- Switch to browser-based tests
+
 **v0.3.1**
 
 - Fix nasty floating point issue when working with large textures (> 100.000 points)
