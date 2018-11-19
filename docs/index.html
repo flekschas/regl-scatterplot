@@ -4,7 +4,7 @@
 <head>
   <meta charset="utf-8">
 
-  <title>WebGL Scatterplot</title>
+  <title>Regl Scatterplot</title>
   <meta name="description" content="Scalable WebGL-based Scatterplot for millions of points build with Regl">
   <meta name="author" content="Fritz Lekschas">
 
@@ -261,7 +261,7 @@
 <body>
   <header id="topbar" tabindex="0">
     <div id="title-wrapper" class="flex-c flex-jc-sb">
-      <h1 id="title">WebGL Scatterplot</h1>
+      <h1 id="title">Regl Scatterplot</h1>
       <span class="no-select">Menu</span>
     </div>
     <aside id="controls" class="flex-c flex-v">
@@ -282,14 +282,15 @@
       <label class="flex-c flex-v">
         <div class="flex-a-c no-select">
           <span class="label">Opacity</span>
-          <span id="opacity-value" class="value">0.5</span>
+          <span id="opacity-value" class="value">1.0</span>
         </div>
-        <input id="opacity" type="range" min="0.01" max="1" step="0.01" value="0.5">
+        <input id="opacity" type="range" min="0.01" max="1" step="0.01" value="1">
       </label>
+      <button id="reset">Reset</button>
     </aside>
   </header>
   <div id="canvas-wrapper">
     <canvas id="canvas"></canvas>
   </div>
-<script type="text/javascript" src="./webgl-scatterplot-example.js"></script></body>
+<script type="text/javascript" src="./example.js"></script></body>
 </html>
