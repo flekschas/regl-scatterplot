@@ -382,6 +382,7 @@ const createScatterplot = ({
     scroll.dispose();
     mousePosition.dispose();
     mousePressed.dispose();
+    pubSub.clear();
   };
 
   const updateRatio = () => {

@@ -1,3 +1,7 @@
+**v0.3.3**
+
+- Remove event listeners on `destroy()`
+
 **v0.3.2**
 
 - Update third party libraries
