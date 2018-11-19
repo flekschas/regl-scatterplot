@@ -1,6 +1,8 @@
 **v0.3.3**
 
 - Remove event listeners on `destroy()`
+- Rename `camera` event to `view` and publish the view matrix
+- Fix issues with setting colors
 
 **v0.3.2**
 
