@@ -2,6 +2,7 @@
 
 - Update third party libraries
 - Switch to browser-based tests
+- Set more strict linting
 
 **v0.3.1**
 
