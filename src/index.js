@@ -23,7 +23,8 @@ import {
   HEIGHT,
   TARGET,
   DISTANCE,
-  ROTATION
+  ROTATION,
+  VIEW
 } from "./defaults";
 
 import { dist, isRgb, isRgba, toRgba } from "./utils";
@@ -39,17 +40,23 @@ const COLOR_NUM_STATES = 4;
 const FLOAT_BYTES = Float32Array.BYTES_PER_ELEMENT;
 
 const createScatterplot = ({
+  background: initBackground = COLOR_BG,
   canvas: initCanvas = document.createElement("canvas"),
   colors: initColors = COLORS,
   pointSize: initPointSize = POINT_SIZE,
   pointSizeSelected: initPointSizeSelected = POINT_SIZE_SELECTED,
   pointOutlineWidth: initPointOutlineWidth = POINT_OUTLINE_WIDTH,
   width: initWidth = WIDTH,
-  height: initHeight = HEIGHT
+  height: initHeight = HEIGHT,
+  target: initTarget = TARGET,
+  distance: initDistance = DISTANCE,
+  rotation: initRotation = ROTATION,
+  view: initView = VIEW
 } = {}) => {
   const pubSub = createPubSub();
   const scratch = new Float32Array(16);
 
+  let background = toRgba(initBackground, true);
   let canvas = initCanvas;
   let colors = initColors;
   let width = initWidth;
@@ -349,11 +356,9 @@ const createScatterplot = ({
     }
 
     regl = createRegl({ gl, extensions });
-    camera = canvasCamera2d(c, {
-      target: TARGET,
-      distance: DISTANCE,
-      rotation: ROTATION
-    });
+    camera = canvasCamera2d(c);
+    if (initView) camera.set(mat4.clone(initView));
+    else camera.lookAt([...initTarget], initDistance, initRotation);
     lasso = createLine(regl, { width: 3, is2d: true });
     scroll = createScroll(c);
     mousePosition = createMousePos(c);
@@ -406,7 +411,7 @@ const createScatterplot = ({
           const rgba = toRgba(color, true);
           tmp.push(rgba, rgba, rgba); // normal, active, and hover
         }
-        tmp.push(COLOR_BG); // background
+        tmp.push(background);
       });
     } catch (e) {
       console.error(
@@ -660,6 +665,14 @@ const createScatterplot = ({
     return out;
   };
 
+  const setBackground = newBackground => {
+    if (!newBackground) return;
+
+    background = toRgba(newBackground);
+
+    console.log(background); // eslint-disable-line
+  };
+
   const style = arg => {
     if (typeof arg === "string") {
       if (arg === "colorBy") return colorBy;
@@ -672,6 +685,7 @@ const createScatterplot = ({
 
     if (typeof arg === "object") {
       const {
+        background: newBackground = null,
         colorBy: newColorBy = null,
         colors: newColors = null,
         opacity: newOpacity = null,
@@ -679,6 +693,7 @@ const createScatterplot = ({
         pointSize: newPointSize = null,
         pointSizeSelected: newPointSizeSelected = null
       } = arg;
+      setBackground(newBackground);
       setColorBy(newColorBy);
       setColors(newColors);
       setOpacity(newOpacity);
@@ -712,8 +727,9 @@ const createScatterplot = ({
   };
 
   const reset = () => {
-    camera.lookAt([...TARGET], DISTANCE);
-    pubSub.publish("camera", camera.position);
+    if (initView) camera.set(mat4.clone(initView))
+    else camera.lookAt([...initTarget], initDistance, initRotation);
+    pubSub.publish("view", camera.view);
   };
 
   const keyUpHandler = ({ key }) => {

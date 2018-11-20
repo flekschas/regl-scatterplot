@@ -1,8 +1,11 @@
 **v0.3.3**
 
+- Add endpoint for changing the background color
+- Allow setting view on initialization
 - Remove event listeners on `destroy()`
 - Rename `camera` event to `view` and publish the view matrix
 - Fix issues with setting colors
+- Fix resetting view
 
 **v0.3.2**
 
