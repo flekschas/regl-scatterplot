@@ -306,7 +306,7 @@ const createScatterplot = ({
       lassoEnd();
     } else if (performance.now() - mouseDownTime <= CLICK_DELAY) {
       const clostestPoint = raycast(mouseDownX, mouseDownY);
-      if (clostestPoint) select([clostestPoint]);
+      if (clostestPoint >= 0) select([clostestPoint]);
       else deselect();
     }
   };
