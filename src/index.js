@@ -409,7 +409,8 @@ const createScatterplot = ({
           }
         } else {
           const rgba = toRgba(color, true);
-          tmp.push(rgba, rgba, rgba); // normal, active, and hover
+          const rgbaOpaque = [...rgba.slice(0, 3), 1];
+          tmp.push(rgba, rgbaOpaque, rgbaOpaque); // normal, active, and hover
         }
         tmp.push(background);
       });
