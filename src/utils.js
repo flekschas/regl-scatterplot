@@ -27,6 +27,23 @@ export const hexToRgb = (hex, isNormalize = false) =>
     .map(x => parseInt(x, 16) / 255 ** isNormalize);
 
 /**
+ * Promised-based image loading
+ * @param   {string}  src  Remote image source, i.e., a URL
+ * @return  {object}  Promise resolving to the image once its loaded
+ */
+export const loadImage = src =>
+  new Promise((accept, reject) => {
+    const image = new Image();
+    image.src = src;
+    image.onload = () => {
+      accept(image);
+    };
+    image.onerror = error => {
+      reject(error);
+    };
+  });
+
+/**
  * Convert a HEX-encoded color to an RGBA-encoded color
  * @param   {string}  hex  HEX-encoded color string.
  * @param   {boolean}  isNormalize  If `true` the returned RGBA values will be
@@ -58,6 +75,13 @@ export const isNormFloat = x => x >= 0 && x <= 1;
  * @return  {boolean}  If `true` the array contains only numbers in `[0,1]`.
  */
 export const isNormFloatArray = a => Array.isArray(a) && a.every(isNormFloat);
+
+/**
+ * Tests if a variable is a string
+ * @param   {*}  s  Variable to be tested
+ * @return  {boolean}  If `true` variable is a string
+ */
+export const isString = s => typeof s === "string" || s instanceof String;
 
 /**
  * Tests if a number is an interger and in `[0,255]`.

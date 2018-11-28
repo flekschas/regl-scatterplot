@@ -10,6 +10,8 @@ import { mat4, vec4 } from "gl-matrix";
 import createLine from "regl-line";
 import createScroll from "scroll-speed";
 
+import BG_FS from "./bg.fs";
+import BG_VS from "./bg.vs";
 import POINT_FS from "./point.fs";
 import POINT_VS from "./point.vs";
 
@@ -35,7 +37,7 @@ import {
   VIEW
 } from "./defaults";
 
-import { dist, isRgb, isRgba, toRgba } from "./utils";
+import { dist, isRgb, isRgba, toRgba, isString, loadImage } from "./utils";
 
 const EXTENSIONS = ["OES_standard_derivatives", "OES_texture_float"];
 
@@ -130,6 +132,7 @@ const createScatterplot = ({
   let isInit = false;
 
   let opacity = 1;
+  let backgroundImage;
 
   const getMousePos = () => {
     mousePosition.flush();
@@ -468,6 +471,7 @@ const createScatterplot = ({
     colorTex = createColorTexture();
   };
 
+  const getBackgroundImage = () => backgroundImage;
   const getColorTex = () => colorTex;
   const getColorTexRes = () => colorTexRes;
   const getNormalStateIndexBuffer = () => stateIndexBuffer;
@@ -573,6 +577,21 @@ const createScatterplot = ({
     )();
   };
 
+  const drawBackgroundImage = regl({
+    frag: BG_FS,
+    vert: BG_VS,
+    attributes: {
+      position: [0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0]
+    },
+    uniforms: {
+      projection: getProjection,
+      model: getModel,
+      view: getView,
+      texture: getBackgroundImage
+    },
+    count: 6
+  });
+
   const createStateIndex = numNewPoints => {
     const index = new Float32Array(numNewPoints);
 
@@ -631,6 +650,8 @@ const createScatterplot = ({
     // Update camera
     isViewChanged = camera.tick();
 
+    if (backgroundImage) drawBackgroundImage();
+
     // Draw the points
     drawPointBodies();
     if (selection.length) drawSelectedPoint();
@@ -653,6 +674,30 @@ const createScatterplot = ({
     if (!newBackground) return;
 
     background = toRgba(newBackground);
+  };
+
+  const setBackgroundImage = newBackgroundImage => {
+    if (!newBackgroundImage) {
+      backgroundImage = newBackgroundImage;
+    }
+
+    if (isString(newBackgroundImage)) {
+      loadImage(newBackgroundImage)
+        .then(image => {
+          backgroundImage = regl.texture(image);
+          drawRaf();
+        })
+        .catch(error => {
+          console.error(
+            `Could not load image from ${newBackgroundImage}.`,
+            error
+          );
+        });
+    }
+
+    if (typeof newBackgroundImage === "function") {
+      backgroundImage = newBackgroundImage;
+    }
   };
 
   /**
@@ -678,6 +723,7 @@ const createScatterplot = ({
     if (typeof arg === "object") {
       const {
         background: newBackground = null,
+        backgroundImage: newBackgroundImage = null,
         colorBy: newColorBy = null,
         colors: newColors = null,
         opacity: newOpacity = null,
@@ -686,6 +732,7 @@ const createScatterplot = ({
         pointSizeSelected: newPointSizeSelected = null
       } = arg;
       setBackground(newBackground);
+      setBackgroundImage(newBackgroundImage);
       setColorBy(newColorBy);
       setColors(newColors);
       setOpacity(newOpacity);
