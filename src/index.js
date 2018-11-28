@@ -14,8 +14,16 @@ import POINT_FS from "./point.fs";
 import POINT_VS from "./point.vs";
 
 import {
+  CLICK_DELAY,
+  LASSO_MIN_DELAY,
+  LASSO_MIN_DIST,
+  COLOR_NORMAL_IDX,
+  COLOR_ACTIVE_IDX,
   COLOR_BG,
+  COLOR_BG_IDX,
+  COLOR_NUM_STATES,
   COLORS,
+  FLOAT_BYTES,
   POINT_SIZE,
   POINT_SIZE_SELECTED,
   POINT_OUTLINE_WIDTH,
@@ -28,16 +36,6 @@ import {
 } from "./defaults";
 
 import { dist, isRgb, isRgba, toRgba } from "./utils";
-
-const CLICK_DELAY = 250;
-const LASSO_MIN_DELAY = 25;
-const LASSO_MIN_DIST = 8;
-const COLOR_NORMAL_IDX = 0;
-const COLOR_ACTIVE_IDX = 1;
-// const COLOR_HOVER_IDX = 2;
-const COLOR_BG_IDX = 3;
-const COLOR_NUM_STATES = 4;
-const FLOAT_BYTES = Float32Array.BYTES_PER_ELEMENT;
 
 const createScatterplot = ({
   background: initBackground = COLOR_BG,
@@ -728,7 +726,7 @@ const createScatterplot = ({
   };
 
   const reset = () => {
-    if (initView) camera.set(mat4.clone(initView))
+    if (initView) camera.set(mat4.clone(initView));
     else camera.lookAt([...initTarget], initDistance, initRotation);
     pubSub.publish("view", camera.view);
   };
