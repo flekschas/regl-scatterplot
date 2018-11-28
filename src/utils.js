@@ -34,7 +34,7 @@ export const hexToRgb = (hex, isNormalize = false) =>
 export const loadImage = (src, isCrossOrigin = false) =>
   new Promise((accept, reject) => {
     const image = new Image();
-    if (isCrossOrigin) image.crossOrigin = "anonymous";
+    if (isCrossOrigin) image.crossOrigin = 'anonymous';
     image.src = src;
     image.onload = () => {
       accept(image);
@@ -82,7 +82,7 @@ export const isNormFloatArray = a => Array.isArray(a) && a.every(isNormFloat);
  * @param   {*}  s  Variable to be tested
  * @return  {boolean}  If `true` variable is a string
  */
-export const isString = s => typeof s === "string" || s instanceof String;
+export const isString = s => typeof s === 'string' || s instanceof String;
 
 /**
  * Tests if a number is an interger and in `[0,255]`.
@@ -151,7 +151,7 @@ export const toRgba = (color, isNormalize) => {
     ];
   if (isHex(color)) return hexToRgba(color, isNormalize);
   console.warn(
-    "Only HEX, RGB, and RGBA are handled by this function. Returning white instead."
+    'Only HEX, RGB, and RGBA are handled by this function. Returning white instead.'
   );
   return isNormalize ? [1, 1, 1, 1] : [255, 255, 255, 255];
 };
