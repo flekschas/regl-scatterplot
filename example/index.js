@@ -49,9 +49,7 @@ scatterplot.subscribe("deselect", deselectHandler);
 
 const resizeHandler = () => {
   ({ width, height } = canvas.getBoundingClientRect());
-  scatterplot.width = width;
-  scatterplot.height = height;
-  scatterplot.draw();
+  scatterplot.attr({ width, height });
 };
 
 window.addEventListener("resize", resizeHandler);
