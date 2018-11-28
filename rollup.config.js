@@ -5,6 +5,8 @@ import resolve from 'rollup-plugin-node-resolve';
 import filesize from 'rollup-plugin-filesize';
 import visualizer from 'rollup-plugin-visualizer';
 
+const VERSION = require('./version.js');
+
 const configurator = (file, format, plugins) => ({
   input: 'src/index.js',
   output: {
@@ -14,7 +16,8 @@ const configurator = (file, format, plugins) => ({
     globals: {
       'pub-sub-es': 'createPubSub',
       regl: 'createREGL'
-    }
+    },
+    intro: `const VERSION = ${VERSION};`
   },
   plugins,
   external: ['pub-sub-es', 'regl']

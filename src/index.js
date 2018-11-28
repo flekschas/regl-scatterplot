@@ -823,6 +823,9 @@ const createScatterplot = ({
     get canvas() {
       return canvas;
     },
+    get version() {
+      return VERSION;
+    },
     attr,
     deselect,
     destroy,

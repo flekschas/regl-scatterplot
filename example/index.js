@@ -44,6 +44,8 @@ const scatterplot = createScatterplot({
   pointSize
 });
 
+console.log(`Scatterplot v${scatterplot.version}`);
+
 scatterplot.subscribe('select', selectHandler);
 scatterplot.subscribe('deselect', deselectHandler);
 

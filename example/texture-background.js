@@ -47,6 +47,8 @@ const scatterplot = createScatterplot({
   pointSize
 });
 
+console.log(`Scatterplot v${scatterplot.version}`);
+
 console.log('Load random background image');
 scatterplot.style({
   backgroundImage: {
