@@ -37,25 +37,37 @@ import {
 
 import { dist, isRgb, isRgba, toRgba } from "./utils";
 
+const EXTENSIONS = ["OES_standard_derivatives", "OES_texture_float"];
+
 const createOwnRegl = canvas => {
   const gl = canvas.getContext("webgl");
   const extensions = [];
 
   // Needed to run the tests properly as the headless-gl doesn't support all
   // extensions, which is fine for the functional tests.
-  if (gl.getExtension("OES_standard_derivatives")) {
-    extensions.push("OES_standard_derivatives");
-  } else {
-    console.warn("WebGL: OES_standard_derivatives extension not supported.");
-  }
-
-  if (gl.getExtension("OES_texture_float")) {
-    extensions.push("OES_texture_float");
-  } else {
-    console.warn("WebGL: OES_texture_float extension not supported.");
-  }
+  EXTENSIONS.forEach(EXTENSION => {
+    if (gl.getExtension(EXTENSION)) {
+      extensions.push(EXTENSION);
+    } else {
+      console.warn(
+        `WebGL: ${EXTENSION} extension not supported. Scatterplot might not render properly`
+      );
+    }
+  });
 
   return createRegl({ gl, extensions });
+};
+
+const checkReglExtensions = regl => {
+  if (!regl) return regl;
+  EXTENSIONS.forEach(EXTENSION => {
+    if (!regl.hasExtension(EXTENSION)) {
+      console.warn(
+        `WebGL: ${EXTENSION} extension not supported. Scatterplot might not render properly`
+      );
+    }
+  });
+  return regl;
 };
 
 const createScatterplot = ({
@@ -84,7 +96,7 @@ const createScatterplot = ({
   let pointSize = initialPointSize;
   let pointSizeSelected = initialPointSizeSelected;
   let pointOutlineWidth = initialPointOutlineWidth;
-  let regl = initialRegl || createOwnRegl(initialCanvas);
+  let regl = checkReglExtensions(initialRegl) || createOwnRegl(initialCanvas);
   let camera;
   let lasso;
   let scroll;
