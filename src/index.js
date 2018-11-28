@@ -37,34 +37,56 @@ import {
 
 import { dist, isRgb, isRgba, toRgba } from "./utils";
 
+const createOwnRegl = canvas => {
+  const gl = canvas.getContext("webgl");
+  const extensions = [];
+
+  // Needed to run the tests properly as the headless-gl doesn't support all
+  // extensions, which is fine for the functional tests.
+  if (gl.getExtension("OES_standard_derivatives")) {
+    extensions.push("OES_standard_derivatives");
+  } else {
+    console.warn("WebGL: OES_standard_derivatives extension not supported.");
+  }
+
+  if (gl.getExtension("OES_texture_float")) {
+    extensions.push("OES_texture_float");
+  } else {
+    console.warn("WebGL: OES_texture_float extension not supported.");
+  }
+
+  return createRegl({ gl, extensions });
+};
+
 const createScatterplot = ({
-  background: initBackground = COLOR_BG,
-  canvas: initCanvas = document.createElement("canvas"),
-  colors: initColors = COLORS,
-  pointSize: initPointSize = POINT_SIZE,
-  pointSizeSelected: initPointSizeSelected = POINT_SIZE_SELECTED,
-  pointOutlineWidth: initPointOutlineWidth = POINT_OUTLINE_WIDTH,
-  width: initWidth = WIDTH,
-  height: initHeight = HEIGHT,
-  target: initTarget = TARGET,
-  distance: initDistance = DISTANCE,
-  rotation: initRotation = ROTATION,
-  view: initView = VIEW
+  regl: initialRegl,
+  background: initialBackground = COLOR_BG,
+  canvas: initialCanvas = document.createElement("canvas"),
+  colors: initialColors = COLORS,
+  pointSize: initialPointSize = POINT_SIZE,
+  pointSizeSelected: initialPointSizeSelected = POINT_SIZE_SELECTED,
+  pointOutlineWidth: initialPointOutlineWidth = POINT_OUTLINE_WIDTH,
+  width: initialWidth = WIDTH,
+  height: initialHeight = HEIGHT,
+  target: initialTarget = TARGET,
+  distance: initialDistance = DISTANCE,
+  rotation: initialRotation = ROTATION,
+  view: initialView = VIEW
 } = {}) => {
   const pubSub = createPubSub();
   const scratch = new Float32Array(16);
 
-  let background = toRgba(initBackground, true);
-  let canvas = initCanvas;
-  let colors = initColors;
-  let width = initWidth;
-  let height = initHeight;
-  let pointSize = initPointSize;
-  let pointSizeSelected = initPointSizeSelected;
-  let pointOutlineWidth = initPointOutlineWidth;
+  let background = toRgba(initialBackground, true);
+  let canvas = initialCanvas;
+  let colors = initialColors;
+  let width = initialWidth;
+  let height = initialHeight;
+  let pointSize = initialPointSize;
+  let pointSizeSelected = initialPointSizeSelected;
+  let pointOutlineWidth = initialPointOutlineWidth;
+  let regl = initialRegl || createOwnRegl(initialCanvas);
   let camera;
   let lasso;
-  let regl;
   let scroll;
   let mousePosition;
   let mousePressed;
@@ -96,9 +118,6 @@ const createScatterplot = ({
   let isInit = false;
 
   let opacity = 1;
-
-  canvas.width = width * window.devicePixelRatio;
-  canvas.height = height * window.devicePixelRatio;
 
   const getMousePos = () => {
     mousePosition.flush();
@@ -335,48 +354,6 @@ const createScatterplot = ({
     });
   };
 
-  const initRegl = (c = canvas) => {
-    const gl = c.getContext("webgl");
-    const extensions = [];
-
-    // Needed to run the tests properly as the headless-gl doesn't support all
-    // extensions, which is fine for the functional tests.
-    if (gl.getExtension("OES_standard_derivatives")) {
-      extensions.push("OES_standard_derivatives");
-    } else {
-      console.warn("WebGL: OES_standard_derivatives extension not supported.");
-    }
-
-    if (gl.getExtension("OES_texture_float")) {
-      extensions.push("OES_texture_float");
-    } else {
-      console.warn("WebGL: OES_texture_float extension not supported.");
-    }
-
-    regl = createRegl({ gl, extensions });
-    camera = canvasCamera2d(c);
-    if (initView) camera.set(mat4.clone(initView));
-    else camera.lookAt([...initTarget], initDistance, initRotation);
-    lasso = createLine(regl, { width: 3, is2d: true });
-    scroll = createScroll(c);
-    mousePosition = createMousePos(c);
-    mousePressed = createMousePressed(c);
-
-    // Event listeners
-    scroll.on("scroll", () => {
-      drawRaf(); // eslint-disable-line no-use-before-define
-    });
-    mousePosition.on("move", mouseMoveHandler);
-    mousePressed.on("down", mouseDownHandler);
-    mousePressed.on("up", mouseUpHandler);
-
-    // Buffers
-    stateIndexBuffer = regl.buffer();
-    highlightIndexBuffer = regl.buffer();
-
-    colorTex = createColorTexture();
-  };
-
   const destroy = () => {
     canvas = undefined;
     camera = undefined;
@@ -430,31 +407,29 @@ const createScatterplot = ({
   };
   const setHeight = newHeight => {
     if (!+newHeight || +newHeight <= 0) return;
-
     height = +newHeight;
     canvas.height = height * window.devicePixelRatio;
-    updateRatio();
-    camera.refresh();
   };
+
   const setPointSize = newPointSize => {
     if (!+newPointSize || +newPointSize <= 0) return;
     pointSize = +newPointSize;
   };
+
   const setPointSizeSelected = newPointSizeSelected => {
     if (!+newPointSizeSelected || +newPointSizeSelected <= 0) return;
     pointSizeSelected = +newPointSizeSelected;
   };
+
   const setPointOutlineWidth = newPointOutlineWidth => {
     if (!+newPointOutlineWidth || +newPointOutlineWidth <= 0) return;
     pointOutlineWidth = +newPointOutlineWidth;
   };
+
   const setWidth = newWidth => {
     if (!+newWidth || +newWidth <= 0) return;
-
     width = +newWidth;
     canvas.width = width * window.devicePixelRatio;
-    updateRatio();
-    camera.refresh();
   };
 
   const setColorBy = (type, newColors) => {
@@ -480,8 +455,6 @@ const createScatterplot = ({
     opacity = +newOpacity;
     colorTex = createColorTexture();
   };
-
-  initRegl(canvas);
 
   const getColorTex = () => colorTex;
   const getColorTexRes = () => colorTexRes;
@@ -723,6 +696,8 @@ const createScatterplot = ({
       const { height: newHeight = null, width: newWidth = null } = arg;
       setHeight(newHeight);
       setWidth(newWidth);
+      updateRatio();
+      camera.refresh();
       refresh();
       drawRaf();
     }
@@ -731,8 +706,8 @@ const createScatterplot = ({
   };
 
   const reset = () => {
-    if (initView) camera.set(mat4.clone(initView));
-    else camera.lookAt([...initTarget], initDistance, initRotation);
+    if (initialView) camera.set(mat4.clone(initialView));
+    else camera.lookAt([...initialTarget], initialDistance, initialRotation);
     pubSub.publish("view", camera.view);
   };
 
@@ -750,6 +725,41 @@ const createScatterplot = ({
 
   window.addEventListener("keyup", keyUpHandler, false);
   window.addEventListener("blur", mouseUpHandler, false);
+
+  const initCamera = () => {
+    camera = canvasCamera2d(canvas);
+
+    if (initialView) camera.set(mat4.clone(initialView));
+    else camera.lookAt([...initialTarget], initialDistance, initialRotation);
+  };
+
+  const init = () => {
+    initCamera();
+
+    lasso = createLine(regl, { width: 3, is2d: true });
+    scroll = createScroll(canvas);
+    mousePosition = createMousePos(canvas);
+    mousePressed = createMousePressed(canvas);
+
+    // Event listeners
+    scroll.on("scroll", () => {
+      drawRaf(); // eslint-disable-line no-use-before-define
+    });
+    mousePosition.on("move", mouseMoveHandler);
+    mousePressed.on("down", mouseDownHandler);
+    mousePressed.on("up", mouseUpHandler);
+
+    // Buffers
+    stateIndexBuffer = regl.buffer();
+    highlightIndexBuffer = regl.buffer();
+
+    colorTex = createColorTexture();
+
+    // Set dimensions
+    attr({ width, height });
+  };
+
+  init(canvas);
 
   return {
     get canvas() {
@@ -769,3 +779,5 @@ const createScatterplot = ({
 };
 
 export default createScatterplot;
+
+export { createOwnRegl as createRegl };
