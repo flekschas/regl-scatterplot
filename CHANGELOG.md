@@ -1,6 +1,9 @@
 **v0.3.4**
 
 - Use a combination of linear and log2 scaling for point size
+- Add support for background images
+- Switch to single quotes
+- Export version
 
 **v0.3.3**
 
