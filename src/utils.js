@@ -31,9 +31,10 @@ export const hexToRgb = (hex, isNormalize = false) =>
  * @param   {string}  src  Remote image source, i.e., a URL
  * @return  {object}  Promise resolving to the image once its loaded
  */
-export const loadImage = src =>
+export const loadImage = (src, isCrossOrigin = false) =>
   new Promise((accept, reject) => {
     const image = new Image();
+    if (isCrossOrigin) image.crossOrigin = "anonymous";
     image.src = src;
     image.onload = () => {
       accept(image);

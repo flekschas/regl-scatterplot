@@ -679,23 +679,20 @@ const createScatterplot = ({
   const setBackgroundImage = newBackgroundImage => {
     if (!newBackgroundImage) {
       backgroundImage = newBackgroundImage;
-    }
+    } else if (isString(newBackgroundImage) || newBackgroundImage.src) {
+      const imgSrc = isString(newBackgroundImage)
+        ? newBackgroundImage
+        : newBackgroundImage.src;
 
-    if (isString(newBackgroundImage)) {
-      loadImage(newBackgroundImage)
+      loadImage(imgSrc, newBackgroundImage.crossOrigin)
         .then(image => {
           backgroundImage = regl.texture(image);
           drawRaf();
         })
         .catch(error => {
-          console.error(
-            `Could not load image from ${newBackgroundImage}.`,
-            error
-          );
+          console.error(`Could not load background image.`, error);
         });
-    }
-
-    if (typeof newBackgroundImage === "function") {
+    } else if (typeof newBackgroundImage === "function") {
       backgroundImage = newBackgroundImage;
     }
   };
@@ -712,6 +709,8 @@ const createScatterplot = ({
 
   const style = arg => {
     if (typeof arg === "string") {
+      if (arg === "background") return background;
+      if (arg === "backgroundImage") return backgroundImage;
       if (arg === "colorBy") return colorBy;
       if (arg === "colors") return colors;
       if (arg === "opacity") return opacity;
