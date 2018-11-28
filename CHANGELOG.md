@@ -1,3 +1,7 @@
+**v0.3.4**
+
+- Use a combination of linear and log2 scaling for point size
+
 **v0.3.3**
 
 - Add endpoint for changing the background color

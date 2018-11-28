@@ -58,7 +58,11 @@ void main() {
 
   color = texture2D(colorTex, colorTexIndex);
 
-  gl_PointSize = pointSize * (1.0 + log(scaling)) + pointSizeExtra;
+  // The final scaling consists of linear scaling in [0, 1] and log scaling
+  // in [1, [
+  float finalScaling = min(1.0, scaling) + log2(max(1.0, scaling));
+
+  gl_PointSize = pointSize * finalScaling + pointSizeExtra;
 }
 `;
 
