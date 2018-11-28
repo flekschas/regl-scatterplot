@@ -79,9 +79,9 @@ const createScatterplot = ({
   let lassoScatterPos = [];
   let lassoPrevMousePos;
   let searchIndex;
-  let aspectRatio = width / height;
-  let projection = mat4.fromScaling([], [1 / aspectRatio, 1, 1]);
-  let model = mat4.fromScaling([], [aspectRatio, 1, 1]);
+  let aspectRatio;
+  let projection;
+  let model;
 
   let stateTex; // Stores the point texture holding x, y, category, and value
   let stateTexRes = 0; // Width and height of the texture
@@ -668,8 +668,16 @@ const createScatterplot = ({
     if (!newBackground) return;
 
     background = toRgba(newBackground);
+  };
 
-    console.log(background); // eslint-disable-line
+  /**
+   * Update Regl's viewport, drawingBufferWidth, and drawingBufferHeight
+   *
+   * @description Call this method after the viewport has changed, e.g., width
+   * or height have been altered
+   */
+  const refresh = () => {
+    regl.poll();
   };
 
   const style = arg => {
@@ -715,14 +723,11 @@ const createScatterplot = ({
       const { height: newHeight = null, width: newWidth = null } = arg;
       setHeight(newHeight);
       setWidth(newWidth);
+      refresh();
       drawRaf();
     }
 
     return undefined;
-  };
-
-  const refresh = () => {
-    regl.poll();
   };
 
   const reset = () => {
@@ -740,6 +745,8 @@ const createScatterplot = ({
       // Nothing
     }
   };
+
+  updateRatio();
 
   window.addEventListener("keyup", keyUpHandler, false);
   window.addEventListener("blur", mouseUpHandler, false);
