@@ -432,12 +432,12 @@ const createScatterplot = ({
   };
 
   const setPointSizeSelected = newPointSizeSelected => {
-    if (!+newPointSizeSelected || +newPointSizeSelected <= 0) return;
+    if (!+newPointSizeSelected || +newPointSizeSelected < 0) return;
     pointSizeSelected = +newPointSizeSelected;
   };
 
   const setPointOutlineWidth = newPointOutlineWidth => {
-    if (!+newPointOutlineWidth || +newPointOutlineWidth <= 0) return;
+    if (!+newPointOutlineWidth || +newPointOutlineWidth < 0) return;
     pointOutlineWidth = +newPointOutlineWidth;
   };
 
