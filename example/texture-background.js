@@ -69,9 +69,8 @@ setTimeout(() => {
     height
   )}/?random`;
   image.onload = () => {
-    const texture = regl.texture(image);
     console.log('Random background image loaded');
-    scatterplot.style({ backgroundImage: texture });
+    scatterplot.style({ backgroundImage: regl.texture(image) });
   };
 }, 5000);
 
