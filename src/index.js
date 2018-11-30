@@ -18,10 +18,12 @@ import {
   LASSO_MIN_DIST,
   COLOR_NORMAL_IDX,
   COLOR_ACTIVE_IDX,
+  COLOR_HOVER_IDX,
   COLOR_BG,
   COLOR_BG_IDX,
   COLOR_NUM_STATES,
   COLORS,
+  DATA_ASPECT_RATIO,
   FLOAT_BYTES,
   POINT_SIZE,
   POINT_SIZE_SELECTED,
@@ -43,7 +45,9 @@ import {
   toRgba,
   isSet,
   isString,
-  loadImage
+  loadImage,
+  max,
+  min
 } from './utils';
 
 const EXTENSIONS = ['OES_standard_derivatives', 'OES_texture_float'];
@@ -119,14 +123,16 @@ const createScatterplot = ({
   let lassoScatterPos = [];
   let lassoPrevMousePos;
   let searchIndex;
-  let aspectRatio;
+  let viewAspectRatio;
+  let dataAspectRatio = DATA_ASPECT_RATIO;
   let projection;
   let model;
 
   let stateTex; // Stores the point texture holding x, y, category, and value
   let stateTexRes = 0; // Width and height of the texture
-  let stateIndexBuffer; // Buffer holding the indices pointing to the correct texel
-  let highlightIndexBuffer; // Used for pointing to the highlighted texels
+  let normalPointsIndexBuffer; // Buffer holding the indices pointing to the correct texel
+  let selectedPointsIndexBuffer; // Used for pointing to the selected texels
+  let hoveredPointIndexBuffer; // Used for pointing to the hovered texels
 
   let colorTex; // Stores the color texture
   let colorTexRes = 0; // Width and height of the texture
@@ -137,6 +143,8 @@ const createScatterplot = ({
 
   let opacity = 1;
   let backgroundImage;
+
+  let hoveredPoint;
 
   // Get a copy of the current mouse position
   const getMousePos = () => mousePosition.slice();
@@ -176,18 +184,27 @@ const createScatterplot = ({
 
   const raycast = () => {
     const [x, y] = getScatterGlPos();
-    const pointGlSize = (pointSize / width) * window.devicePixelRatio;
+
+    const scaling = camera.scaling;
+    const scaledPointSize =
+      2 *
+      pointSize *
+      (min(1.0, scaling) + Math.log2(max(1.0, scaling))) *
+      window.devicePixelRatio;
+
+    const xNormalizedScaledPointSize = scaledPointSize / width;
+    const yNormalizedScaledPointSize = scaledPointSize / height;
 
     // Get all points within a close range
     const pointsInBBox = searchIndex.range(
-      x - pointGlSize,
-      y - pointGlSize,
-      x + pointGlSize,
-      y + pointGlSize
+      x - xNormalizedScaledPointSize,
+      y - yNormalizedScaledPointSize,
+      x + xNormalizedScaledPointSize,
+      y + yNormalizedScaledPointSize
     );
 
     // Find the closest point
-    let minDist = Infinity;
+    let minDist = scaledPointSize;
     let clostestPoint;
     pointsInBBox.forEach(idx => {
       const [ptX, ptY] = searchIndex.points[idx];
@@ -251,10 +268,9 @@ const createScatterplot = ({
   const select = points => {
     selection = isSet(points) ? points : new Set(points);
 
-    highlightIndexBuffer({
+    selectedPointsIndexBuffer({
       usage: 'dynamic',
       type: 'float',
-      length: FLOAT_BYTES,
       data: new Float32Array(selection)
     });
 
@@ -294,11 +310,8 @@ const createScatterplot = ({
     }
   };
 
-  const mouseClickHandler = event => {
-    const clostestPoint = raycast(
-      getNdcX(event.clientX),
-      getNdcY(event.clientY)
-    );
+  const mouseClickHandler = () => {
+    const clostestPoint = raycast();
     if (clostestPoint >= 0) select(new Set([clostestPoint]));
   };
 
@@ -309,8 +322,29 @@ const createScatterplot = ({
   const mouseMoveHandler = event => {
     mousePosition[0] = event.clientX;
     mousePosition[1] = event.clientY;
-    if (mouseDown) drawRaf(); // eslint-disable-line no-use-before-define
+
+    let needsRedraw = mouseDown;
+
+    const clostestPoint = raycast();
+    if (clostestPoint >= 0) {
+      needsRedraw = true;
+      hoveredPoint = clostestPoint;
+      hoveredPointIndexBuffer.subdata([clostestPoint]);
+      pubSub.publish('hover', clostestPoint);
+    } else {
+      needsRedraw = needsRedraw || !!hoveredPoint;
+      hoveredPoint = undefined;
+    }
+
     if (mouseDownShift) lassoDb();
+
+    if (needsRedraw) drawRaf(); // eslint-disable-line no-use-before-define
+  };
+
+  const blurHandler = () => {
+    hoveredPoint = undefined;
+    mouseUpHandler();
+    drawRaf(); // eslint-disable-line no-use-before-define
   };
 
   const createColorTexture = (newColors = colors) => {
@@ -344,10 +378,15 @@ const createScatterplot = ({
     pubSub.clear();
   };
 
-  const updateRatio = () => {
-    aspectRatio = width / height;
-    projection = mat4.fromScaling([], [1 / aspectRatio, 1, 1]);
-    model = mat4.fromScaling([], [aspectRatio, 1, 1]);
+  const updateViewAspectRatio = () => {
+    viewAspectRatio = width / height;
+    projection = mat4.fromScaling([], [1 / viewAspectRatio, 1, 1]);
+    model = mat4.fromScaling([], [dataAspectRatio, 1, 1]);
+  };
+
+  const setDataAspectRatio = newDataAspectRatio => {
+    if (+newDataAspectRatio <= 0) return;
+    dataAspectRatio = newDataAspectRatio;
   };
 
   const setColors = newColors => {
@@ -438,8 +477,8 @@ const createScatterplot = ({
   const getBackgroundImage = () => backgroundImage;
   const getColorTex = () => colorTex;
   const getColorTexRes = () => colorTexRes;
-  const getNormalStateIndexBuffer = () => stateIndexBuffer;
-  const getHighlightIndexBuffer = () => highlightIndexBuffer;
+  const getNormalPointsIndexBuffer = () => normalPointsIndexBuffer;
+  const getSelectedPointsIndexBuffer = () => selectedPointsIndexBuffer;
   const getPointSize = () => pointSize * window.devicePixelRatio;
   const getNormalPointSizeExtra = () => 0;
   const getStateTex = () => stateTex;
@@ -509,7 +548,14 @@ const createScatterplot = ({
   const drawPointBodies = drawPoints(
     getNormalPointSizeExtra,
     getNormalNumPoints,
-    getNormalStateIndexBuffer
+    getNormalPointsIndexBuffer
+  );
+
+  const drawHoveredPoint = drawPoints(
+    getNormalPointSizeExtra,
+    () => 1,
+    () => hoveredPointIndexBuffer,
+    COLOR_HOVER_IDX
   );
 
   const drawSelectedPoint = () => {
@@ -520,7 +566,7 @@ const createScatterplot = ({
       () =>
         (pointSizeSelected + pointOutlineWidth * 2) * window.devicePixelRatio,
       () => numOutlinedPoints,
-      getHighlightIndexBuffer,
+      getSelectedPointsIndexBuffer,
       COLOR_ACTIVE_IDX
     )();
 
@@ -528,7 +574,7 @@ const createScatterplot = ({
     drawPoints(
       () => (pointSizeSelected + pointOutlineWidth) * window.devicePixelRatio,
       () => numOutlinedPoints,
-      getHighlightIndexBuffer,
+      getSelectedPointsIndexBuffer,
       COLOR_BG_IDX
     )();
 
@@ -536,7 +582,7 @@ const createScatterplot = ({
     drawPoints(
       () => pointSizeSelected,
       () => numOutlinedPoints,
-      getHighlightIndexBuffer,
+      getSelectedPointsIndexBuffer,
       COLOR_ACTIVE_IDX
     )();
   };
@@ -556,7 +602,7 @@ const createScatterplot = ({
     count: 6
   });
 
-  const createStateIndex = numNewPoints => {
+  const createPointIndex = numNewPoints => {
     const index = new Float32Array(numNewPoints);
 
     for (let i = 0; i < numNewPoints; ++i) {
@@ -589,14 +635,13 @@ const createScatterplot = ({
     numPoints = newPoints.length;
 
     stateTex = createStateTexture(newPoints);
-    stateIndexBuffer({
+    normalPointsIndexBuffer({
       usage: 'static',
       type: 'float',
-      length: FLOAT_BYTES,
-      data: createStateIndex(numPoints)
+      data: createPointIndex(numPoints)
     });
 
-    searchIndex = new KDBush(newPoints);
+    searchIndex = new KDBush(newPoints, p => p[0], p => p[1], 16);
 
     isInit = true;
   };
@@ -618,6 +663,7 @@ const createScatterplot = ({
 
     // Draw the points
     drawPointBodies();
+    if (hoveredPoint >= 0) drawHoveredPoint();
     if (selection.size) drawSelectedPoint();
 
     lasso.draw();
@@ -712,13 +758,19 @@ const createScatterplot = ({
     if (typeof arg === 'string') {
       if (arg === 'width') return width;
       if (arg === 'height') return height;
+      if (arg === 'aspectRatio') return dataAspectRatio;
     }
 
     if (typeof arg === 'object') {
-      const { height: newHeight = null, width: newWidth = null } = arg;
+      const {
+        height: newHeight = null,
+        width: newWidth = null,
+        aspectRatio: newDataAspectRatio = null
+      } = arg;
       setHeight(newHeight);
       setWidth(newWidth);
-      updateRatio();
+      setDataAspectRatio(newDataAspectRatio);
+      updateViewAspectRatio();
       camera.refresh();
       refresh();
       drawRaf();
@@ -751,7 +803,7 @@ const createScatterplot = ({
   };
 
   const init = () => {
-    updateRatio();
+    updateViewAspectRatio();
     initCamera();
 
     lasso = createLine(regl, { width: 3, is2d: true });
@@ -759,12 +811,17 @@ const createScatterplot = ({
 
     // Event listeners
     scroll.on('scroll', () => {
-      drawRaf(); // eslint-disable-line no-use-before-define
+      drawRaf();
     });
 
     // Buffers
-    stateIndexBuffer = regl.buffer();
-    highlightIndexBuffer = regl.buffer();
+    normalPointsIndexBuffer = regl.buffer();
+    selectedPointsIndexBuffer = regl.buffer();
+    hoveredPointIndexBuffer = regl.buffer({
+      usage: 'dynamic',
+      type: 'float',
+      length: FLOAT_BYTES // This buffer is fixed to exactly 1 point
+    });
 
     colorTex = createColorTexture();
 
@@ -773,7 +830,7 @@ const createScatterplot = ({
 
     // Setup event handler
     window.addEventListener('keyup', keyUpHandler, false);
-    window.addEventListener('blur', mouseUpHandler, false);
+    window.addEventListener('blur', blurHandler, false);
     window.addEventListener('mousedown', mouseDownHandler, false);
     window.addEventListener('click', mouseClickHandler, false);
     window.addEventListener('dblclick', mouseDblClickHandler, false);

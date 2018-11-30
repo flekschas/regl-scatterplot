@@ -5,6 +5,7 @@ export const COLOR_ACTIVE_IDX = 1;
 export const COLOR_HOVER_IDX = 2;
 export const COLOR_BG_IDX = 3;
 export const COLOR_NUM_STATES = 4;
+export const DATA_ASPECT_RATIO = 1;
 export const FLOAT_BYTES = Float32Array.BYTES_PER_ELEMENT;
 export const POINT_SIZE = 6;
 export const POINT_SIZE_SELECTED = 2;
