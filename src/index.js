@@ -683,7 +683,7 @@ const createScatterplot = ({
   const setBackground = newBackground => {
     if (!newBackground) return;
 
-    background = toRgba(newBackground);
+    background = toRgba(newBackground, true);
   };
 
   const setBackgroundImage = newBackgroundImage => {
