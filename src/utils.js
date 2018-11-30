@@ -9,6 +9,22 @@
 export const dist = (x1, y1, x2, y2) =>
   Math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2);
 
+export const getBBox = pos => {
+  let xMin = Infinity;
+  let xMax = -Infinity;
+  let yMin = Infinity;
+  let yMax = -Infinity;
+
+  for (let i = 0; i < pos.length; i += 2) {
+    xMin = pos[i] < xMin ? pos[i] : xMin;
+    xMax = pos[i] > xMax ? pos[i] : xMax;
+    yMin = pos[i + 1] < yMin ? pos[i + 1] : yMin;
+    yMax = pos[i + 1] > yMax ? pos[i + 1] : yMax;
+  }
+
+  return [xMin, yMin, xMax, yMax];
+};
+
 /**
  * Convert a HEX-encoded color to an RGB-encoded color
  * @param   {string}  hex  HEX-encoded color string.
@@ -76,6 +92,37 @@ export const isNormFloat = x => x >= 0 && x <= 1;
  * @return  {boolean}  If `true` the array contains only numbers in `[0,1]`.
  */
 export const isNormFloatArray = a => Array.isArray(a) && a.every(isNormFloat);
+
+/**
+ * From: https://wrf.ecse.rpi.edu//Research/Short_Notes/pnpoly.html
+ * @param   {Array}  point  Tuple of the form `[x,y]` to be tested.
+ * @param   {Array}  polygon  1D list of vertices defining the polygon.
+ * @return  {boolean}  If `true` point lies within the polygon.
+ */
+export const isPointInPolygon = ([px, py] = [], polygon) => {
+  let x1;
+  let y1;
+  let x2;
+  let y2;
+  let isWithin = false;
+  for (let i = 0, j = polygon.length - 2; i < polygon.length; i += 2) {
+    x1 = polygon[i];
+    y1 = polygon[i + 1];
+    x2 = polygon[j];
+    y2 = polygon[j + 1];
+    if (y1 > py !== y2 > py && px < ((x2 - x1) * (py - y1)) / (y2 - y1) + x1)
+      isWithin = !isWithin;
+    j = i;
+  }
+  return isWithin;
+};
+
+/**
+ * Tests if a variable is a set
+ * @param   {*}  s  Variable to be tested
+ * @return  {boolean}  If `true` variable is a set
+ */
+export const isSet = s => s instanceof Set;
 
 /**
  * Tests if a variable is a string

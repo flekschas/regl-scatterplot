@@ -1,4 +1,3 @@
-export const CLICK_DELAY = 250;
 export const LASSO_MIN_DELAY = 25;
 export const LASSO_MIN_DIST = 8;
 export const COLOR_NORMAL_IDX = 0;
@@ -16,23 +15,12 @@ export const COLORMAP = [];
 export const TARGET = [0, 0];
 export const DISTANCE = 1;
 export const ROTATION = 0;
+// prettier-ignore
 export const VIEW = new Float32Array([
-  1,
-  0,
-  0,
-  0,
-  0,
-  1,
-  0,
-  0,
-  0,
-  0,
-  1,
-  0,
-  0,
-  0,
-  0,
-  1
+  1, 0, 0, 0,
+  0, 1, 0, 0,
+  0, 0, 1, 0,
+  0, 0, 0, 1
 ]);
 export const COLOR_NORMAL = [0.66, 0.66, 0.66, 1];
 export const COLOR_ACTIVE = [0, 0.55, 1, 1];

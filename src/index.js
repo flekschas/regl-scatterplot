@@ -1,7 +1,5 @@
 import canvasCamera2d from 'canvas-camera-2d';
 import KDBush from 'kdbush';
-import createMousePos from 'mouse-position';
-import createMousePressed from 'mouse-pressed';
 import createPubSub from 'pub-sub-es';
 import createRegl from 'regl';
 import withThrottle from 'lodash-es/throttle';
@@ -16,7 +14,6 @@ import POINT_FS from './point.fs';
 import POINT_VS from './point.vs';
 
 import {
-  CLICK_DELAY,
   LASSO_MIN_DELAY,
   LASSO_MIN_DIST,
   COLOR_NORMAL_IDX,
@@ -37,7 +34,17 @@ import {
   VIEW
 } from './defaults';
 
-import { dist, isRgb, isRgba, toRgba, isString, loadImage } from './utils';
+import {
+  dist,
+  getBBox,
+  isRgb,
+  isPointInPolygon,
+  isRgba,
+  toRgba,
+  isSet,
+  isString,
+  loadImage
+} from './utils';
 
 const EXTENSIONS = ['OES_standard_derivatives', 'OES_texture_float'];
 
@@ -89,6 +96,7 @@ const createScatterplot = ({
 } = {}) => {
   const pubSub = createPubSub();
   const scratch = new Float32Array(16);
+  const mousePosition = [0, 0];
 
   let background = toRgba(initialBackground, true);
   let canvas = initialCanvas;
@@ -102,13 +110,9 @@ const createScatterplot = ({
   let camera;
   let lasso;
   let scroll;
-  let mousePosition;
   let mousePressed;
   let mouseDown;
   let mouseDownShift = false;
-  let mouseDownTime;
-  let mouseDownX;
-  let mouseDownY;
   let numPoints = 0;
   let selection = [];
   let lassoPos = [];
@@ -134,21 +138,21 @@ const createScatterplot = ({
   let opacity = 1;
   let backgroundImage;
 
-  const getMousePos = () => {
-    mousePosition.flush();
-    return [mousePosition[0], mousePosition[1]];
-  };
+  // Get a copy of the current mouse position
+  const getMousePos = () => mousePosition.slice();
 
-  const getMouseGlPos = ([x, y] = getMousePos()) => {
-    // Get relative WebGL position
-    const xGl = -1 + (x / width) * 2;
-    const yGl = 1 + (y / height) * -2;
+  const getNdcX = x => -1 + (x / width) * 2;
 
-    return [xGl, yGl];
-  };
+  const getNdcY = y => 1 + (y / height) * -2;
 
-  const getScatterGlPos = ([x, y] = getMousePos()) => {
-    const [xGl, yGl] = getMouseGlPos([x, y]);
+  // Get relative WebGL position
+  const getMouseGlPos = () => [
+    getNdcX(mousePosition[0]),
+    getNdcY(mousePosition[1])
+  ];
+
+  const getScatterGlPos = () => {
+    const [xGl, yGl] = getMouseGlPos();
 
     // Homogeneous vector
     const v = [xGl, yGl, 1, 1];
@@ -221,71 +225,31 @@ const createScatterplot = ({
   };
   const lassoDb = withThrottle(lassoExtend, LASSO_MIN_DELAY, true);
 
-  const getBBox = pos => {
-    let xMin = Infinity;
-    let xMax = -Infinity;
-    let yMin = Infinity;
-    let yMax = -Infinity;
-
-    for (let i = 0; i < pos.length; i += 2) {
-      xMin = pos[i] < xMin ? pos[i] : xMin;
-      xMax = pos[i] > xMax ? pos[i] : xMax;
-      yMin = pos[i + 1] < yMin ? pos[i + 1] : yMin;
-      yMax = pos[i + 1] > yMax ? pos[i + 1] : yMax;
-    }
-
-    return [xMin, yMin, xMax, yMax];
-  };
-
-  /**
-   * From: https://wrf.ecse.rpi.edu//Research/Short_Notes/pnpoly.html
-   * @param   {Array}  point  Tuple of the form `[x,y]` to be tested.
-   * @param   {Array}  polygon  1D list of vertices defining the polygon.
-   * @return  {boolean}  If `true` point lies within the polygon.
-   */
-  const pointInPoly = ([px, py] = [], polygon) => {
-    let x1;
-    let y1;
-    let x2;
-    let y2;
-    let isWithin = false;
-    for (let i = 0, j = polygon.length - 2; i < polygon.length; i += 2) {
-      x1 = polygon[i];
-      y1 = polygon[i + 1];
-      x2 = polygon[j];
-      y2 = polygon[j + 1];
-      if (y1 > py !== y2 > py && px < ((x2 - x1) * (py - y1)) / (y2 - y1) + x1)
-        isWithin = !isWithin;
-      j = i;
-    }
-    return isWithin;
-  };
-
   const findPointsInLasso = lassoPolygon => {
     // get the bounding box of the lasso selection...
     const bBox = getBBox(lassoPolygon);
     // ...to efficiently preselect potentially selected points
     const pointsInBBox = searchIndex.range(...bBox);
     // next we test each point in the bounding box if it is in the polygon too
-    const ptsInPoly = [];
+    const pointsInPolygon = new Set();
     pointsInBBox.forEach(pointIdx => {
-      if (pointInPoly(searchIndex.points[pointIdx], lassoPolygon))
-        ptsInPoly.push(pointIdx);
+      if (isPointInPolygon(searchIndex.points[pointIdx], lassoPolygon))
+        pointsInPolygon.add(pointIdx);
     });
 
-    return ptsInPoly;
+    return pointsInPolygon;
   };
 
   const deselect = () => {
-    if (selection.length) {
+    if (selection.size) {
       pubSub.publish('deselect');
-      selection = [];
+      selection = new Set();
       drawRaf(); // eslint-disable-line no-use-before-define
     }
   };
 
   const select = points => {
-    selection = points;
+    selection = isSet(points) ? points : new Set(points);
 
     highlightIndexBuffer({
       usage: 'dynamic',
@@ -303,9 +267,9 @@ const createScatterplot = ({
 
   const lassoEnd = () => {
     // const t0 = performance.now();
-    const ptsInLasso = findPointsInLasso(lassoScatterPos);
-    // console.log(`found ${ptsInLasso.length} in ${performance.now() - t0} msec`);
-    select(ptsInLasso);
+    const pointsInLasso = findPointsInLasso(lassoScatterPos);
+    // console.log(`found ${pointsInLasso.length} in ${performance.now() - t0} msec`);
+    select(pointsInLasso);
     lassoPos = [];
     lassoScatterPos = [];
     lassoPrevMousePos = undefined;
@@ -315,18 +279,9 @@ const createScatterplot = ({
   const mouseDownHandler = event => {
     mouseDown = true;
     mouseDownShift = event.shiftKey;
-    mouseDownTime = performance.now();
 
     // fix camera
     if (mouseDownShift) camera.config({ isFixed: true });
-
-    // Get the mouse cursor position
-    mousePosition.flush();
-
-    // Get relative webgl coordinates
-    const { 0: x, 1: y } = mousePosition;
-    mouseDownX = -1 + (x / width) * 2;
-    mouseDownY = 1 + (y / height) * -2;
   };
 
   const mouseUpHandler = () => {
@@ -336,14 +291,24 @@ const createScatterplot = ({
       mouseDownShift = false;
       camera.config({ isFixed: false });
       lassoEnd();
-    } else if (performance.now() - mouseDownTime <= CLICK_DELAY) {
-      const clostestPoint = raycast(mouseDownX, mouseDownY);
-      if (clostestPoint >= 0) select([clostestPoint]);
-      else deselect();
     }
   };
 
-  const mouseMoveHandler = () => {
+  const mouseClickHandler = event => {
+    const clostestPoint = raycast(
+      getNdcX(event.clientX),
+      getNdcY(event.clientY)
+    );
+    if (clostestPoint >= 0) select(new Set([clostestPoint]));
+  };
+
+  const mouseDblClickHandler = () => {
+    deselect();
+  };
+
+  const mouseMoveHandler = event => {
+    mousePosition[0] = event.clientX;
+    mousePosition[1] = event.clientY;
     if (mouseDown) drawRaf(); // eslint-disable-line no-use-before-define
     if (mouseDownShift) lassoDb();
   };
@@ -375,7 +340,6 @@ const createScatterplot = ({
     regl = undefined;
     lasso.destroy();
     scroll.dispose();
-    mousePosition.dispose();
     mousePressed.dispose();
     pubSub.clear();
   };
@@ -549,7 +513,7 @@ const createScatterplot = ({
   );
 
   const drawSelectedPoint = () => {
-    const numOutlinedPoints = selection.length;
+    const numOutlinedPoints = selection.size;
 
     // Draw outer outline
     drawPoints(
@@ -654,7 +618,7 @@ const createScatterplot = ({
 
     // Draw the points
     drawPointBodies();
-    if (selection.length) drawSelectedPoint();
+    if (selection.size) drawSelectedPoint();
 
     lasso.draw();
 
@@ -779,11 +743,6 @@ const createScatterplot = ({
     }
   };
 
-  updateRatio();
-
-  window.addEventListener('keyup', keyUpHandler, false);
-  window.addEventListener('blur', mouseUpHandler, false);
-
   const initCamera = () => {
     camera = canvasCamera2d(canvas);
 
@@ -792,20 +751,16 @@ const createScatterplot = ({
   };
 
   const init = () => {
+    updateRatio();
     initCamera();
 
     lasso = createLine(regl, { width: 3, is2d: true });
     scroll = createScroll(canvas);
-    mousePosition = createMousePos(canvas);
-    mousePressed = createMousePressed(canvas);
 
     // Event listeners
     scroll.on('scroll', () => {
       drawRaf(); // eslint-disable-line no-use-before-define
     });
-    mousePosition.on('move', mouseMoveHandler);
-    mousePressed.on('down', mouseDownHandler);
-    mousePressed.on('up', mouseUpHandler);
 
     // Buffers
     stateIndexBuffer = regl.buffer();
@@ -815,6 +770,15 @@ const createScatterplot = ({
 
     // Set dimensions
     attr({ width, height });
+
+    // Setup event handler
+    window.addEventListener('keyup', keyUpHandler, false);
+    window.addEventListener('blur', mouseUpHandler, false);
+    window.addEventListener('mousedown', mouseDownHandler, false);
+    window.addEventListener('click', mouseClickHandler, false);
+    window.addEventListener('dblclick', mouseDblClickHandler, false);
+    window.addEventListener('mouseup', mouseUpHandler, false);
+    window.addEventListener('mousemove', mouseMoveHandler, false);
   };
 
   init(canvas);
