@@ -114,7 +114,6 @@ const createScatterplot = ({
   let camera;
   let lasso;
   let scroll;
-  let mousePressed;
   let mouseDown;
   let mouseDownShift = false;
   let numPoints = 0;
@@ -293,6 +292,8 @@ const createScatterplot = ({
   };
 
   const mouseDownHandler = event => {
+    if (!isInit) return;
+
     mouseDown = true;
     mouseDownShift = event.shiftKey;
 
@@ -301,6 +302,8 @@ const createScatterplot = ({
   };
 
   const mouseUpHandler = () => {
+    if (!isInit) return;
+
     mouseDown = false;
 
     if (mouseDownShift) {
@@ -311,6 +314,8 @@ const createScatterplot = ({
   };
 
   const mouseClickHandler = () => {
+    if (!isInit) return;
+
     const clostestPoint = raycast();
     if (clostestPoint >= 0) select(new Set([clostestPoint]));
   };
@@ -320,8 +325,12 @@ const createScatterplot = ({
   };
 
   const mouseMoveHandler = event => {
-    mousePosition[0] = event.clientX;
-    mousePosition[1] = event.clientY;
+    if (!isInit) return;
+
+    const rect = canvas.getBoundingClientRect();
+
+    mousePosition[0] = event.clientX - rect.left;
+    mousePosition[1] = event.clientY - rect.top;
 
     let needsRedraw = mouseDown;
 
@@ -342,6 +351,8 @@ const createScatterplot = ({
   };
 
   const blurHandler = () => {
+    if (!isInit) return;
+
     hoveredPoint = undefined;
     mouseUpHandler();
     drawRaf(); // eslint-disable-line no-use-before-define
@@ -366,16 +377,6 @@ const createScatterplot = ({
       shape: [colorTexRes, colorTexRes, 4],
       type: 'float'
     });
-  };
-
-  const destroy = () => {
-    canvas = undefined;
-    camera = undefined;
-    regl = undefined;
-    lasso.destroy();
-    scroll.dispose();
-    mousePressed.dispose();
-    pubSub.clear();
   };
 
   const updateViewAspectRatio = () => {
@@ -632,6 +633,8 @@ const createScatterplot = ({
   };
 
   const setPoints = newPoints => {
+    isInit = false;
+
     numPoints = newPoints.length;
 
     stateTex = createStateTexture(newPoints);
@@ -836,6 +839,22 @@ const createScatterplot = ({
     window.addEventListener('dblclick', mouseDblClickHandler, false);
     window.addEventListener('mouseup', mouseUpHandler, false);
     window.addEventListener('mousemove', mouseMoveHandler, false);
+  };
+
+  const destroy = () => {
+    window.removeEventListener('keyup', keyUpHandler, false);
+    window.removeEventListener('blur', blurHandler, false);
+    window.removeEventListener('mousedown', mouseDownHandler, false);
+    window.removeEventListener('click', mouseClickHandler, false);
+    window.removeEventListener('dblclick', mouseDblClickHandler, false);
+    window.removeEventListener('mouseup', mouseUpHandler, false);
+    window.removeEventListener('mousemove', mouseMoveHandler, false);
+    canvas = undefined;
+    camera = undefined;
+    regl = undefined;
+    lasso.destroy();
+    scroll.dispose();
+    pubSub.clear();
   };
 
   init(canvas);
