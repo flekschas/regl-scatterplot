@@ -118,13 +118,6 @@ export const isPointInPolygon = ([px, py] = [], polygon) => {
 };
 
 /**
- * Tests if a variable is a set
- * @param   {*}  s  Variable to be tested
- * @return  {boolean}  If `true` variable is a set
- */
-export const isSet = s => s instanceof Set;
-
-/**
  * Tests if a variable is a string
  * @param   {*}  s  Variable to be tested
  * @return  {boolean}  If `true` variable is a string

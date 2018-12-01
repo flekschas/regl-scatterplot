@@ -43,7 +43,6 @@ import {
   isPointInPolygon,
   isRgba,
   toRgba,
-  isSet,
   isString,
   loadImage,
   max,
@@ -114,10 +113,9 @@ const createScatterplot = ({
   let camera;
   let lasso;
   let scroll;
-  let mouseDown;
   let mouseDownShift = false;
   let numPoints = 0;
-  let selection = new Set();
+  let selection = [];
   let lassoPos = [];
   let lassoScatterPos = [];
   let lassoPrevMousePos;
@@ -248,25 +246,25 @@ const createScatterplot = ({
     // ...to efficiently preselect potentially selected points
     const pointsInBBox = searchIndex.range(...bBox);
     // next we test each point in the bounding box if it is in the polygon too
-    const pointsInPolygon = new Set();
+    const pointsInPolygon = [];
     pointsInBBox.forEach(pointIdx => {
       if (isPointInPolygon(searchIndex.points[pointIdx], lassoPolygon))
-        pointsInPolygon.add(pointIdx);
+        pointsInPolygon.push(pointIdx);
     });
 
     return pointsInPolygon;
   };
 
   const deselect = () => {
-    if (selection.size) {
+    if (selection.length) {
       pubSub.publish('deselect');
-      selection = new Set();
+      selection = [];
       drawRaf(); // eslint-disable-line no-use-before-define
     }
   };
 
   const select = points => {
-    selection = isSet(points) ? points : new Set(points);
+    selection = points;
 
     selectedPointsIndexBuffer({
       usage: 'dynamic',
@@ -295,7 +293,6 @@ const createScatterplot = ({
   const mouseDownHandler = event => {
     if (!isInit) return;
 
-    mouseDown = true;
     mouseDownShift = event.shiftKey;
 
     // fix camera
@@ -304,8 +301,6 @@ const createScatterplot = ({
 
   const mouseUpHandler = () => {
     if (!isInit) return;
-
-    mouseDown = false;
 
     if (mouseDownShift) {
       mouseDownShift = false;
@@ -333,25 +328,13 @@ const createScatterplot = ({
     mousePosition[0] = event.clientX - rect.left;
     mousePosition[1] = event.clientY - rect.top;
 
-    let needsRedraw = mouseDown;
-
     // Only ray cast if the mouse cursor is inside
-    if (isMouseInCanvas) {
+    if (isMouseInCanvas && !mouseDownShift) {
       const clostestPoint = raycast();
-      if (clostestPoint >= 0) {
-        needsRedraw = true;
-        hoveredPoint = clostestPoint;
-        hoveredPointIndexBuffer.subdata([clostestPoint]);
-        pubSub.publish('hover', clostestPoint);
-      } else {
-        needsRedraw = needsRedraw || !!hoveredPoint;
-        hoveredPoint = undefined;
-      }
+      hover(clostestPoint); // eslint-disable-line no-use-before-define
     }
 
     if (mouseDownShift) lassoDb();
-
-    if (needsRedraw) drawRaf(); // eslint-disable-line no-use-before-define
   };
 
   const blurHandler = () => {
@@ -565,7 +548,7 @@ const createScatterplot = ({
   );
 
   const drawSelectedPoint = () => {
-    const numOutlinedPoints = selection.size;
+    const numOutlinedPoints = selection.length;
 
     // Draw outer outline
     drawPoints(
@@ -672,7 +655,7 @@ const createScatterplot = ({
     // Draw the points
     drawPointBodies();
     if (hoveredPoint >= 0) drawHoveredPoint();
-    if (selection.size) drawSelectedPoint();
+    if (selection.length) drawSelectedPoint();
 
     lasso.draw();
 
@@ -787,6 +770,22 @@ const createScatterplot = ({
     return undefined;
   };
 
+  const hover = point => {
+    let needsRedraw = false;
+
+    if (point >= 0) {
+      needsRedraw = true;
+      hoveredPoint = point;
+      hoveredPointIndexBuffer.subdata([point]);
+      pubSub.publish('hover', point);
+    } else {
+      needsRedraw = hoveredPoint;
+      hoveredPoint = undefined;
+    }
+
+    if (needsRedraw) drawRaf();
+  };
+
   const reset = () => {
     if (initialView) camera.set(mat4.clone(initialView));
     else camera.lookAt([...initialTarget], initialDistance, initialRotation);
@@ -808,7 +807,7 @@ const createScatterplot = ({
   };
 
   const mouseLeaveCanvasHandler = () => {
-    hoveredPoint = undefined;
+    hover();
     isMouseInCanvas = false;
     drawRaf();
   };
@@ -889,6 +888,7 @@ const createScatterplot = ({
     deselect,
     destroy,
     draw: drawRaf,
+    hover,
     refresh,
     reset: withDraw(reset),
     select,
