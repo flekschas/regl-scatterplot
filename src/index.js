@@ -117,7 +117,7 @@ const createScatterplot = ({
   let mouseDown;
   let mouseDownShift = false;
   let numPoints = 0;
-  let selection = [];
+  let selection = new Set();
   let lassoPos = [];
   let lassoScatterPos = [];
   let lassoPrevMousePos;
@@ -835,20 +835,20 @@ const createScatterplot = ({
     window.addEventListener('keyup', keyUpHandler, false);
     window.addEventListener('blur', blurHandler, false);
     window.addEventListener('mousedown', mouseDownHandler, false);
-    window.addEventListener('click', mouseClickHandler, false);
-    window.addEventListener('dblclick', mouseDblClickHandler, false);
     window.addEventListener('mouseup', mouseUpHandler, false);
     window.addEventListener('mousemove', mouseMoveHandler, false);
+    canvas.addEventListener('click', mouseClickHandler, false);
+    canvas.addEventListener('dblclick', mouseDblClickHandler, false);
   };
 
   const destroy = () => {
     window.removeEventListener('keyup', keyUpHandler, false);
     window.removeEventListener('blur', blurHandler, false);
     window.removeEventListener('mousedown', mouseDownHandler, false);
-    window.removeEventListener('click', mouseClickHandler, false);
-    window.removeEventListener('dblclick', mouseDblClickHandler, false);
     window.removeEventListener('mouseup', mouseUpHandler, false);
     window.removeEventListener('mousemove', mouseMoveHandler, false);
+    canvas.removeEventListener('click', mouseClickHandler, false);
+    canvas.removeEventListener('dblclick', mouseDblClickHandler, false);
     canvas = undefined;
     camera = undefined;
     regl = undefined;
