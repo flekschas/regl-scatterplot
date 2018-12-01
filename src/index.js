@@ -144,6 +144,7 @@ const createScatterplot = ({
   let backgroundImage;
 
   let hoveredPoint;
+  let isMouseInCanvas = false;
 
   // Get a copy of the current mouse position
   const getMousePos = () => mousePosition.slice();
@@ -334,15 +335,18 @@ const createScatterplot = ({
 
     let needsRedraw = mouseDown;
 
-    const clostestPoint = raycast();
-    if (clostestPoint >= 0) {
-      needsRedraw = true;
-      hoveredPoint = clostestPoint;
-      hoveredPointIndexBuffer.subdata([clostestPoint]);
-      pubSub.publish('hover', clostestPoint);
-    } else {
-      needsRedraw = needsRedraw || !!hoveredPoint;
-      hoveredPoint = undefined;
+    // Only ray cast if the mouse cursor is inside
+    if (isMouseInCanvas) {
+      const clostestPoint = raycast();
+      if (clostestPoint >= 0) {
+        needsRedraw = true;
+        hoveredPoint = clostestPoint;
+        hoveredPointIndexBuffer.subdata([clostestPoint]);
+        pubSub.publish('hover', clostestPoint);
+      } else {
+        needsRedraw = needsRedraw || !!hoveredPoint;
+        hoveredPoint = undefined;
+      }
     }
 
     if (mouseDownShift) lassoDb();
@@ -354,6 +358,7 @@ const createScatterplot = ({
     if (!isInit) return;
 
     hoveredPoint = undefined;
+    isMouseInCanvas = false;
     mouseUpHandler();
     drawRaf(); // eslint-disable-line no-use-before-define
   };
@@ -798,6 +803,16 @@ const createScatterplot = ({
     }
   };
 
+  const mouseEnterCanvasHandler = () => {
+    isMouseInCanvas = true;
+  };
+
+  const mouseLeaveCanvasHandler = () => {
+    hoveredPoint = undefined;
+    isMouseInCanvas = false;
+    drawRaf();
+  };
+
   const initCamera = () => {
     camera = canvasCamera2d(canvas);
 
@@ -837,6 +852,8 @@ const createScatterplot = ({
     window.addEventListener('mousedown', mouseDownHandler, false);
     window.addEventListener('mouseup', mouseUpHandler, false);
     window.addEventListener('mousemove', mouseMoveHandler, false);
+    canvas.addEventListener('mouseenter', mouseEnterCanvasHandler, false);
+    canvas.addEventListener('mouseleave', mouseLeaveCanvasHandler, false);
     canvas.addEventListener('click', mouseClickHandler, false);
     canvas.addEventListener('dblclick', mouseDblClickHandler, false);
   };
@@ -847,6 +864,8 @@ const createScatterplot = ({
     window.removeEventListener('mousedown', mouseDownHandler, false);
     window.removeEventListener('mouseup', mouseUpHandler, false);
     window.removeEventListener('mousemove', mouseMoveHandler, false);
+    canvas.removeEventListener('mouseenter', mouseEnterCanvasHandler, false);
+    canvas.removeEventListener('mouseleave', mouseLeaveCanvasHandler, false);
     canvas.removeEventListener('click', mouseClickHandler, false);
     canvas.removeEventListener('dblclick', mouseDblClickHandler, false);
     canvas = undefined;
