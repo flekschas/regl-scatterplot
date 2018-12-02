@@ -3,15 +3,29 @@ import createOriginalRegl from 'regl';
 import { GL_EXTENSIONS } from './constants';
 
 /**
- * L2 distance between a pair of 2D points
- * @param   {number}  x1  X coordinate of the first point
- * @param   {number}  y1  Y coordinate of the first point
- * @param   {number}  x2  X coordinate of the second point
- * @param   {number}  y2  Y coordinate of the first point
- * @return  {number}  L2 distance
+ * Get the max value of an array. helper method to be used with `Array.reduce()`.
+ * @param   {number}  max  Accumulator holding the max value.
+ * @param   {number}  x  Current value.
+ * @return  {number}  Max value.
  */
-export const dist = (x1, y1, x2, y2) =>
-  Math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2);
+export const arrayMax = (max, x) => (max > x ? max : x);
+
+/**
+ * Check if all GL extensions are enabled and warn otherwise
+ * @param   {function}  regl  Regl instance to be tested
+ * @return  {function}  Returns the Regl instance itself
+ */
+export const checkReglExtensions = regl => {
+  if (!regl) return regl;
+  GL_EXTENSIONS.forEach(EXTENSION => {
+    if (!regl.hasExtension(EXTENSION)) {
+      console.warn(
+        `WebGL: ${EXTENSION} extension not supported. Scatterplot might not render properly`
+      );
+    }
+  });
+  return regl;
+};
 
 /**
  * Create a new Regl instance with `GL_EXTENSIONS` enables
@@ -38,21 +52,15 @@ export const createRegl = canvas => {
 };
 
 /**
- * Check if all GL extensions are enabled and warn otherwise
- * @param   {function}  regl  Regl instance to be tested
- * @return  {function}  Returns the Regl instance itself
+ * L2 distance between a pair of 2D points
+ * @param   {number}  x1  X coordinate of the first point
+ * @param   {number}  y1  Y coordinate of the first point
+ * @param   {number}  x2  X coordinate of the second point
+ * @param   {number}  y2  Y coordinate of the first point
+ * @return  {number}  L2 distance
  */
-export const checkReglExtensions = regl => {
-  if (!regl) return regl;
-  GL_EXTENSIONS.forEach(EXTENSION => {
-    if (!regl.hasExtension(EXTENSION)) {
-      console.warn(
-        `WebGL: ${EXTENSION} extension not supported. Scatterplot might not render properly`
-      );
-    }
-  });
-  return regl;
-};
+export const dist = (x1, y1, x2, y2) =>
+  Math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2);
 
 /**
  * Get the bounding box of a set of 2D positions
@@ -206,14 +214,6 @@ export const isRgb = rgb =>
  */
 export const isRgba = rgba =>
   rgba.length === 4 && (isNormFloatArray(rgba) || isUint8Array(rgba));
-
-/**
- * Get the max value of an array. helper method to be used with `Array.reduce()`.
- * @param   {number}  max  Accumulator holding the max value.
- * @param   {number}  x  Current value.
- * @return  {number}  Max value.
- */
-export const arrayMax = (max, x) => (max > x ? max : x);
 
 /**
  * Fast version of `Math.max`. Based on
