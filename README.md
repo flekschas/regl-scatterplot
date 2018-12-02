@@ -47,7 +47,7 @@ See a complete example at [example/index.js](example/index.js).
 
 **Returns:** a new scatterplot instance.
 
-**Options:**
+**Options:** is an object that accepts the following properties:
 
 - `regl` a Regl instance to be used for rendering.
 - `background` background color of the scatterplot.
@@ -65,9 +65,20 @@ See a complete example at [example/index.js](example/index.js).
 
 #### `const regl = createRegl(canvas)`
 
-**Returns:** a new Regl instance with approriate extensions being enabled.
+**Returns:** a new Regl instance with appropriate extensions being enabled.
 
 **Canvas:** the canvas object on which the scatterplot will be rendered on.
+
+
+#### `const texture = createTextureFromUrl(regl, url, isCrossOrigin)`
+
+**Returns:** a new [Regl texture](https://github.com/regl-project/regl/blob/gh-pages/API.md#textures) from a remote image.
+
+**regl:** the Regl instance associated to your scatterplot instance. Either use [`createRegl()`](#const-regl--createreglcanvas) or `scatterplot.regl`;
+
+**url:** the URL to an image.
+
+**isCrossOrigin:** if `url` is pointing to another origin `isCrossOrigin` must be set to `true`.
 
 
 ### Properties
@@ -76,6 +87,10 @@ See a complete example at [example/index.js](example/index.js).
 
 The canvas element on which the scatterplot is rendered.
 
+#### `scatterplot.regl`
+
+The Regl instance which renderes the scatterplot.
+
 #### `scatterplot.version`
 
 The version number of the scatterplot.
@@ -83,9 +98,40 @@ The version number of the scatterplot.
 
 ### Methods
 
-#### `scatterplot.draw()`
+#### `scatterplot.draw(points)`
+
+Sets and draws `points`, which must be an array of points where a point is interpreted as a quadruple of form `[x, y, category, value]`.
+
+**Examples:**
+
+```javascript
+
+const points = [
+  [
+    // The X position
+    2,
+    // The Y position
+    1,
+    // The category, which defaults to `0` if `undefined`
+    0,
+    // Some value, which defaults to `0` if `undefined`
+    0.5
+  ]
+];
+
+scatterplot.draw(points);
+
+// You can now do something else like changing the point size etc.
+
+// Lets redraw the scatterplot. Since `draw` is caching the points you don't
+// have to specify the points here again if they didn't change.
+scatterplot.draw();
 
 
+// Lets actively unset the points. Since `draw()` assumes that you want to
+// redraw existing points you have to actively pass in an empty array
+scatterplot.draw([]);
+```
 
 #### `scatterplot.attr(arg)`
 
@@ -93,10 +139,11 @@ Setting or getting attributes. If `arg` is a string then one of the attributes l
 
 **Attributes:**
 
-| Name   | Type   | Example | Nullifiable |
-|--------|--------|---------|-------------|
-| width  | number | 300     | false       |
-| height | number | 200     | false       |
+| Name        | Type   | Example | Nullifiable |
+|-------------|--------|---------|-------------|
+| width       | number | 300     | false       |
+| height      | number | 200     | false       |
+| aspectRatio | number | 1.0     | false       |
 
 **Examples:**
 
@@ -106,6 +153,14 @@ scatterplot.attr({ width: 300, height: 200 });
 
 // get width
 const width = scatterplot.attr('width');
+
+// Set the aspect ratio of the scatterplot. This aspect ratio is referring to
+// your data source and **not** the aspect ratio of the canvas element! By
+// default it is assumed that your data us following a 1:1 ratio and this ratio
+// is preserved even if your canvas element has some other aspect ratio. But if
+// you wanted you could provide data that's going from [0,2] in x and [0,1] in y
+// in which case you'd have to set the aspect ratio as follows to `2`.
+scatterplot.attr({ aspectRatio: 2.0 });
 ```
 
 Nullifiable: an attribute is considered _nullifiable_ if you can unset it. Attributes that are not _nullifiable_ can be used, i.e., if you call `scatterplot.attr({ width: 0 });` will not change the width as `0` is interpreted as a falsey value.
@@ -116,22 +171,25 @@ Setting or getting styles. If `arg` is a string then one of the attributes liste
 
 **Attributes:**
 
-| Name              | Type                         | Default          | Constraints                                          | Nullifiable |
-|-------------------|------------------------------|------------------|------------------------------------------------------|-------------|
-| background        | string or array              | rgba(0, 0, 0, 1) | hex, rgb, rgba                                       | `false`     |
-| backgroundImage   | string or object or function | `undefined`      | URL, `{ src: URL, crossOrigin: BOOL }`, regl texture | `true`      |
-| colorBy           | string                       | `undefined`      | `category` or `value`                                | `true`      |
-| colors            | array                        | _see below_      | list of hex, rgb, rgba                               | `false`     |
-| opacity           | number                       | `1`              | > 0                                                  | `false`     |
-| pointOutlineWidth | number                       | `2`              | >= 0                                                 | `false`     |
-| pointSize         | number                       | `6`              | > 0                                                  | `false`     |
-| pointSizeSelected | number                       | `2`              | >= 0                                                 | `false`     |
+| Name              | Type            | Default          | Constraints            | Nullifiable |
+|-------------------|-----------------|------------------|------------------------|-------------|
+| background        | string or array | rgba(0, 0, 0, 1) | hex, rgb, rgba         | `false`     |
+| backgroundImage   | function        | `undefined`      | Regl texture           | `true`      |
+| colorBy           | string          | `undefined`      | `category` or `value`  | `true`      |
+| colors            | array           | _see below_      | list of hex, rgb, rgba | `false`     |
+| opacity           | number          | `1`              | > 0                    | `false`     |
+| pointOutlineWidth | number          | `2`              | >= 0                   | `false`     |
+| pointSize         | number          | `6`              | > 0                    | `false`     |
+| pointSizeSelected | number          | `2`              | >= 0                   | `false`     |
 
 **Notes:**
 
 - The background of the scatterplot is transparent, i.e., you have to control
   the background with CSS! `background` is used when drawing the
   outline of selected points to simulate the padded border only.
+
+- The background image must be a Regl texture function. To easily set a remote
+  image as the background please use [`createTextureFromUrl`](#const-texture--createTextureFromUrlregl-url-isCrossOrigin).
 
 - The scatterplot stores 4 colors per color representing 4 states, representing:
 
