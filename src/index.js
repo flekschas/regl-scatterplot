@@ -13,39 +13,39 @@ import POINT_FS from './point.fs';
 import POINT_VS from './point.vs';
 
 import {
-  LASSO_MIN_DELAY,
-  LASSO_MIN_DIST,
-  COLOR_NORMAL_IDX,
   COLOR_ACTIVE_IDX,
-  COLOR_HOVER_IDX,
-  DEFAULT_COLOR_BG,
   COLOR_BG_IDX,
+  COLOR_HOVER_IDX,
+  COLOR_NORMAL_IDX,
   COLOR_NUM_STATES,
+  DEFAULT_BACKGROUND_IMAGE,
+  DEFAULT_COLOR_BG,
   DEFAULT_COLORS,
   DEFAULT_DATA_ASPECT_RATIO,
-  FLOAT_BYTES,
+  DEFAULT_DISTANCE,
+  DEFAULT_HEIGHT,
+  DEFAULT_POINT_OUTLINE_WIDTH,
   DEFAULT_POINT_SIZE,
   DEFAULT_POINT_SIZE_SELECTED,
-  DEFAULT_POINT_OUTLINE_WIDTH,
-  DEFAULT_WIDTH,
-  DEFAULT_HEIGHT,
-  DEFAULT_TARGET,
-  DEFAULT_DISTANCE,
   DEFAULT_ROTATION,
-  DEFAULT_VIEW
+  DEFAULT_TARGET,
+  DEFAULT_VIEW,
+  DEFAULT_WIDTH,
+  FLOAT_BYTES,
+  LASSO_MIN_DELAY,
+  LASSO_MIN_DIST
 } from './constants';
 
 import {
-  createRegl,
   checkReglExtensions,
+  createRegl,
+  createTextureFromUrl,
   dist,
   getBBox,
   isRgb,
   isPointInPolygon,
   isRgba,
   toRgba,
-  isString,
-  loadImage,
   max,
   min
 } from './utils';
@@ -53,6 +53,7 @@ import {
 const createScatterplot = ({
   regl: initialRegl,
   background: initialBackground = DEFAULT_COLOR_BG,
+  backgroundImage: initialBackgroundImage = DEFAULT_BACKGROUND_IMAGE,
   canvas: initialCanvas = document.createElement('canvas'),
   colors: initialColors = DEFAULT_COLORS,
   pointSize: initialPointSize = DEFAULT_POINT_SIZE,
@@ -70,6 +71,7 @@ const createScatterplot = ({
   const mousePosition = [0, 0];
 
   let background = toRgba(initialBackground, true);
+  let backgroundImage = initialBackgroundImage;
   let canvas = initialCanvas;
   let colors = initialColors;
   let width = initialWidth;
@@ -107,7 +109,6 @@ const createScatterplot = ({
   let isInit = false;
 
   let opacity = 1;
-  let backgroundImage;
 
   let hoveredPoint;
   let isMouseInCanvas = false;
@@ -618,7 +619,9 @@ const createScatterplot = ({
     // Update camera
     isViewChanged = camera.tick();
 
-    if (backgroundImage) drawBackgroundImage();
+    if (backgroundImage) {
+      drawBackgroundImage();
+    }
 
     // Draw the points
     drawPointBodies();
@@ -647,21 +650,8 @@ const createScatterplot = ({
 
   const setBackgroundImage = newBackgroundImage => {
     if (!newBackgroundImage) {
-      backgroundImage = newBackgroundImage;
-    } else if (isString(newBackgroundImage) || newBackgroundImage.src) {
-      const imgSrc = isString(newBackgroundImage)
-        ? newBackgroundImage
-        : newBackgroundImage.src;
-
-      loadImage(imgSrc, newBackgroundImage.crossOrigin)
-        .then(image => {
-          backgroundImage = regl.texture(image);
-          drawRaf();
-        })
-        .catch(error => {
-          console.error(`Could not load background image.`, error);
-        });
-    } else if (typeof newBackgroundImage === 'function') {
+      backgroundImage = null;
+    } else {
       backgroundImage = newBackgroundImage;
     }
   };
@@ -691,7 +681,7 @@ const createScatterplot = ({
     if (typeof arg === 'object') {
       const {
         background: newBackground = null,
-        backgroundImage: newBackgroundImage = null,
+        backgroundImage: newBackgroundImage = backgroundImage,
         colorBy: newColorBy = null,
         colors: newColors = null,
         opacity: newOpacity = null,
@@ -849,6 +839,9 @@ const createScatterplot = ({
     get canvas() {
       return canvas;
     },
+    get regl() {
+      return regl;
+    },
     get version() {
       return VERSION;
     },
@@ -868,4 +861,4 @@ const createScatterplot = ({
 
 export default createScatterplot;
 
-export { createRegl };
+export { createRegl, createTextureFromUrl };

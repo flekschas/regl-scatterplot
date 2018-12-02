@@ -42,3 +42,6 @@ export const DEFAULT_VIEW = new Float32Array([
   0, 0, 1, 0,
   0, 0, 0, 1
 ]);
+
+// Default background image
+export const DEFAULT_BACKGROUND_IMAGE = null;

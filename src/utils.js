@@ -120,6 +120,25 @@ export const loadImage = (src, isCrossOrigin = false) =>
   });
 
 /**
+ * Create a Regl texture from an URL.
+ * @param   {function}  regl  Regl instance used for creating the texture.
+ * @param   {string}  url  Source URL of the image.
+ * @param   {boolean}  isCrossOrigin  If `true` allow loading image from a
+ *   source of another origin.
+ * @return  {object}  Promise resolving to the texture object.
+ */
+export const createTextureFromUrl = (regl, url, isCrossOrigin = false) =>
+  new Promise((resolve, reject) => {
+    loadImage(url, isCrossOrigin)
+      .then(image => {
+        resolve(regl.texture(image));
+      })
+      .catch(error => {
+        reject(error);
+      });
+  });
+
+/**
  * Convert a HEX-encoded color to an RGBA-encoded color
  * @param   {string}  hex  HEX-encoded color string.
  * @param   {boolean}  isNormalize  If `true` the returned RGBA values will be
