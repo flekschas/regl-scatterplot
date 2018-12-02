@@ -1,3 +1,7 @@
+import createOriginalRegl from 'regl';
+
+import { GL_EXTENSIONS } from './constants';
+
 /**
  * L2 distance between a pair of 2D points
  * @param   {number}  x1  X coordinate of the first point
@@ -8,6 +12,37 @@
  */
 export const dist = (x1, y1, x2, y2) =>
   Math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2);
+
+export const createRegl = canvas => {
+  const gl = canvas.getContext('webgl');
+  const extensions = [];
+
+  // Needed to run the tests properly as the headless-gl doesn't support all
+  // extensions, which is fine for the functional tests.
+  GL_EXTENSIONS.forEach(EXTENSION => {
+    if (gl.getExtension(EXTENSION)) {
+      extensions.push(EXTENSION);
+    } else {
+      console.warn(
+        `WebGL: ${EXTENSION} extension not supported. Scatterplot might not render properly`
+      );
+    }
+  });
+
+  return createOriginalRegl({ gl, extensions });
+};
+
+export const checkReglExtensions = regl => {
+  if (!regl) return regl;
+  GL_EXTENSIONS.forEach(EXTENSION => {
+    if (!regl.hasExtension(EXTENSION)) {
+      console.warn(
+        `WebGL: ${EXTENSION} extension not supported. Scatterplot might not render properly`
+      );
+    }
+  });
+  return regl;
+};
 
 export const getBBox = pos => {
   let xMin = Infinity;

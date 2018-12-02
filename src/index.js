@@ -1,7 +1,6 @@
 import canvasCamera2d from 'canvas-camera-2d';
 import KDBush from 'kdbush';
 import createPubSub from 'pub-sub-es';
-import createRegl from 'regl';
 import withThrottle from 'lodash-es/throttle';
 import withRaf from 'with-raf';
 import { mat4, vec4 } from 'gl-matrix';
@@ -19,24 +18,26 @@ import {
   COLOR_NORMAL_IDX,
   COLOR_ACTIVE_IDX,
   COLOR_HOVER_IDX,
-  COLOR_BG,
+  DEFAULT_COLOR_BG,
   COLOR_BG_IDX,
   COLOR_NUM_STATES,
-  COLORS,
-  DATA_ASPECT_RATIO,
+  DEFAULT_COLORS,
+  DEFAULT_DATA_ASPECT_RATIO,
   FLOAT_BYTES,
-  POINT_SIZE,
-  POINT_SIZE_SELECTED,
-  POINT_OUTLINE_WIDTH,
-  WIDTH,
-  HEIGHT,
-  TARGET,
-  DISTANCE,
-  ROTATION,
-  VIEW
-} from './defaults';
+  DEFAULT_POINT_SIZE,
+  DEFAULT_POINT_SIZE_SELECTED,
+  DEFAULT_POINT_OUTLINE_WIDTH,
+  DEFAULT_WIDTH,
+  DEFAULT_HEIGHT,
+  DEFAULT_TARGET,
+  DEFAULT_DISTANCE,
+  DEFAULT_ROTATION,
+  DEFAULT_VIEW
+} from './constants';
 
 import {
+  createRegl,
+  checkReglExtensions,
   dist,
   getBBox,
   isRgb,
@@ -49,53 +50,20 @@ import {
   min
 } from './utils';
 
-const EXTENSIONS = ['OES_standard_derivatives', 'OES_texture_float'];
-
-const createOwnRegl = canvas => {
-  const gl = canvas.getContext('webgl');
-  const extensions = [];
-
-  // Needed to run the tests properly as the headless-gl doesn't support all
-  // extensions, which is fine for the functional tests.
-  EXTENSIONS.forEach(EXTENSION => {
-    if (gl.getExtension(EXTENSION)) {
-      extensions.push(EXTENSION);
-    } else {
-      console.warn(
-        `WebGL: ${EXTENSION} extension not supported. Scatterplot might not render properly`
-      );
-    }
-  });
-
-  return createRegl({ gl, extensions });
-};
-
-const checkReglExtensions = regl => {
-  if (!regl) return regl;
-  EXTENSIONS.forEach(EXTENSION => {
-    if (!regl.hasExtension(EXTENSION)) {
-      console.warn(
-        `WebGL: ${EXTENSION} extension not supported. Scatterplot might not render properly`
-      );
-    }
-  });
-  return regl;
-};
-
 const createScatterplot = ({
   regl: initialRegl,
-  background: initialBackground = COLOR_BG,
+  background: initialBackground = DEFAULT_COLOR_BG,
   canvas: initialCanvas = document.createElement('canvas'),
-  colors: initialColors = COLORS,
-  pointSize: initialPointSize = POINT_SIZE,
-  pointSizeSelected: initialPointSizeSelected = POINT_SIZE_SELECTED,
-  pointOutlineWidth: initialPointOutlineWidth = POINT_OUTLINE_WIDTH,
-  width: initialWidth = WIDTH,
-  height: initialHeight = HEIGHT,
-  target: initialTarget = TARGET,
-  distance: initialDistance = DISTANCE,
-  rotation: initialRotation = ROTATION,
-  view: initialView = VIEW
+  colors: initialColors = DEFAULT_COLORS,
+  pointSize: initialPointSize = DEFAULT_POINT_SIZE,
+  pointSizeSelected: initialPointSizeSelected = DEFAULT_POINT_SIZE_SELECTED,
+  pointOutlineWidth: initialPointOutlineWidth = DEFAULT_POINT_OUTLINE_WIDTH,
+  width: initialWidth = DEFAULT_WIDTH,
+  height: initialHeight = DEFAULT_HEIGHT,
+  target: initialTarget = DEFAULT_TARGET,
+  distance: initialDistance = DEFAULT_DISTANCE,
+  rotation: initialRotation = DEFAULT_ROTATION,
+  view: initialView = DEFAULT_VIEW
 } = {}) => {
   const pubSub = createPubSub();
   const scratch = new Float32Array(16);
@@ -109,7 +77,7 @@ const createScatterplot = ({
   let pointSize = initialPointSize;
   let pointSizeSelected = initialPointSizeSelected;
   let pointOutlineWidth = initialPointOutlineWidth;
-  let regl = checkReglExtensions(initialRegl) || createOwnRegl(initialCanvas);
+  let regl = checkReglExtensions(initialRegl) || createRegl(initialCanvas);
   let camera;
   let lasso;
   let scroll;
@@ -121,7 +89,7 @@ const createScatterplot = ({
   let lassoPrevMousePos;
   let searchIndex;
   let viewAspectRatio;
-  let dataAspectRatio = DATA_ASPECT_RATIO;
+  let dataAspectRatio = DEFAULT_DATA_ASPECT_RATIO;
   let projection;
   let model;
 
@@ -313,7 +281,7 @@ const createScatterplot = ({
     if (!isInit) return;
 
     const clostestPoint = raycast();
-    if (clostestPoint >= 0) select(new Set([clostestPoint]));
+    if (clostestPoint >= 0) select([clostestPoint]);
   };
 
   const mouseDblClickHandler = () => {
@@ -407,7 +375,7 @@ const createScatterplot = ({
     try {
       colorTex = createColorTexture();
     } catch (e) {
-      colors = COLORS;
+      colors = DEFAULT_COLORS;
       colorTex = createColorTexture();
       console.error('Invalid colors. Switching back to default colors.');
     }
@@ -900,4 +868,4 @@ const createScatterplot = ({
 
 export default createScatterplot;
 
-export { createOwnRegl as createRegl };
+export { createRegl };
