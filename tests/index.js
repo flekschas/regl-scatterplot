@@ -107,7 +107,7 @@ test('set aspectRatio via attr()', t => {
 
 /* --------------------------------- style() -------------------------------- */
 
-test('set background via style()', t => {
+test('style({ background })', t => {
   const scatterplot = createScatterplot({ canvas: createCanvas() });
 
   const backgroundHex = '#ff0000';
@@ -120,7 +120,7 @@ test('set background via style()', t => {
   );
 });
 
-test('set background image via style() with createTextureFromUrl()', async t => {
+test('style({ backgroundImage }) and createTextureFromUrl()', async t => {
   const canvas = createCanvas();
   const regl = createRegl(canvas);
   const scatterplot = createScatterplot({ canvas, regl });
@@ -148,7 +148,25 @@ test('set background image via style() with createTextureFromUrl()', async t => 
   );
 });
 
-test('set colors via style()', t => {
+test('style({ colorBy })', async t => {
+  const scatterplot = createScatterplot({ canvas: createCanvas() });
+
+  const colorBy = 'category';
+
+  scatterplot.style({ colorBy });
+
+  t.equal(
+    scatterplot.style('colorBy'),
+    colorBy,
+    `colorBy should be set to ${colorBy}`
+  );
+
+  scatterplot.style({ colorBy: null });
+
+  t.equal(scatterplot.style('colorBy'), null, 'colorBy should be nullifyable');
+});
+
+test('style({ colors })', t => {
   const canvas = createCanvas();
   const scatterplot = createScatterplot({ canvas });
 
@@ -222,5 +240,93 @@ test('set colors via style()', t => {
       .style('colors')
       .every((color, i) => color.every((c, j) => c === rgba2a[i][j])),
     'should create 8 normalized RGBAs from 2 non-normalized RGBAs'
+  );
+});
+
+test('style({ opacity })', async t => {
+  const scatterplot = createScatterplot({ canvas: createCanvas() });
+
+  const opacity = 0.5;
+
+  scatterplot.style({ opacity });
+
+  t.equal(
+    scatterplot.style('opacity'),
+    opacity,
+    `opacity should be set to ${opacity}`
+  );
+
+  scatterplot.style({ opacity: 0 });
+
+  t.equal(
+    scatterplot.style('opacity'),
+    opacity,
+    'opacity should not be nullifyable'
+  );
+});
+
+test('style({ pointOutlineWidth })', async t => {
+  const scatterplot = createScatterplot({ canvas: createCanvas() });
+
+  const pointOutlineWidth = 42;
+
+  scatterplot.style({ pointOutlineWidth });
+
+  t.equal(
+    scatterplot.style('pointOutlineWidth'),
+    pointOutlineWidth,
+    `pointOutlineWidth should be set to ${pointOutlineWidth}`
+  );
+
+  scatterplot.style({ pointOutlineWidth: 0 });
+
+  t.equal(
+    scatterplot.style('pointOutlineWidth'),
+    pointOutlineWidth,
+    'pointOutlineWidth should not be nullifyable'
+  );
+});
+
+test('style({ pointSize })', async t => {
+  const scatterplot = createScatterplot({ canvas: createCanvas() });
+
+  const pointSize = 42;
+
+  scatterplot.style({ pointSize });
+
+  t.equal(
+    scatterplot.style('pointSize'),
+    pointSize,
+    `pointSize should be set to ${pointSize}`
+  );
+
+  scatterplot.style({ pointSize: 0 });
+
+  t.equal(
+    scatterplot.style('pointSize'),
+    pointSize,
+    'pointSize should not be nullifyable'
+  );
+});
+
+test('style({ pointSizeSelected })', async t => {
+  const scatterplot = createScatterplot({ canvas: createCanvas() });
+
+  const pointSizeSelected = 42;
+
+  scatterplot.style({ pointSizeSelected });
+
+  t.equal(
+    scatterplot.style('pointSizeSelected'),
+    pointSizeSelected,
+    `pointSizeSelected should be set to ${pointSizeSelected}`
+  );
+
+  scatterplot.style({ pointSizeSelected: 0 });
+
+  t.equal(
+    scatterplot.style('pointSizeSelected'),
+    pointSizeSelected,
+    'pointSizeSelected should not be nullifyable'
   );
 });

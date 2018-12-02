@@ -20,6 +20,7 @@ export const DEFAULT_POINT_OUTLINE_WIDTH = 2;
 
 // Default colors
 export const DEFAULT_COLORMAP = [];
+export const DEFAULT_COLOR_BY = null;
 export const DEFAULT_COLOR_NORMAL = [0.66, 0.66, 0.66, 1];
 export const DEFAULT_COLOR_ACTIVE = [0, 0.55, 1, 1];
 export const DEFAULT_COLOR_HOVER = [1, 1, 1, 1];

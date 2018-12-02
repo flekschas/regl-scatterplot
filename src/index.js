@@ -20,6 +20,7 @@ import {
   COLOR_NUM_STATES,
   DEFAULT_BACKGROUND_IMAGE,
   DEFAULT_COLOR_BG,
+  DEFAULT_COLOR_BY,
   DEFAULT_COLORS,
   DEFAULT_DATA_ASPECT_RATIO,
   DEFAULT_DISTANCE,
@@ -55,6 +56,7 @@ const createScatterplot = ({
   background: initialBackground = DEFAULT_COLOR_BG,
   backgroundImage: initialBackgroundImage = DEFAULT_BACKGROUND_IMAGE,
   canvas: initialCanvas = document.createElement('canvas'),
+  colorBy: initialColorBy = DEFAULT_COLOR_BY,
   colors: initialColors = DEFAULT_COLORS,
   pointSize: initialPointSize = DEFAULT_POINT_SIZE,
   pointSizeSelected: initialPointSizeSelected = DEFAULT_POINT_SIZE_SELECTED,
@@ -104,7 +106,7 @@ const createScatterplot = ({
   let colorTex; // Stores the color texture
   let colorTexRes = 0; // Width and height of the texture
 
-  let colorBy;
+  let colorBy = initialColorBy;
   let isViewChanged = false;
   let isInit = false;
 
@@ -408,9 +410,7 @@ const createScatterplot = ({
     canvas.width = width * window.devicePixelRatio;
   };
 
-  const setColorBy = (type, newColors) => {
-    if (newColors) setColors(newColors);
-
+  const setColorBy = type => {
     switch (type) {
       case 'category':
         colorBy = 'category';
@@ -421,7 +421,7 @@ const createScatterplot = ({
         break;
 
       default:
-        colorBy = undefined;
+        colorBy = DEFAULT_COLOR_BY;
     }
   };
 
@@ -682,7 +682,7 @@ const createScatterplot = ({
       const {
         background: newBackground = null,
         backgroundImage: newBackgroundImage = backgroundImage,
-        colorBy: newColorBy = null,
+        colorBy: newColorBy = colorBy,
         colors: newColors = null,
         opacity: newOpacity = null,
         pointOutlineWidth: newPointOutlineWidth = null,
