@@ -19,7 +19,9 @@ const createCanvas = (width = 200, height = 200) => {
   return canvas;
 };
 
-test('creates a Regl instance with a fake canvas element with a webgl context', t => {
+/* ------------------------------ constructors ------------------------------ */
+
+test('createRegl()', t => {
   const dim = 200;
   const canvas = createCanvas(dim, dim);
   const gl = canvas.getContext('webgl');
@@ -32,7 +34,7 @@ test('creates a Regl instance with a fake canvas element with a webgl context', 
   t.ok(!!regl, 'regl should be instanciated');
 });
 
-test('creates scatterplot with default values', t => {
+test('createScatterplot()', t => {
   const canvas = createCanvas();
   const scatterplot = createScatterplot({ canvas });
 
@@ -69,9 +71,39 @@ test('creates scatterplot with default values', t => {
   );
 });
 
+test('createTextureFromUrl()', async t => {
+  const regl = createRegl(createCanvas());
+
+  const texture = await createTextureFromUrl(
+    regl,
+    'https://picsum.photos/300/200/',
+    true
+  );
+
+  t.equal(
+    texture._reglType, // eslint-disable-line no-underscore-dangle
+    'texture2d',
+    'texture should be a Regl texture object'
+  );
+});
+
+/* ------------------------------- properties ------------------------------- */
+
+test('scatterplot.canvas, scatterplot.regl, and scatterplot.version', async t => {
+  const canvas = createCanvas();
+  const regl = createRegl(canvas);
+  const scatterplot = createScatterplot({ canvas, regl });
+
+  t.equal(scatterplot.canvas, canvas, 'canvas should be a canvas element');
+
+  t.equal(scatterplot.regl, regl, 'regl should be a regl instance');
+
+  t.equal(scatterplot.version, VERSION, `version should be set to ${VERSION}`);
+});
+
 /* --------------------------------- attr() --------------------------------- */
 
-test('set width and height via attr()', t => {
+test('attr({ width, height })', t => {
   const w1 = 200;
   const h1 = 200;
 
@@ -87,11 +119,11 @@ test('set width and height via attr()', t => {
 
   scatterplot.attr({ width: w2, height: h2 });
 
-  t.equal(gl.drawingBufferWidth, w2, `width should be ${w2}px`);
-  t.equal(gl.drawingBufferHeight, h2, `height should be ${h2}px`);
+  t.equal(gl.drawingBufferWidth, w2, `width should be set to ${w2}px`);
+  t.equal(gl.drawingBufferHeight, h2, `height should be set to ${h2}px`);
 });
 
-test('set aspectRatio via attr()', t => {
+test('attr({ aspectRatio })', t => {
   const canvas = createCanvas(400, 200);
   const scatterplot = createScatterplot({ canvas, width: 400, height: 200 });
 
@@ -101,7 +133,7 @@ test('set aspectRatio via attr()', t => {
   t.equal(
     scatterplot.attr('aspectRatio'),
     aspectRatio,
-    `data aspect ratio should be ${aspectRatio}`
+    `aspectRatio should be set to ${aspectRatio}`
   );
 });
 
@@ -120,7 +152,7 @@ test('style({ background })', t => {
   );
 });
 
-test('style({ backgroundImage }) and createTextureFromUrl()', async t => {
+test('style({ backgroundImage })', async t => {
   const canvas = createCanvas();
   const regl = createRegl(canvas);
   const scatterplot = createScatterplot({ canvas, regl });
