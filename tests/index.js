@@ -1,17 +1,16 @@
 /* eslint no-console: 1 */
 
 import test from 'zora';
-import createRegl from 'regl';
 
-import createScatterplot from '../src';
+import createScatterplot, { createRegl, createTextureFromUrl } from '../src';
 import {
-  COLORS,
-  HEIGHT,
-  POINT_OUTLINE_WIDTH,
-  POINT_SIZE,
-  POINT_SIZE_SELECTED,
-  WIDTH
-} from '../src/defaults';
+  DEFAULT_COLORS,
+  DEFAULT_HEIGHT,
+  DEFAULT_POINT_OUTLINE_WIDTH,
+  DEFAULT_POINT_SIZE,
+  DEFAULT_POINT_SIZE_SELECTED,
+  DEFAULT_WIDTH
+} from '../src/constants';
 
 const createCanvas = (width = 200, height = 200) => {
   const canvas = document.createElement('canvas');
@@ -28,7 +27,7 @@ test('creates a Regl instance with a fake canvas element with a webgl context', 
   t.equal(gl.drawingBufferWidth, dim, `width should be ${dim}px`);
   t.equal(gl.drawingBufferHeight, dim, `height should be ${dim}px`);
 
-  const regl = createRegl({ canvas });
+  const regl = createRegl(canvas);
 
   t.ok(!!regl, 'regl should be instanciated');
 });
@@ -40,32 +39,32 @@ test('creates scatterplot with default values', t => {
   t.equal(scatterplot.canvas, canvas, 'canvas object should equal');
   t.equal(
     scatterplot.style('colors'),
-    COLORS,
+    DEFAULT_COLORS,
     'scatterplot should have default colors'
   );
   t.equal(
     scatterplot.style('pointSize'),
-    POINT_SIZE,
+    DEFAULT_POINT_SIZE,
     'scatterplot should have default point size'
   );
   t.equal(
     scatterplot.style('pointSizeSelected'),
-    POINT_SIZE_SELECTED,
+    DEFAULT_POINT_SIZE_SELECTED,
     'scatterplot should have default selected point size'
   );
   t.equal(
     scatterplot.style('pointOutlineWidth'),
-    POINT_OUTLINE_WIDTH,
+    DEFAULT_POINT_OUTLINE_WIDTH,
     'scatterplot should have default point outline width'
   );
   t.equal(
     scatterplot.attr('width'),
-    WIDTH,
+    DEFAULT_WIDTH,
     'scatterplot should have default width'
   );
   t.equal(
     scatterplot.attr('height'),
-    HEIGHT,
+    DEFAULT_HEIGHT,
     'scatterplot should have default height'
   );
 });
@@ -118,6 +117,34 @@ test('set background via style()', t => {
   t.ok(
     scatterplot.style('background').every((v, i) => v === backgroundNrgba[i]),
     'background should be red and and converted to normalized RGBA'
+  );
+});
+
+test('set background image via style() with createTextureFromUrl()', async t => {
+  const canvas = createCanvas();
+  const regl = createRegl(canvas);
+  const scatterplot = createScatterplot({ canvas, regl });
+
+  const backgroundImage = await createTextureFromUrl(
+    regl,
+    'https://picsum.photos/300/200/',
+    true
+  );
+
+  scatterplot.style({ backgroundImage });
+
+  t.equal(
+    scatterplot.style('backgroundImage'),
+    backgroundImage,
+    'background image should be a Regl texture'
+  );
+
+  scatterplot.style({ backgroundImage: null });
+
+  t.equal(
+    scatterplot.style('backgroundImage'),
+    null,
+    'background image should be nullifyable'
   );
 });
 
