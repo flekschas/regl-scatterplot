@@ -174,8 +174,8 @@ Setting or getting styles. If `arg` is a string then one of the attributes liste
 | Name              | Type            | Default          | Constraints            | Nullifiable |
 |-------------------|-----------------|------------------|------------------------|-------------|
 | background        | string or array | rgba(0, 0, 0, 1) | hex, rgb, rgba         | `false`     |
-| backgroundImage   | function        | `undefined`      | Regl texture           | `true`      |
-| colorBy           | string          | `undefined`      | `category` or `value`  | `true`      |
+| backgroundImage   | function        | `null`           | Regl texture           | `true`      |
+| colorBy           | string          | `null`           | `category` or `value`  | `true`      |
 | colors            | array           | _see below_      | list of hex, rgb, rgba | `false`     |
 | opacity           | number          | `1`              | > 0                    | `false`     |
 | pointOutlineWidth | number          | `2`              | >= 0                   | `false`     |
