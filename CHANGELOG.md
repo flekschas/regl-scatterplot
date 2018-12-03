@@ -1,3 +1,12 @@
+**v0.5.0**
+
+- Set default aspect ratio to 1. It can be changed via `attr({ aspectRatio })`
+- Expose helper (`createTextureFromUrl`) for creating a texture from an image URL
+- Expose regl instance via `scatterplot.regl`
+- Replace `mouse-position` and `mouse-pressed` with internal code
+- Add tests for all public API endpoints
+- Fix several smaller bugs
+
 **v0.4.0**
 
 - Use a combination of linear and log2 scaling for point size
