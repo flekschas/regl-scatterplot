@@ -17,7 +17,7 @@ const configurator = (file, format, plugins) => ({
       'pub-sub-es': 'createPubSub',
       regl: 'createREGL'
     },
-    intro: `const VERSION = ${VERSION};`
+    intro: `var VERSION = ${VERSION};`
   },
   plugins,
   external: ['pub-sub-es', 'regl']

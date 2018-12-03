@@ -10,7 +10,7 @@ export default {
     name: 'test',
     format: 'iife',
     sourcemap: 'inline',
-    intro: `const VERSION = ${VERSION};`
+    intro: `var VERSION = ${VERSION};`
   },
   plugins: [resolve(), commonjs(), json()]
 };
