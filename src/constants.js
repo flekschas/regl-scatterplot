@@ -44,5 +44,6 @@ export const DEFAULT_VIEW = new Float32Array([
   0, 0, 0, 1
 ]);
 
-// Default background image
+// Default misc
 export const DEFAULT_BACKGROUND_IMAGE = null;
+export const DEFAULT_LASSO_COLOR = [0, 0.666666667, 1, 1];

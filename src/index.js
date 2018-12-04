@@ -25,6 +25,7 @@ import {
   DEFAULT_DATA_ASPECT_RATIO,
   DEFAULT_DISTANCE,
   DEFAULT_HEIGHT,
+  DEFAULT_LASSO_COLOR,
   DEFAULT_POINT_OUTLINE_WIDTH,
   DEFAULT_POINT_SIZE,
   DEFAULT_POINT_SIZE_SELECTED,
@@ -58,6 +59,7 @@ const createScatterplot = ({
   canvas: initialCanvas = document.createElement('canvas'),
   colorBy: initialColorBy = DEFAULT_COLOR_BY,
   colors: initialColors = DEFAULT_COLORS,
+  lassoColor: initialLassoColor = DEFAULT_LASSO_COLOR,
   pointSize: initialPointSize = DEFAULT_POINT_SIZE,
   pointSizeSelected: initialPointSizeSelected = DEFAULT_POINT_SIZE_SELECTED,
   pointOutlineWidth: initialPointOutlineWidth = DEFAULT_POINT_OUTLINE_WIDTH,
@@ -88,6 +90,7 @@ const createScatterplot = ({
   let mouseDownShift = false;
   let numPoints = 0;
   let selection = [];
+  let lassoColor = toRgba(initialLassoColor, true);
   let lassoPos = [];
   let lassoScatterPos = [];
   let lassoPrevMousePos;
@@ -656,6 +659,14 @@ const createScatterplot = ({
     }
   };
 
+  const setLassoColor = newLassoColor => {
+    if (!newLassoColor) return;
+
+    lassoColor = toRgba(newLassoColor, true);
+
+    lasso.setStyle({ color: lassoColor });
+  };
+
   /**
    * Update Regl's viewport, drawingBufferWidth, and drawingBufferHeight
    *
@@ -672,6 +683,7 @@ const createScatterplot = ({
       if (arg === 'backgroundImage') return backgroundImage;
       if (arg === 'colorBy') return colorBy;
       if (arg === 'colors') return colors;
+      if (arg === 'lassoColor') return lassoColor;
       if (arg === 'opacity') return opacity;
       if (arg === 'pointOutlineWidth') return pointOutlineWidth;
       if (arg === 'pointSize') return pointSize;
@@ -685,6 +697,7 @@ const createScatterplot = ({
         colorBy: newColorBy = colorBy,
         colors: newColors = null,
         opacity: newOpacity = null,
+        lassoColor: newLassoColor = null,
         pointOutlineWidth: newPointOutlineWidth = null,
         pointSize: newPointSize = null,
         pointSizeSelected: newPointSizeSelected = null
@@ -694,6 +707,7 @@ const createScatterplot = ({
       setColorBy(newColorBy);
       setColors(newColors);
       setOpacity(newOpacity);
+      setLassoColor(newLassoColor);
       setPointOutlineWidth(newPointOutlineWidth);
       setPointSize(newPointSize);
       setPointSizeSelected(newPointSizeSelected);
@@ -781,7 +795,7 @@ const createScatterplot = ({
     updateViewAspectRatio();
     initCamera();
 
-    lasso = createLine(regl, { width: 3, is2d: true });
+    lasso = createLine(regl, { color: lassoColor, width: 3, is2d: true });
     scroll = createScroll(canvas);
 
     // Event listeners

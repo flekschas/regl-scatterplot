@@ -1,6 +1,7 @@
 **v0.5.0**
 
 - Set default aspect ratio to 1. It can be changed via `attr({ aspectRatio })`
+- Add property to set `lassoColor` via `style({ lassoColor })`
 - Expose helper (`createTextureFromUrl`) for creating a texture from an image URL
 - Expose regl instance via `scatterplot.regl`
 - Replace `mouse-position` and `mouse-pressed` with internal code

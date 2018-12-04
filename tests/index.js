@@ -6,6 +6,7 @@ import createScatterplot, { createRegl, createTextureFromUrl } from '../src';
 import {
   DEFAULT_COLORS,
   DEFAULT_HEIGHT,
+  DEFAULT_LASSO_COLOR,
   DEFAULT_POINT_OUTLINE_WIDTH,
   DEFAULT_POINT_SIZE,
   DEFAULT_POINT_SIZE_SELECTED,
@@ -294,6 +295,35 @@ test('style({ opacity })', async t => {
     scatterplot.style('opacity'),
     opacity,
     'opacity should not be nullifyable'
+  );
+});
+
+test('style({ lassoColor })', async t => {
+  const scatterplot = createScatterplot({ canvas: createCanvas() });
+
+  // Check default lasso color
+  t.equal(
+    scatterplot.style('lassoColor'),
+    DEFAULT_LASSO_COLOR,
+    `lassoColor should be set to ${DEFAULT_LASSO_COLOR}`
+  );
+
+  const lassoColor = [1, 0, 0, 1];
+
+  scatterplot.style({ lassoColor });
+
+  t.equal(
+    scatterplot.style('lassoColor'),
+    lassoColor,
+    `lassoColor should be set to ${lassoColor}`
+  );
+
+  scatterplot.style({ lassoColor: null });
+
+  t.equal(
+    scatterplot.style('lassoColor'),
+    lassoColor,
+    'lassoColor should not be nullifyable'
   );
 });
 
