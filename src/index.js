@@ -214,7 +214,7 @@ const createScatterplot = ({
       }
     }
   };
-  const lassoDb = withThrottle(lassoExtend, LASSO_MIN_DELAY, true);
+  const lassoExtendDb = withThrottle(lassoExtend, LASSO_MIN_DELAY, true);
 
   const findPointsInLasso = lassoPolygon => {
     // get the bounding box of the lasso selection...
@@ -310,7 +310,7 @@ const createScatterplot = ({
       hover(clostestPoint); // eslint-disable-line no-use-before-define
     }
 
-    if (mouseDownShift) lassoDb();
+    if (mouseDownShift) lassoExtendDb();
   };
 
   const blurHandler = () => {
