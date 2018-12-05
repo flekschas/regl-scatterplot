@@ -12,7 +12,8 @@ import {
   DEFAULT_POINT_SIZE,
   DEFAULT_POINT_SIZE_SELECTED,
   DEFAULT_WIDTH,
-  LASSO_MIN_DELAY
+  LASSO_MIN_DELAY,
+  LASSO_MIN_DIST
 } from '../src/constants';
 
 import { asyncForEach, createCanvas, createMouseEvent, wait } from './utils';
@@ -392,7 +393,7 @@ test('style({ pointSizeSelected })', async t => {
 
 /* ---------------------------------- events -------------------------------- */
 
-test('click and lasso selection and select+deselect events', async t => {
+test('click selection with publish("select")', async t => {
   const dim = 200;
   const hdim = dim / 2;
   const canvas = createCanvas(dim, dim);
@@ -415,7 +416,6 @@ test('click and lasso selection and select+deselect events', async t => {
   scatterplot.subscribe('deselect', deselectHandler);
 
   // Test single selection via mouse clicks
-  window.dispatchEvent(createMouseEvent('mousemove', hdim, hdim));
   window.dispatchEvent(createMouseEvent('mousedown', hdim, hdim));
   canvas.dispatchEvent(createMouseEvent('click', hdim, hdim));
 
@@ -426,6 +426,39 @@ test('click and lasso selection and select+deselect events', async t => {
   canvas.dispatchEvent(createMouseEvent('dblclick', hdim, hdim));
 
   t.equal(selectedPoints.length, 0, 'should have deselected 1 point');
+
+  // Test that mousedown + mousemove + click is not interpreted as a click when
+  // the cursor moved more than `LASSO_MIN_DIST` in between mousedown and
+  // mouseup
+  window.dispatchEvent(
+    createMouseEvent('mousedown', hdim - LASSO_MIN_DIST, hdim)
+  );
+  canvas.dispatchEvent(createMouseEvent('click', hdim, hdim));
+
+  t.equal(selectedPoints.length, 0, 'should *not* have selected 1 point');
+});
+
+test('lasso selection with publish("select")', async t => {
+  const dim = 200;
+  const hdim = dim / 2;
+  const canvas = createCanvas(dim, dim);
+  const scatterplot = createScatterplot({ canvas, width: dim, height: dim });
+
+  const points = [[0, 0], [1, 1], [1, -1], [-1, -1], [-1, 1]];
+  scatterplot.draw(points);
+
+  // TODO: fix this!
+  await wait(250);
+
+  let selectedPoints = [];
+  const selectHandler = ({ points: newSelectedPoints }) => {
+    selectedPoints = [...newSelectedPoints];
+  };
+  const deselectHandler = () => {
+    selectedPoints = [];
+  };
+  scatterplot.subscribe('select', selectHandler);
+  scatterplot.subscribe('deselect', deselectHandler);
 
   // Test multi selections via mousedown + mousemove
   window.dispatchEvent(

@@ -90,6 +90,7 @@ const createScatterplot = ({
   let lasso;
   let scroll;
   let mouseDownShift = false;
+  let mouseDownPosition = [0, 0];
   let numPoints = 0;
   let selection = [];
   let lassoColor = toRgba(initialLassoColor, true);
@@ -255,6 +256,15 @@ const createScatterplot = ({
     drawRaf(); // eslint-disable-line no-use-before-define
   };
 
+  const getRelativeMousePosition = event => {
+    const rect = canvas.getBoundingClientRect();
+
+    mousePosition[0] = event.clientX - rect.left;
+    mousePosition[1] = event.clientY - rect.top;
+
+    return [...mousePosition];
+  };
+
   const lassoEnd = () => {
     // const t0 = performance.now();
     const pointsInLasso = findPointsInLasso(lassoScatterPos);
@@ -269,6 +279,7 @@ const createScatterplot = ({
   const mouseDownHandler = event => {
     if (!isInit) return;
 
+    mouseDownPosition = getRelativeMousePosition(event);
     mouseDownShift = event.shiftKey;
 
     // fix camera
@@ -285,8 +296,13 @@ const createScatterplot = ({
     }
   };
 
-  const mouseClickHandler = () => {
+  const mouseClickHandler = event => {
     if (!isInit) return;
+
+    const currentMousePosition = getRelativeMousePosition(event);
+    const clickDist = dist(...currentMousePosition, ...mouseDownPosition);
+
+    if (clickDist >= LASSO_MIN_DIST) return;
 
     const clostestPoint = raycast();
     if (clostestPoint >= 0) select([clostestPoint]);
@@ -299,10 +315,7 @@ const createScatterplot = ({
   const mouseMoveHandler = event => {
     if (!isInit) return;
 
-    const rect = canvas.getBoundingClientRect();
-
-    mousePosition[0] = event.clientX - rect.left;
-    mousePosition[1] = event.clientY - rect.top;
+    getRelativeMousePosition(event);
 
     // Only ray cast if the mouse cursor is inside
     if (isMouseInCanvas && !mouseDownShift) {
