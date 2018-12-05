@@ -1,5 +1,5 @@
 import { terser } from 'rollup-plugin-terser';
-import buble from 'rollup-plugin-buble';
+import babel from 'rollup-plugin-babel';
 import commonjs from 'rollup-plugin-commonjs';
 import resolve from 'rollup-plugin-node-resolve';
 import filesize from 'rollup-plugin-filesize';
@@ -26,7 +26,7 @@ const configurator = (file, format, plugins) => ({
 const devConfig = configurator('dist/regl-scatterplot.js', 'umd', [
   resolve(),
   commonjs({ sourceMap: false }),
-  buble(),
+  babel(),
   filesize(),
   visualizer()
 ]);
@@ -34,7 +34,7 @@ const devConfig = configurator('dist/regl-scatterplot.js', 'umd', [
 const prodConfig = configurator('dist/regl-scatterplot.js', 'umd', [
   resolve(),
   commonjs({ sourceMap: false }),
-  buble(),
+  babel(),
   terser()
 ]);
 
