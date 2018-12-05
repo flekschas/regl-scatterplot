@@ -1,5 +1,6 @@
 /* eslint no-console: 1 */
 
+import '@babel/polyfill';
 import test from 'zora';
 
 import createScatterplot, { createRegl, createTextureFromUrl } from '../src';
@@ -10,10 +11,11 @@ import {
   DEFAULT_POINT_OUTLINE_WIDTH,
   DEFAULT_POINT_SIZE,
   DEFAULT_POINT_SIZE_SELECTED,
-  DEFAULT_WIDTH
+  DEFAULT_WIDTH,
+  LASSO_MIN_DELAY
 } from '../src/constants';
 
-import { createCanvas, createMouseEvent, wait } from './utils';
+import { asyncForEach, createCanvas, createMouseEvent, wait } from './utils';
 
 /* ------------------------------ constructors ------------------------------ */
 
@@ -390,12 +392,13 @@ test('style({ pointSizeSelected })', async t => {
 
 /* ---------------------------------- events -------------------------------- */
 
-test('subscribe("select") and subscribe("deselect")', async t => {
+test('click and lasso selection and select+deselect events', async t => {
   const dim = 200;
+  const hdim = dim / 2;
   const canvas = createCanvas(dim, dim);
   const scatterplot = createScatterplot({ canvas, width: dim, height: dim });
 
-  const points = [[0, 0], [0.5, 0.5], [0.5, -0.5], [-0.5, -0.5], [-0.5, 0.5]];
+  const points = [[0, 0], [1, 1], [1, -1], [-1, -1], [-1, 1]];
   scatterplot.draw(points);
 
   // TODO: fix this!
@@ -411,13 +414,49 @@ test('subscribe("select") and subscribe("deselect")', async t => {
   scatterplot.subscribe('select', selectHandler);
   scatterplot.subscribe('deselect', deselectHandler);
 
-  window.dispatchEvent(createMouseEvent('mousemove', dim / 2, dim / 2));
-  canvas.dispatchEvent(createMouseEvent('click', dim / 2, dim / 2));
+  // Test single selection via mouse clicks
+  window.dispatchEvent(createMouseEvent('mousemove', hdim, hdim));
+  window.dispatchEvent(createMouseEvent('mousedown', hdim, hdim));
+  canvas.dispatchEvent(createMouseEvent('click', hdim, hdim));
 
-  t.equal(selectedPoints.length, 1, 'should have selected one point');
+  t.equal(selectedPoints.length, 1, 'should have selected 1 point');
   t.equal(selectedPoints[0], 0, 'should have selected the first point');
 
-  canvas.dispatchEvent(createMouseEvent('dblclick', dim / 2, dim / 2));
+  // Test deselection
+  canvas.dispatchEvent(createMouseEvent('dblclick', hdim, hdim));
 
-  t.equal(selectedPoints.length, 0, 'should have deselected one point');
+  t.equal(selectedPoints.length, 0, 'should have deselected 1 point');
+
+  // Test multi selections via mousedown + mousemove
+  window.dispatchEvent(
+    createMouseEvent('mousedown', dim * 1.125, hdim, { shiftKey: true })
+  );
+
+  // Needed to first diguest the mousedown event
+  await wait(0);
+
+  const mousePositions = [
+    [dim * 1.125, hdim],
+    [hdim, -dim * 0.125],
+    [-dim * 0.125, -dim * 0.125],
+    [-dim * 0.125, dim * 0.125],
+    [0, dim * 0.9],
+    [dim * 0.1, dim * 0.9],
+    [dim * 0.1, dim * 1.125],
+    [dim * 1.125, dim * 1.125]
+  ];
+
+  await asyncForEach(mousePositions, async mousePosition => {
+    window.dispatchEvent(createMouseEvent('mousemove', ...mousePosition));
+    await wait(LASSO_MIN_DELAY + 5);
+  });
+
+  window.dispatchEvent(createMouseEvent('mouseup'));
+
+  t.equal(selectedPoints.length, 3, 'should have selected 3 points');
+  t.deepEqual(
+    selectedPoints,
+    [0, 2, 4],
+    'should have selected the first, third, and fifth point'
+  );
 });
