@@ -16,15 +16,16 @@ export const arrayMax = (max, x) => (max > x ? max : x);
  * @return  {function}  Returns the Regl instance itself
  */
 export const checkReglExtensions = regl => {
-  if (!regl) return regl;
-  GL_EXTENSIONS.forEach(EXTENSION => {
+  if (!regl) return false;
+  return GL_EXTENSIONS.reduce((every, EXTENSION) => {
     if (!regl.hasExtension(EXTENSION)) {
       console.warn(
         `WebGL: ${EXTENSION} extension not supported. Scatterplot might not render properly`
       );
+      return false;
     }
-  });
-  return regl;
+    return every;
+  }, true);
 };
 
 /**

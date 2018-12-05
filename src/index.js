@@ -74,6 +74,8 @@ const createScatterplot = ({
   const scratch = new Float32Array(16);
   const mousePosition = [0, 0];
 
+  checkReglExtensions(initialRegl);
+
   let background = toRgba(initialBackground, true);
   let backgroundImage = initialBackgroundImage;
   let canvas = initialCanvas;
@@ -83,7 +85,7 @@ const createScatterplot = ({
   let pointSize = initialPointSize;
   let pointSizeSelected = initialPointSizeSelected;
   let pointOutlineWidth = initialPointOutlineWidth;
-  let regl = checkReglExtensions(initialRegl) || createRegl(initialCanvas);
+  let regl = initialRegl || createRegl(initialCanvas);
   let camera;
   let lasso;
   let scroll;
