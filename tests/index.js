@@ -2,6 +2,7 @@
 
 import '@babel/polyfill';
 import test from 'zora';
+// import { mat4 } from 'gl-matrix';
 
 import createScatterplot, { createRegl, createTextureFromUrl } from '../src';
 import {
@@ -493,3 +494,32 @@ test('lasso selection with publish("select")', async t => {
     'should have selected the first, third, and fifth point'
   );
 });
+
+// test('publish("view")', async t => {
+//   const dim = 200;
+//   const hdim = dim / 2;
+//   const canvas = createCanvas(dim, dim);
+//   const scatterplot = createScatterplot({ canvas, width: dim, height: dim });
+
+//   const translatedView = mat4.fromTranslation([], [-1, 0, 0]);
+
+//   let view;
+//   const viewHandler = newView => {
+//     view = newView;
+//   };
+//   scatterplot.subscribe('view', viewHandler);
+
+//   // Test panning with mousedown + mousemove
+//   // Somehow the mousedown event is not registered by `mouse-pressed` and hence
+//   // panning is not registered
+//   canvas.dispatchEvent(createMouseEvent('mousedown', hdim, hdim, { button: 0 }));
+//   await wait(50);
+//   canvas.dispatchEvent(createMouseEvent('mousemove', 0, hdim));
+//   await wait(50);
+
+//   t.deepEqual(
+//     view,
+//     translatedView,
+//     'should have published the translated view'
+//   );
+// });
