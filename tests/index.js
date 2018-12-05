@@ -13,12 +13,7 @@ import {
   DEFAULT_WIDTH
 } from '../src/constants';
 
-const createCanvas = (width = 200, height = 200) => {
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  return canvas;
-};
+import { createCanvas, createMouseEvent, wait } from './utils';
 
 /* ------------------------------ constructors ------------------------------ */
 
@@ -391,4 +386,38 @@ test('style({ pointSizeSelected })', async t => {
     pointSizeSelected,
     'pointSizeSelected should not be nullifyable'
   );
+});
+
+/* ---------------------------------- events -------------------------------- */
+
+test('subscribe("select") and subscribe("deselect")', async t => {
+  const dim = 200;
+  const canvas = createCanvas(dim, dim);
+  const scatterplot = createScatterplot({ canvas, width: dim, height: dim });
+
+  const points = [[0, 0], [0.5, 0.5], [0.5, -0.5], [-0.5, -0.5], [-0.5, 0.5]];
+  scatterplot.draw(points);
+
+  // TODO: fix this!
+  await wait(250);
+
+  let selectedPoints = [];
+  const selectHandler = ({ points: newSelectedPoints }) => {
+    selectedPoints = [...newSelectedPoints];
+  };
+  const deselectHandler = () => {
+    selectedPoints = [];
+  };
+  scatterplot.subscribe('select', selectHandler);
+  scatterplot.subscribe('deselect', deselectHandler);
+
+  window.dispatchEvent(createMouseEvent('mousemove', dim / 2, dim / 2));
+  canvas.dispatchEvent(createMouseEvent('click', dim / 2, dim / 2));
+
+  t.equal(selectedPoints.length, 1, 'should have selected one point');
+  t.equal(selectedPoints[0], 0, 'should have selected the first point');
+
+  canvas.dispatchEvent(createMouseEvent('dblclick', dim / 2, dim / 2));
+
+  t.equal(selectedPoints.length, 0, 'should have deselected one point');
 });
