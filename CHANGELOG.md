@@ -5,6 +5,7 @@
 - Expose helper (`createTextureFromUrl`) for creating a texture from an image URL
 - Expose regl instance via `scatterplot.regl`
 - Replace `mouse-position` and `mouse-pressed` with internal code
+- Avoid click selections upon mousedown + mousemove + mouseup
 - Add tests for all public API endpoints
 - Fix several smaller bugs
 
