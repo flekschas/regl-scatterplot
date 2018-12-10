@@ -38,7 +38,7 @@ void main() {
 
   // Determine color index
   float colorIndexCat = state.z * isColoredByCategory;
-  float colorIndexVal = floor(state.w * maxColor);
+  float colorIndexVal = floor(state.w * maxColor) * isColoredByValue;
   float colorIndex = colorIndexCat + colorIndexVal;
   // Multiply by the number of color states per color
   // I.e., normal, active, hover, background, etc.
