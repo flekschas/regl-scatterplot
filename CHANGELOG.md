@@ -1,3 +1,7 @@
+**v0.5.1**
+
+- Fix a bug in categorical color encoding
+
 **v0.5.0**
 
 - Set default aspect ratio to 1. It can be changed via `attr({ aspectRatio })`
