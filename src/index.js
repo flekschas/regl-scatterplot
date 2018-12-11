@@ -26,6 +26,8 @@ import {
   DEFAULT_DISTANCE,
   DEFAULT_HEIGHT,
   DEFAULT_LASSO_COLOR,
+  DEFAULT_SHOW_RECTICLE,
+  DEFAULT_RECTICLE_COLOR,
   DEFAULT_POINT_OUTLINE_WIDTH,
   DEFAULT_POINT_SIZE,
   DEFAULT_POINT_SIZE_SELECTED,
@@ -60,6 +62,8 @@ const createScatterplot = ({
   colorBy: initialColorBy = DEFAULT_COLOR_BY,
   colors: initialColors = DEFAULT_COLORS,
   lassoColor: initialLassoColor = DEFAULT_LASSO_COLOR,
+  showRecticle: initialShowRecticle = DEFAULT_SHOW_RECTICLE,
+  recticleColor: initialRecticleColor = DEFAULT_RECTICLE_COLOR,
   pointSize: initialPointSize = DEFAULT_POINT_SIZE,
   pointSizeSelected: initialPointSizeSelected = DEFAULT_POINT_SIZE_SELECTED,
   pointOutlineWidth: initialPointOutlineWidth = DEFAULT_POINT_OUTLINE_WIDTH,
@@ -103,6 +107,10 @@ const createScatterplot = ({
   let dataAspectRatio = DEFAULT_DATA_ASPECT_RATIO;
   let projection;
   let model;
+  const showRecticle = initialShowRecticle;
+  let recticleHLine;
+  let recticleVLine;
+  let recticleColor = toRgba(initialRecticleColor, true);
 
   let stateTex; // Stores the point texture holding x, y, category, and value
   let stateTexRes = 0; // Width and height of the texture
@@ -573,17 +581,64 @@ const createScatterplot = ({
   const drawBackgroundImage = regl({
     frag: BG_FS,
     vert: BG_VS,
+
     attributes: {
       position: [0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0]
     },
+
     uniforms: {
       projection: getProjection,
       model: getModel,
       view: getView,
       texture: getBackgroundImage
     },
+
     count: 6
   });
+
+  const drawRecticle = () => {
+    if (!(hoveredPoint >= 0)) return;
+
+    const [x, y] = searchIndex.points[hoveredPoint].slice(0, 2);
+
+    // Normalized device coordinate of the point
+    const v = [x, y, 0, 1];
+
+    // We have to calculate the model-view-projection matrix outside of the
+    // shader as we actually don't want the mode, view, or projection of the
+    // line view space to change such that the recticle is visualized across the
+    // entire view container and not within the view of the scatterplot
+    mat4.multiply(
+      scratch,
+      projection,
+      mat4.multiply(scratch, camera.view, model)
+    );
+
+    vec4.transformMat4(v, v, scratch);
+
+    recticleHLine.setPoints([-1, v[1], 1, v[1]]);
+    recticleVLine.setPoints([v[0], 1, v[0], -1]);
+
+    recticleHLine.draw();
+    recticleVLine.draw();
+
+    // Draw outer outline
+    drawPoints(
+      () =>
+        (pointSizeSelected + pointOutlineWidth * 2) * window.devicePixelRatio,
+      () => 1,
+      hoveredPointIndexBuffer,
+      COLOR_ACTIVE_IDX
+    )();
+
+    // Draw inner outline
+    drawPoints(
+      () => (pointSizeSelected + pointOutlineWidth) * window.devicePixelRatio,
+      () => 1,
+      hoveredPointIndexBuffer,
+      COLOR_BG_IDX
+    )();
+  };
 
   const createPointIndex = numNewPoints => {
     const index = new Float32Array(numNewPoints);
@@ -631,7 +686,7 @@ const createScatterplot = ({
     isInit = true;
   };
 
-  const draw = newPoints => {
+  const draw = (newPoints, showRecticleOnce) => {
     if (newPoints) setPoints(newPoints);
     if (!isInit) return;
 
@@ -648,8 +703,9 @@ const createScatterplot = ({
       drawBackgroundImage();
     }
 
-    // Draw the points
+    // The draw order of the following calls is important!
     drawPointBodies();
+    if (showRecticle || showRecticleOnce) drawRecticle();
     if (hoveredPoint >= 0) drawHoveredPoint();
     if (selection.length) drawSelectedPoint();
 
@@ -689,6 +745,15 @@ const createScatterplot = ({
     lasso.setStyle({ color: lassoColor });
   };
 
+  const setRecticleColor = newRecticleColor => {
+    if (!newRecticleColor) return;
+
+    recticleColor = toRgba(newRecticleColor, true);
+
+    recticleHLine.setStyle({ color: recticleColor });
+    recticleVLine.setStyle({ color: recticleColor });
+  };
+
   /**
    * Update Regl's viewport, drawingBufferWidth, and drawingBufferHeight
    *
@@ -705,6 +770,7 @@ const createScatterplot = ({
     if (property === 'colorBy') return colorBy;
     if (property === 'colors') return colors;
     if (property === 'lassoColor') return lassoColor;
+    if (property === 'recticleColor') return recticleColor;
     if (property === 'opacity') return opacity;
     if (property === 'pointOutlineWidth') return pointOutlineWidth;
     if (property === 'pointSize') return pointSize;
@@ -726,6 +792,7 @@ const createScatterplot = ({
     colors: newColors = null,
     opacity: newOpacity = null,
     lassoColor: newLassoColor = null,
+    recticleColor: newRecticleColor = null,
     pointOutlineWidth: newPointOutlineWidth = null,
     pointSize: newPointSize = null,
     pointSizeSelected: newPointSizeSelected = null,
@@ -739,6 +806,7 @@ const createScatterplot = ({
     setColors(newColors);
     setOpacity(newOpacity);
     setLassoColor(newLassoColor);
+    setRecticleColor(newRecticleColor);
     setPointOutlineWidth(newPointOutlineWidth);
     setPointSize(newPointSize);
     setPointSizeSelected(newPointSizeSelected);
@@ -752,7 +820,7 @@ const createScatterplot = ({
     drawRaf();
   };
 
-  const hover = point => {
+  const hover = (point, showRecticleOnce = false) => {
     let needsRedraw = false;
 
     if (point >= 0) {
@@ -765,7 +833,7 @@ const createScatterplot = ({
       hoveredPoint = undefined;
     }
 
-    if (needsRedraw) drawRaf();
+    if (needsRedraw) drawRaf(null, showRecticleOnce);
   };
 
   const reset = () => {
@@ -806,6 +874,16 @@ const createScatterplot = ({
     initCamera();
 
     lasso = createLine(regl, { color: lassoColor, width: 3, is2d: true });
+    recticleHLine = createLine(regl, {
+      color: recticleColor,
+      width: 1,
+      is2d: true
+    });
+    recticleVLine = createLine(regl, {
+      color: recticleColor,
+      width: 1,
+      is2d: true
+    });
     scroll = createScroll(canvas);
 
     // Event listeners
