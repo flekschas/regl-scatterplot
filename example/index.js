@@ -19,6 +19,9 @@ let pointSize = 2;
 let opacity = 0.33;
 let selection = [];
 
+const showRecticle = true;
+const recticleColor = [1, 1, 0.878431373, 0.33];
+
 const selectHandler = ({ points: selectedPoints }) => {
   console.log('Selected:', selectedPoints);
   selection = selectedPoints;
@@ -41,7 +44,9 @@ const scatterplot = createScatterplot({
   canvas,
   width,
   height,
-  pointSize
+  pointSize,
+  showRecticle,
+  recticleColor
 });
 
 console.log(`Scatterplot v${scatterplot.get('version')}`);
