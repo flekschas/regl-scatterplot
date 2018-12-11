@@ -692,69 +692,57 @@ const createScatterplot = ({
     regl.poll();
   };
 
-  const style = arg => {
-    if (typeof arg === 'string') {
-      if (arg === 'background') return background;
-      if (arg === 'backgroundImage') return backgroundImage;
-      if (arg === 'colorBy') return colorBy;
-      if (arg === 'colors') return colors;
-      if (arg === 'lassoColor') return lassoColor;
-      if (arg === 'opacity') return opacity;
-      if (arg === 'pointOutlineWidth') return pointOutlineWidth;
-      if (arg === 'pointSize') return pointSize;
-      if (arg === 'pointSizeSelected') return pointSizeSelected;
-    }
-
-    if (typeof arg === 'object') {
-      const {
-        background: newBackground = null,
-        backgroundImage: newBackgroundImage = backgroundImage,
-        colorBy: newColorBy = colorBy,
-        colors: newColors = null,
-        opacity: newOpacity = null,
-        lassoColor: newLassoColor = null,
-        pointOutlineWidth: newPointOutlineWidth = null,
-        pointSize: newPointSize = null,
-        pointSizeSelected: newPointSizeSelected = null
-      } = arg;
-      setBackground(newBackground);
-      setBackgroundImage(newBackgroundImage);
-      setColorBy(newColorBy);
-      setColors(newColors);
-      setOpacity(newOpacity);
-      setLassoColor(newLassoColor);
-      setPointOutlineWidth(newPointOutlineWidth);
-      setPointSize(newPointSize);
-      setPointSizeSelected(newPointSizeSelected);
-      drawRaf();
-    }
+  const get = property => {
+    if (property === 'background') return background;
+    if (property === 'backgroundImage') return backgroundImage;
+    if (property === 'colorBy') return colorBy;
+    if (property === 'colors') return colors;
+    if (property === 'lassoColor') return lassoColor;
+    if (property === 'opacity') return opacity;
+    if (property === 'pointOutlineWidth') return pointOutlineWidth;
+    if (property === 'pointSize') return pointSize;
+    if (property === 'pointSizeSelected') return pointSizeSelected;
+    if (property === 'width') return width;
+    if (property === 'height') return height;
+    if (property === 'aspectRatio') return dataAspectRatio;
+    if (property === 'canvas') return canvas;
+    if (property === 'regl') return regl;
+    if (property === 'version') return VERSION;
 
     return undefined;
   };
 
-  const attr = (arg = {}) => {
-    if (typeof arg === 'string') {
-      if (arg === 'width') return width;
-      if (arg === 'height') return height;
-      if (arg === 'aspectRatio') return dataAspectRatio;
-    }
+  const set = ({
+    background: newBackground = null,
+    backgroundImage: newBackgroundImage = backgroundImage,
+    colorBy: newColorBy = colorBy,
+    colors: newColors = null,
+    opacity: newOpacity = null,
+    lassoColor: newLassoColor = null,
+    pointOutlineWidth: newPointOutlineWidth = null,
+    pointSize: newPointSize = null,
+    pointSizeSelected: newPointSizeSelected = null,
+    height: newHeight = null,
+    width: newWidth = null,
+    aspectRatio: newDataAspectRatio = null
+  } = {}) => {
+    setBackground(newBackground);
+    setBackgroundImage(newBackgroundImage);
+    setColorBy(newColorBy);
+    setColors(newColors);
+    setOpacity(newOpacity);
+    setLassoColor(newLassoColor);
+    setPointOutlineWidth(newPointOutlineWidth);
+    setPointSize(newPointSize);
+    setPointSizeSelected(newPointSizeSelected);
+    setHeight(newHeight);
+    setWidth(newWidth);
+    setDataAspectRatio(newDataAspectRatio);
 
-    if (typeof arg === 'object') {
-      const {
-        height: newHeight = null,
-        width: newWidth = null,
-        aspectRatio: newDataAspectRatio = null
-      } = arg;
-      setHeight(newHeight);
-      setWidth(newWidth);
-      setDataAspectRatio(newDataAspectRatio);
-      updateViewAspectRatio();
-      camera.refresh();
-      refresh();
-      drawRaf();
-    }
-
-    return undefined;
+    updateViewAspectRatio();
+    camera.refresh();
+    refresh();
+    drawRaf();
   };
 
   const hover = point => {
@@ -830,7 +818,7 @@ const createScatterplot = ({
     colorTex = createColorTexture();
 
     // Set dimensions
-    attr({ width, height });
+    set({ width, height });
 
     // Setup event handler
     window.addEventListener('keyup', keyUpHandler, false);
@@ -865,24 +853,15 @@ const createScatterplot = ({
   init(canvas);
 
   return {
-    get canvas() {
-      return canvas;
-    },
-    get regl() {
-      return regl;
-    },
-    get version() {
-      return VERSION;
-    },
-    attr,
     deselect,
     destroy,
     draw: drawRaf,
+    get,
     hover,
     refresh,
     reset: withDraw(reset),
     select,
-    style,
+    set,
     subscribe: pubSub.subscribe,
     unsubscribe: pubSub.unsubscribe
   };

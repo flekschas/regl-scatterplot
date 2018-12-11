@@ -1,3 +1,7 @@
+**v0.6.0**
+
+- Simplify API: `style()`, `attr()`, `scatterplot.canvas`, `scatterplot.regl`, and `scatterplot.version` are merged into `get()` and `set()`. The function signature is identical to `style()` and `attr()` so all you have to do is rename.
+
 **v0.5.1**
 
 - Fix a bug in categorical color encoding

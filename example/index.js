@@ -44,14 +44,14 @@ const scatterplot = createScatterplot({
   pointSize
 });
 
-console.log(`Scatterplot v${scatterplot.version}`);
+console.log(`Scatterplot v${scatterplot.get('version')}`);
 
 scatterplot.subscribe('select', selectHandler);
 scatterplot.subscribe('deselect', deselectHandler);
 
 const resizeHandler = () => {
   ({ width, height } = canvas.getBoundingClientRect());
-  scatterplot.attr({ width, height });
+  scatterplot.set({ width, height });
 };
 
 window.addEventListener('resize', resizeHandler);
@@ -87,7 +87,7 @@ const setPointSize = newPointSize => {
   pointSize = newPointSize;
   pointSizeEl.value = pointSize;
   pointSizeValEl.innerHTML = pointSize;
-  scatterplot.style({ pointSize });
+  scatterplot.set({ pointSize });
 };
 
 const pointSizeInputHandler = event => setPointSize(+event.target.value);
@@ -98,7 +98,7 @@ const setOpacity = newOpacity => {
   opacity = newOpacity;
   opacityEl.value = opacity;
   opacityValEl.innerHTML = opacity;
-  scatterplot.style({ opacity });
+  scatterplot.set({ opacity });
 };
 
 const opacityInputHandler = event => setOpacity(+event.target.value);
@@ -115,7 +115,7 @@ const colorsCat = [
   ['#3a78aa', '#008dff', '#008dff'],
   ['#aa3a99', '#ff00da', '#ff00da']
 ];
-scatterplot.style({ colorBy: 'category', colors: colorsCat });
+scatterplot.set({ colorBy: 'category', colors: colorsCat });
 
 const colorsScale = [
   '#8b0000',
@@ -219,7 +219,7 @@ const colorsScale = [
   '#fffddb',
   '#ffffe0'
 ];
-scatterplot.style({ colorBy: 'value', colors: colorsScale });
+scatterplot.set({ colorBy: 'value', colors: colorsScale });
 
 setPointSize(pointSize);
 setOpacity(opacity);
