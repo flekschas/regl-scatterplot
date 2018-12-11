@@ -107,7 +107,7 @@ const createScatterplot = ({
   let dataAspectRatio = DEFAULT_DATA_ASPECT_RATIO;
   let projection;
   let model;
-  const showRecticle = initialShowRecticle;
+  let showRecticle = initialShowRecticle;
   let recticleHLine;
   let recticleVLine;
   let recticleColor = toRgba(initialRecticleColor, true);
@@ -745,6 +745,12 @@ const createScatterplot = ({
     lasso.setStyle({ color: lassoColor });
   };
 
+  const setShowRecticle = newShowRecticle => {
+    if (newShowRecticle === null) return;
+
+    showRecticle = newShowRecticle;
+  };
+
   const setRecticleColor = newRecticleColor => {
     if (!newRecticleColor) return;
 
@@ -770,6 +776,7 @@ const createScatterplot = ({
     if (property === 'colorBy') return colorBy;
     if (property === 'colors') return colors;
     if (property === 'lassoColor') return lassoColor;
+    if (property === 'showRecticle') return showRecticle;
     if (property === 'recticleColor') return recticleColor;
     if (property === 'opacity') return opacity;
     if (property === 'pointOutlineWidth') return pointOutlineWidth;
@@ -792,6 +799,7 @@ const createScatterplot = ({
     colors: newColors = null,
     opacity: newOpacity = null,
     lassoColor: newLassoColor = null,
+    showRecticle: newShowRecticle = null,
     recticleColor: newRecticleColor = null,
     pointOutlineWidth: newPointOutlineWidth = null,
     pointSize: newPointSize = null,
@@ -806,6 +814,7 @@ const createScatterplot = ({
     setColors(newColors);
     setOpacity(newOpacity);
     setLassoColor(newLassoColor);
+    setShowRecticle(newShowRecticle);
     setRecticleColor(newRecticleColor);
     setPointOutlineWidth(newPointOutlineWidth);
     setPointSize(newPointSize);
