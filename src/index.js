@@ -89,6 +89,7 @@ const createScatterplot = ({
   let camera;
   let lasso;
   let scroll;
+  let mouseDown = false;
   let mouseDownShift = false;
   let mouseDownPosition = [0, 0];
   let numPoints = 0;
@@ -210,7 +211,6 @@ const createScatterplot = ({
         lassoPrevMousePos = currMousePos;
         if (lassoPos.length > 2) {
           lasso.setPoints(lassoPos);
-          drawRaf(); // eslint-disable-line no-use-before-define
         }
       }
     }
@@ -279,6 +279,8 @@ const createScatterplot = ({
   const mouseDownHandler = event => {
     if (!isInit) return;
 
+    mouseDown = true;
+
     mouseDownPosition = getRelativeMousePosition(event);
     mouseDownShift = event.shiftKey;
 
@@ -288,6 +290,8 @@ const createScatterplot = ({
 
   const mouseUpHandler = () => {
     if (!isInit) return;
+
+    mouseDown = false;
 
     if (mouseDownShift) {
       mouseDownShift = false;
@@ -324,6 +328,9 @@ const createScatterplot = ({
     }
 
     if (mouseDownShift) lassoExtendDb();
+
+    // Always redraw when mouse as the user might have panned or lassoed
+    if (mouseDown) drawRaf(); // eslint-disable-line no-use-before-define
   };
 
   const blurHandler = () => {
