@@ -81,21 +81,6 @@ See a complete example at [example/index.js](example/index.js).
 **isCrossOrigin:** if `url` is pointing to another origin `isCrossOrigin` must be set to `true`.
 
 
-### Properties
-
-#### `scatterplot.canvas`
-
-The canvas element on which the scatterplot is rendered.
-
-#### `scatterplot.regl`
-
-The Regl instance which renderes the scatterplot.
-
-#### `scatterplot.version`
-
-The version number of the scatterplot.
-
-
 ### Methods
 
 #### `scatterplot.draw(points)`
@@ -133,7 +118,7 @@ scatterplot.draw();
 scatterplot.draw([]);
 ```
 
-#### `scatterplot.attr(arg)`
+#### `scatterplot.get(property)`
 
 Setting or getting attributes. If `arg` is a string then one of the attributes listed below will be returned. If `arg` is a object of key-value pairs then those attributes will be set.
 
@@ -145,14 +130,28 @@ Setting or getting attributes. If `arg` is a string then one of the attributes l
 | height      | number | 200     | false       |
 | aspectRatio | number | 1.0     | false       |
 
+
+
+#### `scatterplot.canvas`
+
+The canvas element on which the scatterplot is rendered.
+
+#### `scatterplot.regl`
+
+The Regl instance which renderes the scatterplot.
+
+#### `scatterplot.version`
+
+The version number of the scatterplot.
+
 **Examples:**
 
 ```javascript
 // Set width and height
-scatterplot.attr({ width: 300, height: 200 });
+scatterplot.set({ width: 300, height: 200 });
 
 // get width
-const width = scatterplot.attr('width');
+const width = scatterplot.get('width');
 
 // Set the aspect ratio of the scatterplot. This aspect ratio is referring to
 // your data source and **not** the aspect ratio of the canvas element! By
@@ -160,29 +159,44 @@ const width = scatterplot.attr('width');
 // is preserved even if your canvas element has some other aspect ratio. But if
 // you wanted you could provide data that's going from [0,2] in x and [0,1] in y
 // in which case you'd have to set the aspect ratio as follows to `2`.
-scatterplot.attr({ aspectRatio: 2.0 });
+scatterplot.set({ aspectRatio: 2.0 });
 ```
 
-Nullifiable: an attribute is considered _nullifiable_ if you can unset it. Attributes that are not _nullifiable_ can be used, i.e., if you call `scatterplot.attr({ width: 0 });` will not change the width as `0` is interpreted as a falsey value.
+Nullifiable: an attribute is considered _nullifiable_ if you can unset it. Attributes that are not _nullifiable_ can be used, i.e., if you call `scatterplot.set({ width: 0 });` will not change the width as `0` is interpreted as a falsey value.
 
-#### `scatterplot.style()`
+#### `scatterplot.get(property)`
 
-Setting or getting styles. If `arg` is a string then one of the attributes listed below will be returned. If `arg` is a object of key-value pairs then those attributes will be set.
+**Returns:** one of the properties documented in [`set()`](#scatterplotset)
 
-**Attributes:**
+#### `scatterplot.set(properties)`
 
-| Name              | Type            | Default          | Constraints            | Nullifiable |
-|-------------------|-----------------|------------------|------------------------|-------------|
-| background        | string or array | rgba(0, 0, 0, 1) | hex, rgb, rgba         | `false`     |
-| backgroundImage   | function        | `null`           | Regl texture           | `true`      |
-| colorBy           | string          | `null`           | `category` or `value`  | `true`      |
-| colors            | array           | _see below_      | list of hex, rgb, rgba | `false`     |
-| opacity           | number          | `1`              | > 0                    | `false`     |
-| pointOutlineWidth | number          | `2`              | >= 0                   | `false`     |
-| pointSize         | number          | `6`              | > 0                    | `false`     |
-| pointSizeSelected | number          | `2`              | >= 0                   | `false`     |
+**Arguments:** `properties` is an object of key-value pairs. The list of all understood properties is given below.
+
+**Properties:**
+
+| Name              | Type            | Default          | Constraints            | Settable | Nullifiable |
+|-------------------|-----------------|------------------|------------------------|----------|-------------|
+| canvas            | number          | `300`            | > 0                    | `false`  | `false`     |
+| regl              | number          | `300`            | > 0                    | `false`  | `false`     |
+| version           | number          | `300`            | > 0                    | `false`  | `false`     |
+| width             | number          | `300`            | > 0                    | `true`   | `false`     |
+| height            | number          | `200`            | > 0                    | `true`   | `false`     |
+| aspectRatio       | number          | `1.0`            | > 0                    | `true`   | `false`     |
+| background        | string or array | rgba(0, 0, 0, 1) | hex, rgb, rgba         | `true`   | `false`     |
+| backgroundImage   | function        | `null`           | Regl texture           | `true`   | `true`      |
+| colorBy           | string          | `null`           | `category` or `value`  | `true`   | `true`      |
+| colors            | array           | _see below_      | list of hex, rgb, rgba | `true`   | `false`     |
+| opacity           | number          | `1`              | > 0                    | `true`   | `false`     |
+| pointOutlineWidth | number          | `2`              | >= 0                   | `true`   | `false`     |
+| pointSize         | number          | `6`              | > 0                    | `true`   | `false`     |
+| pointSizeSelected | number          | `2`              | >= 0                   | `true`   | `false`     |
 
 **Notes:**
+
+- An attribute is considered _nullifiable_ if it can be unset. Attributes that
+  are **not nullifiable** will be ignored if you try to ste them to a falsy
+  value. For example, if you call `scatterplot.attr({ width: 0 });` the width
+  will not be changed as `0` is interpreted as a falsy value.
 
 - The background of the scatterplot is transparent, i.e., you have to control
   the background with CSS! `background` is used when drawing the
@@ -209,38 +223,52 @@ Setting or getting styles. If `arg` is a string then one of the attributes liste
 **Examples:**
 
 ```javascript
+// Set width and height
+scatterplot.set({ width: 300, height: 200 });
+
+// get width
+const width = scatterplot.get('width');
+
+// Set the aspect ratio of the scatterplot. This aspect ratio is referring to
+// your data source and **not** the aspect ratio of the canvas element! By
+// default it is assumed that your data us following a 1:1 ratio and this ratio
+// is preserved even if your canvas element has some other aspect ratio. But if
+// you wanted you could provide data that's going from [0,2] in x and [0,1] in y
+// in which case you'd have to set the aspect ratio as follows to `2`.
+scatterplot.set({ aspectRatio: 2.0 });
+
 // Set background color red
-scatterplot.style({ background: '#00ff00' });
-scatterplot.style({ background: [255, 0, 0] });
-scatterplot.style({ background: [255, 0, 0, 1.0] });
-scatterplot.style({ background: [1, 0, 0, 1.0] }); // normalized rgba
+scatterplot.set({ background: '#00ff00' });
+scatterplot.set({ background: [255, 0, 0] });
+scatterplot.set({ background: [255, 0, 0, 1.0] });
+scatterplot.set({ background: [1, 0, 0, 1.0] }); // normalized rgba
 
 // Set background image to an image with the same origin
-scatterplot.style({ backgroundImage: 'my-image.png' });
+scatterplot.set({ backgroundImage: 'my-image.png' });
 // Set background image to an image with a different origin
-scatterplot.style({ backgroundImage: { src: 'https://server.com/my-image.png', crossOrigin: true } });
+scatterplot.set({ backgroundImage: { src: 'https://server.com/my-image.png', crossOrigin: true } });
 // Set background image to some regl texture
 const image = new Image();
 image.src = 'my-image.png';
-image.onload = () => { scatterplot.style({ backgroundImage: regl.texture(image) });
+image.onload = () => { scatterplot.set({ backgroundImage: regl.texture(image) });
 
 // Color by
-scatterplot.style({ colorBy: 'category' });
+scatterplot.set({ colorBy: 'category' });
 
 // Set color map
-scatterplot.style({ colors: ['#ff0000', '#00ff00', '#0000ff'] });
+scatterplot.set({ colors: ['#ff0000', '#00ff00', '#0000ff'] });
 
 // Set base opacity
-scatterplot.style({ opacity: 0.5 });
+scatterplot.set({ opacity: 0.5 });
 
 // Set the width of the outline of selected points
-scatterplot.style({ pointOutlineWidth: 2 });
+scatterplot.set({ pointOutlineWidth: 2 });
 
 // Set the base point size
-scatterplot.style({ pointSize: 10 });
+scatterplot.set({ pointSize: 10 });
 
 // Set the additional point size of selected points
-scatterplot.style({ pointSizeSelected: 2 });
+scatterplot.set({ pointSizeSelected: 2 });
 ```
 
 
