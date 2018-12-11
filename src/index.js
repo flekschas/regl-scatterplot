@@ -705,7 +705,7 @@ const createScatterplot = ({
 
     // The draw order of the following calls is important!
     drawPointBodies();
-    if (showRecticle || showRecticleOnce) drawRecticle();
+    if (!mouseDown && (showRecticle || showRecticleOnce)) drawRecticle();
     if (hoveredPoint >= 0) drawHoveredPoint();
     if (selection.length) drawSelectedPoint();
 
