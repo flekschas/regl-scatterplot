@@ -193,8 +193,6 @@ Nullifiable: an attribute is considered _nullifiable_ if you can unset it. Attri
 | showRecticle      | boolean         | `false`        | `true` or `false`      | `true`   | `false`     |
 | recticleColor     | array           | rgba(1,1,1,.5) | hex, rgb, rgba         | `true`   | `false`     |
 
-set({ showRecticle, recticleColor })
-
 **Notes:**
 
 - An attribute is considered _nullifiable_ if it can be unset. Attributes that
