@@ -118,20 +118,6 @@ scatterplot.draw();
 scatterplot.draw([]);
 ```
 
-#### `scatterplot.get(property)`
-
-Setting or getting attributes. If `arg` is a string then one of the attributes listed below will be returned. If `arg` is a object of key-value pairs then those attributes will be set.
-
-**Attributes:**
-
-| Name        | Type   | Example | Nullifiable |
-|-------------|--------|---------|-------------|
-| width       | number | 300     | false       |
-| height      | number | 200     | false       |
-| aspectRatio | number | 1.0     | false       |
-
-
-
 #### `scatterplot.canvas`
 
 The canvas element on which the scatterplot is rendered.
