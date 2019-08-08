@@ -8,6 +8,17 @@
 
 > A highly scalable scatterplot rendered with WebGL using [Regl](https://github.com/regl-project/regl)
 
+**Demo:** https://flekschas.github.io/regl-scatterplot/
+
+**Interactions:**
+
+- **Pan**: Click and drag your mouse.
+- **Zoom**: Scroll vertically.
+- **Rotate**: While pressing <kbd>ALT</kbd>, click and drag your mouse.
+- **Select a single dot**: Click on a dot with your mouse.
+- **Select multiple dots**: While pressing <kbd>SHIFT</kbd>, click and drag your mouse. All items within the lasso will be selected.
+- **Deselect**: Click outside a dot.
+
 ## Install
 
 ```
@@ -160,29 +171,29 @@ Nullifiable: an attribute is considered _nullifiable_ if you can unset it. Attri
 
 **Properties:**
 
-| Name              | Type            | Default        | Constraints            | Settable | Nullifiable |
-|-------------------|-----------------|----------------|------------------------|----------|-------------|
-| canvas            | number          | `300`          | > 0                    | `false`  | `false`     |
-| regl              | number          | `300`          | > 0                    | `false`  | `false`     |
-| version           | number          | `300`          | > 0                    | `false`  | `false`     |
-| width             | number          | `300`          | > 0                    | `true`   | `false`     |
-| height            | number          | `200`          | > 0                    | `true`   | `false`     |
-| aspectRatio       | number          | `1.0`          | > 0                    | `true`   | `false`     |
-| background        | string or array | rgba(0,0,0,1)  | hex, rgb, rgba         | `true`   | `false`     |
-| backgroundImage   | function        | `null`         | Regl texture           | `true`   | `true`      |
-| colorBy           | string          | `null`         | `category` or `value`  | `true`   | `true`      |
-| colors            | array           | _see below_    | list of hex, rgb, rgba | `true`   | `false`     |
-| opacity           | number          | `1`            | > 0                    | `true`   | `false`     |
-| pointOutlineWidth | number          | `2`            | >= 0                   | `true`   | `false`     |
-| pointSize         | number          | `6`            | > 0                    | `true`   | `false`     |
-| pointSizeSelected | number          | `2`            | >= 0                   | `true`   | `false`     |
-| showRecticle      | boolean         | `false`        | `true` or `false`      | `true`   | `false`     |
-| recticleColor     | array           | rgba(1,1,1,.5) | hex, rgb, rgba         | `true`   | `false`     |
+| Name              | Type            | Default                            | Constraints            | Settable | Nullifiable |
+|-------------------|-----------------|------------------------------------|------------------------|----------|-------------|
+| canvas            | object          | `document.createElement('canvas')` |                        | `true`   | `false`     |
+| regl              | object          | `createRegl(canvas)`               |                        | `true`   | `false`     |
+| version           | string          |                                    |                        | `false`  | `false`     |
+| width             | number          | `300`                              | > 0                    | `true`   | `false`     |
+| height            | number          | `200`                              | > 0                    | `true`   | `false`     |
+| aspectRatio       | number          | `1.0`                              | > 0                    | `true`   | `false`     |
+| background        | string or array | rgba(0,0,0,1)                      | hex, rgb, rgba         | `true`   | `false`     |
+| backgroundImage   | function        | `null`                             | Regl texture           | `true`   | `true`      |
+| colorBy           | string          | `null`                             | `category` or `value`  | `true`   | `true`      |
+| colors            | array           | _see below_                        | list of hex, rgb, rgba | `true`   | `false`     |
+| opacity           | number          | `1`                                | > 0                    | `true`   | `false`     |
+| pointOutlineWidth | number          | `2`                                | >= 0                   | `true`   | `false`     |
+| pointSize         | number          | `6`                                | > 0                    | `true`   | `false`     |
+| pointSizeSelected | number          | `2`                                | >= 0                   | `true`   | `false`     |
+| showRecticle      | boolean         | `false`                            | `true` or `false`      | `true`   | `false`     |
+| recticleColor     | array           | rgba(1,1,1,.5)                     | hex, rgb, rgba         | `true`   | `false`     |
 
 **Notes:**
 
 - An attribute is considered _nullifiable_ if it can be unset. Attributes that
-  are **not nullifiable** will be ignored if you try to ste them to a falsy
+  are **not nullifiable** will be ignored if you try to set them to a falsy
   value. For example, if you call `scatterplot.attr({ width: 0 });` the width
   will not be changed as `0` is interpreted as a falsy value.
 
