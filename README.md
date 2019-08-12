@@ -8,6 +8,10 @@
 
 > A highly scalable scatterplot rendered with WebGL using [Regl](https://github.com/regl-project/regl)
 
+<p>
+  <img src="https://user-images.githubusercontent.com/932103/62905669-7679f380-bd39-11e9-9528-86ee56d6dfba.gif" />
+</p>
+
 **Demo:** https://flekschas.github.io/regl-scatterplot/
 
 **Interactions:**
