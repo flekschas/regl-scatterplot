@@ -573,7 +573,7 @@ test('lasso selection with publish("select")', async t => {
 
 test('point hover with publish("pointover") and publish("pointout")', async t => {
   const dim = 200;
-  const hdim = dim / window.devicePixelRatio;
+  const hdim = dim / 2;
   const canvas = createCanvas(dim, dim);
   const scatterplot = createScatterplot({ canvas, width: dim, height: dim });
 
