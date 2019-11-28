@@ -19,6 +19,8 @@ let pointSize = 2;
 let opacity = 0.33;
 let selection = [];
 
+const lassoMinDelay = 10;
+const lassoMinDist = 2;
 const showRecticle = true;
 const recticleColor = [1, 1, 0.878431373, 0.33];
 
@@ -50,6 +52,8 @@ const scatterplot = createScatterplot({
   canvas,
   width,
   height,
+  lassoMinDelay,
+  lassoMinDist,
   pointSize,
   showRecticle,
   recticleColor
