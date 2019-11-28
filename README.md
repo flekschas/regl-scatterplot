@@ -32,9 +32,9 @@ npm -i regl-scatterplot
 ## Getting started
 
 ```javascript
-import createScatterplot from "regl-scatterplot";
+import createScatterplot from 'regl-scatterplot';
 
-const canvas = document.querySelector("#canvas");
+const canvas = document.querySelector('#canvas');
 
 const { width, height } = canvas.getBoundingClientRect();
 
@@ -84,7 +84,6 @@ See a complete example at [example/index.js](example/index.js).
 
 **Canvas:** the canvas object on which the scatterplot will be rendered on.
 
-
 #### `const texture = createTextureFromUrl(regl, url, isCrossOrigin)`
 
 **Returns:** a new [Regl texture](https://github.com/regl-project/regl/blob/gh-pages/API.md#textures) from a remote image.
@@ -95,7 +94,6 @@ See a complete example at [example/index.js](example/index.js).
 
 **isCrossOrigin:** if `url` is pointing to another origin `isCrossOrigin` must be set to `true`.
 
-
 ### Methods
 
 #### `scatterplot.draw(points)`
@@ -105,7 +103,6 @@ Sets and draws `points`, which must be an array of points where a point is inter
 **Examples:**
 
 ```javascript
-
 const points = [
   [
     // The X position
@@ -126,7 +123,6 @@ scatterplot.draw(points);
 // Lets redraw the scatterplot. Since `draw` is caching the points you don't
 // have to specify the points here again if they didn't change.
 scatterplot.draw();
-
 
 // Lets actively unset the points. Since `draw()` assumes that you want to
 // redraw existing points you have to actively pass in an empty array
@@ -176,7 +172,7 @@ Nullifiable: an attribute is considered _nullifiable_ if you can unset it. Attri
 **Properties:**
 
 | Name              | Type            | Default                            | Constraints            | Settable | Nullifiable |
-|-------------------|-----------------|------------------------------------|------------------------|----------|-------------|
+| ----------------- | --------------- | ---------------------------------- | ---------------------- | -------- | ----------- |
 | canvas            | object          | `document.createElement('canvas')` |                        | `true`   | `false`     |
 | regl              | object          | `createRegl(canvas)`               |                        | `true`   | `false`     |
 | version           | string          |                                    |                        | `false`  | `false`     |
@@ -191,6 +187,9 @@ Nullifiable: an attribute is considered _nullifiable_ if you can unset it. Attri
 | pointOutlineWidth | number          | `2`                                | >= 0                   | `true`   | `false`     |
 | pointSize         | number          | `6`                                | > 0                    | `true`   | `false`     |
 | pointSizeSelected | number          | `2`                                | >= 0                   | `true`   | `false`     |
+| lassoColor        | array           | rgba(0, 0.667, 1, 1)               | hex, rgb, rgba         | `true`   | `false`     |
+| lassoMinDelay     | number          | 15                                 | >= 0                   | `true`   | `false`     |
+| lassoMinDist      | number          | 4                                  | >= 0                   | `true`   | `false`     |
 | showRecticle      | boolean         | `false`                            | `true` or `false`      | `true`   | `false`     |
 | recticleColor     | array           | rgba(1,1,1,.5)                     | hex, rgb, rgba         | `true`   | `false`     |
 
@@ -273,10 +272,12 @@ scatterplot.set({ pointSize: 10 });
 // Set the additional point size of selected points
 scatterplot.set({ pointSizeSelected: 2 });
 
+// Change the lasso color and make it very smooth
+scatterplot.set({ lassoColor: [1, 1, 1, 1], lassoMinDelay: 0, lassoMinDist: 1 });
+
 // Activate recticle and set recticle color to red
 scatterplot.set({ showRecticle: true, recticleColor: [1, 0, 0, 0.66] });
 ```
-
 
 #### `scatterplot.select(points)`
 

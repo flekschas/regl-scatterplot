@@ -62,6 +62,8 @@ const createScatterplot = ({
   colorBy: initialColorBy = DEFAULT_COLOR_BY,
   colors: initialColors = DEFAULT_COLORS,
   lassoColor: initialLassoColor = DEFAULT_LASSO_COLOR,
+  lassoMinDelay: initialLassoMinDelay = LASSO_MIN_DELAY,
+  lassoMinDist: initialLassoMinDist = LASSO_MIN_DIST,
   showRecticle: initialShowRecticle = DEFAULT_SHOW_RECTICLE,
   recticleColor: initialRecticleColor = DEFAULT_RECTICLE_COLOR,
   pointSize: initialPointSize = DEFAULT_POINT_SIZE,
@@ -99,6 +101,8 @@ const createScatterplot = ({
   let numPoints = 0;
   let selection = [];
   let lassoColor = toRgba(initialLassoColor, true);
+  let lassoMinDelay = +initialLassoMinDelay;
+  let lassoMinDist = +initialLassoMinDist;
   let lassoPos = [];
   let lassoScatterPos = [];
   let lassoPrevMousePos;
@@ -213,7 +217,7 @@ const createScatterplot = ({
     } else {
       const d = dist(...currMousePos, ...lassoPrevMousePos);
 
-      if (d > LASSO_MIN_DIST) {
+      if (d > lassoMinDist) {
         lassoPos.push(...getMouseGlPos(currMousePos));
         lassoScatterPos.push(...getScatterGlPos(currMousePos));
         lassoPrevMousePos = currMousePos;
@@ -223,7 +227,7 @@ const createScatterplot = ({
       }
     }
   };
-  const lassoExtendDb = withThrottle(lassoExtend, LASSO_MIN_DELAY, true);
+  let lassoExtendDb = withThrottle(lassoExtend, lassoMinDelay, true);
 
   const findPointsInLasso = lassoPolygon => {
     // get the bounding box of the lasso selection...
@@ -745,6 +749,19 @@ const createScatterplot = ({
     lasso.setStyle({ color: lassoColor });
   };
 
+  const setLassoMinDelay = newLassoMinDelay => {
+    if (!+newLassoMinDelay) return;
+
+    lassoMinDelay = +newLassoMinDelay;
+    lassoExtendDb = withThrottle(lassoExtend, lassoMinDelay, true);
+  };
+
+  const setLassoMinDist = newLassoMinDist => {
+    if (!+newLassoMinDist) return;
+
+    lassoMinDist = +newLassoMinDist;
+  };
+
   const setShowRecticle = newShowRecticle => {
     if (newShowRecticle === null) return;
 
@@ -799,6 +816,8 @@ const createScatterplot = ({
     colors: newColors = null,
     opacity: newOpacity = null,
     lassoColor: newLassoColor = null,
+    lassoMinDelay: newLassoMinDelay = null,
+    lassoMinDist: newLassoMinDist = null,
     showRecticle: newShowRecticle = null,
     recticleColor: newRecticleColor = null,
     pointOutlineWidth: newPointOutlineWidth = null,
@@ -814,6 +833,8 @@ const createScatterplot = ({
     setColors(newColors);
     setOpacity(newOpacity);
     setLassoColor(newLassoColor);
+    setLassoMinDelay(newLassoMinDelay);
+    setLassoMinDist(newLassoMinDist);
     setShowRecticle(newShowRecticle);
     setRecticleColor(newRecticleColor);
     setPointOutlineWidth(newPointOutlineWidth);
