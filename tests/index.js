@@ -119,8 +119,16 @@ test('set({ width, height })', t => {
   const gl = canvas.getContext('webgl');
   const scatterplot = createScatterplot({ canvas, width: w1, height: h1 });
 
-  t.equal(gl.drawingBufferWidth, w1, `width should be ${w1}px`);
-  t.equal(gl.drawingBufferHeight, h1, `height should be ${h1}px`);
+  t.equal(
+    gl.drawingBufferWidth,
+    w1 * window.devicePixelRatio,
+    `width should be ${w1 * window.devicePixelRatio}px`
+  );
+  t.equal(
+    gl.drawingBufferHeight,
+    h1 * window.devicePixelRatio,
+    `height should be ${h1 * window.devicePixelRatio}px`
+  );
 
   const w2 = 400;
   const h2 = 300;
@@ -130,8 +138,16 @@ test('set({ width, height })', t => {
   t.equal(scatterplot.get('width'), w2, `width should be set to ${w2}px`);
   t.equal(scatterplot.get('height'), h2, `height should be set to ${h2}px`);
 
-  t.equal(gl.drawingBufferWidth, w2, `width should be set to ${w2}px`);
-  t.equal(gl.drawingBufferHeight, h2, `height should be set to ${h2}px`);
+  t.equal(
+    gl.drawingBufferWidth,
+    w2 * window.devicePixelRatio,
+    `width should be set to ${w2 * window.devicePixelRatio}px`
+  );
+  t.equal(
+    gl.drawingBufferHeight,
+    h2 * window.devicePixelRatio,
+    `height should be set to ${h2 * window.devicePixelRatio}px`
+  );
 });
 
 test('set({ aspectRatio })', t => {
@@ -526,7 +542,7 @@ test('lasso selection with publish("select")', async t => {
     createMouseEvent('mousedown', dim * 1.125, hdim, { shiftKey: true })
   );
 
-  // Needed to first diguest the mousedown event
+  // Needed to first digest the mousedown event
   await wait(0);
 
   const mousePositions = [
