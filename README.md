@@ -306,6 +306,7 @@ Subscribe to an event.
 
 **eventName** needs to be one of the following events:
 
+- `hover` [payload: `point`]: broadcasted when a point is hovered
 - `select` [payload: `{ points }`]: broadcasted when points are selected
 - `deselect` [payload: `undefined`]: broadcasted when points are deselected
 - `view` [payload: camera view matrix]: broadcasted when the view changes
