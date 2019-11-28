@@ -272,7 +272,9 @@ scatterplot.set({ pointSize: 10 });
 // Set the additional point size of selected points
 scatterplot.set({ pointSizeSelected: 2 });
 
-// Change the lasso color and make it very smooth
+// Change the lasso color and make it very smooth, i.e., do not wait before
+// extending the lasso (i.e., `lassoMinDelay = 0`) and extend the lasso when
+// the mouse moves at least 1 pixel
 scatterplot.set({ lassoColor: [1, 1, 1, 1], lassoMinDelay: 0, lassoMinDist: 1 });
 
 // Activate recticle and set recticle color to red
