@@ -24,8 +24,14 @@ const lassoMinDist = 2;
 const showRecticle = true;
 const recticleColor = [1, 1, 0.878431373, 0.33];
 
-const hoverHandler = pointId => {
-  console.log('Hovered:', pointId);
+const pointoverHandler = pointId => {
+  console.log('Over point:', pointId);
+  const [x, y, category, value] = points[pointId];
+  console.log(`X: ${x}\nY: ${y}\nCategory: ${category}\nValue: ${value}`);
+};
+
+const pointoutHandler = pointId => {
+  console.log('Out point:', pointId);
   const [x, y, category, value] = points[pointId];
   console.log(`X: ${x}\nY: ${y}\nCategory: ${category}\nValue: ${value}`);
 };
@@ -61,7 +67,8 @@ const scatterplot = createScatterplot({
 
 console.log(`Scatterplot v${scatterplot.get('version')}`);
 
-scatterplot.subscribe('hover', hoverHandler);
+scatterplot.subscribe('pointover', pointoverHandler);
+scatterplot.subscribe('pointout', pointoutHandler);
 scatterplot.subscribe('select', selectHandler);
 scatterplot.subscribe('deselect', deselectHandler);
 
