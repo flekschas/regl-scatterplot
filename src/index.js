@@ -855,12 +855,14 @@ const createScatterplot = ({
 
     if (point >= 0) {
       needsRedraw = true;
+      const newHoveredPoint = point !== hoveredPoint;
       hoveredPoint = point;
       hoveredPointIndexBuffer.subdata([point]);
-      pubSub.publish('hover', point);
+      if (newHoveredPoint) pubSub.publish('pointover', hoveredPoint);
     } else {
       needsRedraw = hoveredPoint;
       hoveredPoint = undefined;
+      if (+needsRedraw >= 0) pubSub.publish('pointout', needsRedraw);
     }
 
     if (needsRedraw) drawRaf(null, showRecticleOnce);
