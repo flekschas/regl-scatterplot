@@ -571,6 +571,42 @@ test('lasso selection with publish("select")', async t => {
   );
 });
 
+test('point hover with publish("pointover") and publish("pointout")', async t => {
+  const dim = 200;
+  const hdim = dim / window.devicePixelRatio;
+  const canvas = createCanvas(dim, dim);
+  const scatterplot = createScatterplot({ canvas, width: dim, height: dim });
+
+  const points = [[0, 0], [1, 1], [1, -1], [-1, -1], [-1, 1]];
+  scatterplot.draw(points);
+
+  // TODO: fix this!
+  await wait(250);
+
+  let hoveredPoint = null;
+  const pointoverHandler = point => {
+    hoveredPoint = point;
+  };
+  const pointoutHandler = () => {
+    hoveredPoint = null;
+  };
+  scatterplot.subscribe('pointover', pointoverHandler);
+  scatterplot.subscribe('pointout', pointoutHandler);
+
+  // Test single selection via mouse clicks
+  canvas.dispatchEvent(createMouseEvent('mouseenter', hdim, hdim));
+  await wait(250);
+  window.dispatchEvent(createMouseEvent('mousemove', hdim, hdim));
+  await wait(250);
+
+  t.equal(hoveredPoint, 0, 'should be hovering point 0 (in the middle)');
+
+  // Test deselection
+  window.dispatchEvent(createMouseEvent('mousemove', hdim / 2, hdim));
+
+  t.equal(hoveredPoint, null, 'should not be hovering any point');
+});
+
 // test('publish("view")', async t => {
 //   const dim = 200;
 //   const hdim = dim / 2;
