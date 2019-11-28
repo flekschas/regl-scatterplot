@@ -1,3 +1,7 @@
+**v0.7.1**
+
+- Replaced `hover` event with `pointover` and `pointout` to be able to know when a point is not hovered anymore.
+
 **v0.7.0**
 
 - Allow changing the lasso smoothness via `set({ lassoMinDelay, lassoMinDist })` where `lassoMinDelay` is the minimum number of milliseconds between mousemove events before the lasso is extended and `lassoMinDist` is the minimum number of pixels the mouse has to move.
