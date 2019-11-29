@@ -1,3 +1,7 @@
+**v0.7.3**
+
+- Fix glitch in the npm release of `v0.7.2`.
+
 **v0.7.2**
 
 - Provide proper ESM instead of pointing to the source code.
