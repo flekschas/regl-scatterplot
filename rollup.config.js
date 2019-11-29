@@ -17,7 +17,7 @@ const configurator = (file, format, plugins) => ({
       'pub-sub-es': 'createPubSub',
       regl: 'createREGL'
     },
-    intro: `var VERSION = ${VERSION};`
+    intro: `${format === 'es' ? 'const' : 'var'} VERSION = ${VERSION};`
   },
   plugins,
   external: ['pub-sub-es', 'regl']
@@ -31,11 +31,26 @@ const devConfig = configurator('dist/regl-scatterplot.js', 'umd', [
   visualizer()
 ]);
 
-const prodConfig = configurator('dist/regl-scatterplot.js', 'umd', [
+const devConfigEsm = configurator('dist/regl-scatterplot.esm.js', 'es', [
+  resolve(),
+  commonjs({ sourceMap: false }),
+  babel(),
+  filesize(),
+  visualizer()
+]);
+
+const prodConfig = configurator('dist/regl-scatterplot.min.js', 'umd', [
   resolve(),
   commonjs({ sourceMap: false }),
   babel(),
   terser()
 ]);
 
-export default [devConfig, prodConfig];
+const prodConfigEsm = configurator('dist/regl-scatterplot.esm.min.js', 'es', [
+  resolve(),
+  commonjs({ sourceMap: false }),
+  babel(),
+  terser()
+]);
+
+export default [devConfig, devConfigEsm, prodConfig, prodConfigEsm];

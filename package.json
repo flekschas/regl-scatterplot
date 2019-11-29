@@ -11,11 +11,10 @@
   ],
   "license": "MIT",
   "main": "dist/regl-scatterplot.js",
-  "module": "src/index.js",
+  "module": "dist/regl-scatterplot.esm.js",
   "files": [
     "src/*",
-    "dist/regl-scatterplot.js",
-    "dist/regl-scatterplot.min.js"
+    "dist/*"
   ],
   "scripts": {
     "build": "rollup -c; webpack --config ./webpack.config.js --mode production",
