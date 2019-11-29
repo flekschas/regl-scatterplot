@@ -1,3 +1,7 @@
+**v0.7.2**
+
+- Provide proper ESM instead of pointing to the source code.
+
 **v0.7.1**
 
 - Replaced `hover` event with `pointover` and `pointout` to be able to know when a point is not hovered anymore.
