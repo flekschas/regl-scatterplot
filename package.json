@@ -21,7 +21,7 @@
     "ghp": "npm run build; rm -rf ../regl-scatterplot-ghp/*; touch ../regl-scatterplot-ghp/.nojekyll; cp -r docs/* ../regl-scatterplot-ghp/",
     "lint": "eslint src tests rollup.config.js webpack.config.js",
     "precommit": "NODE_ENV=production lint-staged; npm run test",
-    "prepublishOnly": "npm run test",
+    "prepublishOnly": "npm run test; rm -rf dist/*; npm run build;",
     "prerelease": "rm -rf dist/*; npm run build; zip -r dist.zip dist",
     "pretest": "npm run lint",
     "start": "webpack-dev-server --config ./webpack.config.js --mode development --open",
