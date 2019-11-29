@@ -1,6 +1,6 @@
 {
   "name": "regl-scatterplot",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "description": "WebGL-based 2D Scatterplot in Regl",
   "author": "Fritz Lekschas",
   "keywords": [
