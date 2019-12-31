@@ -66,6 +66,7 @@ See a complete example at [example/index.js](example/index.js).
 
 - `regl` a Regl instance to be used for rendering.
 - `background` background color of the scatterplot.
+- `backgroundImage` background image for the scatterplot. This must be a [regl texture object](https://github.com/regl-project/regl/blob/gh-pages/API.md#textures).
 - `canvas` canvas element.
 - `colors` colormap.
 - `pointSize` size of the points.
