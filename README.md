@@ -142,26 +142,6 @@ The Regl instance which renderes the scatterplot.
 
 The version number of the scatterplot.
 
-**Examples:**
-
-```javascript
-// Set width and height
-scatterplot.set({ width: 300, height: 200 });
-
-// get width
-const width = scatterplot.get('width');
-
-// Set the aspect ratio of the scatterplot. This aspect ratio is referring to
-// your data source and **not** the aspect ratio of the canvas element! By
-// default it is assumed that your data us following a 1:1 ratio and this ratio
-// is preserved even if your canvas element has some other aspect ratio. But if
-// you wanted you could provide data that's going from [0,2] in x and [0,1] in y
-// in which case you'd have to set the aspect ratio as follows to `2`.
-scatterplot.set({ aspectRatio: 2.0 });
-```
-
-Nullifiable: an attribute is considered _nullifiable_ if you can unset it. Attributes that are not _nullifiable_ can be used, i.e., if you call `scatterplot.set({ width: 0 });` will not change the width as `0` is interpreted as a falsey value.
-
 #### `scatterplot.get(property)`
 
 **Returns:** one of the properties documented in [`set()`](#scatterplotset)
