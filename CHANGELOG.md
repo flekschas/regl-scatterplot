@@ -1,6 +1,8 @@
 **v0.7.4**
 
 - Increase floating point precision (#5)
+- Fix a rare glitch in the lasso selection where the lasso would be drawn with a far away point
+- Smoothify lasso by lowering the min delay and min dist
 
 **v0.7.3**
 
