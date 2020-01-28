@@ -1,3 +1,8 @@
+**v0.7.4**
+
+- Fix a rare glitch in the lasso selection where the lasso would be drawn with a far away point
+- Smoothify lasso by lowering the min delay and min dist
+
 **v0.7.3**
 
 - Fix glitch in the npm release of `v0.7.2`.
