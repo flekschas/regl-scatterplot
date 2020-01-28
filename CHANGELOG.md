@@ -1,3 +1,7 @@
+**v0.7.4**
+
+- Increase floating point precision (#5)
+
 **v0.7.3**
 
 - Fix glitch in the npm release of `v0.7.2`.
