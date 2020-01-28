@@ -211,8 +211,8 @@ const createScatterplot = ({
     const currMousePos = getMousePos();
 
     if (!lassoPrevMousePos) {
-      lassoPos.push(...getMouseGlPos(currMousePos));
-      lassoScatterPos.push(...getScatterGlPos(currMousePos));
+      lassoPos = [...getMouseGlPos(currMousePos)];
+      lassoScatterPos = [...getScatterGlPos(currMousePos)];
       lassoPrevMousePos = currMousePos;
     } else {
       const d = dist(...currMousePos, ...lassoPrevMousePos);
@@ -227,7 +227,7 @@ const createScatterplot = ({
       }
     }
   };
-  let lassoExtendDb = withThrottle(lassoExtend, lassoMinDelay, true);
+  let lassoExtendDb = withThrottle(lassoExtend, lassoMinDelay);
 
   const findPointsInLasso = lassoPolygon => {
     // get the bounding box of the lasso selection...
@@ -296,8 +296,12 @@ const createScatterplot = ({
     mouseDownPosition = getRelativeMousePosition(event);
     mouseDownShift = event.shiftKey;
 
-    // fix camera
-    if (mouseDownShift) camera.config({ isFixed: true });
+    if (mouseDownShift) {
+      // Fix camera for the lasso selection
+      camera.config({ isFixed: true });
+      // Make sure we start a new lasso selection
+      lassoPrevMousePos = undefined;
+    }
   };
 
   const mouseUpHandler = () => {
@@ -753,7 +757,7 @@ const createScatterplot = ({
     if (!+newLassoMinDelay) return;
 
     lassoMinDelay = +newLassoMinDelay;
-    lassoExtendDb = withThrottle(lassoExtend, lassoMinDelay, true);
+    lassoExtendDb = withThrottle(lassoExtend, lassoMinDelay);
   };
 
   const setLassoMinDist = newLassoMinDist => {
