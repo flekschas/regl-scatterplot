@@ -4,7 +4,6 @@
 - Smoothify lasso by lowering the min delay and min dist
 - Update 2D camera and many dev packages
 - Remove the minified ESM build as it's unnecessary
-- Cherry pick gl-matrix modules to reduce the bundle size
 
 **v0.7.3**
 
