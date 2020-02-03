@@ -6,7 +6,6 @@ import withRaf from 'with-raf';
 import * as mat4 from 'gl-matrix/mat4';
 import * as vec4 from 'gl-matrix/vec4';
 import createLine from 'regl-line';
-import createScroll from 'scroll-speed';
 
 import BG_FS from './bg.fs';
 import BG_VS from './bg.vs';
@@ -913,6 +912,10 @@ const createScatterplot = ({
     else camera.lookAt([...initialTarget], initialDistance, initialRotation);
   };
 
+  const wheelHandler = () => {
+    drawRaf();
+  };
+
   const init = () => {
     updateViewAspectRatio();
     initCamera();
@@ -928,12 +931,9 @@ const createScatterplot = ({
       width: 1,
       is2d: true
     });
-    scroll = createScroll(canvas);
 
     // Event listeners
-    scroll.on('scroll', () => {
-      drawRaf();
-    });
+    canvas.addEventListener('wheel', wheelHandler);
 
     // Buffers
     normalPointsIndexBuffer = regl.buffer();
