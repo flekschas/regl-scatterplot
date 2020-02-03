@@ -1,7 +1,9 @@
 /* eslint no-console: 1 */
 
 import '@babel/polyfill';
-import test from 'zora';
+import { test } from 'zora';
+import { version } from '../package.json';
+
 // import { mat4 } from 'gl-matrix';
 
 import createScatterplot, { createRegl, createTextureFromUrl } from '../src';
@@ -106,8 +108,8 @@ test('get("canvas"), get("regl"), and get("version")', async t => {
 
   t.equal(
     scatterplot.get('version'),
-    VERSION,
-    `version should be set to ${VERSION}`
+    version,
+    `version should be set to ${version}`
   );
 });
 
@@ -283,7 +285,12 @@ test('set({ colors })', t => {
     'should create 8 normalized RGBAs from 2 HEX'
   );
 
-  scatterplot.set({ colors: [[0, 141, 255], [255, 0, 218]] });
+  scatterplot.set({
+    colors: [
+      [0, 141, 255],
+      [255, 0, 218]
+    ]
+  });
   t.ok(
     scatterplot
       .get('colors')
@@ -291,7 +298,12 @@ test('set({ colors })', t => {
     'should create 8 normalized RGBAs from 2 non-normalized RGB'
   );
 
-  scatterplot.set({ colors: [[0, 141, 255, 127], [255, 0, 218, 127]] });
+  scatterplot.set({
+    colors: [
+      [0, 141, 255, 127],
+      [255, 0, 218, 127]
+    ]
+  });
   t.ok(
     scatterplot
       .get('colors')
@@ -476,7 +488,13 @@ test('click selection with publish("select")', async t => {
   const canvas = createCanvas(dim, dim);
   const scatterplot = createScatterplot({ canvas, width: dim, height: dim });
 
-  const points = [[0, 0], [1, 1], [1, -1], [-1, -1], [-1, 1]];
+  const points = [
+    [0, 0],
+    [1, 1],
+    [1, -1],
+    [-1, -1],
+    [-1, 1]
+  ];
   scatterplot.draw(points);
 
   // TODO: fix this!
@@ -521,7 +539,13 @@ test('lasso selection with publish("select")', async t => {
   const canvas = createCanvas(dim, dim);
   const scatterplot = createScatterplot({ canvas, width: dim, height: dim });
 
-  const points = [[0, 0], [1, 1], [1, -1], [-1, -1], [-1, 1]];
+  const points = [
+    [0, 0],
+    [1, 1],
+    [1, -1],
+    [-1, -1],
+    [-1, 1]
+  ];
   scatterplot.draw(points);
 
   // TODO: fix this!
@@ -577,7 +601,13 @@ test('point hover with publish("pointover") and publish("pointout")', async t =>
   const canvas = createCanvas(dim, dim);
   const scatterplot = createScatterplot({ canvas, width: dim, height: dim });
 
-  const points = [[0, 0], [1, 1], [1, -1], [-1, -1], [-1, 1]];
+  const points = [
+    [0, 0],
+    [1, 1],
+    [1, -1],
+    [-1, -1],
+    [-1, 1]
+  ];
   scatterplot.draw(points);
 
   // TODO: fix this!
