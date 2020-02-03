@@ -6,7 +6,14 @@ import resolve from '@rollup/plugin-node-resolve';
 import { terser } from 'rollup-plugin-terser';
 import visualizer from 'rollup-plugin-visualizer';
 
-const basePlugins = [resolve(), commonjs({ sourceMap: false }), json()];
+const basePlugins = [
+  resolve({
+    dedupe: ['gl-matrix'],
+    mainFields: ['module', 'main']
+  }),
+  commonjs({ sourceMap: false }),
+  json()
+];
 
 const configurator = (file, format, plugins = []) => ({
   input: 'src/index.js',
