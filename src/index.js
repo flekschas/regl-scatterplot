@@ -3,7 +3,8 @@ import KDBush from 'kdbush';
 import createPubSub from 'pub-sub-es';
 import withThrottle from 'lodash-es/throttle';
 import withRaf from 'with-raf';
-import { mat4, vec4 } from 'gl-matrix';
+import * as mat4 from 'gl-matrix/mat4';
+import * as vec4 from 'gl-matrix/vec4';
 import createLine from 'regl-line';
 import createScroll from 'scroll-speed';
 
