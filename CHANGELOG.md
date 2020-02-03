@@ -2,6 +2,7 @@
 
 - Fix a rare glitch in the lasso selection where the lasso would be drawn with a far away point
 - Smoothify lasso by lowering the min delay and min dist
+- Update 2D camera and many dev packages
 
 **v0.7.3**
 
