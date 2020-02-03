@@ -1,7 +1,4 @@
-const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
-
-const VERSION = require('./version.js');
 
 module.exports = (env, argv) => ({
   entry: {
@@ -37,7 +34,6 @@ module.exports = (env, argv) => ({
       template: 'example/index.html',
       filename: 'texture-background.html',
       chunks: ['textureBackground']
-    }),
-    new webpack.DefinePlugin({ VERSION })
+    })
   ]
 });
