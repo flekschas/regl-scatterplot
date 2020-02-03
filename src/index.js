@@ -1,4 +1,4 @@
-import canvasCamera2d from 'canvas-camera-2d';
+import createDom2dCamera from '@flekschas/dom-2d-camera';
 import KDBush from 'kdbush';
 import createPubSub from 'pub-sub-es';
 import withThrottle from 'lodash-es/throttle';
@@ -53,6 +53,8 @@ import {
   max,
   min
 } from './utils';
+
+import { version } from '../package.json';
 
 const createScatterplot = ({
   regl: initialRegl,
@@ -609,7 +611,7 @@ const createScatterplot = ({
 
     const [x, y] = searchIndex.points[hoveredPoint].slice(0, 2);
 
-    // Normalized device coordinate of the point
+    // Homogeneous coordinates of the point
     const v = [x, y, 0, 1];
 
     // We have to calculate the model-view-projection matrix outside of the
@@ -689,7 +691,12 @@ const createScatterplot = ({
       data: createPointIndex(numPoints)
     });
 
-    searchIndex = new KDBush(newPoints, p => p[0], p => p[1], 16);
+    searchIndex = new KDBush(
+      newPoints,
+      p => p[0],
+      p => p[1],
+      16
+    );
 
     isInit = true;
   };
@@ -808,7 +815,7 @@ const createScatterplot = ({
     if (property === 'aspectRatio') return dataAspectRatio;
     if (property === 'canvas') return canvas;
     if (property === 'regl') return regl;
-    if (property === 'version') return VERSION;
+    if (property === 'version') return version;
 
     return undefined;
   };
@@ -899,7 +906,7 @@ const createScatterplot = ({
   };
 
   const initCamera = () => {
-    camera = canvasCamera2d(canvas);
+    camera = createDom2dCamera(canvas);
 
     if (initialView) camera.set(mat4.clone(initialView));
     else camera.lookAt([...initialTarget], initialDistance, initialRotation);
