@@ -19,6 +19,7 @@ before_deploy:
   - npm run prerelease
 deploy:
   - provider: releases
+    edge: true
     skip_cleanup: true
     api_key:
       secure: PCL6FS8GDmgiTFhZ8rPmCgrktRYYT7QV/yyVLZk93J6WTAI5ChbtFusB+O6cyia0+G7CEmNZXwc6OGGs6iXCFAckP2lMqexfeTU35pd0feeN+gcvVdXudUo+FVVkgb2FPBUjj0RvanL6RvuoZHeUFIrTho4VK6gtlm8ErmAA/JZhhRACSI2cwV5GoJQtUl1i0D7KiA/w5AhtMGKhG2kc26MPXF3k715XcO+qpt1M6lK6uu0wonLk3EgH2YqndY4OPoffneQVbL1jwnkCoY4NRyuaQeHjNeUSvxI7QG4c95kFg6XcnCpi9Kqu2o6wZpxIIMlSjYi0C9nja+scdwjaEc/nGO0WTNC/UFbAgK36EkoxFcIaZiDq/dhtNekyDzHmJklrI6iEBMa7Fb3y1PE1dK+FBeHq3G3aVWFRYExZtpKyq16Cj7+588qalOYfgib0WT/EWg9e4vqM2vdw2ALm9gYwM9WJSgVVTRarm1nL4G/2aamCly5zxC9gKzNF6ikxG5cTYHypNZppOaZZ8+iKUYso9VOiGsW6GRXTLxY0oGF+7DU8In5CqxgP/Q6F2BWWKo1cUoFuzqQZ1ixeaq6MehS01CF5JXhrKaN1TTMFAIBizRQnE3pibyGz+Sgms8XtQ0wedS9yXr57joCC5rr6yILzmw9UhUIPdd2p/FbTYr0=
@@ -28,6 +29,7 @@ deploy:
       tags: true
       repo: flekschas/regl-scatterplot
   - provider: npm
+    edge: true
     skip_cleanup: true
     email: service@lekschas.de
     api_key:
