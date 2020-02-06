@@ -1,4 +1,4 @@
-import createDom2dCamera from '@flekschas/dom-2d-camera';
+import createDom2dCamera from 'dom-2d-camera';
 import KDBush from 'kdbush';
 import createPubSub from 'pub-sub-es';
 import withThrottle from 'lodash-es/throttle';
@@ -95,7 +95,6 @@ const createScatterplot = ({
   let regl = initialRegl || createRegl(initialCanvas);
   let camera;
   let lasso;
-  let scroll;
   let mouseDown = false;
   let mouseDownShift = false;
   let mouseDownPosition = [0, 0];
@@ -700,8 +699,7 @@ const createScatterplot = ({
     isInit = true;
   };
 
-  const draw = (newPoints, showRecticleOnce) => {
-    if (newPoints) setPoints(newPoints);
+  const draw = (showRecticleOnce = false) => {
     if (!isInit) return;
 
     regl.clear({
@@ -730,6 +728,11 @@ const createScatterplot = ({
   };
 
   const drawRaf = withRaf(draw);
+
+  const publicDraw = (newPoints, showRecticleOnce = false) => {
+    if (newPoints) setPoints(newPoints);
+    drawRaf(showRecticleOnce);
+  };
 
   const withDraw = f => (...args) => {
     const out = f(...args);
@@ -795,6 +798,7 @@ const createScatterplot = ({
    */
   const refresh = () => {
     regl.poll();
+    camera.refresh();
   };
 
   const get = property => {
@@ -915,6 +919,10 @@ const createScatterplot = ({
     drawRaf();
   };
 
+  const clear = () => {
+    setPoints([]);
+  };
+
   const init = () => {
     updateViewAspectRatio();
     initCamera();
@@ -974,16 +982,16 @@ const createScatterplot = ({
     camera = undefined;
     regl = undefined;
     lasso.destroy();
-    scroll.dispose();
     pubSub.clear();
   };
 
   init(canvas);
 
   return {
+    clear: withDraw(clear),
     deselect,
     destroy,
-    draw: drawRaf,
+    draw: publicDraw,
     get,
     hover,
     refresh,
