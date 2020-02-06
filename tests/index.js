@@ -482,7 +482,7 @@ test('set({ showRecticle, recticleColor })', async t => {
 
 /* ---------------------------------- events -------------------------------- */
 
-test('click selection with publish("select")', async t => {
+test('draw(), clear(), publish("select")', async t => {
   const dim = 200;
   const hdim = dim / 2;
   const canvas = createCanvas(dim, dim);
@@ -496,6 +496,11 @@ test('click selection with publish("select")', async t => {
     [-1, 1]
   ];
   scatterplot.draw(points);
+  // The second draw call should not block the drawing of the points!
+  // This test is related to a previous issue caused by `drawRaf` as `withRaf`
+  // overwrites previous arguments. While that is normally expected, this
+  // should not overwrite the points from above
+  scatterplot.draw();
 
   // TODO: fix this!
   await wait(250);
@@ -514,13 +519,13 @@ test('click selection with publish("select")', async t => {
   window.dispatchEvent(createMouseEvent('mousedown', hdim, hdim));
   canvas.dispatchEvent(createMouseEvent('click', hdim, hdim));
 
-  t.equal(selectedPoints.length, 1, 'should have selected 1 point');
+  t.equal(selectedPoints.length, 1, 'should have selected one point');
   t.equal(selectedPoints[0], 0, 'should have selected the first point');
 
   // Test deselection
   canvas.dispatchEvent(createMouseEvent('dblclick', hdim, hdim));
 
-  t.equal(selectedPoints.length, 0, 'should have deselected 1 point');
+  t.equal(selectedPoints.length, 0, 'should have deselected one point');
 
   // Test that mousedown + mousemove + click is not interpreted as a click when
   // the cursor moved more than `LASSO_MIN_DIST` in between mousedown and
@@ -530,7 +535,15 @@ test('click selection with publish("select")', async t => {
   );
   canvas.dispatchEvent(createMouseEvent('click', hdim, hdim));
 
-  t.equal(selectedPoints.length, 0, 'should *not* have selected 1 point');
+  t.equal(selectedPoints.length, 0, 'should *not* have selected one point');
+
+  // Test that clearing the points works. The selection that worked previously
+  // should not work anymore
+  scatterplot.clear();
+  window.dispatchEvent(createMouseEvent('mousedown', hdim, hdim));
+  canvas.dispatchEvent(createMouseEvent('click', hdim, hdim));
+
+  t.equal(selectedPoints.length, 0, 'should *not* have selected one point');
 });
 
 test('lasso selection with publish("select")', async t => {
