@@ -29,8 +29,8 @@
     "watch": "rollup -cw"
   },
   "dependencies": {
-    "@flekschas/dom-2d-camera": "~1.0.0-rc.3",
     "camera-2d-simple": "~2.0.1",
+    "dom-2d-camera": "~1.0.0-rc.5",
     "gl-matrix": "~3.1.0",
     "kdbush": "~3.0.0",
     "lodash-es": "~4.17.11",
