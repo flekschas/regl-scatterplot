@@ -15,6 +15,8 @@
 
 **Demo:** https://flekschas.github.io/regl-scatterplot/
 
+**Live playground:** https://observablehq.com/@flekschas/regl-scatterplot
+
 **Interactions:**
 
 - **Pan**: Click and drag your mouse.
