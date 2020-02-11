@@ -29,7 +29,7 @@ void main() {
   float stateRowIndex = floor((stateIndex + eps) / stateTexRes);
   vec2 stateTexIndex = vec2(
     (stateIndex / stateTexRes) - stateRowIndex + eps,
-    stateRowIndex / stateTexRes
+    stateRowIndex / stateTexRes + eps
   );
 
   vec4 state = texture2D(stateTex, stateTexIndex);
@@ -53,7 +53,7 @@ void main() {
 
   vec2 colorTexIndex = vec2(
     (colorLinearIndex / colorTexRes) - colorRowIndex + eps,
-    colorRowIndex / colorTexRes
+    colorRowIndex / colorTexRes + eps
   );
 
   color = texture2D(colorTex, colorTexIndex);
