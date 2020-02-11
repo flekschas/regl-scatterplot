@@ -1,11 +1,10 @@
-import canvasCamera2d from 'canvas-camera-2d';
+import createDom2dCamera from 'dom-2d-camera';
 import KDBush from 'kdbush';
 import createPubSub from 'pub-sub-es';
 import withThrottle from 'lodash-es/throttle';
 import withRaf from 'with-raf';
 import { mat4, vec4 } from 'gl-matrix';
 import createLine from 'regl-line';
-import createScroll from 'scroll-speed';
 
 import BG_FS from './bg.fs';
 import BG_VS from './bg.vs';
@@ -54,6 +53,8 @@ import {
   min
 } from './utils';
 
+import { version } from '../package.json';
+
 const createScatterplot = ({
   regl: initialRegl,
   background: initialBackground = DEFAULT_COLOR_BG,
@@ -94,7 +95,6 @@ const createScatterplot = ({
   let regl = initialRegl || createRegl(initialCanvas);
   let camera;
   let lasso;
-  let scroll;
   let mouseDown = false;
   let mouseDownShift = false;
   let mouseDownPosition = [0, 0];
@@ -609,7 +609,7 @@ const createScatterplot = ({
 
     const [x, y] = searchIndex.points[hoveredPoint].slice(0, 2);
 
-    // Normalized device coordinate of the point
+    // Homogeneous coordinates of the point
     const v = [x, y, 0, 1];
 
     // We have to calculate the model-view-projection matrix outside of the
@@ -689,13 +689,17 @@ const createScatterplot = ({
       data: createPointIndex(numPoints)
     });
 
-    searchIndex = new KDBush(newPoints, p => p[0], p => p[1], 16);
+    searchIndex = new KDBush(
+      newPoints,
+      p => p[0],
+      p => p[1],
+      16
+    );
 
     isInit = true;
   };
 
-  const draw = (newPoints, showRecticleOnce) => {
-    if (newPoints) setPoints(newPoints);
+  const draw = (showRecticleOnce = false) => {
     if (!isInit) return;
 
     regl.clear({
@@ -724,6 +728,11 @@ const createScatterplot = ({
   };
 
   const drawRaf = withRaf(draw);
+
+  const publicDraw = (newPoints, showRecticleOnce = false) => {
+    if (newPoints) setPoints(newPoints);
+    drawRaf(showRecticleOnce);
+  };
 
   const withDraw = f => (...args) => {
     const out = f(...args);
@@ -789,6 +798,7 @@ const createScatterplot = ({
    */
   const refresh = () => {
     regl.poll();
+    camera.refresh();
   };
 
   const get = property => {
@@ -808,7 +818,7 @@ const createScatterplot = ({
     if (property === 'aspectRatio') return dataAspectRatio;
     if (property === 'canvas') return canvas;
     if (property === 'regl') return regl;
-    if (property === 'version') return VERSION;
+    if (property === 'version') return version;
 
     return undefined;
   };
@@ -899,10 +909,18 @@ const createScatterplot = ({
   };
 
   const initCamera = () => {
-    camera = canvasCamera2d(canvas);
+    camera = createDom2dCamera(canvas);
 
     if (initialView) camera.set(mat4.clone(initialView));
     else camera.lookAt([...initialTarget], initialDistance, initialRotation);
+  };
+
+  const wheelHandler = () => {
+    drawRaf();
+  };
+
+  const clear = () => {
+    setPoints([]);
   };
 
   const init = () => {
@@ -920,12 +938,9 @@ const createScatterplot = ({
       width: 1,
       is2d: true
     });
-    scroll = createScroll(canvas);
 
     // Event listeners
-    scroll.on('scroll', () => {
-      drawRaf();
-    });
+    canvas.addEventListener('wheel', wheelHandler);
 
     // Buffers
     normalPointsIndexBuffer = regl.buffer();
@@ -967,16 +982,16 @@ const createScatterplot = ({
     camera = undefined;
     regl = undefined;
     lasso.destroy();
-    scroll.dispose();
     pubSub.clear();
   };
 
   init(canvas);
 
   return {
+    clear: withDraw(clear),
     deselect,
     destroy,
-    draw: drawRaf,
+    draw: publicDraw,
     get,
     hover,
     refresh,
