@@ -1,5 +1,5 @@
 const VERTEX_SHADER = `
-precision mediump float;
+precision highp float;
 
 uniform sampler2D colorTex;
 uniform float colorTexRes;
@@ -29,7 +29,7 @@ void main() {
   float stateRowIndex = floor((stateIndex + eps) / stateTexRes);
   vec2 stateTexIndex = vec2(
     (stateIndex / stateTexRes) - stateRowIndex + eps,
-    stateRowIndex / stateTexRes
+    stateRowIndex / stateTexRes + eps
   );
 
   vec4 state = texture2D(stateTex, stateTexIndex);
@@ -47,13 +47,13 @@ void main() {
   eps = 0.5 / colorTexRes;
   float colorLinearIndex = colorIndex + globalState;
   // Need to add cEps here to avoid floating point issue that can lead to
-  // dramatic changes in which color is loaded as floor(3/2.9) = 1 but
+  // dramatic changes in which color is loaded as floor(3/2.9999) = 1 but
   // floor(3/3.0001) = 0!
   float colorRowIndex = floor((colorLinearIndex + eps) / colorTexRes);
 
   vec2 colorTexIndex = vec2(
     (colorLinearIndex / colorTexRes) - colorRowIndex + eps,
-    colorRowIndex / colorTexRes
+    colorRowIndex / colorTexRes + eps
   );
 
   color = texture2D(colorTex, colorTexIndex);
