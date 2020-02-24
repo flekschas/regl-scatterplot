@@ -1,3 +1,8 @@
+## v0.7.6
+
+- Increase floating point precision
+- Fix #5
+
 ## v0.7.5
 
 - Add `clear()` to clear the scatter plot
