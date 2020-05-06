@@ -69,7 +69,7 @@ See a complete example at [example/index.js](example/index.js).
 
 - `regl` a Regl instance to be used for rendering.
 - `background` background color of the scatterplot.
-- `backgroundImage` background image for the scatterplot. This must be a [regl texture object](https://github.com/regl-project/regl/blob/gh-pages/API.md#textures).
+- `backgroundImage` background image for the scatterplot. This must be a [regl texture object](https://github.com/regl-project/regl/blob/gh-pages/API.md#textures) and can be created with [`createTextureFromUrl`](#const-texture--createTextureFromUrlregl-url-isCrossOrigin).
 - `canvas` canvas element.
 - `colors` colormap.
 - `pointSize` size of the points.
@@ -92,7 +92,7 @@ See a complete example at [example/index.js](example/index.js).
 
 **Returns:** a new [Regl texture](https://github.com/regl-project/regl/blob/gh-pages/API.md#textures) from a remote image.
 
-**regl:** the Regl instance associated to your scatterplot instance. Either use [`createRegl()`](#const-regl--createreglcanvas) or `scatterplot.regl`;
+**regl:** the Regl instance **associated to your scatterplot instance**. Either use [`createRegl()`](#const-regl--createreglcanvas) or `scatterplot.regl`. Important, if you use `createRegl()` make sure to pass the created regl instance into the scatterplot constructor as well!
 
 **url:** the URL to an image.
 
@@ -188,7 +188,7 @@ The version number of the scatterplot.
   the background with CSS! `background` is used when drawing the
   outline of selected points to simulate the padded border only.
 
-- The background image must be a Regl texture function. To easily set a remote
+- The background image must be a Regl texture. To easily set a remote
   image as the background please use [`createTextureFromUrl`](#const-texture--createTextureFromUrlregl-url-isCrossOrigin).
 
 - The scatterplot stores 4 colors per color representing 4 states, representing:
@@ -236,7 +236,7 @@ scatterplot.set({ backgroundImage: { src: 'https://server.com/my-image.png', cro
 // Set background image to some regl texture
 const image = new Image();
 image.src = 'my-image.png';
-image.onload = () => { scatterplot.set({ backgroundImage: regl.texture(image) });
+image.onload = () => { scatterplot.set({ backgroundImage: scatterplot.regl.texture(image) });
 
 // Color by
 scatterplot.set({ colorBy: 'category' });
