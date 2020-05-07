@@ -55,35 +55,57 @@ import {
 
 import { version } from '../package.json';
 
-const createScatterplot = ({
-  regl: initialRegl,
-  background: initialBackground = DEFAULT_COLOR_BG,
-  backgroundImage: initialBackgroundImage = DEFAULT_BACKGROUND_IMAGE,
-  canvas: initialCanvas = document.createElement('canvas'),
-  colorBy: initialColorBy = DEFAULT_COLOR_BY,
-  colors: initialColors = DEFAULT_COLORS,
-  lassoColor: initialLassoColor = DEFAULT_LASSO_COLOR,
-  lassoMinDelay: initialLassoMinDelay = LASSO_MIN_DELAY,
-  lassoMinDist: initialLassoMinDist = LASSO_MIN_DIST,
-  showRecticle: initialShowRecticle = DEFAULT_SHOW_RECTICLE,
-  recticleColor: initialRecticleColor = DEFAULT_RECTICLE_COLOR,
-  pointSize: initialPointSize = DEFAULT_POINT_SIZE,
-  pointSizeSelected: initialPointSizeSelected = DEFAULT_POINT_SIZE_SELECTED,
-  pointOutlineWidth: initialPointOutlineWidth = DEFAULT_POINT_OUTLINE_WIDTH,
-  width: initialWidth = DEFAULT_WIDTH,
-  height: initialHeight = DEFAULT_HEIGHT,
-  target: initialTarget = DEFAULT_TARGET,
-  distance: initialDistance = DEFAULT_DISTANCE,
-  rotation: initialRotation = DEFAULT_ROTATION,
-  view: initialView = DEFAULT_VIEW
-} = {}) => {
+const deprecations = {
+  background: 'backgroundColor'
+};
+
+const checkDeprecations = properties => {
+  Object.keys(properties)
+    .filter(prop => deprecations[prop])
+    .forEach(name => {
+      console.warn(
+        `regl-scatterplot: the "${name}" property is deprecated. Please use "${deprecations[name]}" instead.`
+      );
+    });
+};
+
+const createScatterplot = (initialProperties = {}) => {
   const pubSub = createPubSub();
   const scratch = new Float32Array(16);
   const mousePosition = [0, 0];
 
+  checkDeprecations(initialProperties);
+
+  const {
+    regl: initialRegl,
+    background: initialBackground,
+    backgroundColor: initialBackgroundColor,
+    backgroundImage: initialBackgroundImage = DEFAULT_BACKGROUND_IMAGE,
+    canvas: initialCanvas = document.createElement('canvas'),
+    colorBy: initialColorBy = DEFAULT_COLOR_BY,
+    colors: initialColors = DEFAULT_COLORS,
+    lassoColor: initialLassoColor = DEFAULT_LASSO_COLOR,
+    lassoMinDelay: initialLassoMinDelay = LASSO_MIN_DELAY,
+    lassoMinDist: initialLassoMinDist = LASSO_MIN_DIST,
+    showRecticle: initialShowRecticle = DEFAULT_SHOW_RECTICLE,
+    recticleColor: initialRecticleColor = DEFAULT_RECTICLE_COLOR,
+    pointSize: initialPointSize = DEFAULT_POINT_SIZE,
+    pointSizeSelected: initialPointSizeSelected = DEFAULT_POINT_SIZE_SELECTED,
+    pointOutlineWidth: initialPointOutlineWidth = DEFAULT_POINT_OUTLINE_WIDTH,
+    width: initialWidth = DEFAULT_WIDTH,
+    height: initialHeight = DEFAULT_HEIGHT,
+    target: initialTarget = DEFAULT_TARGET,
+    distance: initialDistance = DEFAULT_DISTANCE,
+    rotation: initialRotation = DEFAULT_ROTATION,
+    view: initialView = DEFAULT_VIEW
+  } = initialProperties;
+
   checkReglExtensions(initialRegl);
 
-  let background = toRgba(initialBackground, true);
+  let backgroundColor = toRgba(
+    initialBackgroundColor || initialBackground || DEFAULT_COLOR_BG,
+    true
+  );
   let backgroundImage = initialBackgroundImage;
   let canvas = initialCanvas;
   let colors = initialColors;
@@ -406,7 +428,7 @@ const createScatterplot = ({
           const rgbaOpaque = [...rgba.slice(0, 3), 1];
           tmp.push(rgba, rgbaOpaque, rgbaOpaque); // normal, active, and hover
         }
-        tmp.push(background);
+        tmp.push(backgroundColor);
       });
     } catch (e) {
       console.error(
@@ -740,10 +762,10 @@ const createScatterplot = ({
     return out;
   };
 
-  const setBackground = newBackground => {
-    if (!newBackground) return;
+  const setBackgroundColor = newBackgroundColor => {
+    if (!newBackgroundColor) return;
 
-    background = toRgba(newBackground, true);
+    backgroundColor = toRgba(newBackgroundColor, true);
   };
 
   const setBackgroundImage = newBackgroundImage => {
@@ -802,7 +824,10 @@ const createScatterplot = ({
   };
 
   const get = property => {
-    if (property === 'background') return background;
+    checkDeprecations({ property: true });
+
+    if (property === 'background') return backgroundColor;
+    if (property === 'backgroundColor') return backgroundColor;
     if (property === 'backgroundImage') return backgroundImage;
     if (property === 'colorBy') return colorBy;
     if (property === 'colors') return colors;
@@ -823,25 +848,30 @@ const createScatterplot = ({
     return undefined;
   };
 
-  const set = ({
-    background: newBackground = null,
-    backgroundImage: newBackgroundImage = backgroundImage,
-    colorBy: newColorBy = colorBy,
-    colors: newColors = null,
-    opacity: newOpacity = null,
-    lassoColor: newLassoColor = null,
-    lassoMinDelay: newLassoMinDelay = null,
-    lassoMinDist: newLassoMinDist = null,
-    showRecticle: newShowRecticle = null,
-    recticleColor: newRecticleColor = null,
-    pointOutlineWidth: newPointOutlineWidth = null,
-    pointSize: newPointSize = null,
-    pointSizeSelected: newPointSizeSelected = null,
-    height: newHeight = null,
-    width: newWidth = null,
-    aspectRatio: newDataAspectRatio = null
-  } = {}) => {
-    setBackground(newBackground);
+  const set = (properties = {}) => {
+    checkDeprecations(properties);
+
+    const {
+      background: newBackground = null,
+      backgroundColor: newBackgroundColor = null,
+      backgroundImage: newBackgroundImage = backgroundImage,
+      colorBy: newColorBy = colorBy,
+      colors: newColors = null,
+      opacity: newOpacity = null,
+      lassoColor: newLassoColor = null,
+      lassoMinDelay: newLassoMinDelay = null,
+      lassoMinDist: newLassoMinDist = null,
+      showRecticle: newShowRecticle = null,
+      recticleColor: newRecticleColor = null,
+      pointOutlineWidth: newPointOutlineWidth = null,
+      pointSize: newPointSize = null,
+      pointSizeSelected: newPointSizeSelected = null,
+      height: newHeight = null,
+      width: newWidth = null,
+      aspectRatio: newDataAspectRatio = null
+    } = properties;
+
+    setBackgroundColor(newBackgroundColor || newBackground);
     setBackgroundImage(newBackgroundImage);
     setColorBy(newColorBy);
     setColors(newColors);

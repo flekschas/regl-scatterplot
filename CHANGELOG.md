@@ -1,6 +1,7 @@
 ## v0.7.7
 
 - Fix horizontally-flipped background image (#13)
+- Rename the `background` property to `backgroundColor` for clarity
 - Update camera
 
 ## v0.7.6
