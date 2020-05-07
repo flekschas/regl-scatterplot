@@ -1,5 +1,6 @@
 ## v0.7.7
 
+- Fix horizontally-flipped background image (#13)
 - Update camera
 
 ## v0.7.6
