@@ -911,7 +911,7 @@ const createScatterplot = ({
   const initCamera = () => {
     camera = createDom2dCamera(canvas);
 
-    if (initialView) camera.set(mat4.clone(initialView));
+    if (initialView) camera.setView(mat4.clone(initialView));
     else camera.lookAt([...initialTarget], initialDistance, initialRotation);
   };
 

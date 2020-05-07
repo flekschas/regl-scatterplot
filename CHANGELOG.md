@@ -1,3 +1,7 @@
+## v0.7.7
+
+- Update camera
+
 ## v0.7.6
 
 - Increase floating point precision
