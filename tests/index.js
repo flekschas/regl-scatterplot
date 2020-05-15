@@ -21,14 +21,14 @@ import {
   DEFAULT_POINT_SIZE_SELECTED,
   DEFAULT_WIDTH,
   LASSO_MIN_DELAY,
-  LASSO_MIN_DIST
+  LASSO_MIN_DIST,
 } from '../src/constants';
 
 import { asyncForEach, createCanvas, createMouseEvent, wait } from './utils';
 
 /* ------------------------------ constructors ------------------------------ */
 
-test('createRegl()', t => {
+test('createRegl()', (t) => {
   const dim = 200;
   const canvas = createCanvas(dim, dim);
   const gl = canvas.getContext('webgl');
@@ -41,7 +41,7 @@ test('createRegl()', t => {
   t.ok(!!regl, 'regl should be instanciated');
 });
 
-test('createScatterplot()', t => {
+test('createScatterplot()', (t) => {
   const canvas = createCanvas();
   const scatterplot = createScatterplot({ canvas });
 
@@ -93,7 +93,7 @@ test('createScatterplot()', t => {
   );
 });
 
-test('createTextureFromUrl()', async t => {
+test('createTextureFromUrl()', async (t) => {
   const regl = createRegl(createCanvas());
 
   const texture = await createTextureFromUrl(
@@ -111,7 +111,7 @@ test('createTextureFromUrl()', async t => {
 
 /* ---------------------------- get() and set() ----------------------------- */
 
-test('get("canvas"), get("regl"), and get("version")', async t => {
+test('get("canvas"), get("regl"), and get("version")', async (t) => {
   const canvas = createCanvas();
   const regl = createRegl(canvas);
   const scatterplot = createScatterplot({ canvas, regl });
@@ -131,7 +131,7 @@ test('get("canvas"), get("regl"), and get("version")', async t => {
   );
 });
 
-test('set({ width, height })', t => {
+test('set({ width, height })', (t) => {
   const w1 = 200;
   const h1 = 200;
 
@@ -170,7 +170,7 @@ test('set({ width, height })', t => {
   );
 });
 
-test('set({ aspectRatio })', t => {
+test('set({ aspectRatio })', (t) => {
   const canvas = createCanvas(400, 200);
   const scatterplot = createScatterplot({ canvas, width: 400, height: 200 });
 
@@ -184,7 +184,7 @@ test('set({ aspectRatio })', t => {
   );
 });
 
-test('set({ backgroundColor })', t => {
+test('set({ backgroundColor })', (t) => {
   const scatterplot = createScatterplot({ canvas: createCanvas() });
 
   const backgroundHex = '#ff0000';
@@ -199,7 +199,7 @@ test('set({ backgroundColor })', t => {
   );
 });
 
-test('set({ backgroundImage })', async t => {
+test('set({ backgroundImage })', async (t) => {
   const canvas = createCanvas();
   const regl = createRegl(canvas);
   const scatterplot = createScatterplot({ canvas, regl });
@@ -225,9 +225,21 @@ test('set({ backgroundImage })', async t => {
     null,
     'background image should be nullifyable'
   );
+
+  scatterplot.set({ backgroundImage: 'https://picsum.photos/300/200/' });
+
+  await new Promise((resolve) =>
+    scatterplot.subscribe('background-image-ready', resolve, 1)
+  );
+
+  t.equal(
+    scatterplot.get('backgroundImage').width,
+    300,
+    'background image should be a Regl texture'
+  );
 });
 
-test('set({ colorBy })', async t => {
+test('set({ colorBy })', async (t) => {
   const scatterplot = createScatterplot({ canvas: createCanvas() });
 
   const colorBy = 'category';
@@ -245,7 +257,7 @@ test('set({ colorBy })', async t => {
   t.equal(scatterplot.get('colorBy'), null, 'colorBy should be nullifyable');
 });
 
-test('set({ pointColor, pointColorActive, pointColorHover }) single color', t => {
+test('set({ pointColor, pointColorActive, pointColorHover }) single color', (t) => {
   const canvas = createCanvas();
   const scatterplot = createScatterplot({ canvas });
 
@@ -253,7 +265,7 @@ test('set({ pointColor, pointColorActive, pointColorHover }) single color', t =>
     0.22745098039215686,
     0.47058823529411764,
     0.6666666666666666,
-    1
+    1,
   ];
   const rgbaPointColorActive = [0, 0.5529411764705883, 1, 1];
   const rgbaPointColorHover = [0, 0.5529411764705883, 1, 1];
@@ -262,7 +274,7 @@ test('set({ pointColor, pointColorActive, pointColorHover }) single color', t =>
   scatterplot.set({
     pointColor: '#3a78aa',
     pointColorActive: '#008dff',
-    pointColorHover: '#008dff'
+    pointColorHover: '#008dff',
   });
 
   t.ok(
@@ -288,22 +300,22 @@ test('set({ pointColor, pointColorActive, pointColorHover }) single color', t =>
 
   // Set an invalid color, which should default to white
   scatterplot.set({
-    pointColor: 'shouldnotwork'
+    pointColor: 'shouldnotwork',
   });
 
   t.ok(
-    scatterplot.get('pointColor').every(component => component === 1),
+    scatterplot.get('pointColor').every((component) => component === 1),
     'should default to white when setting an invalid color point color from before'
   );
 });
 
-test('set({ pointColor }) multiple colors', t => {
+test('set({ pointColor }) multiple colors', (t) => {
   const canvas = createCanvas();
   const scatterplot = createScatterplot({ canvas });
 
   const pointColor = [
     [0, 0.5, 1, 0.5],
-    [1, 0.5, 1, 0.5]
+    [1, 0.5, 1, 0.5],
   ];
 
   // Set a single color
@@ -317,28 +329,28 @@ test('set({ pointColor }) multiple colors', t => {
   );
 });
 
-test('set({ pointColor, pointColorActive, pointColorHover }) multiple colors', t => {
+test('set({ pointColor, pointColorActive, pointColorHover }) multiple colors', (t) => {
   const canvas = createCanvas();
   const scatterplot = createScatterplot({ canvas });
 
   const pointColor = [
     [0, 0.5, 1, 0.5],
-    [0, 0.5, 0.5, 0.5]
+    [0, 0.5, 0.5, 0.5],
   ];
   const pointColorActive = [
     [0.5, 0, 1, 0.5],
-    [0.5, 0, 0.5, 0.5]
+    [0.5, 0, 0.5, 0.5],
   ];
   const pointColorHover = [
     [0.5, 0.5, 0, 0.5],
-    [0.5, 0.5, 0, 0.5]
+    [0.5, 0.5, 0, 0.5],
   ];
 
   // Set a single color
   scatterplot.set({
     pointColor,
     pointColorActive,
-    pointColorHover
+    pointColorHover,
   });
 
   t.ok(
@@ -363,7 +375,7 @@ test('set({ pointColor, pointColorActive, pointColorHover }) multiple colors', t
   );
 });
 
-test('set({ opacity })', async t => {
+test('set({ opacity })', async (t) => {
   const scatterplot = createScatterplot({ canvas: createCanvas() });
 
   const opacity = 0.5;
@@ -385,7 +397,7 @@ test('set({ opacity })', async t => {
   );
 });
 
-test('set({ lassoColor })', async t => {
+test('set({ lassoColor })', async (t) => {
   const scatterplot = createScatterplot({ canvas: createCanvas() });
 
   // Check default lasso color
@@ -414,7 +426,7 @@ test('set({ lassoColor })', async t => {
   );
 });
 
-test('set({ pointOutlineWidth })', async t => {
+test('set({ pointOutlineWidth })', async (t) => {
   const scatterplot = createScatterplot({ canvas: createCanvas() });
 
   const pointOutlineWidth = 42;
@@ -436,7 +448,7 @@ test('set({ pointOutlineWidth })', async t => {
   );
 });
 
-test('set({ pointSize })', async t => {
+test('set({ pointSize })', async (t) => {
   const scatterplot = createScatterplot({ canvas: createCanvas() });
 
   const pointSize = 42;
@@ -458,7 +470,7 @@ test('set({ pointSize })', async t => {
   );
 });
 
-test('set({ pointSizeSelected })', async t => {
+test('set({ pointSizeSelected })', async (t) => {
   const scatterplot = createScatterplot({ canvas: createCanvas() });
 
   const pointSizeSelected = 42;
@@ -480,7 +492,7 @@ test('set({ pointSizeSelected })', async t => {
   );
 });
 
-test('set({ showRecticle, recticleColor })', async t => {
+test('set({ showRecticle, recticleColor })', async (t) => {
   const scatterplot = createScatterplot({ canvas: createCanvas() });
 
   t.equal(
@@ -533,7 +545,7 @@ test('set({ showRecticle, recticleColor })', async t => {
 
 /* ---------------------------------- events -------------------------------- */
 
-test('draw(), clear(), publish("select")', async t => {
+test('draw(), clear(), publish("select")', async (t) => {
   const dim = 200;
   const hdim = dim / 2;
   const canvas = createCanvas(dim, dim);
@@ -544,7 +556,7 @@ test('draw(), clear(), publish("select")', async t => {
     [1, 1],
     [1, -1],
     [-1, -1],
-    [-1, 1]
+    [-1, 1],
   ];
   scatterplot.draw(points);
   // The second draw call should not block the drawing of the points!
@@ -597,7 +609,7 @@ test('draw(), clear(), publish("select")', async t => {
   t.equal(selectedPoints.length, 0, 'should *not* have selected one point');
 });
 
-test('lasso selection with publish("select")', async t => {
+test('lasso selection with publish("select")', async (t) => {
   const dim = 200;
   const hdim = dim / 2;
   const canvas = createCanvas(dim, dim);
@@ -608,7 +620,7 @@ test('lasso selection with publish("select")', async t => {
     [1, 1],
     [1, -1],
     [-1, -1],
-    [-1, 1]
+    [-1, 1],
   ];
   scatterplot.draw(points);
 
@@ -641,10 +653,10 @@ test('lasso selection with publish("select")', async t => {
     [0, dim * 0.9],
     [dim * 0.1, dim * 0.9],
     [dim * 0.1, dim * 1.125],
-    [dim * 1.125, dim * 1.125]
+    [dim * 1.125, dim * 1.125],
   ];
 
-  await asyncForEach(mousePositions, async mousePosition => {
+  await asyncForEach(mousePositions, async (mousePosition) => {
     window.dispatchEvent(createMouseEvent('mousemove', ...mousePosition));
     await wait(LASSO_MIN_DELAY + 5);
   });
@@ -659,7 +671,7 @@ test('lasso selection with publish("select")', async t => {
   );
 });
 
-test('point hover with publish("pointover") and publish("pointout")', async t => {
+test('point hover with publish("pointover") and publish("pointout")', async (t) => {
   const dim = 200;
   const hdim = dim / 2;
   const canvas = createCanvas(dim, dim);
@@ -670,7 +682,7 @@ test('point hover with publish("pointover") and publish("pointout")', async t =>
     [1, 1],
     [1, -1],
     [-1, -1],
-    [-1, 1]
+    [-1, 1],
   ];
   scatterplot.draw(points);
 
@@ -678,7 +690,7 @@ test('point hover with publish("pointover") and publish("pointout")', async t =>
   await wait(250);
 
   let hoveredPoint = null;
-  const pointoverHandler = point => {
+  const pointoverHandler = (point) => {
     hoveredPoint = point;
   };
   const pointoutHandler = () => {

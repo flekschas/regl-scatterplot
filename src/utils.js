@@ -15,7 +15,7 @@ export const arrayMax = (max, x) => (max > x ? max : x);
  * @param   {function}  regl  Regl instance to be tested
  * @return  {function}  Returns the Regl instance itself
  */
-export const checkReglExtensions = regl => {
+export const checkReglExtensions = (regl) => {
   if (!regl) return false;
   return GL_EXTENSIONS.reduce((every, EXTENSION) => {
     if (!regl.hasExtension(EXTENSION)) {
@@ -33,13 +33,13 @@ export const checkReglExtensions = regl => {
  * @param   {object}  canvas  Canvas element to be rendered on
  * @return  {function}  New Regl instance
  */
-export const createRegl = canvas => {
+export const createRegl = (canvas) => {
   const gl = canvas.getContext('webgl');
   const extensions = [];
 
   // Needed to run the tests properly as the headless-gl doesn't support all
   // extensions, which is fine for the functional tests.
-  GL_EXTENSIONS.forEach(EXTENSION => {
+  GL_EXTENSIONS.forEach((EXTENSION) => {
     if (gl.getExtension(EXTENSION)) {
       extensions.push(EXTENSION);
     } else {
@@ -69,7 +69,7 @@ export const dist = (x1, y1, x2, y2) =>
  * @return  {array}  Quadruple of form `[xMin, yMin, xMax, yMax]` defining the
  *  bounding box
  */
-export const getBBox = positions2d => {
+export const getBBox = (positions2d) => {
   let xMin = Infinity;
   let xMax = -Infinity;
   let yMin = Infinity;
@@ -100,7 +100,7 @@ export const hexToRgb = (hex, isNormalize = false) =>
     )
     .substring(1)
     .match(/.{2}/g)
-    .map(x => parseInt(x, 16) / 255 ** isNormalize);
+    .map((x) => parseInt(x, 16) / 255 ** isNormalize);
 
 /**
  * Promised-based image loading
@@ -115,7 +115,7 @@ export const loadImage = (src, isCrossOrigin = false) =>
     image.onload = () => {
       accept(image);
     };
-    image.onerror = error => {
+    image.onerror = (error) => {
       reject(error);
     };
   });
@@ -128,13 +128,13 @@ export const loadImage = (src, isCrossOrigin = false) =>
  *   source of another origin.
  * @return  {object}  Promise resolving to the texture object.
  */
-export const createTextureFromUrl = (regl, url, isCrossOrigin = false) =>
+export const createTextureFromUrl = (regl, url) =>
   new Promise((resolve, reject) => {
-    loadImage(url, isCrossOrigin)
-      .then(image => {
+    loadImage(url, url.indexOf(window.location.origin) !== 0)
+      .then((image) => {
         resolve(regl.texture(image));
       })
-      .catch(error => {
+      .catch((error) => {
         reject(error);
       });
   });
@@ -148,7 +148,7 @@ export const createTextureFromUrl = (regl, url, isCrossOrigin = false) =>
  */
 export const hexToRgba = (hex, isNormalize = false) => [
   ...hexToRgb(hex, isNormalize),
-  255 ** !isNormalize
+  255 ** !isNormalize,
 ];
 
 /**
@@ -156,21 +156,21 @@ export const hexToRgba = (hex, isNormalize = false) => [
  * @param   {string}  hex  HEX-encoded color string.
  * @return  {boolean}  If `true` the string is a valid HEX color encoding.
  */
-export const isHex = hex => /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(hex);
+export const isHex = (hex) => /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(hex);
 
 /**
  * Tests if a number is in `[0,1]`.
  * @param   {number}  x  Number to be tested.
  * @return  {boolean}  If `true` the number is in `[0,1]`.
  */
-export const isNormFloat = x => x >= 0 && x <= 1;
+export const isNormFloat = (x) => x >= 0 && x <= 1;
 
 /**
  * Tests if an array consist of normalized numbers that are in `[0,1]` only.
  * @param   {array}  a  Array to be tested
  * @return  {boolean}  If `true` the array contains only numbers in `[0,1]`.
  */
-export const isNormFloatArray = a => Array.isArray(a) && a.every(isNormFloat);
+export const isNormFloatArray = (a) => Array.isArray(a) && a.every(isNormFloat);
 
 /**
  * From: https://wrf.ecse.rpi.edu//Research/Short_Notes/pnpoly.html
@@ -201,21 +201,21 @@ export const isPointInPolygon = ([px, py] = [], polygon) => {
  * @param   {*}  s  Variable to be tested
  * @return  {boolean}  If `true` variable is a string
  */
-export const isString = s => typeof s === 'string' || s instanceof String;
+export const isString = (s) => typeof s === 'string' || s instanceof String;
 
 /**
  * Tests if a number is an interger and in `[0,255]`.
  * @param   {number}  x  Number to be tested.
  * @return  {boolean}  If `true` the number is an interger and in `[0,255]`.
  */
-export const isUint8 = x => Number.isInteger(x) && x >= 0 && x <= 255;
+export const isUint8 = (x) => Number.isInteger(x) && x >= 0 && x <= 255;
 
 /**
  * Tests if an array consist of Uint8 numbers only.
  * @param   {array}  a  Array to be tested.
  * @return  {boolean}  If `true` the array contains only Uint8 numbers.
  */
-export const isUint8Array = a => Array.isArray(a) && a.every(isUint8);
+export const isUint8Array = (a) => Array.isArray(a) && a.every(isUint8);
 
 /**
  * Tests if an array is encoding an RGB color.
@@ -223,7 +223,7 @@ export const isUint8Array = a => Array.isArray(a) && a.every(isUint8);
  * @return  {boolean}  If `true` the array hold a triple of Uint8 numbers or
  *   a triple of normalized floats.
  */
-export const isRgb = rgb =>
+export const isRgb = (rgb) =>
   rgb.length === 3 && (isNormFloatArray(rgb) || isUint8Array(rgb));
 
 /**
@@ -232,7 +232,7 @@ export const isRgb = rgb =>
  * @return  {boolean}  If `true` the array hold a quadruple of Uint8 numbers or
  *   a quadruple of normalized floats.
  */
-export const isRgba = rgba =>
+export const isRgba = (rgba) =>
   rgba.length === 4 && (isNormFloatArray(rgba) || isUint8Array(rgba));
 
 /**
@@ -240,7 +240,7 @@ export const isRgba = rgba =>
  * @param   {*}  color  To be tested
  * @return  {boolean}  If `true`, `color` is an array of colors.
  */
-export const isMultipleColors = color =>
+export const isMultipleColors = (color) =>
   Array.isArray(color) &&
   color.length &&
   (Array.isArray(color[0]) || isString(color[0]));
@@ -270,7 +270,8 @@ export const min = (a, b) => (a < b ? a : b);
  * @param   {array}  a  Array to be normalized.
  * @return  {array}  Normalized array.
  */
-export const normNumArray = a => a.map(x => x / a.reduce(arrayMax, -Infinity));
+export const normNumArray = (a) =>
+  a.map((x) => x / a.reduce(arrayMax, -Infinity));
 
 /**
  * Convert a color to an RGBA color
@@ -289,7 +290,7 @@ export const toRgba = (color, isNormalize) => {
   if (isRgb(color))
     return [
       ...(isNormalize ? normNumArray(color) : color),
-      255 ** !isNormalize
+      255 ** !isNormalize,
     ];
 
   if (isHex(color)) return hexToRgba(color, isNormalize);

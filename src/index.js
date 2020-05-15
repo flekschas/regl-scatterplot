@@ -38,7 +38,7 @@ import {
   DEFAULT_WIDTH,
   FLOAT_BYTES,
   LASSO_MIN_DELAY,
-  LASSO_MIN_DIST
+  LASSO_MIN_DIST,
 } from './constants';
 
 import {
@@ -49,21 +49,22 @@ import {
   getBBox,
   isMultipleColors,
   isPointInPolygon,
+  isString,
   toRgba,
   max,
-  min
+  min,
 } from './utils';
 
 import { version } from '../package.json';
 
 const deprecations = {
-  background: 'backgroundColor'
+  background: 'backgroundColor',
 };
 
-const checkDeprecations = properties => {
+const checkDeprecations = (properties) => {
   Object.keys(properties)
-    .filter(prop => deprecations[prop])
-    .forEach(name => {
+    .filter((prop) => deprecations[prop])
+    .forEach((name) => {
       console.warn(
         `regl-scatterplot: the "${name}" property is deprecated. Please use "${deprecations[name]}" instead.`
       );
@@ -100,7 +101,7 @@ const createScatterplot = (initialProperties = {}) => {
     target: initialTarget = DEFAULT_TARGET,
     distance: initialDistance = DEFAULT_DISTANCE,
     rotation: initialRotation = DEFAULT_ROTATION,
-    view: initialView = DEFAULT_VIEW
+    view: initialView = DEFAULT_VIEW,
   } = initialProperties;
 
   checkReglExtensions(initialRegl);
@@ -109,7 +110,7 @@ const createScatterplot = (initialProperties = {}) => {
     initialBackgroundColor || initialBackground || DEFAULT_COLOR_BG,
     true
   );
-  let backgroundImage = initialBackgroundImage;
+  let backgroundImage = null;
   let canvas = initialCanvas;
   let width = initialWidth;
   let height = initialHeight;
@@ -150,9 +151,9 @@ const createScatterplot = (initialProperties = {}) => {
     ? initialPointColorHover
     : [initialPointColorHover];
 
-  pointColors = pointColors.map(color => toRgba(color, true));
-  pointColorsActive = pointColorsActive.map(color => toRgba(color, true));
-  pointColorsHover = pointColorsHover.map(color => toRgba(color, true));
+  pointColors = pointColors.map((color) => toRgba(color, true));
+  pointColorsActive = pointColorsActive.map((color) => toRgba(color, true));
+  pointColorsHover = pointColorsHover.map((color) => toRgba(color, true));
 
   let stateTex; // Stores the point texture holding x, y, category, and value
   let stateTexRes = 0; // Width and height of the texture
@@ -175,14 +176,14 @@ const createScatterplot = (initialProperties = {}) => {
   // Get a copy of the current mouse position
   const getMousePos = () => mousePosition.slice();
 
-  const getNdcX = x => -1 + (x / width) * 2;
+  const getNdcX = (x) => -1 + (x / width) * 2;
 
-  const getNdcY = y => 1 + (y / height) * -2;
+  const getNdcY = (y) => 1 + (y / height) * -2;
 
   // Get relative WebGL position
   const getMouseGlPos = () => [
     getNdcX(mousePosition[0]),
-    getNdcY(mousePosition[1])
+    getNdcY(mousePosition[1]),
   ];
 
   const getScatterGlPos = () => {
@@ -232,7 +233,7 @@ const createScatterplot = (initialProperties = {}) => {
     // Find the closest point
     let minDist = scaledPointSize;
     let clostestPoint;
-    pointsInBBox.forEach(idx => {
+    pointsInBBox.forEach((idx) => {
       const [ptX, ptY] = searchIndex.points[idx];
       const d = dist(ptX, ptY, x, y);
       if (d < minDist) {
@@ -267,14 +268,14 @@ const createScatterplot = (initialProperties = {}) => {
   };
   let lassoExtendDb = withThrottle(lassoExtend, lassoMinDelay);
 
-  const findPointsInLasso = lassoPolygon => {
+  const findPointsInLasso = (lassoPolygon) => {
     // get the bounding box of the lasso selection...
     const bBox = getBBox(lassoPolygon);
     // ...to efficiently preselect potentially selected points
     const pointsInBBox = searchIndex.range(...bBox);
     // next we test each point in the bounding box if it is in the polygon too
     const pointsInPolygon = [];
-    pointsInBBox.forEach(pointIdx => {
+    pointsInBBox.forEach((pointIdx) => {
       if (isPointInPolygon(searchIndex.points[pointIdx], lassoPolygon))
         pointsInPolygon.push(pointIdx);
     });
@@ -290,23 +291,23 @@ const createScatterplot = (initialProperties = {}) => {
     }
   };
 
-  const select = points => {
+  const select = (points) => {
     selection = points;
 
     selectedPointsIndexBuffer({
       usage: 'dynamic',
       type: 'float',
-      data: new Float32Array(selection)
+      data: new Float32Array(selection),
     });
 
     pubSub.publish('select', {
-      points: selection
+      points: selection,
     });
 
     drawRaf(); // eslint-disable-line no-use-before-define
   };
 
-  const getRelativeMousePosition = event => {
+  const getRelativeMousePosition = (event) => {
     const rect = canvas.getBoundingClientRect();
 
     mousePosition[0] = event.clientX - rect.left;
@@ -326,7 +327,7 @@ const createScatterplot = (initialProperties = {}) => {
     lasso.clear();
   };
 
-  const mouseDownHandler = event => {
+  const mouseDownHandler = (event) => {
     if (!isInit) return;
 
     mouseDown = true;
@@ -354,7 +355,7 @@ const createScatterplot = (initialProperties = {}) => {
     }
   };
 
-  const mouseClickHandler = event => {
+  const mouseClickHandler = (event) => {
     if (!isInit) return;
 
     const currentMousePosition = getRelativeMousePosition(event);
@@ -370,7 +371,7 @@ const createScatterplot = (initialProperties = {}) => {
     deselect();
   };
 
-  const mouseMoveHandler = event => {
+  const mouseMoveHandler = (event) => {
     if (!isInit) return;
 
     getRelativeMousePosition(event);
@@ -416,7 +417,7 @@ const createScatterplot = (initialProperties = {}) => {
           pointColors[i][0],
           pointColors[i][1],
           pointColors[i][2],
-          1
+          1,
         ];
         const colorActive =
           colorBy === DEFAULT_COLOR_BY ? pointColorsActive[0] : rgbaOpaque;
@@ -446,7 +447,7 @@ const createScatterplot = (initialProperties = {}) => {
     return regl.texture({
       data: rgba,
       shape: [colorTexRes, colorTexRes, 4],
-      type: 'float'
+      type: 'float',
     });
   };
 
@@ -456,23 +457,23 @@ const createScatterplot = (initialProperties = {}) => {
     model = mat4.fromScaling([], [dataAspectRatio, 1, 1]);
   };
 
-  const setDataAspectRatio = newDataAspectRatio => {
+  const setDataAspectRatio = (newDataAspectRatio) => {
     if (+newDataAspectRatio <= 0) return;
     dataAspectRatio = newDataAspectRatio;
   };
 
-  const setColors = (getter, setter) => newColors => {
+  const setColors = (getter, setter) => (newColors) => {
     if (!newColors || !newColors.length) return;
 
     const colors = getter();
     const prevColors = [...colors];
 
     let tmpColors = isMultipleColors(newColors) ? newColors : [newColors];
-    tmpColors = tmpColors.map(color => toRgba(color, true));
+    tmpColors = tmpColors.map((color) => toRgba(color, true));
 
     try {
-      colorTex = createColorTexture();
       setter(tmpColors);
+      colorTex = createColorTexture();
     } catch (e) {
       console.error('Invalid colors. Switching back to default colors.');
       // eslint-disable-next-line no-param-reassign
@@ -483,51 +484,51 @@ const createScatterplot = (initialProperties = {}) => {
 
   const setPointColors = setColors(
     () => pointColors,
-    colors => {
+    (colors) => {
       pointColors = colors;
     }
   );
   const setPointColorsActive = setColors(
     () => pointColorsActive,
-    colors => {
+    (colors) => {
       pointColorsActive = colors;
     }
   );
   const setPointColorsHover = setColors(
     () => pointColorsHover,
-    colors => {
+    (colors) => {
       pointColorsHover = colors;
     }
   );
 
-  const setHeight = newHeight => {
+  const setHeight = (newHeight) => {
     if (!+newHeight || +newHeight <= 0) return;
     height = +newHeight;
     canvas.height = height * window.devicePixelRatio;
   };
 
-  const setPointSize = newPointSize => {
+  const setPointSize = (newPointSize) => {
     if (!+newPointSize || +newPointSize <= 0) return;
     pointSize = +newPointSize;
   };
 
-  const setPointSizeSelected = newPointSizeSelected => {
+  const setPointSizeSelected = (newPointSizeSelected) => {
     if (!+newPointSizeSelected || +newPointSizeSelected < 0) return;
     pointSizeSelected = +newPointSizeSelected;
   };
 
-  const setPointOutlineWidth = newPointOutlineWidth => {
+  const setPointOutlineWidth = (newPointOutlineWidth) => {
     if (!+newPointOutlineWidth || +newPointOutlineWidth < 0) return;
     pointOutlineWidth = +newPointOutlineWidth;
   };
 
-  const setWidth = newWidth => {
+  const setWidth = (newWidth) => {
     if (!+newWidth || +newWidth <= 0) return;
     width = +newWidth;
     canvas.width = width * window.devicePixelRatio;
   };
 
-  const setColorBy = type => {
+  const setColorBy = (type) => {
     switch (type) {
       case 'category':
         colorBy = 'category';
@@ -542,7 +543,7 @@ const createScatterplot = (initialProperties = {}) => {
     }
   };
 
-  const setOpacity = newOpacity => {
+  const setOpacity = (newOpacity) => {
     if (!+newOpacity || +newOpacity <= 0) return;
 
     opacity = +newOpacity;
@@ -583,8 +584,8 @@ const createScatterplot = (initialProperties = {}) => {
           srcRGB: 'src alpha',
           srcAlpha: 'one',
           dstRGB: 'one minus src alpha',
-          dstAlpha: 'one minus src alpha'
-        }
+          dstAlpha: 'one minus src alpha',
+        },
       },
 
       depth: { enable: false },
@@ -592,8 +593,8 @@ const createScatterplot = (initialProperties = {}) => {
       attributes: {
         stateIndex: {
           buffer: getStateIndexBuffer,
-          size: 1
-        }
+          size: 1,
+        },
       },
 
       uniforms: {
@@ -611,12 +612,12 @@ const createScatterplot = (initialProperties = {}) => {
         isColoredByCategory: getIsColoredByCategory,
         isColoredByValue: getIsColoredByValue,
         maxColorTexIdx: getMaxColorTexIdx,
-        numColorStates: COLOR_NUM_STATES
+        numColorStates: COLOR_NUM_STATES,
       },
 
       count: getNumPoints,
 
-      primitive: 'points'
+      primitive: 'points',
     });
 
   const drawPointBodies = drawPoints(
@@ -666,17 +667,17 @@ const createScatterplot = (initialProperties = {}) => {
     vert: BG_VS,
 
     attributes: {
-      position: [0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0]
+      position: [0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0],
     },
 
     uniforms: {
       projection: getProjection,
       model: getModel,
       view: getView,
-      texture: getBackgroundImage
+      texture: getBackgroundImage,
     },
 
-    count: 6
+    count: 6,
   });
 
   const drawRecticle = () => {
@@ -723,7 +724,7 @@ const createScatterplot = (initialProperties = {}) => {
     )();
   };
 
-  const createPointIndex = numNewPoints => {
+  const createPointIndex = (numNewPoints) => {
     const index = new Float32Array(numNewPoints);
 
     for (let i = 0; i < numNewPoints; ++i) {
@@ -733,7 +734,7 @@ const createScatterplot = (initialProperties = {}) => {
     return index;
   };
 
-  const createStateTexture = newPoints => {
+  const createStateTexture = (newPoints) => {
     const numNewPoints = newPoints.length;
     stateTexRes = Math.max(2, Math.ceil(Math.sqrt(numNewPoints)));
     const data = new Float32Array(stateTexRes ** 2 * 4);
@@ -748,11 +749,11 @@ const createScatterplot = (initialProperties = {}) => {
     return regl.texture({
       data,
       shape: [stateTexRes, stateTexRes, 4],
-      type: 'float'
+      type: 'float',
     });
   };
 
-  const setPoints = newPoints => {
+  const setPoints = (newPoints) => {
     isInit = false;
 
     numPoints = newPoints.length;
@@ -761,13 +762,13 @@ const createScatterplot = (initialProperties = {}) => {
     normalPointsIndexBuffer({
       usage: 'static',
       type: 'float',
-      data: createPointIndex(numPoints)
+      data: createPointIndex(numPoints),
     });
 
     searchIndex = new KDBush(
       newPoints,
-      p => p[0],
-      p => p[1],
+      (p) => p[0],
+      (p) => p[1],
       16
     );
 
@@ -780,7 +781,7 @@ const createScatterplot = (initialProperties = {}) => {
     regl.clear({
       // background color (transparent)
       color: [0, 0, 0, 0],
-      depth: 1
+      depth: 1,
     });
 
     // Update camera
@@ -809,27 +810,33 @@ const createScatterplot = (initialProperties = {}) => {
     drawRaf(showRecticleOnce);
   };
 
-  const withDraw = f => (...args) => {
+  const withDraw = (f) => (...args) => {
     const out = f(...args);
     drawRaf();
     return out;
   };
 
-  const setBackgroundColor = newBackgroundColor => {
+  const setBackgroundColor = (newBackgroundColor) => {
     if (!newBackgroundColor) return;
 
     backgroundColor = toRgba(newBackgroundColor, true);
   };
 
-  const setBackgroundImage = newBackgroundImage => {
+  const setBackgroundImage = (newBackgroundImage) => {
     if (!newBackgroundImage) {
       backgroundImage = null;
+    } else if (isString(newBackgroundImage)) {
+      createTextureFromUrl(regl, newBackgroundImage).then((texture) => {
+        backgroundImage = texture;
+        drawRaf();
+        pubSub.publish('background-image-ready');
+      });
     } else {
       backgroundImage = newBackgroundImage;
     }
   };
 
-  const setLassoColor = newLassoColor => {
+  const setLassoColor = (newLassoColor) => {
     if (!newLassoColor) return;
 
     lassoColor = toRgba(newLassoColor, true);
@@ -837,26 +844,26 @@ const createScatterplot = (initialProperties = {}) => {
     lasso.setStyle({ color: lassoColor });
   };
 
-  const setLassoMinDelay = newLassoMinDelay => {
+  const setLassoMinDelay = (newLassoMinDelay) => {
     if (!+newLassoMinDelay) return;
 
     lassoMinDelay = +newLassoMinDelay;
     lassoExtendDb = withThrottle(lassoExtend, lassoMinDelay);
   };
 
-  const setLassoMinDist = newLassoMinDist => {
+  const setLassoMinDist = (newLassoMinDist) => {
     if (!+newLassoMinDist) return;
 
     lassoMinDist = +newLassoMinDist;
   };
 
-  const setShowRecticle = newShowRecticle => {
+  const setShowRecticle = (newShowRecticle) => {
     if (newShowRecticle === null) return;
 
     showRecticle = newShowRecticle;
   };
 
-  const setRecticleColor = newRecticleColor => {
+  const setRecticleColor = (newRecticleColor) => {
     if (!newRecticleColor) return;
 
     recticleColor = toRgba(newRecticleColor, true);
@@ -876,7 +883,7 @@ const createScatterplot = (initialProperties = {}) => {
     camera.refresh();
   };
 
-  const get = property => {
+  const get = (property) => {
     checkDeprecations({ property: true });
 
     if (property === 'background') return backgroundColor;
@@ -913,46 +920,80 @@ const createScatterplot = (initialProperties = {}) => {
   const set = (properties = {}) => {
     checkDeprecations(properties);
 
-    const {
-      background: newBackground = null,
-      backgroundColor: newBackgroundColor = null,
-      backgroundImage: newBackgroundImage = backgroundImage,
-      colorBy: newColorBy = colorBy,
-      opacity: newOpacity = null,
-      lassoColor: newLassoColor = null,
-      lassoMinDelay: newLassoMinDelay = null,
-      lassoMinDist: newLassoMinDist = null,
-      showRecticle: newShowRecticle = null,
-      recticleColor: newRecticleColor = null,
-      pointColor: newPointColor = null,
-      pointColorActive: newPointColorActive = null,
-      pointColorHover: newPointColorHover = null,
-      pointOutlineWidth: newPointOutlineWidth = null,
-      pointSize: newPointSize = null,
-      pointSizeSelected: newPointSizeSelected = null,
-      height: newHeight = null,
-      width: newWidth = null,
-      aspectRatio: newDataAspectRatio = null
-    } = properties;
+    if (
+      properties.backgroundColor !== undefined ||
+      properties.background !== undefined
+    ) {
+      setBackgroundColor(properties.backgroundColor || properties.background);
+    }
 
-    setBackgroundColor(newBackgroundColor || newBackground);
-    setBackgroundImage(newBackgroundImage);
-    setColorBy(newColorBy);
-    setPointColors(newPointColor);
-    setPointColorsActive(newPointColorActive);
-    setPointColorsHover(newPointColorHover);
-    setOpacity(newOpacity);
-    setLassoColor(newLassoColor);
-    setLassoMinDelay(newLassoMinDelay);
-    setLassoMinDist(newLassoMinDist);
-    setShowRecticle(newShowRecticle);
-    setRecticleColor(newRecticleColor);
-    setPointOutlineWidth(newPointOutlineWidth);
-    setPointSize(newPointSize);
-    setPointSizeSelected(newPointSizeSelected);
-    setHeight(newHeight);
-    setWidth(newWidth);
-    setDataAspectRatio(newDataAspectRatio);
+    if (properties.backgroundImage !== undefined) {
+      setBackgroundImage(properties.backgroundImage);
+    }
+
+    if (properties.colorBy !== undefined) {
+      setColorBy(properties.colorBy);
+    }
+
+    if (properties.pointColor !== undefined) {
+      setPointColors(properties.pointColor);
+    }
+
+    if (properties.pointColorActive !== undefined) {
+      setPointColorsActive(properties.pointColorActive);
+    }
+
+    if (properties.pointColorHover !== undefined) {
+      setPointColorsHover(properties.pointColorHover);
+    }
+
+    if (properties.opacity !== undefined) {
+      setOpacity(properties.opacity);
+    }
+
+    if (properties.lassoColor !== undefined) {
+      setLassoColor(properties.lassoColor);
+    }
+
+    if (properties.lassoMinDelay !== undefined) {
+      setLassoMinDelay(properties.lassoMinDelay);
+    }
+
+    if (properties.lassoMinDist !== undefined) {
+      setLassoMinDist(properties.lassoMinDist);
+    }
+
+    if (properties.showRecticle !== undefined) {
+      setShowRecticle(properties.showRecticle);
+    }
+
+    if (properties.recticleColor !== undefined) {
+      setRecticleColor(properties.recticleColor);
+    }
+
+    if (properties.pointOutlineWidth !== undefined) {
+      setPointOutlineWidth(properties.pointOutlineWidth);
+    }
+
+    if (properties.pointSize !== undefined) {
+      setPointSize(properties.pointSize);
+    }
+
+    if (properties.pointSizeSelected !== undefined) {
+      setPointSizeSelected(properties.pointSizeSelected);
+    }
+
+    if (properties.height !== undefined) {
+      setHeight(properties.height);
+    }
+
+    if (properties.width !== undefined) {
+      setWidth(properties.width);
+    }
+
+    if (properties.aspectRatio !== undefined) {
+      setDataAspectRatio(properties.aspectRatio);
+    }
 
     updateViewAspectRatio();
     camera.refresh();
@@ -1027,12 +1068,12 @@ const createScatterplot = (initialProperties = {}) => {
     recticleHLine = createLine(regl, {
       color: recticleColor,
       width: 1,
-      is2d: true
+      is2d: true,
     });
     recticleVLine = createLine(regl, {
       color: recticleColor,
       width: 1,
-      is2d: true
+      is2d: true,
     });
 
     // Event listeners
@@ -1044,13 +1085,13 @@ const createScatterplot = (initialProperties = {}) => {
     hoveredPointIndexBuffer = regl.buffer({
       usage: 'dynamic',
       type: 'float',
-      length: FLOAT_BYTES // This buffer is fixed to exactly 1 point
+      length: FLOAT_BYTES, // This buffer is fixed to exactly 1 point
     });
 
     colorTex = createColorTexture();
 
     // Set dimensions
-    set({ width, height });
+    set({ backgroundImage: initialBackgroundImage, width, height });
 
     // Setup event handler
     window.addEventListener('keyup', keyUpHandler, false);
@@ -1085,6 +1126,7 @@ const createScatterplot = (initialProperties = {}) => {
 
   return {
     clear: withDraw(clear),
+    createTextureFromUrl: (url) => createTextureFromUrl(regl, url),
     deselect,
     destroy,
     draw: publicDraw,
@@ -1095,7 +1137,7 @@ const createScatterplot = (initialProperties = {}) => {
     select,
     set,
     subscribe: pubSub.subscribe,
-    unsubscribe: pubSub.unsubscribe
+    unsubscribe: pubSub.unsubscribe,
   };
 };
 

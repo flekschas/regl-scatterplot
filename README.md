@@ -45,7 +45,7 @@ const scatterplot = createScatterplot({
   canvas,
   width,
   height,
-  pointSize: 5
+  pointSize: 5,
 });
 
 const points = new Array(10000)
@@ -61,7 +61,7 @@ See a complete example at [example/index.js](example/index.js).
 
 ### Constructors
 
-#### `const scatterplot = createScatterplot(options)`
+<a name="createScatterplot" href="#createScatterplot">#</a> <b>createScatterplot</b>(<i>options = {}</i>)
 
 **Returns:** a new scatterplot instance.
 
@@ -69,7 +69,7 @@ See a complete example at [example/index.js](example/index.js).
 
 - `regl` a Regl instance to be used for rendering.
 - `background` background color of the scatterplot.
-- `backgroundImage` background image for the scatterplot. This must be a [regl texture object](https://github.com/regl-project/regl/blob/gh-pages/API.md#textures) and can be created with [`createTextureFromUrl`](#const-texture--createTextureFromUrlregl-url-isCrossOrigin).
+- `backgroundImage` background image for the scatterplot. This can either be a URL or a [regl texture object](https://github.com/regl-project/regl/blob/gh-pages/API.md#textures). The latter can be created with [`scatterplot.createTextureFromUrl`](#scatterplot.createTextureFromUrl).
 - `canvas` canvas element.
 - `colors` colormap.
 - `pointSize` size of the points.
@@ -82,25 +82,19 @@ See a complete example at [example/index.js](example/index.js).
 - `rotation` rotation of the camera around the target.
 - `view` view matrix defining `target`, `distance`, and `rotation`. When given `target`, `distance`, and `rotation` are ignored.
 
-#### `const regl = createRegl(canvas)`
+<a name="createRegl" href="#createRegl">#</a> <b>createRegl</b>(<i>canvas</i>)
 
 **Returns:** a new Regl instance with appropriate extensions being enabled.
 
 **Canvas:** the canvas object on which the scatterplot will be rendered on.
 
-#### `const texture = createTextureFromUrl(regl, url, isCrossOrigin)`
+<a name="createTextureFromUrl" href="#createTextureFromUrl">#</a> <b>createTextureFromUrl</b>(<i>regl</i>, <i>url</i>)
 
-**Returns:** a new [Regl texture](https://github.com/regl-project/regl/blob/gh-pages/API.md#textures) from a remote image.
-
-**regl:** the Regl instance **associated to your scatterplot instance**. Either use [`createRegl()`](#const-regl--createreglcanvas) or `scatterplot.regl`. Important, if you use `createRegl()` make sure to pass the created regl instance into the scatterplot constructor as well!
-
-**url:** the URL to an image.
-
-**isCrossOrigin:** if `url` is pointing to another origin `isCrossOrigin` must be set to `true`.
+_DEPRECATED! Use [`scatterplot.createTextureFromUrl()`](#scatterplot.createTextureFromUrl) instead._
 
 ### Methods
 
-#### `scatterplot.draw(points)`
+<a name="scatterplot.draw" href="#scatterplot.draw">#</a> scatterplot.<b>draw</b>(<i>points</i>)
 
 Sets and draws `points`, which must be an array of points where a point is interpreted as a quadruple of form `[x, y, category, value]`.
 
@@ -116,8 +110,8 @@ const points = [
     // The category, which defaults to `0` if `undefined`
     0,
     // Some value, which defaults to `0` if `undefined`
-    0.5
-  ]
+    0.5,
+  ],
 ];
 
 scatterplot.draw(points);
@@ -133,23 +127,11 @@ scatterplot.draw();
 scatterplot.draw([]);
 ```
 
-#### `scatterplot.canvas`
-
-The canvas element on which the scatterplot is rendered.
-
-#### `scatterplot.regl`
-
-The Regl instance which renderes the scatterplot.
-
-#### `scatterplot.version`
-
-The version number of the scatterplot.
-
-#### `scatterplot.get(property)`
+<a name="scatterplot.get" href="#scatterplot.set">#</a> scatterplot.<b>get</b>(<i>property</i>)
 
 **Returns:** one of the properties documented in [`set()`](#scatterplotset)
 
-#### `scatterplot.set(properties)`
+<a name="scatterplot.set" href="#scatterplot.set">#</a> scatterplot.<b>set</b>(<i>properties = {}</i>)
 
 **Arguments:** `properties` is an object of key-value pairs. The list of all understood properties is given below.
 
@@ -227,14 +209,22 @@ scatterplot.set({ backgroundColor: [255, 0, 0] }); // rgb array
 scatterplot.set({ backgroundColor: [255, 0, 0, 1.0] }); // rgba array
 scatterplot.set({ backgroundColor: [1.0, 0, 0, 1.0] }); // normalized rgba
 
-// Set background image to an image from the same origin
-scatterplot.set({ backgroundImage: 'my-image.png' });
-// Set background image to an image from a different origin
-scatterplot.set({ backgroundImage: { src: 'https://server.com/my-image.png', crossOrigin: true } });
-// Set background image to some regl texture
-const image = new Image();
-image.src = 'my-image.png';
-image.onload = () => { scatterplot.set({ backgroundImage: scatterplot.regl.texture(image) });
+// Set background image to an image
+scatterplot.set({ backgroundImage: 'https://server.com/my-image.png' });
+// If you need to know when the image was loaded you have two options. First,
+// you can listen to the following event
+scatterplot.subscribe(
+  'background-image-ready',
+  () => {
+    console.log('Background image is now loaded and rendered!');
+  },
+  1
+);
+// or you load the image yourself as follows
+const backgroundImage = await scatterplot.createTextureFromUrl(
+  'https://server.com/my-image.png'
+);
+scatterplot.set({ backgroundImage });
 
 // Color by
 scatterplot.set({ colorBy: 'category' });
@@ -261,35 +251,39 @@ scatterplot.set({ pointSizeSelected: 2 });
 // Change the lasso color and make it very smooth, i.e., do not wait before
 // extending the lasso (i.e., `lassoMinDelay = 0`) and extend the lasso when
 // the mouse moves at least 1 pixel
-scatterplot.set({ lassoColor: [1, 1, 1, 1], lassoMinDelay: 0, lassoMinDist: 1 });
+scatterplot.set({
+  lassoColor: [1, 1, 1, 1],
+  lassoMinDelay: 0,
+  lassoMinDist: 1,
+});
 
 // Activate recticle and set recticle color to red
 scatterplot.set({ showRecticle: true, recticleColor: [1, 0, 0, 0.66] });
 ```
 
-#### `scatterplot.select(points)`
+<a name="scatterplot.select" href="#scatterplot.select">#</a> scatterplot.<b>select</b>()
 
 Select some points, such that they get visually highlighted. This will trigger
 a `select` event.
 
-#### `scatterplot.deselect()`
+<a name="scatterplot.deselect" href="#scatterplot.deselect">#</a> scatterplot.<b>deselect</b>()
 
 Deselect all selected points. This will trigger a `deselect` event.
 
-#### `scatterplot.destroy()`
+<a name="scatterplot.destroy" href="#scatterplot.destroy">#</a> scatterplot.<b>destroy</b>()
 
 Destroys the scatterplot instance by disposing all event listeners, the pubSub
 instance, regl, and the camera.
 
-#### `scatterplot.refresh()`
+<a name="scatterplot.refresh" href="#scatterplot.refresh">#</a> scatterplot.<b>refresh</b>()
 
 Refreshes the viewport of the scatterplot's regl instance.
 
-#### `scatterplot.reset()`
+<a name="scatterplot.reset" href="#scatterplot.reset">#</a> scatterplot.<b>reset</b>()
 
 Sets the view back to the initially defined view.
 
-#### `scatterplot.subscribe(eventName, eventHandler)`
+<a name="scatterplot.subscribe" href="#scatterplot.subscribe">#</a> scatterplot.<b>unsubscribe</b>(<i>eventName</i>, <i>eventHandler</i>)
 
 Subscribe to an event.
 
@@ -303,7 +297,13 @@ Subscribe to an event.
 
 **eventHandler** needs to be a callback function that can receive the payload.
 
-#### `scatterplot.unsubscribe(eventName, eventHandler)`
+<a name="scatterplot.unsubscribe" href="#scatterplot.unsubscribe">#</a> scatterplot.<b>unsubscribe</b>(<i>eventName</i>, <i>eventHandler</i>)
 
 Unsubscribe from an event. See [`scatterplot.subscribe()`](#scatterplot.subscribe) for a list of all
 events.
+
+<a name="scatterplot.createTextureFromUrl" href="#scatterplot.createTextureFromUrl">#</a> scatterplot.<b>createTextureFromUrl</b>(<i>url</i>)
+
+**Returns:** a Promise that resolves to a [Regl texture](https://github.com/regl-project/regl/blob/gh-pages/API.md#textures) that can be used, for example, as the [background image](#).
+
+**url:** the URL to an image.
