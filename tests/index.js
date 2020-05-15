@@ -204,10 +204,21 @@ test('set({ backgroundImage })', async (t) => {
   const regl = createRegl(canvas);
   const scatterplot = createScatterplot({ canvas, regl });
 
-  const backgroundImage = await createTextureFromUrl(
+  let backgroundImage = await createTextureFromUrl(
     regl,
-    'https://picsum.photos/300/200/',
-    true
+    'https://picsum.photos/300/200/'
+  );
+
+  scatterplot.set({ backgroundImage });
+
+  t.equal(
+    scatterplot.get('backgroundImage'),
+    backgroundImage,
+    'background image should be a Regl texture'
+  );
+
+  backgroundImage = await scatterplot.createTextureFromUrl(
+    'https://picsum.photos/300/200/'
   );
 
   scatterplot.set({ backgroundImage });
@@ -235,7 +246,7 @@ test('set({ backgroundImage })', async (t) => {
   t.equal(
     scatterplot.get('backgroundImage').width,
     300,
-    'background image should be a Regl texture'
+    'background image should be loaded by scatterplot'
   );
 });
 
