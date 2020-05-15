@@ -42,9 +42,7 @@ const selectHandler = ({ points: selectedPoints }) => {
   if (selection.length === 1) {
     const point = points[selection[0]];
     console.log(
-      `X: ${point[0]}\nY: ${point[1]}\nCategory: ${point[2]}\nValue: ${
-        point[3]
-      }`
+      `X: ${point[0]}\nY: ${point[1]}\nCategory: ${point[2]}\nValue: ${point[3]}`
     );
   }
 };
@@ -65,6 +63,7 @@ const scatterplot = createScatterplot({
   recticleColor
 });
 
+console.log(scatterplot.get('pointColorActive'));
 console.log(`Scatterplot v${scatterplot.get('version')}`);
 
 scatterplot.subscribe('pointover', pointoverHandler);
@@ -134,14 +133,11 @@ const resetClickHandler = () => {
 
 resetEl.addEventListener('click', resetClickHandler);
 
-const colorsCat = [
-  ['#3a78aa', '#008dff', '#008dff'],
-  ['#aa3a99', '#ff00da', '#ff00da']
-];
-scatterplot.set({ colorBy: 'category', colors: colorsCat });
+const colorsCat = ['#3a78aa', '#aa3a99'];
+scatterplot.set({ colorBy: 'category', pointColor: colorsCat });
 
 const colorsScale = [
-  '#002072',
+  '#002072', // dark blue
   '#162b79',
   '#233680',
   '#2e4186',
@@ -160,9 +156,9 @@ const colorsScale = [
   '#b8e0d7',
   '#c8ecdc',
   '#ddf7df',
-  '#ffffe0'
+  '#ffffe0' // bright yellow
 ];
-scatterplot.set({ colorBy: 'value', colors: colorsScale });
+scatterplot.set({ colorBy: 'value', pointColor: colorsScale });
 
 setPointSize(pointSize);
 setOpacity(opacity);

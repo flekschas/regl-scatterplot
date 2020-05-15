@@ -2,6 +2,7 @@
 
 - Fix horizontally-flipped background image (#13)
 - Rename the `background` property to `backgroundColor` for clarity
+- Split the `colors` property into `pointColor`, `pointColorActive`, and `pointColorHover` for clarity
 - Update camera
 
 ## v0.7.6

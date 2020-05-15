@@ -8,7 +8,10 @@ import { version } from '../package.json';
 
 import createScatterplot, { createRegl, createTextureFromUrl } from '../src';
 import {
-  DEFAULT_COLORS,
+  DEFAULT_COLOR_NORMAL,
+  DEFAULT_COLOR_ACTIVE,
+  DEFAULT_COLOR_HOVER,
+  DEFAULT_COLOR_BG,
   DEFAULT_HEIGHT,
   DEFAULT_LASSO_COLOR,
   DEFAULT_SHOW_RECTICLE,
@@ -44,8 +47,23 @@ test('createScatterplot()', t => {
 
   t.equal(scatterplot.get('canvas'), canvas, 'canvas object should equal');
   t.equal(
-    scatterplot.get('colors'),
-    DEFAULT_COLORS,
+    scatterplot.get('backgroundColor'),
+    DEFAULT_COLOR_BG,
+    'scatterplot should have default colors'
+  );
+  t.equal(
+    scatterplot.get('pointColor'),
+    DEFAULT_COLOR_NORMAL,
+    'scatterplot should have default colors'
+  );
+  t.equal(
+    scatterplot.get('pointColorActive'),
+    DEFAULT_COLOR_ACTIVE,
+    'scatterplot should have default colors'
+  );
+  t.equal(
+    scatterplot.get('pointColorHover'),
+    DEFAULT_COLOR_HOVER,
     'scatterplot should have default colors'
   );
   t.equal(
@@ -166,16 +184,18 @@ test('set({ aspectRatio })', t => {
   );
 });
 
-test('set({ background })', t => {
+test('set({ backgroundColor })', t => {
   const scatterplot = createScatterplot({ canvas: createCanvas() });
 
   const backgroundHex = '#ff0000';
   const backgroundNrgba = [1, 0, 0, 1];
-  scatterplot.set({ background: backgroundHex });
+  scatterplot.set({ backgroundColor: backgroundHex });
 
   t.ok(
-    scatterplot.get('background').every((v, i) => v === backgroundNrgba[i]),
-    'background should be red and and converted to normalized RGBA'
+    scatterplot
+      .get('backgroundColor')
+      .every((v, i) => v === backgroundNrgba[i]),
+    'background color should be red and and converted to normalized RGBA'
   );
 });
 
@@ -225,90 +245,121 @@ test('set({ colorBy })', async t => {
   t.equal(scatterplot.get('colorBy'), null, 'colorBy should be nullifyable');
 });
 
-test('set({ colors })', t => {
+test('set({ pointColor, pointColorActive, pointColorHover }) single color', t => {
   const canvas = createCanvas();
   const scatterplot = createScatterplot({ canvas });
 
-  const rgba6 = [
-    [0.22745098039215686, 0.47058823529411764, 0.6666666666666666, 1],
-    [0, 0.5529411764705883, 1, 1],
-    [0, 0.5529411764705883, 1, 1],
-    [0, 0, 0, 1],
-    [0.6666666666666666, 0.22745098039215686, 0.6, 1],
-    [1, 0, 0.8549019607843137, 1],
-    [1, 0, 0.8549019607843137, 1],
-    [0, 0, 0, 1]
+  const rgbaPointColor = [
+    0.22745098039215686,
+    0.47058823529411764,
+    0.6666666666666666,
+    1
   ];
+  const rgbaPointColorActive = [0, 0.5529411764705883, 1, 1];
+  const rgbaPointColorHover = [0, 0.5529411764705883, 1, 1];
 
-  const rgba2 = [
-    [0, 0.5529411764705883, 1, 1],
-    [0, 0.5529411764705883, 1, 1],
-    [0, 0.5529411764705883, 1, 1],
-    [0, 0, 0, 1],
-    [1, 0, 0.8549019607843137, 1],
-    [1, 0, 0.8549019607843137, 1],
-    [1, 0, 0.8549019607843137, 1],
-    [0, 0, 0, 1]
-  ];
-
-  const rgba2a = [
-    [0, 0.5529411764705883, 1, 0.4980392156862745],
-    [0, 0.5529411764705883, 1, 1],
-    [0, 0.5529411764705883, 1, 1],
-    [0, 0, 0, 1],
-    [1, 0, 0.8549019607843137, 0.4980392156862745],
-    [1, 0, 0.8549019607843137, 1],
-    [1, 0, 0.8549019607843137, 1],
-    [0, 0, 0, 1]
-  ];
-
+  // Set a single color
   scatterplot.set({
-    colors: [
-      ['#3a78aa', '#008dff', '#008dff'],
-      ['#aa3a99', '#ff00da', '#ff00da']
-    ]
+    pointColor: '#3a78aa',
+    pointColorActive: '#008dff',
+    pointColorHover: '#008dff'
   });
 
   t.ok(
     scatterplot
-      .get('colors')
-      .every((color, i) => color.every((c, j) => c === rgba6[i][j])),
-    'should create 8 normalized RGBAs from 6 HEX'
+      .get('pointColor')
+      .every((component, i) => component === rgbaPointColor[i]),
+    'should create normalized RGBA for point color'
   );
-
-  scatterplot.set({ colors: ['#008dff', '#ff00da'] });
 
   t.ok(
     scatterplot
-      .get('colors')
-      .every((color, i) => color.every((c, j) => c === rgba2[i][j])),
-    'should create 8 normalized RGBAs from 2 HEX'
+      .get('pointColorActive')
+      .every((component, i) => component === rgbaPointColorActive[i]),
+    'should create normalized RGBA for point color active'
   );
 
+  t.ok(
+    scatterplot
+      .get('pointColorHover')
+      .every((component, i) => component === rgbaPointColorHover[i]),
+    'should create normalized RGBA for point color hover'
+  );
+
+  // Set an invalid color, which should default to white
   scatterplot.set({
-    colors: [
-      [0, 141, 255],
-      [255, 0, 218]
-    ]
+    pointColor: 'shouldnotwork'
   });
+
+  t.ok(
+    scatterplot.get('pointColor').every(component => component === 1),
+    'should default to white when setting an invalid color point color from before'
+  );
+});
+
+test('set({ pointColor }) multiple colors', t => {
+  const canvas = createCanvas();
+  const scatterplot = createScatterplot({ canvas });
+
+  const pointColor = [
+    [0, 0.5, 1, 0.5],
+    [1, 0.5, 1, 0.5]
+  ];
+
+  // Set a single color
+  scatterplot.set({ pointColor });
+
   t.ok(
     scatterplot
-      .get('colors')
-      .every((color, i) => color.every((c, j) => c === rgba2[i][j])),
-    'should create 8 normalized RGBAs from 2 non-normalized RGB'
+      .get('pointColor')
+      .every((color, i) => color.every((c, j) => c === pointColor[i][j])),
+    'should accepts multiple normalized RGBA for point color'
+  );
+});
+
+test('set({ pointColor, pointColorActive, pointColorHover }) multiple colors', t => {
+  const canvas = createCanvas();
+  const scatterplot = createScatterplot({ canvas });
+
+  const pointColor = [
+    [0, 0.5, 1, 0.5],
+    [0, 0.5, 0.5, 0.5]
+  ];
+  const pointColorActive = [
+    [0.5, 0, 1, 0.5],
+    [0.5, 0, 0.5, 0.5]
+  ];
+  const pointColorHover = [
+    [0.5, 0.5, 0, 0.5],
+    [0.5, 0.5, 0, 0.5]
+  ];
+
+  // Set a single color
+  scatterplot.set({
+    pointColor,
+    pointColorActive,
+    pointColorHover
+  });
+
+  t.ok(
+    scatterplot
+      .get('pointColor')
+      .every((color, i) => color.every((c, j) => c === pointColor[i][j])),
+    'should accepts multiple normalized RGBA for point color'
   );
 
-  scatterplot.set({
-    colors: [
-      [0, 141, 255, 127],
-      [255, 0, 218, 127]
-    ]
-  });
   t.ok(
     scatterplot
-      .get('colors')
-      .every((color, i) => color.every((c, j) => c === rgba2a[i][j])),
-    'should create 8 normalized RGBAs from 2 non-normalized RGBAs'
+      .get('pointColorActive')
+      .every((color, i) => color.every((c, j) => c === pointColorActive[i][j])),
+    'should accepts multiple normalized RGBA for point color active'
+  );
+
+  t.ok(
+    scatterplot
+      .get('pointColorHover')
+      .every((color, i) => color.every((c, j) => c === pointColorHover[i][j])),
+    'should accepts multiple normalized RGBA for point color hover'
   );
 });
 

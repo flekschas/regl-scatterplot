@@ -155,27 +155,29 @@ The version number of the scatterplot.
 
 **Properties:**
 
-| Name              | Type            | Default                            | Constraints            | Settable | Nullifiable |
-| ----------------- | --------------- | ---------------------------------- | ---------------------- | -------- | ----------- |
-| canvas            | object          | `document.createElement('canvas')` |                        | `true`   | `false`     |
-| regl              | object          | `createRegl(canvas)`               |                        | `true`   | `false`     |
-| version           | string          |                                    |                        | `false`  | `false`     |
-| width             | number          | `300`                              | > 0                    | `true`   | `false`     |
-| height            | number          | `200`                              | > 0                    | `true`   | `false`     |
-| aspectRatio       | number          | `1.0`                              | > 0                    | `true`   | `false`     |
-| background        | string or array | rgba(0,0,0,1)                      | hex, rgb, rgba         | `true`   | `false`     |
-| backgroundImage   | function        | `null`                             | Regl texture           | `true`   | `true`      |
-| colorBy           | string          | `null`                             | `category` or `value`  | `true`   | `true`      |
-| colors            | array           | _see below_                        | list of hex, rgb, rgba | `true`   | `false`     |
-| opacity           | number          | `1`                                | > 0                    | `true`   | `false`     |
-| pointOutlineWidth | number          | `2`                                | >= 0                   | `true`   | `false`     |
-| pointSize         | number          | `6`                                | > 0                    | `true`   | `false`     |
-| pointSizeSelected | number          | `2`                                | >= 0                   | `true`   | `false`     |
-| lassoColor        | array           | rgba(0, 0.667, 1, 1)               | hex, rgb, rgba         | `true`   | `false`     |
-| lassoMinDelay     | number          | 15                                 | >= 0                   | `true`   | `false`     |
-| lassoMinDist      | number          | 4                                  | >= 0                   | `true`   | `false`     |
-| showRecticle      | boolean         | `false`                            | `true` or `false`      | `true`   | `false`     |
-| recticleColor     | array           | rgba(1,1,1,.5)                     | hex, rgb, rgba         | `true`   | `false`     |
+| Name              | Type            | Default                            | Constraints                            | Settable | Nullifiable |
+| ----------------- | --------------- | ---------------------------------- | -------------------------------------- | -------- | ----------- |
+| canvas            | object          | `document.createElement('canvas')` |                                        | `true`   | `false`     |
+| regl              | object          | `createRegl(canvas)`               |                                        | `true`   | `false`     |
+| version           | string          |                                    |                                        | `false`  | `false`     |
+| width             | number          | `300`                              | > 0                                    | `true`   | `false`     |
+| height            | number          | `200`                              | > 0                                    | `true`   | `false`     |
+| aspectRatio       | number          | `1.0`                              | > 0                                    | `true`   | `false`     |
+| background        | string or array | rgba(0,0,0,1)                      | hex, rgb, rgba                         | `true`   | `false`     |
+| backgroundImage   | function        | `null`                             | Regl texture                           | `true`   | `true`      |
+| colorBy           | string          | `null`                             | `category` or `value`                  | `true`   | `true`      |
+| opacity           | number          | `1`                                | > 0                                    | `true`   | `false`     |
+| pointColor        | number          | `[0.66, 0.66, 0.66, 1]`            | single value or list of hex, rgb, rgba | `true`   | `false`     |
+| pointColorActive  | number          | `[0, 0.55, 1, 1]`                  | single value or list of hex, rgb, rgba | `true`   | `false`     |
+| pointColorHover   | number          | `[1, 1, 1, 1]`                     | single value or list of hex, rgb, rgba | `true`   | `false`     |
+| pointOutlineWidth | number          | `2`                                | >= 0                                   | `true`   | `false`     |
+| pointSize         | number          | `6`                                | > 0                                    | `true`   | `false`     |
+| pointSizeSelected | number          | `2`                                | >= 0                                   | `true`   | `false`     |
+| lassoColor        | array           | rgba(0, 0.667, 1, 1)               | hex, rgb, rgba                         | `true`   | `false`     |
+| lassoMinDelay     | number          | 15                                 | >= 0                                   | `true`   | `false`     |
+| lassoMinDist      | number          | 4                                  | >= 0                                   | `true`   | `false`     |
+| showRecticle      | boolean         | `false`                            | `true` or `false`                      | `true`   | `false`     |
+| recticleColor     | array           | rgba(1,1,1,.5)                     | hex, rgb, rgba                         | `true`   | `false`     |
 
 **Notes:**
 
@@ -191,16 +193,12 @@ The version number of the scatterplot.
 - The background image must be a Regl texture. To easily set a remote
   image as the background please use [`createTextureFromUrl`](#const-texture--createTextureFromUrlregl-url-isCrossOrigin).
 
-- The scatterplot stores 4 colors per color representing 4 states, representing:
+- The scatterplot understan 4 colors per color representing 4 states, representing:
 
-  - normal: used by default [default: `[0.66, 0.66, 0.66, 1]`]
-  - active: used when selecting a point [default: `[0, 0.55, 1, 1]`]
-  - hover: used when mousing over a point _not implemented yet_ [default: `[1, 1, 1, 1]`]
-  - background: used as the background color [default: `[0, 0, 0, 1]`]
-
-  When defining colors you can either pass in a flat array of _normal_ colors
-  and regl-scatterplot will fill in the rest or you provide a list of quadruples
-  where each quadruple defines the colors for all 4 states.
+  - normal (`pointColor`): the normal color of points.
+  - active (`pointColorActive`): used for coloring selected points.
+  - hover (`pointColorHover`): used when mousing over a point.
+  - background (`backgroundColor`): used as the background color.
 
 - Points can currently by colored by _category_ and _value_.
 
@@ -223,15 +221,15 @@ const width = scatterplot.get('width');
 // in which case you'd have to set the aspect ratio as follows to `2`.
 scatterplot.set({ aspectRatio: 2.0 });
 
-// Set background color red
-scatterplot.set({ background: '#00ff00' });
-scatterplot.set({ background: [255, 0, 0] });
-scatterplot.set({ background: [255, 0, 0, 1.0] });
-scatterplot.set({ background: [1, 0, 0, 1.0] }); // normalized rgba
+// Set background color to red
+scatterplot.set({ backgroundColor: '#00ff00' }); // hex string
+scatterplot.set({ backgroundColor: [255, 0, 0] }); // rgb array
+scatterplot.set({ backgroundColor: [255, 0, 0, 1.0] }); // rgba array
+scatterplot.set({ backgroundColor: [1.0, 0, 0, 1.0] }); // normalized rgba
 
-// Set background image to an image with the same origin
+// Set background image to an image from the same origin
 scatterplot.set({ backgroundImage: 'my-image.png' });
-// Set background image to an image with a different origin
+// Set background image to an image from a different origin
 scatterplot.set({ backgroundImage: { src: 'https://server.com/my-image.png', crossOrigin: true } });
 // Set background image to some regl texture
 const image = new Image();
@@ -242,7 +240,11 @@ image.onload = () => { scatterplot.set({ backgroundImage: scatterplot.regl.textu
 scatterplot.set({ colorBy: 'category' });
 
 // Set color map
-scatterplot.set({ colors: ['#ff0000', '#00ff00', '#0000ff'] });
+scatterplot.set({
+  pointColor: ['#ff0000', '#00ff00', '#0000ff'],
+  pointColorActive: ['#ff0000', '#00ff00', '#0000ff'], // optional
+  pointColorHover: ['#ff0000', '#00ff00', '#0000ff'], // optional
+});
 
 // Set base opacity
 scatterplot.set({ opacity: 0.5 });

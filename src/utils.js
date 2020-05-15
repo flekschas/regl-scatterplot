@@ -236,6 +236,16 @@ export const isRgba = rgba =>
   rgba.length === 4 && (isNormFloatArray(rgba) || isUint8Array(rgba));
 
 /**
+ * Test if a color is multiple colors
+ * @param   {*}  color  To be tested
+ * @return  {boolean}  If `true`, `color` is an array of colors.
+ */
+export const isMultipleColors = color =>
+  Array.isArray(color) &&
+  color.length &&
+  (Array.isArray(color[0]) || isString(color[0]));
+
+/**
  * Fast version of `Math.max`. Based on
  *   https://jsperf.com/math-min-max-vs-ternary-vs-if/24 `Math.max` is not
  *   very fast
@@ -275,12 +285,15 @@ export const toRgba = (color, isNormalize) => {
     return isNormalize && !isNormFloatArray(color)
       ? normNumArray(color)
       : color;
+
   if (isRgb(color))
     return [
       ...(isNormalize ? normNumArray(color) : color),
       255 ** !isNormalize
     ];
+
   if (isHex(color)) return hexToRgba(color, isNormalize);
+
   console.warn(
     'Only HEX, RGB, and RGBA are handled by this function. Returning white instead.'
   );

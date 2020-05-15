@@ -25,12 +25,6 @@ export const DEFAULT_COLOR_NORMAL = [0.66, 0.66, 0.66, 1];
 export const DEFAULT_COLOR_ACTIVE = [0, 0.55, 1, 1];
 export const DEFAULT_COLOR_HOVER = [1, 1, 1, 1];
 export const DEFAULT_COLOR_BG = [0, 0, 0, 1];
-export const DEFAULT_COLORS = [
-  DEFAULT_COLOR_NORMAL,
-  DEFAULT_COLOR_ACTIVE,
-  DEFAULT_COLOR_HOVER,
-  DEFAULT_COLOR_BG
-];
 
 // Default view
 export const DEFAULT_TARGET = [0, 0];

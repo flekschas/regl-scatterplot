@@ -11,7 +11,7 @@ uniform float numPoints;
 uniform float globalState;
 uniform float isColoredByCategory;
 uniform float isColoredByValue;
-uniform float maxColor;
+uniform float maxColorTexIdx;
 uniform float numColorStates;
 uniform float scaling;
 uniform mat4 projection;
@@ -38,7 +38,7 @@ void main() {
 
   // Determine color index
   float colorIndexCat = state.z * isColoredByCategory;
-  float colorIndexVal = floor(state.w * maxColor) * isColoredByValue;
+  float colorIndexVal = floor(state.w * maxColorTexIdx) * isColoredByValue;
   float colorIndex = colorIndexCat + colorIndexVal;
   // Multiply by the number of color states per color
   // I.e., normal, active, hover, background, etc.

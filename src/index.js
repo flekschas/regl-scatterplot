@@ -20,7 +20,9 @@ import {
   DEFAULT_BACKGROUND_IMAGE,
   DEFAULT_COLOR_BG,
   DEFAULT_COLOR_BY,
-  DEFAULT_COLORS,
+  DEFAULT_COLOR_NORMAL,
+  DEFAULT_COLOR_ACTIVE,
+  DEFAULT_COLOR_HOVER,
   DEFAULT_DATA_ASPECT_RATIO,
   DEFAULT_DISTANCE,
   DEFAULT_HEIGHT,
@@ -45,9 +47,8 @@ import {
   createTextureFromUrl,
   dist,
   getBBox,
-  isRgb,
+  isMultipleColors,
   isPointInPolygon,
-  isRgba,
   toRgba,
   max,
   min
@@ -83,12 +84,14 @@ const createScatterplot = (initialProperties = {}) => {
     backgroundImage: initialBackgroundImage = DEFAULT_BACKGROUND_IMAGE,
     canvas: initialCanvas = document.createElement('canvas'),
     colorBy: initialColorBy = DEFAULT_COLOR_BY,
-    colors: initialColors = DEFAULT_COLORS,
     lassoColor: initialLassoColor = DEFAULT_LASSO_COLOR,
     lassoMinDelay: initialLassoMinDelay = LASSO_MIN_DELAY,
     lassoMinDist: initialLassoMinDist = LASSO_MIN_DIST,
     showRecticle: initialShowRecticle = DEFAULT_SHOW_RECTICLE,
     recticleColor: initialRecticleColor = DEFAULT_RECTICLE_COLOR,
+    pointColor: initialPointColor = DEFAULT_COLOR_NORMAL,
+    pointColorActive: initialPointColorActive = DEFAULT_COLOR_ACTIVE,
+    pointColorHover: initialPointColorHover = DEFAULT_COLOR_HOVER,
     pointSize: initialPointSize = DEFAULT_POINT_SIZE,
     pointSizeSelected: initialPointSizeSelected = DEFAULT_POINT_SIZE_SELECTED,
     pointOutlineWidth: initialPointOutlineWidth = DEFAULT_POINT_OUTLINE_WIDTH,
@@ -108,7 +111,6 @@ const createScatterplot = (initialProperties = {}) => {
   );
   let backgroundImage = initialBackgroundImage;
   let canvas = initialCanvas;
-  let colors = initialColors;
   let width = initialWidth;
   let height = initialHeight;
   let pointSize = initialPointSize;
@@ -137,6 +139,20 @@ const createScatterplot = (initialProperties = {}) => {
   let recticleHLine;
   let recticleVLine;
   let recticleColor = toRgba(initialRecticleColor, true);
+
+  let pointColors = isMultipleColors(initialPointColor)
+    ? initialPointColor
+    : [initialPointColor];
+  let pointColorsActive = isMultipleColors(initialPointColorActive)
+    ? initialPointColorActive
+    : [initialPointColorActive];
+  let pointColorsHover = isMultipleColors(initialPointColorHover)
+    ? initialPointColorHover
+    : [initialPointColorHover];
+
+  pointColors = pointColors.map(color => toRgba(color, true));
+  pointColorsActive = pointColorsActive.map(color => toRgba(color, true));
+  pointColorsHover = pointColorsHover.map(color => toRgba(color, true));
 
   let stateTex; // Stores the point texture holding x, y, category, and value
   let stateTexRes = 0; // Width and height of the texture
@@ -380,11 +396,44 @@ const createScatterplot = (initialProperties = {}) => {
     drawRaf(); // eslint-disable-line no-use-before-define
   };
 
-  const createColorTexture = (newColors = colors) => {
-    const numColors = newColors.length;
+  const getColors = () => {
+    const n = pointColors.length;
+    const n2 = pointColorsActive.length;
+    const n3 = pointColorsHover.length;
+    const colors = [];
+    if (n === n2 && n2 === n3) {
+      for (let i = 0; i < n; i++) {
+        colors.push(
+          pointColors[i],
+          pointColorsActive[i],
+          pointColorsHover[i],
+          backgroundColor
+        );
+      }
+    } else {
+      for (let i = 0; i < n; i++) {
+        const rgbaOpaque = [
+          pointColors[i][0],
+          pointColors[i][1],
+          pointColors[i][2],
+          1
+        ];
+        const colorActive =
+          colorBy === DEFAULT_COLOR_BY ? pointColorsActive[0] : rgbaOpaque;
+        const colorHover =
+          colorBy === DEFAULT_COLOR_BY ? pointColorsHover[0] : rgbaOpaque;
+        colors.push(pointColors[i], colorActive, colorHover, backgroundColor);
+      }
+    }
+    return colors;
+  };
+
+  const createColorTexture = () => {
+    const colors = getColors();
+    const numColors = colors.length;
     colorTexRes = Math.max(2, Math.ceil(Math.sqrt(numColors)));
     const rgba = new Float32Array(colorTexRes ** 2 * 4);
-    newColors.forEach((color, i) => {
+    colors.forEach((color, i) => {
       rgba[i * 4] = color[0]; // r
       rgba[i * 4 + 1] = color[1]; // g
       rgba[i * 4 + 2] = color[2]; // b
@@ -412,40 +461,45 @@ const createScatterplot = (initialProperties = {}) => {
     dataAspectRatio = newDataAspectRatio;
   };
 
-  const setColors = newColors => {
+  const setColors = (getter, setter) => newColors => {
     if (!newColors || !newColors.length) return;
 
-    const tmp = [];
-    try {
-      newColors.forEach(color => {
-        if (Array.isArray(color) && !isRgb(color) && !isRgba(color)) {
-          // Assuming color is an array of HEX colors
-          for (let j = 0; j < 3; j++) {
-            tmp.push(toRgba(color[j], true));
-          }
-        } else {
-          const rgba = toRgba(color, true);
-          const rgbaOpaque = [...rgba.slice(0, 3), 1];
-          tmp.push(rgba, rgbaOpaque, rgbaOpaque); // normal, active, and hover
-        }
-        tmp.push(backgroundColor);
-      });
-    } catch (e) {
-      console.error(
-        e,
-        'Invalid format. Please specify an array of colors or a nested array of accents per colors.'
-      );
-    }
-    colors = tmp;
+    const colors = getter();
+    const prevColors = [...colors];
+
+    let tmpColors = isMultipleColors(newColors) ? newColors : [newColors];
+    tmpColors = tmpColors.map(color => toRgba(color, true));
 
     try {
       colorTex = createColorTexture();
+      setter(tmpColors);
     } catch (e) {
-      colors = DEFAULT_COLORS;
-      colorTex = createColorTexture();
       console.error('Invalid colors. Switching back to default colors.');
+      // eslint-disable-next-line no-param-reassign
+      setter(prevColors);
+      colorTex = createColorTexture();
     }
   };
+
+  const setPointColors = setColors(
+    () => pointColors,
+    colors => {
+      pointColors = colors;
+    }
+  );
+  const setPointColorsActive = setColors(
+    () => pointColorsActive,
+    colors => {
+      pointColorsActive = colors;
+    }
+  );
+  const setPointColorsHover = setColors(
+    () => pointColorsHover,
+    colors => {
+      pointColorsHover = colors;
+    }
+  );
+
   const setHeight = newHeight => {
     if (!+newHeight || +newHeight <= 0) return;
     height = +newHeight;
@@ -511,8 +565,7 @@ const createScatterplot = (initialProperties = {}) => {
   const getNormalNumPoints = () => numPoints;
   const getIsColoredByCategory = () => (colorBy === 'category') * 1;
   const getIsColoredByValue = () => (colorBy === 'value') * 1;
-  const getMaxColor = () => colors.length / COLOR_NUM_STATES - 1;
-  const getNumColorStates = () => COLOR_NUM_STATES;
+  const getMaxColorTexIdx = () => pointColors.length - 1;
 
   const drawPoints = (
     getPointSizeExtra,
@@ -557,8 +610,8 @@ const createScatterplot = (initialProperties = {}) => {
         stateTexRes: getStateTexRes,
         isColoredByCategory: getIsColoredByCategory,
         isColoredByValue: getIsColoredByValue,
-        maxColor: getMaxColor,
-        numColorStates: getNumColorStates
+        maxColorTexIdx: getMaxColorTexIdx,
+        numColorStates: COLOR_NUM_STATES
       },
 
       count: getNumPoints,
@@ -830,11 +883,20 @@ const createScatterplot = (initialProperties = {}) => {
     if (property === 'backgroundColor') return backgroundColor;
     if (property === 'backgroundImage') return backgroundImage;
     if (property === 'colorBy') return colorBy;
-    if (property === 'colors') return colors;
     if (property === 'lassoColor') return lassoColor;
     if (property === 'showRecticle') return showRecticle;
     if (property === 'recticleColor') return recticleColor;
     if (property === 'opacity') return opacity;
+    if (property === 'pointColor')
+      return pointColors.length === 1 ? pointColors[0] : pointColors;
+    if (property === 'pointColorActive')
+      return pointColorsActive.length === 1
+        ? pointColorsActive[0]
+        : pointColorsActive;
+    if (property === 'pointColorHover')
+      return pointColorsHover.length === 1
+        ? pointColorsHover[0]
+        : pointColorsHover;
     if (property === 'pointOutlineWidth') return pointOutlineWidth;
     if (property === 'pointSize') return pointSize;
     if (property === 'pointSizeSelected') return pointSizeSelected;
@@ -856,13 +918,15 @@ const createScatterplot = (initialProperties = {}) => {
       backgroundColor: newBackgroundColor = null,
       backgroundImage: newBackgroundImage = backgroundImage,
       colorBy: newColorBy = colorBy,
-      colors: newColors = null,
       opacity: newOpacity = null,
       lassoColor: newLassoColor = null,
       lassoMinDelay: newLassoMinDelay = null,
       lassoMinDist: newLassoMinDist = null,
       showRecticle: newShowRecticle = null,
       recticleColor: newRecticleColor = null,
+      pointColor: newPointColor = null,
+      pointColorActive: newPointColorActive = null,
+      pointColorHover: newPointColorHover = null,
       pointOutlineWidth: newPointOutlineWidth = null,
       pointSize: newPointSize = null,
       pointSizeSelected: newPointSizeSelected = null,
@@ -874,7 +938,9 @@ const createScatterplot = (initialProperties = {}) => {
     setBackgroundColor(newBackgroundColor || newBackground);
     setBackgroundImage(newBackgroundImage);
     setColorBy(newColorBy);
-    setColors(newColors);
+    setPointColors(newPointColor);
+    setPointColorsActive(newPointColorActive);
+    setPointColorsHover(newPointColorHover);
     setOpacity(newOpacity);
     setLassoColor(newLassoColor);
     setLassoMinDelay(newLassoMinDelay);
