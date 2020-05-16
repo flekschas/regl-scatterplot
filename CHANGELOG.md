@@ -1,5 +1,6 @@
-## v0.7.7
+## v0.8.0
 
+- Add background to lasso
 - Fix horizontally-flipped background image (#13)
 - Rename the `background` property to `backgroundColor` for clarity
 - Split the `colors` property into `pointColor`, `pointColorActive`, and `pointColorHover` for clarity

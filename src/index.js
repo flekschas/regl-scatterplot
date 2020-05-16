@@ -129,6 +129,7 @@ const createScatterplot = (initialProperties = {}) => {
   let lassoMinDelay = +initialLassoMinDelay;
   let lassoMinDist = +initialLassoMinDist;
   let lassoPos = [];
+  let lassoPoints = [];
   let lassoScatterPos = [];
   let lassoPrevMousePos;
   let searchIndex;
@@ -250,14 +251,18 @@ const createScatterplot = (initialProperties = {}) => {
     const currMousePos = getMousePos();
 
     if (!lassoPrevMousePos) {
-      lassoPos = [...getMouseGlPos(currMousePos)];
+      const point = getMouseGlPos(currMousePos);
+      lassoPos = [point[0], point[1]];
+      lassoPoints = [point];
       lassoScatterPos = [...getScatterGlPos(currMousePos)];
       lassoPrevMousePos = currMousePos;
     } else {
       const d = dist(...currMousePos, ...lassoPrevMousePos);
 
       if (d > lassoMinDist) {
-        lassoPos.push(...getMouseGlPos(currMousePos));
+        const point = getMouseGlPos(currMousePos);
+        lassoPos.push(point[0], point[1]);
+        lassoPoints.push(point);
         lassoScatterPos.push(...getScatterGlPos(currMousePos));
         lassoPrevMousePos = currMousePos;
         if (lassoPos.length > 2) {
@@ -322,6 +327,7 @@ const createScatterplot = (initialProperties = {}) => {
     // console.log(`found ${pointsInLasso.length} in ${performance.now() - t0} msec`);
     select(pointsInLasso);
     lassoPos = [];
+    lassoPoints = [];
     lassoScatterPos = [];
     lassoPrevMousePos = undefined;
     lasso.clear();
@@ -680,6 +686,47 @@ const createScatterplot = (initialProperties = {}) => {
     count: 6,
   });
 
+  const drawPolygon2d = regl({
+    vert: `
+      precision mediump float;
+      attribute vec2 position;
+      void main () {
+        gl_Position = vec4(position, 0, 1);
+      }`,
+
+    frag: `
+      precision mediump float;
+      uniform vec4 color;
+      void main () {
+        gl_FragColor = vec4(color.rgb, 0.2);
+      }`,
+
+    depth: { enable: false },
+
+    blend: {
+      enable: true,
+      func: {
+        srcRGB: 'src alpha',
+        srcAlpha: 'one',
+        dstRGB: 'one minus src alpha',
+        dstAlpha: 'one minus src alpha',
+      },
+    },
+
+    attributes: {
+      position: () => lassoPoints,
+    },
+
+    uniforms: {
+      color: () => lassoColor,
+    },
+
+    elements: () =>
+      Array(lassoPoints.length - 2)
+        .fill()
+        .map((_, i) => [0, i + 1, i + 2]),
+  });
+
   const drawRecticle = () => {
     if (!(hoveredPoint >= 0)) return;
 
@@ -796,6 +843,8 @@ const createScatterplot = (initialProperties = {}) => {
     if (!mouseDown && (showRecticle || showRecticleOnce)) drawRecticle();
     if (hoveredPoint >= 0) drawHoveredPoint();
     if (selection.length) drawSelectedPoint();
+
+    if (lassoPoints.length > 2) drawPolygon2d();
 
     lasso.draw();
 
