@@ -10,6 +10,10 @@ const pointSizeValEl = document.querySelector('#point-size-value');
 const opacityEl = document.querySelector('#opacity');
 const opacityValEl = document.querySelector('#opacity-value');
 const resetEl = document.querySelector('#reset');
+const exampleEl = document.querySelector('#example-background');
+
+exampleEl.setAttribute('class', 'active');
+exampleEl.removeAttribute('href');
 
 let { width, height } = canvas.getBoundingClientRect();
 

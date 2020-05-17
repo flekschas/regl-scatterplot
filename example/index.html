@@ -175,6 +175,10 @@
         background: rgba(32, 32, 32, 1);
       }
 
+      #topbar hr {
+        border-color: rgba(255, 255, 255, 0.1);
+      }
+
       #title {
         padding: 0;
         margin: 0;
@@ -232,6 +236,27 @@
         color: #666;
         font-size: 0.7rem;
         line-height: 0.9rem;
+      }
+
+      #examples {
+        margin: 0;
+        padding: 0 0 0 1.25em;
+      }
+
+      #examples li {
+        margin: 0.125em 0;
+      }
+
+      #examples li:last-child {
+        margin-bottom: 0;
+      }
+
+      #examples li a {
+        color: white;
+      }
+
+      #examples li a.active {
+        font-style: italic;
       }
 
       #num-points-value {
@@ -314,6 +339,18 @@
           />
         </label>
         <button id="reset">Reset</button>
+        <hr />
+        <label>Examples:</label>
+        <ul id="examples">
+          <li>
+            <a id="example-basic" href="index.html">Basic</a>
+          </li>
+          <li>
+            <a id="example-background" href="texture-background.html"
+              >Background Image</a
+            >
+          </li>
+        </ul>
       </aside>
     </header>
     <div id="canvas-wrapper">
