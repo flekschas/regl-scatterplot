@@ -34,6 +34,8 @@ npm -i regl-scatterplot
 
 ## Getting started
 
+#### Basic Example
+
 ```javascript
 import createScatterplot from 'regl-scatterplot';
 
@@ -55,7 +57,34 @@ const points = new Array(10000)
 scatterplot.draw(points);
 ```
 
-See a complete example at [example/index.js](example/index.js).
+#### Color by value or category
+
+Regl-scatterplot supports two color modes: coloring by value or coloring by category. To support those, each point can be associated to a categorical and continuous value. To specify those values simply append two additional values to a point quadruples: e.g., `[x, y, category, value]`.
+
+```javascript
+scatterplot.draw([
+  // x, y, category, value
+   0.2, -0.1, 0, 0.1337,
+   0.3,  0.1, 0, 0.3371,
+  -0.9,  0.8, 1, 0.3713,
+]);
+```
+
+To color points by category, set `pointColor` to a list of colors. For performance reasons, regl-scatterplot assumes that the category `0` refers to the first color, `1` refers to the second color, etc. Mathematically, regl-scatterplot maps categories to colors as follows: `category => category % colors.length`.
+
+```javascript
+const colorsCat = ['#3a78aa', '#aa3a99'];
+scatterplot.set({ colorBy: 'category', pointColor: colorsCat });
+```
+
+To apply a continuous colormap use `colorBy: 'value'` and set `pointColor` to a list of colors representing the colormap. For performance reasons, regl-scatterplot assumes that the values are in `[0,1]` . Mathematically, the maping functions is as follows: `value => Math.min(1, Math.max(0, value))`.
+
+```javascript
+const blackToWhite = ['#000000', ..., '#ffffff'];
+scatterplot.set({ colorBy: 'value', pointColor: blackToWhite });
+```
+
+For a complete example see [example/index.js](example/index.js).
 
 ## API
 
