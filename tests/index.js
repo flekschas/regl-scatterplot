@@ -24,7 +24,17 @@ import {
   LASSO_MIN_DIST,
 } from '../src/constants';
 
-import { asyncForEach, createCanvas, createMouseEvent, wait } from './utils';
+import {
+  asyncForEach,
+  createCanvas,
+  createMouseEvent,
+  flatArrayEqual,
+  wait,
+} from './utils';
+
+const EPS = 1e-7;
+
+const floatEqual = (a, b) => Math.abs(a - b) <= EPS;
 
 /* ------------------------------ constructors ------------------------------ */
 
@@ -90,6 +100,58 @@ test('createScatterplot()', (t) => {
     scatterplot.get('height'),
     DEFAULT_HEIGHT,
     'scatterplot should have default height'
+  );
+});
+
+test('createScatterplot({ cameraTarget, cameraDistance, cameraRotation, cameraView })', (t) => {
+  const cameraTarget = [1, 1];
+  const cameraDistance = 2;
+  const cameraRotation = Math.PI / 4;
+  const scatterplot = createScatterplot({
+    cameraTarget,
+    cameraDistance,
+    cameraRotation,
+  });
+
+  t.ok(
+    flatArrayEqual([1, 1], scatterplot.get('cameraTarget'), floatEqual),
+    `The camera target should be ${cameraTarget}`
+  );
+
+  t.ok(
+    floatEqual(cameraDistance, scatterplot.get('cameraDistance')),
+    `The camera distance should be ${cameraDistance}`
+  );
+
+  t.ok(
+    floatEqual(cameraRotation, scatterplot.get('cameraRotation')),
+    `The camera rotation should be ${cameraRotation}`
+  );
+
+  const cameraView = new Float32Array([
+    0.5,
+    0,
+    0,
+    0.5,
+    0,
+    0.5,
+    0,
+    0.5,
+    0,
+    0,
+    0.5,
+    0,
+    0,
+    0,
+    0,
+    1,
+  ]);
+  const scatterplot2 = createScatterplot({ cameraView });
+
+  t.equal(
+    cameraView,
+    scatterplot2.get('cameraView'),
+    `The camera view should be ${cameraView}`
   );
 });
 
@@ -250,7 +312,39 @@ test('set({ backgroundImage })', async (t) => {
   );
 });
 
-test('set({ colorBy })', async (t) => {
+test('set({ cameraTarget, cameraDistance, cameraRotation, cameraView })', (t) => {
+  const scatterplot = createScatterplot({ canvas: createCanvas() });
+
+  const settings = {
+    cameraTarget: [1.337, 1.337],
+    cameraDistance: 1.337,
+    cameraRotation: Math.PI / 1.337,
+  };
+
+  const comparators = {
+    cameraTarget: (a, b) => flatArrayEqual(a, b, floatEqual),
+    cameraDistance: (a, b) => floatEqual(a, b),
+    cameraRotation: (a, b) => floatEqual(a, b),
+  };
+
+  Object.entries(settings).forEach(([setting, value]) => {
+    scatterplot.set({ [setting]: value });
+
+    t.ok(
+      comparators[setting](value, scatterplot.get(setting)),
+      `${setting} should be set to ${value}`
+    );
+
+    scatterplot.set({ [setting]: null });
+
+    t.ok(
+      comparators[setting](value, scatterplot.get(setting)),
+      `${setting} should not be nullifyable`
+    );
+  });
+});
+
+test('set({ colorBy })', (t) => {
   const scatterplot = createScatterplot({ canvas: createCanvas() });
 
   const colorBy = 'category';

@@ -59,6 +59,10 @@ import { version } from '../package.json';
 
 const deprecations = {
   background: 'backgroundColor',
+  target: 'cameraTarget',
+  distance: 'cameraDistance',
+  rotation: 'cameraRotation',
+  view: 'cameraView',
 };
 
 const checkDeprecations = (properties) => {
@@ -83,6 +87,10 @@ const createScatterplot = (initialProperties = {}) => {
     background: initialBackground,
     backgroundColor: initialBackgroundColor,
     backgroundImage: initialBackgroundImage = DEFAULT_BACKGROUND_IMAGE,
+    cameraTarget: initialCameraTarget,
+    cameraDistance: initialCameraDistance,
+    cameraRotation: initialCameraRotation,
+    cameraView: initialCameraView,
     canvas: initialCanvas = document.createElement('canvas'),
     colorBy: initialColorBy = DEFAULT_COLOR_BY,
     lassoColor: initialLassoColor = DEFAULT_LASSO_COLOR,
@@ -98,10 +106,10 @@ const createScatterplot = (initialProperties = {}) => {
     pointOutlineWidth: initialPointOutlineWidth = DEFAULT_POINT_OUTLINE_WIDTH,
     width: initialWidth = DEFAULT_WIDTH,
     height: initialHeight = DEFAULT_HEIGHT,
-    target: initialTarget = DEFAULT_TARGET,
-    distance: initialDistance = DEFAULT_DISTANCE,
-    rotation: initialRotation = DEFAULT_ROTATION,
-    view: initialView = DEFAULT_VIEW,
+    target: initialTarget,
+    distance: initialDistance,
+    rotation: initialRotation,
+    view: initialView,
   } = initialProperties;
 
   checkReglExtensions(initialRegl);
@@ -885,6 +893,23 @@ const createScatterplot = (initialProperties = {}) => {
     }
   };
 
+  const setCameraDistance = (distance) => {
+    if (distance > 0) camera.lookAt(camera.target, distance, camera.rotation);
+  };
+
+  const setCameraRotation = (rotation) => {
+    if (rotation !== null)
+      camera.lookAt(camera.target, camera.distance, rotation);
+  };
+
+  const setCameraTarget = (target) => {
+    if (target) camera.lookAt(target, camera.distance, camera.rotation);
+  };
+
+  const setCameraView = (view) => {
+    if (view) camera.setView(view);
+  };
+
   const setLassoColor = (newLassoColor) => {
     if (!newLassoColor) return;
 
@@ -935,13 +960,18 @@ const createScatterplot = (initialProperties = {}) => {
   const get = (property) => {
     checkDeprecations({ property: true });
 
+    if (property === 'aspectRatio') return dataAspectRatio;
     if (property === 'background') return backgroundColor;
     if (property === 'backgroundColor') return backgroundColor;
     if (property === 'backgroundImage') return backgroundImage;
+    if (property === 'cameraTarget') return camera.target;
+    if (property === 'cameraDistance') return camera.distance;
+    if (property === 'cameraRotation') return camera.rotation;
+    if (property === 'cameraView') return camera.view;
+    if (property === 'canvas') return canvas;
     if (property === 'colorBy') return colorBy;
+    if (property === 'height') return height;
     if (property === 'lassoColor') return lassoColor;
-    if (property === 'showRecticle') return showRecticle;
-    if (property === 'recticleColor') return recticleColor;
     if (property === 'opacity') return opacity;
     if (property === 'pointColor')
       return pointColors.length === 1 ? pointColors[0] : pointColors;
@@ -956,12 +986,11 @@ const createScatterplot = (initialProperties = {}) => {
     if (property === 'pointOutlineWidth') return pointOutlineWidth;
     if (property === 'pointSize') return pointSize;
     if (property === 'pointSizeSelected') return pointSizeSelected;
-    if (property === 'width') return width;
-    if (property === 'height') return height;
-    if (property === 'aspectRatio') return dataAspectRatio;
-    if (property === 'canvas') return canvas;
+    if (property === 'recticleColor') return recticleColor;
     if (property === 'regl') return regl;
+    if (property === 'showRecticle') return showRecticle;
     if (property === 'version') return version;
+    if (property === 'width') return width;
 
     return undefined;
   };
@@ -978,6 +1007,22 @@ const createScatterplot = (initialProperties = {}) => {
 
     if (properties.backgroundImage !== undefined) {
       setBackgroundImage(properties.backgroundImage);
+    }
+
+    if (properties.cameraTarget !== undefined) {
+      setCameraTarget(properties.cameraTarget);
+    }
+
+    if (properties.cameraDistance !== undefined) {
+      setCameraDistance(properties.cameraDistance);
+    }
+
+    if (properties.cameraRotation !== undefined) {
+      setCameraRotation(properties.cameraRotation);
+    }
+
+    if (properties.cameraView !== undefined) {
+      setCameraView(properties.cameraView);
     }
 
     if (properties.colorBy !== undefined) {
@@ -1068,9 +1113,31 @@ const createScatterplot = (initialProperties = {}) => {
     if (needsRedraw) drawRaf(null, showRecticleOnce);
   };
 
+  const initCamera = () => {
+    if (!camera) camera = createDom2dCamera(canvas);
+
+    if (initialCameraView || initialView) {
+      camera.set(mat4.clone(initialCameraView || initialView));
+    } else if (
+      initialCameraTarget ||
+      initialTarget ||
+      initialCameraDistance ||
+      initialDistance ||
+      initialCameraRotation ||
+      initialRotation
+    ) {
+      camera.lookAt(
+        [...(initialCameraTarget || initialTarget || DEFAULT_TARGET)],
+        initialCameraDistance || initialDistance || DEFAULT_DISTANCE,
+        initialCameraRotation || initialRotation || DEFAULT_ROTATION
+      );
+    } else {
+      camera.set(mat4.clone(DEFAULT_VIEW));
+    }
+  };
+
   const reset = () => {
-    if (initialView) camera.set(mat4.clone(initialView));
-    else camera.lookAt([...initialTarget], initialDistance, initialRotation);
+    initCamera();
     pubSub.publish('view', camera.view);
   };
 
@@ -1092,13 +1159,6 @@ const createScatterplot = (initialProperties = {}) => {
     hover();
     isMouseInCanvas = false;
     drawRaf();
-  };
-
-  const initCamera = () => {
-    camera = createDom2dCamera(canvas);
-
-    if (initialView) camera.setView(mat4.clone(initialView));
-    else camera.lookAt([...initialTarget], initialDistance, initialRotation);
   };
 
   const wheelHandler = () => {

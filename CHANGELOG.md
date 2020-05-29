@@ -1,3 +1,10 @@
+## v0.9.0
+
+- Renames `target`, `distance`, `rotation`, and `view` to `cameraTarget`, `cameraDistance`, `cameraRotation`, and `cameraView`
+- Add getter and setter for `cameraTarget`, `cameraDistance`, `cameraRotation`, and `cameraView`
+- Fix setting initial camera position (#15)
+- Improve documentation on how to color points (#14)
+
 ## v0.8.0
 
 - Add background to lasso

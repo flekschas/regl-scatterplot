@@ -21,11 +21,14 @@ export const createMouseEvent = (type, x, y, args = {}) =>
     screenY: y,
     clientX: x,
     clientY: y,
-    ...args
+    ...args,
   });
 
-export const wait = milliSeconds =>
-  new Promise(resolve => {
+export const flatArrayEqual = (a, b, comparator = (x, y) => x === y) =>
+  a.length === b.length && a.every((x, i) => comparator(x, b[i]));
+
+export const wait = (milliSeconds) =>
+  new Promise((resolve) => {
     setTimeout(() => {
       resolve();
     }, milliSeconds);
