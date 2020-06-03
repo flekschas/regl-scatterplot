@@ -684,7 +684,7 @@ test('draw(), clear(), publish("select")', async (t) => {
   scatterplot.subscribe('deselect', deselectHandler);
 
   // Test single selection via mouse clicks
-  window.dispatchEvent(createMouseEvent('mousedown', hdim, hdim));
+  canvas.dispatchEvent(createMouseEvent('mousedown', hdim, hdim));
   canvas.dispatchEvent(createMouseEvent('click', hdim, hdim));
 
   t.equal(selectedPoints.length, 1, 'should have selected one point');
@@ -698,7 +698,7 @@ test('draw(), clear(), publish("select")', async (t) => {
   // Test that mousedown + mousemove + click is not interpreted as a click when
   // the cursor moved more than `LASSO_MIN_DIST` in between mousedown and
   // mouseup
-  window.dispatchEvent(
+  canvas.dispatchEvent(
     createMouseEvent('mousedown', hdim - LASSO_MIN_DIST, hdim)
   );
   canvas.dispatchEvent(createMouseEvent('click', hdim, hdim));
@@ -743,7 +743,7 @@ test('lasso selection with publish("select")', async (t) => {
   scatterplot.subscribe('deselect', deselectHandler);
 
   // Test multi selections via mousedown + mousemove
-  window.dispatchEvent(
+  canvas.dispatchEvent(
     createMouseEvent('mousedown', dim * 1.125, hdim, { shiftKey: true })
   );
 

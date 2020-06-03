@@ -386,7 +386,7 @@ const createScatterplot = (initialProperties = {}) => {
   };
 
   const mouseMoveHandler = (event) => {
-    if (!isInit) return;
+    if (!isInit || (!isMouseInCanvas && !mouseDown)) return;
 
     getRelativeMousePosition(event);
 
@@ -398,7 +398,7 @@ const createScatterplot = (initialProperties = {}) => {
 
     if (mouseDownShift) lassoExtendDb();
 
-    // Always redraw when mouse as the user might have panned or lassoed
+    // Always redraw when mousedown as the user might have panned or lassoed
     if (mouseDown) drawRaf(); // eslint-disable-line no-use-before-define
   };
 
@@ -1205,9 +1205,9 @@ const createScatterplot = (initialProperties = {}) => {
     // Setup event handler
     window.addEventListener('keyup', keyUpHandler, false);
     window.addEventListener('blur', blurHandler, false);
-    window.addEventListener('mousedown', mouseDownHandler, false);
     window.addEventListener('mouseup', mouseUpHandler, false);
     window.addEventListener('mousemove', mouseMoveHandler, false);
+    canvas.addEventListener('mousedown', mouseDownHandler, false);
     canvas.addEventListener('mouseenter', mouseEnterCanvasHandler, false);
     canvas.addEventListener('mouseleave', mouseLeaveCanvasHandler, false);
     canvas.addEventListener('click', mouseClickHandler, false);
@@ -1217,9 +1217,9 @@ const createScatterplot = (initialProperties = {}) => {
   const destroy = () => {
     window.removeEventListener('keyup', keyUpHandler, false);
     window.removeEventListener('blur', blurHandler, false);
-    window.removeEventListener('mousedown', mouseDownHandler, false);
     window.removeEventListener('mouseup', mouseUpHandler, false);
     window.removeEventListener('mousemove', mouseMoveHandler, false);
+    canvas.removeEventListener('mousedown', mouseDownHandler, false);
     canvas.removeEventListener('mouseenter', mouseEnterCanvasHandler, false);
     canvas.removeEventListener('mouseleave', mouseLeaveCanvasHandler, false);
     canvas.removeEventListener('click', mouseClickHandler, false);
