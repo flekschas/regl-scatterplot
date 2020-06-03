@@ -94,22 +94,10 @@ For a complete example see [example/index.js](example/index.js).
 
 **Returns:** a new scatterplot instance.
 
-**Options:** is an object that accepts the following properties:
+**Options:** is an object that accepts any of the [settable properties](scatterplot.set). Additionally, you can set the following properties:
 
 - `regl` a Regl instance to be used for rendering.
-- `background` background color of the scatterplot.
-- `backgroundImage` background image for the scatterplot. This can either be a URL or a [regl texture object](https://github.com/regl-project/regl/blob/gh-pages/API.md#textures). The latter can be created with [`scatterplot.createTextureFromUrl`](#scatterplot.createTextureFromUrl).
-- `canvas` canvas element.
-- `colors` colormap.
-- `pointSize` size of the points.
-- `pointSizeSelected` additional size of the points when being selected. I.e., if set to `0` selected and deselect points have the same size.
-- `pointOutlineWidth` width of the point outline when a point is being selected.
-- `width` width of the canvas element.
-- `height` height of the canvas element.
-- `target` location that the camera should look at.
-- `distance` distance of the camera to the target.
-- `rotation` rotation of the camera around the target.
-- `view` view matrix defining `target`, `distance`, and `rotation`. When given `target`, `distance`, and `rotation` are ignored.
+- `canvas` background color of the scatterplot.
 
 <a name="createRegl" href="#createRegl">#</a> <b>createRegl</b>(<i>canvas</i>)
 
@@ -168,27 +156,30 @@ scatterplot.draw([]);
 
 | Name              | Type            | Default                            | Constraints                            | Settable | Nullifiable |
 | ----------------- | --------------- | ---------------------------------- | -------------------------------------- | -------- | ----------- |
-| canvas            | object          | `document.createElement('canvas')` |                                        | `true`   | `false`     |
-| regl              | object          | `createRegl(canvas)`               |                                        | `true`   | `false`     |
+| canvas            | object          | `document.createElement('canvas')` |                                        | `false`  | `false`     |
+| regl              | object          | `createRegl(canvas)`               |                                        | `false`  | `false`     |
 | version           | string          |                                    |                                        | `false`  | `false`     |
-| width             | number          | `300`                              | > 0                                    | `true`   | `false`     |
-| height            | number          | `200`                              | > 0                                    | `true`   | `false`     |
-| aspectRatio       | number          | `1.0`                              | > 0                                    | `true`   | `false`     |
-| background        | string or array | rgba(0,0,0,1)                      | hex, rgb, rgba                         | `true`   | `false`     |
+| width             | integer         | `300`                              | > 0                                    | `true`   | `false`     |
+| height            | integer         | `200`                              | > 0                                    | `true`   | `false`     |
+| aspectRatio       | float           | `1.0`                              | > 0                                    | `true`   | `false`     |
+| backgroundColor   | string or array | rgba(0, 0, 0, 1)                   | hex, rgb, rgba                         | `true`   | `false`     |
 | backgroundImage   | function        | `null`                             | Regl texture                           | `true`   | `true`      |
+| cameraTarget      | tuple           | `[0, 0]`                           |                                        | `true`   | `false`     |
+| cameraDistance    | float           | `1`                                | > 0                                    | `true`   | `false`     |
+| cameraRotation    | float           | `0`                                |                                        | `true`   | `false`     |
 | colorBy           | string          | `null`                             | `category` or `value`                  | `true`   | `true`      |
-| opacity           | number          | `1`                                | > 0                                    | `true`   | `false`     |
-| pointColor        | number          | `[0.66, 0.66, 0.66, 1]`            | single value or list of hex, rgb, rgba | `true`   | `false`     |
-| pointColorActive  | number          | `[0, 0.55, 1, 1]`                  | single value or list of hex, rgb, rgba | `true`   | `false`     |
-| pointColorHover   | number          | `[1, 1, 1, 1]`                     | single value or list of hex, rgb, rgba | `true`   | `false`     |
-| pointOutlineWidth | number          | `2`                                | >= 0                                   | `true`   | `false`     |
-| pointSize         | number          | `6`                                | > 0                                    | `true`   | `false`     |
-| pointSizeSelected | number          | `2`                                | >= 0                                   | `true`   | `false`     |
-| lassoColor        | array           | rgba(0, 0.667, 1, 1)               | hex, rgb, rgba                         | `true`   | `false`     |
-| lassoMinDelay     | number          | 15                                 | >= 0                                   | `true`   | `false`     |
-| lassoMinDist      | number          | 4                                  | >= 0                                   | `true`   | `false`     |
+| opacity           | float           | `1`                                | > 0                                    | `true`   | `false`     |
+| pointColor        | quadruple       | `[0.66, 0.66, 0.66, 1]`            | single value or list of hex, rgb, rgba | `true`   | `false`     |
+| pointColorActive  | quadruple       | `[0, 0.55, 1, 1]`                  | single value or list of hex, rgb, rgba | `true`   | `false`     |
+| pointColorHover   | quadruple       | `[1, 1, 1, 1]`                     | single value or list of hex, rgb, rgba | `true`   | `false`     |
+| pointOutlineWidth | integer         | `2`                                | >= 0                                   | `true`   | `false`     |
+| pointSize         | integer         | `6`                                | > 0                                    | `true`   | `false`     |
+| pointSizeSelected | integer         | `2`                                | >= 0                                   | `true`   | `false`     |
+| lassoColor        | quadruple       | rgba(0, 0.667, 1, 1)               | hex, rgb, rgba                         | `true`   | `false`     |
+| lassoMinDelay     | integer         | 15                                 | >= 0                                   | `true`   | `false`     |
+| lassoMinDist      | integer         | 4                                  | >= 0                                   | `true`   | `false`     |
 | showRecticle      | boolean         | `false`                            | `true` or `false`                      | `true`   | `false`     |
-| recticleColor     | array           | rgba(1,1,1,.5)                     | hex, rgb, rgba                         | `true`   | `false`     |
+| recticleColor     | quadruple       | rgba(1, 1, 1, .5)                  | hex, rgb, rgba                         | `true`   | `false`     |
 
 **Notes:**
 
