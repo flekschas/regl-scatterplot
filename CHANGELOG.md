@@ -1,3 +1,7 @@
+## v0.9.1
+
+- Only listen on mouse down events within the instance's canvas element (#16)
+
 ## v0.9.0
 
 - Renames `target`, `distance`, `rotation`, and `view` to `cameraTarget`, `cameraDistance`, `cameraRotation`, and `cameraView`
