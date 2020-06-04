@@ -327,3 +327,16 @@ events.
 **Returns:** a Promise that resolves to a [Regl texture](https://github.com/regl-project/regl/blob/gh-pages/API.md#textures) that can be used, for example, as the [background image](#).
 
 **url:** the URL to an image.
+
+## Trouble Shooting
+
+#### Resizing and conditionally hiding/showing the scatterplot
+
+The chances are high that you use the regl-scatterplot in a dynamically-resizable or interactive web-app. Please note that **regl-scatterplot doesn't not automatically resize** when the dimensions of its parent container change. It's your job to keep the size of regl-scatterplot and its parent element in sync. Hence, every time the size of the parent or `canvas` element changed, you have to call:
+
+```javascript
+const { width, height } = canvas.getBoundingClientRect();
+scatterplot.set({ width, height });
+```
+
+Importantly, this is also true when you changed the visible of the canvas element from `canvas.hidden = true` to `canvas.hidden = false`!
