@@ -7,8 +7,12 @@ export const FLOAT_BYTES = Float32Array.BYTES_PER_ELEMENT;
 export const GL_EXTENSIONS = ['OES_standard_derivatives', 'OES_texture_float'];
 
 // Default lasso
+export const LASSO_CLEAR_ON_DESELECT = 'deselect';
+export const LASSO_CLEAR_ON_END = 'lassoEnd';
+export const LASSO_CLEAR_EVENTS = [LASSO_CLEAR_ON_DESELECT, LASSO_CLEAR_ON_END];
 export const DEFAULT_LASSO_MIN_DELAY = 10;
 export const DEFAULT_LASSO_MIN_DIST = 3;
+export const DEFAULT_LASSO_CLEAR_EVENT = LASSO_CLEAR_ON_END;
 
 // Default attribute
 export const DEFAULT_DATA_ASPECT_RATIO = 1;

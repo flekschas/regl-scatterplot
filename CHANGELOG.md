@@ -1,3 +1,10 @@
+## v0.10.0
+
+- Add `lassoClearEvent` property to allow customizing when the lasso is cleared.
+- Add `preventEvent` option to `scatterplot.select()` and `scatterplot.deselect()` to prevent publishing the `select` and `deselect` events
+- Add Promise-based return value to `scatterplot.draw()` to enable the parent application to determine when the points were drawn
+- Add support for `get('lassoMinDelay')` and `get('lassoMinDist')`
+
 ## v0.9.1
 
 - Only listen on mouse down events within the instance's canvas element (#16)

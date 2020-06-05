@@ -178,6 +178,7 @@ scatterplot.draw([]);
 | lassoColor        | quadruple       | rgba(0, 0.667, 1, 1)               | hex, rgb, rgba                         | `true`   | `false`     |
 | lassoMinDelay     | integer         | 15                                 | >= 0                                   | `true`   | `false`     |
 | lassoMinDist      | integer         | 4                                  | >= 0                                   | `true`   | `false`     |
+| lassoClearEvent   | string          | `'lassoEnd'`                       | `'lassoEnd'` or `'deselect'`           | `true`   | `false`     |
 | showRecticle      | boolean         | `false`                            | `true` or `false`                      | `true`   | `false`     |
 | recticleColor     | quadruple       | rgba(1, 1, 1, .5)                  | hex, rgb, rgba                         | `true`   | `false`     |
 
@@ -275,6 +276,8 @@ scatterplot.set({
   lassoColor: [1, 1, 1, 1],
   lassoMinDelay: 0,
   lassoMinDist: 1,
+  // This will keep the drawn lasso until the selected points are deselected
+  lassoClearEvent: 'deselect',
 });
 
 // Activate recticle and set recticle color to red

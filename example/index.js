@@ -65,6 +65,7 @@ const scatterplot = createScatterplot({
   pointSize,
   showRecticle,
   recticleColor,
+  lassoClearEvent: 'deselect',
 });
 
 console.log(scatterplot.get('pointColorActive'));

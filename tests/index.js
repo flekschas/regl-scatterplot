@@ -22,6 +22,7 @@ import {
   DEFAULT_WIDTH,
   DEFAULT_LASSO_MIN_DELAY,
   DEFAULT_LASSO_MIN_DIST,
+  DEFAULT_LASSO_CLEAR_EVENT,
 } from '../src/constants';
 
 import {
@@ -502,7 +503,7 @@ test('set({ opacity })', async (t) => {
   );
 });
 
-test('set({ lassoColor, lassoMinDist, lassoMinDelay })', async (t) => {
+test('set({ lassoColor, lassoMinDist, lassoMinDelay, lassoClearEvent })', async (t) => {
   const scatterplot = createScatterplot({ canvas: createCanvas() });
 
   // Check default lasso color, min distance, and min delay
@@ -521,12 +522,18 @@ test('set({ lassoColor, lassoMinDist, lassoMinDelay })', async (t) => {
     DEFAULT_LASSO_MIN_DELAY,
     `lassoMinDelay should be set to ${DEFAULT_LASSO_MIN_DELAY}`
   );
+  t.equal(
+    scatterplot.get('lassoClearEvent'),
+    DEFAULT_LASSO_CLEAR_EVENT,
+    `lassoClearEvent should be set to ${DEFAULT_LASSO_CLEAR_EVENT}`
+  );
 
   const lassoColor = [1, 0, 0, 1];
   const lassoMinDist = 10;
   const lassoMinDelay = 150;
+  const lassoClearEvent = 'deselect';
 
-  scatterplot.set({ lassoColor, lassoMinDist, lassoMinDelay });
+  scatterplot.set({ lassoColor, lassoMinDist, lassoMinDelay, lassoClearEvent });
 
   t.equal(
     scatterplot.get('lassoColor'),
@@ -543,11 +550,17 @@ test('set({ lassoColor, lassoMinDist, lassoMinDelay })', async (t) => {
     lassoMinDelay,
     `lassoMinDelay should be set to ${lassoMinDelay}`
   );
+  t.equal(
+    scatterplot.get('lassoClearEvent'),
+    lassoClearEvent,
+    `lassoClearEvent should be set to ${lassoClearEvent}`
+  );
 
   scatterplot.set({
     lassoColor: null,
     lassoMinDist: null,
     lassoMinDelay: null,
+    lassoClearEvent: null,
   });
 
   t.equal(
@@ -564,6 +577,11 @@ test('set({ lassoColor, lassoMinDist, lassoMinDelay })', async (t) => {
     scatterplot.get('lassoMinDelay'),
     lassoMinDelay,
     'lassoMinDelay should not be nullifyable'
+  );
+  t.equal(
+    scatterplot.get('lassoClearEvent'),
+    lassoClearEvent,
+    'lassoClearEvent should not be nullifyable'
   );
 });
 

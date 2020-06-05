@@ -103,6 +103,15 @@ export const hexToRgb = (hex, isNormalize = false) =>
     .map((x) => parseInt(x, 16) / 255 ** isNormalize);
 
 /**
+ * Create a function to limit choices to a predefined list
+ * @param   {array}  choices  Array of acceptable choices
+ * @param   {*}  defaultOption  Default choice
+ * @return  {function}  Function limiting the choices
+ */
+export const limit = (choices, defaultChoice) => (choice) =>
+  choices.indexOf(choice) >= 0 ? choice : defaultChoice;
+
+/**
  * Promised-based image loading
  * @param   {string}  src  Remote image source, i.e., a URL
  * @return  {object}  Promise resolving to the image once its loaded
