@@ -357,7 +357,7 @@ events.
 
 ## Trouble Shooting
 
-#### Resizing and conditionally hiding/showing the scatterplot
+#### Resizing the scatterplot
 
 The chances are high that you use the regl-scatterplot in a dynamically-resizable or interactive web-app. Please note that **regl-scatterplot doesn't not automatically resize** when the dimensions of its parent container change. It's your job to keep the size of regl-scatterplot and its parent element in sync. Hence, every time the size of the parent or `canvas` element changed, you have to call:
 
@@ -366,4 +366,6 @@ const { width, height } = canvas.getBoundingClientRect();
 scatterplot.set({ width, height });
 ```
 
-Importantly, this is also true when you changed the visible of the canvas element from `canvas.hidden = true` to `canvas.hidden = false`!
+#### Using regl-scatterplot with Vue
+
+Related to the resizing, when conditionally displaying regl-scatterplot in Vue you might have to update the `width` and `height` when the visibility is changed. See [issue #20](https://github.com/flekschas/regl-scatterplot/issues/20#issuecomment-639377810) for an example.
