@@ -20,8 +20,8 @@ import {
   DEFAULT_POINT_SIZE,
   DEFAULT_POINT_SIZE_SELECTED,
   DEFAULT_WIDTH,
-  LASSO_MIN_DELAY,
-  LASSO_MIN_DIST,
+  DEFAULT_LASSO_MIN_DELAY,
+  DEFAULT_LASSO_MIN_DIST,
 } from '../src/constants';
 
 import {
@@ -502,32 +502,68 @@ test('set({ opacity })', async (t) => {
   );
 });
 
-test('set({ lassoColor })', async (t) => {
+test('set({ lassoColor, lassoMinDist, lassoMinDelay })', async (t) => {
   const scatterplot = createScatterplot({ canvas: createCanvas() });
 
-  // Check default lasso color
+  // Check default lasso color, min distance, and min delay
   t.equal(
     scatterplot.get('lassoColor'),
     DEFAULT_LASSO_COLOR,
     `lassoColor should be set to ${DEFAULT_LASSO_COLOR}`
   );
+  t.equal(
+    scatterplot.get('lassoMinDist'),
+    DEFAULT_LASSO_MIN_DIST,
+    `lassoMinDist should be set to ${DEFAULT_LASSO_MIN_DIST}`
+  );
+  t.equal(
+    scatterplot.get('lassoMinDelay'),
+    DEFAULT_LASSO_MIN_DELAY,
+    `lassoMinDelay should be set to ${DEFAULT_LASSO_MIN_DELAY}`
+  );
 
   const lassoColor = [1, 0, 0, 1];
+  const lassoMinDist = 10;
+  const lassoMinDelay = 150;
 
-  scatterplot.set({ lassoColor });
+  scatterplot.set({ lassoColor, lassoMinDist, lassoMinDelay });
 
   t.equal(
     scatterplot.get('lassoColor'),
     lassoColor,
     `lassoColor should be set to ${lassoColor}`
   );
+  t.equal(
+    scatterplot.get('lassoMinDist'),
+    lassoMinDist,
+    `lassoMinDist should be set to ${lassoMinDist}`
+  );
+  t.equal(
+    scatterplot.get('lassoMinDelay'),
+    lassoMinDelay,
+    `lassoMinDelay should be set to ${lassoMinDelay}`
+  );
 
-  scatterplot.set({ lassoColor: null });
+  scatterplot.set({
+    lassoColor: null,
+    lassoMinDist: null,
+    lassoMinDelay: null,
+  });
 
   t.equal(
     scatterplot.get('lassoColor'),
     lassoColor,
     'lassoColor should not be nullifyable'
+  );
+  t.equal(
+    scatterplot.get('lassoMinDist'),
+    lassoMinDist,
+    'lassoMinDist should not be nullifyable'
+  );
+  t.equal(
+    scatterplot.get('lassoMinDelay'),
+    lassoMinDelay,
+    'lassoMinDelay should not be nullifyable'
   );
 });
 
@@ -696,10 +732,10 @@ test('draw(), clear(), publish("select")', async (t) => {
   t.equal(selectedPoints.length, 0, 'should have deselected one point');
 
   // Test that mousedown + mousemove + click is not interpreted as a click when
-  // the cursor moved more than `LASSO_MIN_DIST` in between mousedown and
+  // the cursor moved more than `DEFAULT_LASSO_MIN_DIST` in between mousedown and
   // mouseup
   canvas.dispatchEvent(
-    createMouseEvent('mousedown', hdim - LASSO_MIN_DIST, hdim)
+    createMouseEvent('mousedown', hdim - DEFAULT_LASSO_MIN_DIST, hdim)
   );
   canvas.dispatchEvent(createMouseEvent('click', hdim, hdim));
 
@@ -763,7 +799,7 @@ test('lasso selection with publish("select")', async (t) => {
 
   await asyncForEach(mousePositions, async (mousePosition) => {
     window.dispatchEvent(createMouseEvent('mousemove', ...mousePosition));
-    await wait(LASSO_MIN_DELAY + 5);
+    await wait(DEFAULT_LASSO_MIN_DELAY + 5);
   });
 
   window.dispatchEvent(createMouseEvent('mouseup'));
@@ -846,3 +882,66 @@ test('point hover with publish("pointover") and publish("pointout")', async (t) 
 //     'should have published the translated view'
 //   );
 // });
+
+/* ----------------------------- Other Methods ------------------------------ */
+
+test('select()', async (t) => {
+  const scatterplot = createScatterplot({ canvas: createCanvas() });
+
+  const points = [
+    [0, 0],
+    [1, 1],
+    [1, -1],
+    [-1, -1],
+    [-1, 1],
+  ];
+  scatterplot.draw(points);
+
+  // TODO: fix this!
+  await wait(250);
+
+  let selectedPoints = [];
+  const selectHandler = ({ points: newSelectedPoints }) => {
+    selectedPoints = [...newSelectedPoints];
+  };
+  const deselectHandler = () => {
+    selectedPoints = [];
+  };
+  scatterplot.subscribe('select', selectHandler);
+  scatterplot.subscribe('deselect', deselectHandler);
+
+  scatterplot.select([0, 2, 4]);
+
+  await wait(0);
+
+  t.ok(
+    flatArrayEqual([0, 2, 4], selectedPoints),
+    'should have selected point 0, 2, and 4'
+  );
+
+  scatterplot.deselect();
+
+  await wait(0);
+
+  t.equal(selectedPoints.length, 0, 'should have deselected all points');
+
+  scatterplot.select([0, 2, 4], { preventEvent: true });
+
+  await wait(0);
+
+  t.equal(
+    selectedPoints.length,
+    0,
+    'should have silently selected three points'
+  );
+
+  scatterplot.select([0, 2, 4]);
+  scatterplot.deselect({ preventEvent: true });
+
+  await wait(0);
+
+  t.ok(
+    flatArrayEqual([0, 2, 4], selectedPoints),
+    'should have silently deselected points'
+  );
+});

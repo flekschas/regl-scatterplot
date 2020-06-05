@@ -64,9 +64,9 @@ Regl-scatterplot supports two color modes: coloring by value or coloring by cate
 ```javascript
 scatterplot.draw([
   // x, y, category, value
-   0.2, -0.1, 0, 0.1337,
-   0.3,  0.1, 0, 0.3371,
-  -0.9,  0.8, 1, 0.3713,
+  [0.2, -0.1, 0, 0.1337],
+  [0.3, 0.1, 0, 0.3371],
+  [-0.9, 0.8, 1, 0.3713],
 ]);
 ```
 
@@ -281,14 +281,38 @@ scatterplot.set({
 scatterplot.set({ showRecticle: true, recticleColor: [1, 0, 0, 0.66] });
 ```
 
-<a name="scatterplot.select" href="#scatterplot.select">#</a> scatterplot.<b>select</b>()
+<a name="scatterplot.select" href="#scatterplot.select">#</a> scatterplot.<b>select</b>(<i>points</i>, <i>options = {}</i>)
 
-Select some points, such that they get visually highlighted. This will trigger
-a `select` event.
+Select some points, such that they get visually highlighted. This will trigger a `select` event unless `options.preventEvent === true`.
 
-<a name="scatterplot.deselect" href="#scatterplot.deselect">#</a> scatterplot.<b>deselect</b>()
+**Arguments:**
 
-Deselect all selected points. This will trigger a `deselect` event.
+- `points` is an array of point indices.
+- `options` [optional] is an object with the following properties:
+  - `preventEvent`: if `true` the `select` will not be published.
+
+**Examples:**
+
+```javascript
+// Let's say we have three points
+scatterplot.draw([
+  [0.1, 0.1],
+  [0.2, 0.2],
+  [0.3, 0.3],
+]);
+
+// To select the first and second point we have to do
+scatterplot.select([0, 1]);
+```
+
+<a name="scatterplot.deselect" href="#scatterplot.deselect">#</a> scatterplot.<b>deselect</b>(<i>options = {}</i>)
+
+Deselect all selected points. This will trigger a `deselect` event unless `options.preventEvent === true`.
+
+**Arguments:**
+
+- `options` [optional] is an object with the following properties:
+  - `preventEvent`: if `true` the `deselect` will not be published.
 
 <a name="scatterplot.destroy" href="#scatterplot.destroy">#</a> scatterplot.<b>destroy</b>()
 

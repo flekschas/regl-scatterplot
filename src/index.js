@@ -27,6 +27,8 @@ import {
   DEFAULT_DISTANCE,
   DEFAULT_HEIGHT,
   DEFAULT_LASSO_COLOR,
+  DEFAULT_LASSO_MIN_DELAY,
+  DEFAULT_LASSO_MIN_DIST,
   DEFAULT_SHOW_RECTICLE,
   DEFAULT_RECTICLE_COLOR,
   DEFAULT_POINT_OUTLINE_WIDTH,
@@ -37,8 +39,6 @@ import {
   DEFAULT_VIEW,
   DEFAULT_WIDTH,
   FLOAT_BYTES,
-  LASSO_MIN_DELAY,
-  LASSO_MIN_DIST,
 } from './constants';
 
 import {
@@ -94,8 +94,8 @@ const createScatterplot = (initialProperties = {}) => {
     canvas: initialCanvas = document.createElement('canvas'),
     colorBy: initialColorBy = DEFAULT_COLOR_BY,
     lassoColor: initialLassoColor = DEFAULT_LASSO_COLOR,
-    lassoMinDelay: initialLassoMinDelay = LASSO_MIN_DELAY,
-    lassoMinDist: initialLassoMinDist = LASSO_MIN_DIST,
+    lassoMinDelay: initialLassoMinDelay = DEFAULT_LASSO_MIN_DELAY,
+    lassoMinDist: initialLassoMinDist = DEFAULT_LASSO_MIN_DIST,
     showRecticle: initialShowRecticle = DEFAULT_SHOW_RECTICLE,
     recticleColor: initialRecticleColor = DEFAULT_RECTICLE_COLOR,
     pointColor: initialPointColor = DEFAULT_COLOR_NORMAL,
@@ -296,15 +296,15 @@ const createScatterplot = (initialProperties = {}) => {
     return pointsInPolygon;
   };
 
-  const deselect = () => {
+  const deselect = ({ preventEvent = false } = {}) => {
     if (selection.length) {
-      pubSub.publish('deselect');
+      if (!preventEvent) pubSub.publish('deselect');
       selection = [];
       drawRaf(); // eslint-disable-line no-use-before-define
     }
   };
 
-  const select = (points) => {
+  const select = (points, { preventEvent = false } = {}) => {
     selection = points;
 
     selectedPointsIndexBuffer({
@@ -313,9 +313,7 @@ const createScatterplot = (initialProperties = {}) => {
       data: new Float32Array(selection),
     });
 
-    pubSub.publish('select', {
-      points: selection,
-    });
+    if (!preventEvent) pubSub.publish('select', { points: selection });
 
     drawRaf(); // eslint-disable-line no-use-before-define
   };
@@ -329,7 +327,16 @@ const createScatterplot = (initialProperties = {}) => {
     return [...mousePosition];
   };
 
+  const lassoStart = () => {
+    // Fix camera for the lasso selection
+    camera.config({ isFixed: true });
+    // Make sure we start a new lasso selection
+    lassoPrevMousePos = undefined;
+    lasso.clear();
+  };
+
   const lassoEnd = () => {
+    camera.config({ isFixed: false });
     // const t0 = performance.now();
     const pointsInLasso = findPointsInLasso(lassoScatterPos);
     // console.log(`found ${pointsInLasso.length} in ${performance.now() - t0} msec`);
@@ -349,12 +356,7 @@ const createScatterplot = (initialProperties = {}) => {
     mouseDownPosition = getRelativeMousePosition(event);
     mouseDownShift = event.shiftKey;
 
-    if (mouseDownShift) {
-      // Fix camera for the lasso selection
-      camera.config({ isFixed: true });
-      // Make sure we start a new lasso selection
-      lassoPrevMousePos = undefined;
-    }
+    if (mouseDownShift) lassoStart();
   };
 
   const mouseUpHandler = () => {
@@ -364,7 +366,6 @@ const createScatterplot = (initialProperties = {}) => {
 
     if (mouseDownShift) {
       mouseDownShift = false;
-      camera.config({ isFixed: false });
       lassoEnd();
     }
   };
@@ -375,7 +376,7 @@ const createScatterplot = (initialProperties = {}) => {
     const currentMousePosition = getRelativeMousePosition(event);
     const clickDist = dist(...currentMousePosition, ...mouseDownPosition);
 
-    if (clickDist >= LASSO_MIN_DIST) return;
+    if (clickDist >= lassoMinDist) return;
 
     const clostestPoint = raycast();
     if (clostestPoint >= 0) select([clostestPoint]);
@@ -972,6 +973,8 @@ const createScatterplot = (initialProperties = {}) => {
     if (property === 'colorBy') return colorBy;
     if (property === 'height') return height;
     if (property === 'lassoColor') return lassoColor;
+    if (property === 'lassoMinDelay') return lassoMinDelay;
+    if (property === 'lassoMinDist') return lassoMinDist;
     if (property === 'opacity') return opacity;
     if (property === 'pointColor')
       return pointColors.length === 1 ? pointColors[0] : pointColors;

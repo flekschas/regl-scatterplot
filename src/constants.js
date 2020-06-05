@@ -5,8 +5,10 @@ export const COLOR_NORMAL_IDX = 0;
 export const COLOR_NUM_STATES = 4;
 export const FLOAT_BYTES = Float32Array.BYTES_PER_ELEMENT;
 export const GL_EXTENSIONS = ['OES_standard_derivatives', 'OES_texture_float'];
-export const LASSO_MIN_DELAY = 10;
-export const LASSO_MIN_DIST = 3;
+
+// Default lasso
+export const DEFAULT_LASSO_MIN_DELAY = 10;
+export const DEFAULT_LASSO_MIN_DIST = 3;
 
 // Default attribute
 export const DEFAULT_DATA_ASPECT_RATIO = 1;
