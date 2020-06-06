@@ -24,7 +24,7 @@
 - **Rotate**: While pressing <kbd>ALT</kbd>, click and drag your mouse.
 - **Select a single dot**: Click on a dot with your mouse.
 - **Select multiple dots**: While pressing <kbd>SHIFT</kbd>, click and drag your mouse. All items within the lasso will be selected.
-- **Deselect**: Click outside a dot.
+- **Deselect**: Double-click onto an empty region.
 
 ## Install
 
