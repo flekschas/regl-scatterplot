@@ -717,15 +717,15 @@ test('draw(), clear(), publish("select")', async (t) => {
     [-1, -1],
     [-1, 1],
   ];
-  scatterplot.draw(points);
+  await scatterplot.draw(points);
   // The second draw call should not block the drawing of the points!
   // This test is related to a previous issue caused by `drawRaf` as `withRaf`
   // overwrites previous arguments. While that is normally expected, this
   // should not overwrite the points from above
-  scatterplot.draw();
+  await scatterplot.draw();
 
   // TODO: fix this!
-  await wait(250);
+  // await wait(250);
 
   let selectedPoints = [];
   const selectHandler = ({ points: newSelectedPoints }) => {
@@ -781,10 +781,10 @@ test('lasso selection with publish("select")', async (t) => {
     [-1, -1],
     [-1, 1],
   ];
-  scatterplot.draw(points);
+  await scatterplot.draw(points);
 
   // TODO: fix this!
-  await wait(250);
+  // await wait(250);
 
   let selectedPoints = [];
   const selectHandler = ({ points: newSelectedPoints }) => {
@@ -843,10 +843,10 @@ test('point hover with publish("pointover") and publish("pointout")', async (t) 
     [-1, -1],
     [-1, 1],
   ];
-  scatterplot.draw(points);
+  await scatterplot.draw(points);
 
   // TODO: fix this!
-  await wait(250);
+  // await wait(250);
 
   let hoveredPoint = null;
   const pointoverHandler = (point) => {
@@ -913,10 +913,11 @@ test('select()', async (t) => {
     [-1, -1],
     [-1, 1],
   ];
-  scatterplot.draw(points);
+
+  await scatterplot.draw(points);
 
   // TODO: fix this!
-  await wait(250);
+  // await wait(250);
 
   let selectedPoints = [];
   const selectHandler = ({ points: newSelectedPoints }) => {

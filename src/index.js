@@ -879,12 +879,16 @@ const createScatterplot = (initialProperties = {}) => {
     if (isViewChanged) pubSub.publish('view', camera.view);
   };
 
-  const drawRaf = withRaf(draw);
+  const drawHandler = () => pubSub.publish('draw');
 
-  const publicDraw = (newPoints, showRecticleOnce = false) => {
-    if (newPoints) setPoints(newPoints);
-    drawRaf(showRecticleOnce);
-  };
+  const drawRaf = withRaf(draw, drawHandler);
+
+  const publicDraw = (newPoints, showRecticleOnce = false) =>
+    new Promise((resolve) => {
+      if (newPoints) setPoints(newPoints);
+      pubSub.subscribe('draw', resolve, 1);
+      drawRaf(showRecticleOnce);
+    });
 
   const withDraw = (f) => (...args) => {
     const out = f(...args);
@@ -1150,7 +1154,7 @@ const createScatterplot = (initialProperties = {}) => {
     if (!camera) camera = createDom2dCamera(canvas);
 
     if (initialCameraView || initialView) {
-      camera.set(mat4.clone(initialCameraView || initialView));
+      camera.setView(mat4.clone(initialCameraView || initialView));
     } else if (
       initialCameraTarget ||
       initialTarget ||
@@ -1165,7 +1169,7 @@ const createScatterplot = (initialProperties = {}) => {
         initialCameraRotation || initialRotation || DEFAULT_ROTATION
       );
     } else {
-      camera.set(mat4.clone(DEFAULT_VIEW));
+      camera.setView(mat4.clone(DEFAULT_VIEW));
     }
   };
 

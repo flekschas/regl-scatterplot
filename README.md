@@ -113,7 +113,13 @@ _DEPRECATED! Use [`scatterplot.createTextureFromUrl()`](#scatterplot.createTextu
 
 <a name="scatterplot.draw" href="#scatterplot.draw">#</a> scatterplot.<b>draw</b>(<i>points</i>)
 
-Sets and draws `points`, which must be an array of points where a point is interpreted as a quadruple of form `[x, y, category, value]`.
+Sets and draws `points`. Note that repeatedly calling this method without specifying `points` will not clear previously set points. To clear points use [`scatterplot.clear()`](#scatterplot.clear)
+
+**Arguments:**
+
+- `points` is an array of quadruples defining the point data. Each quadruple must be of the form `[x, y, category, value]` where `category` and `value` are optional and can be used for [coloring the points](#color-by-value-or-category).
+
+**Returns:** a Promise object that resolves once the points have been drawn.
 
 **Examples:**
 
@@ -140,9 +146,14 @@ scatterplot.draw(points);
 scatterplot.draw();
 
 // Lets actively unset the points. Since `draw()` assumes that you want to
-// redraw existing points you have to actively pass in an empty array
+// redraw existing points you have to actively pass in an empty array.
+// Alternatively, call `scatterplot.clear()`
 scatterplot.draw([]);
 ```
+
+<a name="scatterplot.clear" href="#scatterplot.clear">#</a> scatterplot.<b>clear</b>()
+
+Clears previously drawn points.
 
 <a name="scatterplot.get" href="#scatterplot.set">#</a> scatterplot.<b>get</b>(<i>property</i>)
 
@@ -150,7 +161,9 @@ scatterplot.draw([]);
 
 <a name="scatterplot.set" href="#scatterplot.set">#</a> scatterplot.<b>set</b>(<i>properties = {}</i>)
 
-**Arguments:** `properties` is an object of key-value pairs. The list of all understood properties is given below.
+**Arguments:**
+
+- `properties` is an object of key-value pairs. The list of all understood properties is given below.
 
 **Properties:**
 
