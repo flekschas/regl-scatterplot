@@ -139,7 +139,10 @@ export const loadImage = (src, isCrossOrigin = false) =>
  */
 export const createTextureFromUrl = (regl, url) =>
   new Promise((resolve, reject) => {
-    loadImage(url, url.indexOf(window.location.origin) !== 0)
+    loadImage(
+      url,
+      url.indexOf(window.location.origin) !== 0 && url.indexOf('base64') === -1
+    )
       .then((image) => {
         resolve(regl.texture(image));
       })

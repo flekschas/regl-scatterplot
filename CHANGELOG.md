@@ -1,3 +1,7 @@
+## v0.10.1
+
+- Make sure `backgroundImage` supports base64-encoded images
+
 ## v0.10.0
 
 - Add `lassoClearEvent` property to allow customizing when the lasso is cleared.
