@@ -494,6 +494,8 @@ const createScatterplot = (initialProperties = {}) => {
     let tmpColors = isMultipleColors(newColors) ? newColors : [newColors];
     tmpColors = tmpColors.map((color) => toRgba(color, true));
 
+    if (colorTex) colorTex.destroy();
+
     try {
       setter(tmpColors);
       colorTex = createColorTexture();
@@ -570,6 +572,8 @@ const createScatterplot = (initialProperties = {}) => {
     if (!+newOpacity || +newOpacity <= 0) return;
 
     opacity = +newOpacity;
+
+    if (colorTex) colorTex.destroy();
     colorTex = createColorTexture();
   };
 
@@ -828,7 +832,9 @@ const createScatterplot = (initialProperties = {}) => {
 
     numPoints = newPoints.length;
 
+    if (stateTex) stateTex.destroy();
     stateTex = createStateTexture(newPoints);
+
     normalPointsIndexBuffer({
       usage: 'static',
       type: 'float',
