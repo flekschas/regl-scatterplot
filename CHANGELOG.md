@@ -1,6 +1,7 @@
-## v0.10.1
+## Next
 
 - Make sure `backgroundImage` supports base64-encoded images
+- Fix missing texture destruction before recreating the texture (#22)
 
 ## v0.10.0
 
