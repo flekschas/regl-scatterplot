@@ -343,7 +343,7 @@ Refreshes the viewport of the scatterplot's regl instance.
 
 Sets the view back to the initially defined view.
 
-<a name="scatterplot.subscribe" href="#scatterplot.subscribe">#</a> scatterplot.<b>unsubscribe</b>(<i>eventName</i>, <i>eventHandler</i>)
+<a name="scatterplot.subscribe" href="#scatterplot.subscribe">#</a> scatterplot.<b>subscribe</b>(<i>eventName</i>, <i>eventHandler</i>)
 
 Subscribe to an event.
 
