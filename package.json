@@ -18,7 +18,8 @@
   ],
   "scripts": {
     "build": "rm -rf dist/*; rollup -c; webpack --config ./webpack.config.js --mode production",
-    "ghp": "npm run build; rm -rf ../regl-scatterplot-ghp/*; touch ../regl-scatterplot-ghp/.nojekyll; cp -r docs/* ../regl-scatterplot-ghp/",
+    "build-demo": "webpack --config ./webpack.config.js --mode production",
+    "deploy": "npm run build-demo; touch docs/.nojekyll; gh-pages -d docs -t --git git",
     "lint": "eslint src tests rollup.config.js webpack.config.js",
     "precommit": "NODE_ENV=production lint-staged; npm run test",
     "prepublishOnly": "npm run test; rm -rf dist/*; npm run build;",
@@ -67,6 +68,7 @@
     "eslint-plugin-prettier": "^3.1.3",
     "eslint-plugin-react": "^7.20.0",
     "esm": "^3.2.25",
+    "gh-pages": "^3.1.0",
     "gl": "^4.5.0",
     "html-webpack-plugin": "^4.3.0",
     "husky": "^4.2.5",
