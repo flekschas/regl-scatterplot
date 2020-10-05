@@ -1,18 +1,4 @@
-<!DOCTYPE html>
-
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-
-    <title>Regl Scatterplot</title>
-    <meta
-      name="description"
-      content="Scalable WebGL-based Scatterplot for millions of points build with Regl"
-    />
-    <meta name="author" content="Fritz Lekschas" />
-
-    <style type="text/css">
-      html,
+<!doctype html><html lang="en"><head><meta charset="utf-8"/><title>Regl Scatterplot</title><meta name="description" content="Scalable WebGL-based Scatterplot for millions of points build with Regl"/><meta name="author" content="Fritz Lekschas"/><style>html,
       body {
         padding: 0;
         margin: 0;
@@ -175,6 +161,10 @@
         background: rgba(32, 32, 32, 1);
       }
 
+      #topbar hr {
+        border-color: rgba(255, 255, 255, 0.1);
+      }
+
       #title {
         padding: 0;
         margin: 0;
@@ -234,6 +224,27 @@
         line-height: 0.9rem;
       }
 
+      #examples {
+        margin: 0;
+        padding: 0 0 0 1.25em;
+      }
+
+      #examples li {
+        margin: 0.125em 0;
+      }
+
+      #examples li:last-child {
+        margin-bottom: 0;
+      }
+
+      #examples li a {
+        color: white;
+      }
+
+      #examples li a.active {
+        font-style: italic;
+      }
+
       #num-points-value {
         min-width: 5rem;
       }
@@ -244,6 +255,14 @@
 
       #opacity-value {
         min-width: 2rem;
+      }
+
+      #parent-wrapper {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
       }
 
       #canvas-wrapper {
@@ -258,66 +277,4 @@
         position: absolute;
         width: 100%;
         height: 100%;
-      }
-    </style>
-  </head>
-
-  <body>
-    <header id="topbar" tabindex="0">
-      <div id="title-wrapper" class="flex-c flex-jc-sb">
-        <h1 id="title">Regl Scatterplot</h1>
-        <span class="no-select">Menu</span>
-      </div>
-      <aside id="controls" class="flex-c flex-v">
-        <label class="flex-c flex-v">
-          <div class="flex-a-c no-select">
-            <span class="label"
-              ><abbr title="Number of points">Num. PTS</abbr></span
-            >
-            <span id="num-points-value" class="value">1000</span>
-          </div>
-          <input
-            id="num-points"
-            type="range"
-            min="1000"
-            max="2000000"
-            step="1000"
-            value="10000"
-          />
-        </label>
-        <label class="flex-c flex-v">
-          <div class="flex-a-c no-select">
-            <span class="label"><abbr title="Point size">PT Size</abbr></span>
-            <span id="point-size-value" class="value">5</span>
-          </div>
-          <input
-            id="point-size"
-            type="range"
-            min="1"
-            max="100"
-            step="1"
-            value="5"
-          />
-        </label>
-        <label class="flex-c flex-v">
-          <div class="flex-a-c no-select">
-            <span class="label">Opacity</span>
-            <span id="opacity-value" class="value">1.0</span>
-          </div>
-          <input
-            id="opacity"
-            type="range"
-            min="0.01"
-            max="1"
-            step="0.01"
-            value="1"
-          />
-        </label>
-        <button id="reset">Reset</button>
-      </aside>
-    </header>
-    <div id="canvas-wrapper">
-      <canvas id="canvas"></canvas>
-    </div>
-  <script type="text/javascript" src="./textureBackground.js"></script></body>
-</html>
+      }</style></head><body><header id="topbar" tabindex="0"><div id="title-wrapper" class="flex-c flex-jc-sb"><h1 id="title">Regl Scatterplot</h1><span class="no-select">Menu</span></div><aside id="controls" class="flex-c flex-v"><label class="flex-c flex-v"><div class="flex-a-c no-select"><span class="label"><abbr title="Number of points">Num. PTS</abbr></span> <span id="num-points-value" class="value">1000</span></div><input id="num-points" type="range" min="1000" max="2000000" step="1000" value="10000"/></label> <label class="flex-c flex-v"><div class="flex-a-c no-select"><span class="label"><abbr title="Point size">PT Size</abbr></span> <span id="point-size-value" class="value">5</span></div><input id="point-size" type="range" min="1" max="100" step="1" value="5"/></label> <label class="flex-c flex-v"><div class="flex-a-c no-select"><span class="label">Opacity</span> <span id="opacity-value" class="value">1.0</span></div><input id="opacity" type="range" min="0.01" max="1" step="0.01" value="1"/></label> <button id="reset">Reset</button><hr/><label>Examples:</label><ul id="examples"><li><a id="example-basic" href="index.html">Basic</a></li><li><a id="example-background" href="texture-background.html">Background Image</a></li><li><a id="example-axes" href="axes.html">Axes</a></li></ul></aside></header><div id="parent-wrapper"><div id="canvas-wrapper"><canvas id="canvas"></canvas></div></div><script src="./textureBackground.js"></script></body></html>
