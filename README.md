@@ -194,6 +194,10 @@ Clears previously drawn points.
 | lassoClearEvent   | string          | `'lassoEnd'`                       | `'lassoEnd'` or `'deselect'`           | `true`   | `false`     |
 | showRecticle      | boolean         | `false`                            | `true` or `false`                      | `true`   | `false`     |
 | recticleColor     | quadruple       | rgba(1, 1, 1, .5)                  | hex, rgb, rgba                         | `true`   | `false`     |
+| xDomain           | tuple           | `[0, 1]`                           |                                        | `true`   | `false`     |
+| xDomainView       | tuple           | `[0, 1]`                           |                                        | `false`  | `false`     |
+| yDomain           | tuple           | `[0, 1]`                           |                                        | `true`   | `false`     |
+| yDomainView       | tuple           | `[0, 1]`                           |                                        | `false`  | `false`     |
 
 **Notes:**
 
@@ -353,7 +357,7 @@ Subscribe to an event.
 - `pointout` [payload: `point`]: broadcasted when the mouse cursor moves out of a point
 - `select` [payload: `{ points }`]: broadcasted when points are selected
 - `deselect` [payload: `undefined`]: broadcasted when points are deselected
-- `view` [payload: camera view matrix]: broadcasted when the view changes
+- `view` [payload: `{ camera, view, xDomainView, yDomainView }`]: broadcasted when the view changes
 
 **eventHandler** needs to be a callback function that can receive the payload.
 

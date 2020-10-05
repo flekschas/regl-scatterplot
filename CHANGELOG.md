@@ -1,5 +1,9 @@
 ## Next
 
+- Expose view domains via `scatterplot.subscribe('view', () => { ... })` for synchronizing the camera view with D3 scales
+
+## v0.10.1
+
 - Make sure `backgroundImage` supports base64-encoded images
 - Fix missing texture destruction before recreating the texture (#22)
 
