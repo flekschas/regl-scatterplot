@@ -271,6 +271,14 @@
         min-width: 2rem;
       }
 
+      #parent-wrapper {
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+      }
+
       #canvas-wrapper {
         position: absolute;
         top: 0;
@@ -350,11 +358,16 @@
               >Background Image</a
             >
           </li>
+          <li>
+            <a id="example-axes" href="axes.html">Axes</a>
+          </li>
         </ul>
       </aside>
     </header>
-    <div id="canvas-wrapper">
-      <canvas id="canvas"></canvas>
+    <div id="parent-wrapper">
+      <div id="canvas-wrapper">
+        <canvas id="canvas"></canvas>
+      </div>
     </div>
   </body>
 </html>

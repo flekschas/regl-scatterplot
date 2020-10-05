@@ -5,6 +5,7 @@ module.exports = (env, argv) => ({
     index: './example/index.js',
     textureBackground: './example/texture-background.js',
     twoInstances: './example/two-instances.js',
+    axes: './example/axes.js',
   },
   output: {
     path: `${__dirname}/docs`,
@@ -40,6 +41,11 @@ module.exports = (env, argv) => ({
       template: 'example/index.html',
       filename: 'two-instances.html',
       chunks: ['twoInstances'],
+    }),
+    new HtmlWebpackPlugin({
+      template: 'example/index.html',
+      filename: 'axes.html',
+      chunks: ['axes'],
     }),
   ],
 });

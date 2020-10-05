@@ -39,6 +39,8 @@ import {
   DEFAULT_TARGET,
   DEFAULT_VIEW,
   DEFAULT_WIDTH,
+  DEFAULT_X_DOMAIN,
+  DEFAULT_Y_DOMAIN,
   FLOAT_BYTES,
   LASSO_CLEAR_EVENTS,
   LASSO_CLEAR_ON_DESELECT,
@@ -188,6 +190,11 @@ const createScatterplot = (initialProperties = {}) => {
   let hoveredPoint;
   let isMouseInCanvas = false;
 
+  const xDomain = initialProperties.xDomain || DEFAULT_X_DOMAIN;
+  const yDomain = initialProperties.yDomain || DEFAULT_Y_DOMAIN;
+  let xDomainSize = xDomain[1] - xDomain[0];
+  let yDomainSize = yDomain[1] - yDomain[0];
+
   // Get a copy of the current mouse position
   const getMousePos = () => mousePosition.slice();
 
@@ -201,9 +208,7 @@ const createScatterplot = (initialProperties = {}) => {
     getNdcY(mousePosition[1]),
   ];
 
-  const getScatterGlPos = () => {
-    const [xGl, yGl] = getMouseGlPos();
-
+  const getScatterGlPos = (xGl, yGl) => {
     // Homogeneous vector
     const v = [xGl, yGl, 1, 1];
 
@@ -225,7 +230,8 @@ const createScatterplot = (initialProperties = {}) => {
   };
 
   const raycast = () => {
-    const [x, y] = getScatterGlPos();
+    const [xGl, yGl] = getMouseGlPos();
+    const [x, y] = getScatterGlPos(xGl, yGl);
 
     const scaling = camera.scaling;
     const scaledPointSize =
@@ -263,9 +269,10 @@ const createScatterplot = (initialProperties = {}) => {
 
   const lassoExtend = () => {
     const currMousePos = getMousePos();
+    const [xGl, yGl] = getMouseGlPos();
 
     if (!lassoPrevMousePos) {
-      const point = getScatterGlPos(currMousePos);
+      const point = getScatterGlPos(xGl, yGl);
       lassoPos = [...point];
       lassoPoints = [point];
       lassoPrevMousePos = currMousePos;
@@ -273,7 +280,7 @@ const createScatterplot = (initialProperties = {}) => {
       const d = dist(...currMousePos, ...lassoPrevMousePos);
 
       if (d > lassoMinDist) {
-        const point = getScatterGlPos(currMousePos);
+        const point = getScatterGlPos(xGl, yGl);
         lassoPos.push(...point);
         lassoPoints.push(point);
         lassoPrevMousePos = currMousePos;
@@ -595,6 +602,25 @@ const createScatterplot = (initialProperties = {}) => {
   const getIsColoredByValue = () => (colorBy === 'value') * 1;
   const getMaxColorTexIdx = () => pointColors.length - 1;
 
+  const computeDomainView = () => {
+    const xyStartPt = getScatterGlPos(-1, -1);
+    const xyEndPt = getScatterGlPos(1, 1);
+
+    const xDomainSizeView = xDomainSize / camera.scaling;
+    const yDomainSizeView = yDomainSize / camera.scaling;
+
+    const xDomainView = [
+      ((xyStartPt[0] + 1) / 2) * xDomainSizeView,
+      ((xyEndPt[0] + 1) / 2) * xDomainSizeView,
+    ];
+    const yDomainView = [
+      ((xyStartPt[1] + 1) / 2) * yDomainSizeView,
+      ((xyEndPt[1] + 1) / 2) * yDomainSizeView,
+    ];
+
+    return [xDomainView, yDomainView];
+  };
+
   const drawPoints = (
     getPointSizeExtra,
     getNumPoints,
@@ -882,7 +908,16 @@ const createScatterplot = (initialProperties = {}) => {
     });
 
     // Publish camera change
-    if (isViewChanged) pubSub.publish('view', camera.view);
+    if (isViewChanged) {
+      const [xDomainView, yDomainView] = computeDomainView();
+
+      pubSub.publish('view', {
+        view: camera.view,
+        camera,
+        xDomainView,
+        yDomainView,
+      });
+    }
   };
 
   const drawHandler = () => pubSub.publish('draw');
@@ -982,6 +1017,22 @@ const createScatterplot = (initialProperties = {}) => {
     recticleVLine.setStyle({ color: recticleColor });
   };
 
+  const setXDomain = (newXDomain) => {
+    if (!Array.isArray(newXDomain) || newXDomain.length < 2) return;
+
+    xDomain[0] = +newXDomain[0];
+    xDomain[1] = +newXDomain[1];
+    xDomainSize = xDomain[1] - xDomain[0];
+  };
+
+  const setYDomain = (newYDomain) => {
+    if (!Array.isArray(newYDomain) || newYDomain.length < 2) return;
+
+    yDomain[0] = +newYDomain[0];
+    yDomain[1] = +newYDomain[1];
+    yDomainSize = yDomain[1] - yDomain[0];
+  };
+
   /**
    * Update Regl's viewport, drawingBufferWidth, and drawingBufferHeight
    *
@@ -1030,6 +1081,10 @@ const createScatterplot = (initialProperties = {}) => {
     if (property === 'showRecticle') return showRecticle;
     if (property === 'version') return version;
     if (property === 'width') return width;
+    if (property === 'xDomain') return [...xDomain];
+    if (property === 'yDomain') return [...yDomain];
+    if (property === 'xDomainView') return computeDomainView()[0];
+    if (property === 'yDomainView') return computeDomainView()[1];
 
     return undefined;
   };
@@ -1132,6 +1187,14 @@ const createScatterplot = (initialProperties = {}) => {
       setDataAspectRatio(properties.aspectRatio);
     }
 
+    if (properties.xDomain !== undefined) {
+      setXDomain(properties.xDomain);
+    }
+
+    if (properties.yDomain !== undefined) {
+      setYDomain(properties.yDomain);
+    }
+
     updateViewAspectRatio();
     camera.refresh();
     refresh();
@@ -1181,7 +1244,15 @@ const createScatterplot = (initialProperties = {}) => {
 
   const reset = () => {
     initCamera();
-    pubSub.publish('view', camera.view);
+
+    const [xDomainView, yDomainView] = computeDomainView();
+
+    pubSub.publish('view', {
+      view: camera.view,
+      camera,
+      xDomainView,
+      yDomainView,
+    });
   };
 
   const keyUpHandler = ({ key }) => {
