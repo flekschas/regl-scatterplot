@@ -320,7 +320,7 @@ const createScatterplot = (initialProperties = {}) => {
   const lassoClear = () => {
     lassoPos = [];
     lassoPoints = [];
-    lasso.clear();
+    if (lasso) lasso.clear();
   };
 
   const deselect = ({ preventEvent = false } = {}) => {
@@ -907,7 +907,7 @@ const createScatterplot = (initialProperties = {}) => {
   };
 
   const draw = (showRecticleOnce = false) => {
-    if (!isInit) return;
+    if (!isInit || !regl) return;
 
     regl.clear({
       // background color (transparent)
@@ -1080,6 +1080,7 @@ const createScatterplot = (initialProperties = {}) => {
     if (property === 'background') return backgroundColor;
     if (property === 'backgroundColor') return backgroundColor;
     if (property === 'backgroundImage') return backgroundImage;
+    if (property === 'camera') return camera;
     if (property === 'cameraTarget') return camera.target;
     if (property === 'cameraDistance') return camera.distance;
     if (property === 'cameraRotation') return camera.rotation;
