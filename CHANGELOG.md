@@ -1,6 +1,6 @@
 ## Next
 
-- Expose view domains via `scatterplot.subscribe('view', () => { ... })` for synchronizing the camera view with D3 scales
+- Allow synchronizing x and y scales via `scatterplot.set('xScale', xScale)` and `scatterplot.subscribe('view', ({ xScale }) => { ... })`. The scales need to be a D3 scale function.
 
 ## v0.10.1
 

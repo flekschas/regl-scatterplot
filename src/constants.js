@@ -43,8 +43,6 @@ export const DEFAULT_VIEW = new Float32Array([
   0, 0, 1, 0,
   0, 0, 0, 1
 ]);
-export const DEFAULT_X_DOMAIN = [0, 1];
-export const DEFAULT_Y_DOMAIN = [0, 1];
 
 // Default misc
 export const DEFAULT_BACKGROUND_IMAGE = null;

@@ -45,10 +45,7 @@ canvasWrapper.style.bottom = `${xAxisPadding}px`;
 
 let { width, height } = canvas.getBoundingClientRect();
 
-xScale.range([0, width]);
 xAxisContainer.attr('transform', `translate(0, ${height})`).call(xAxis);
-
-yScale.range([height, 0]);
 yAxisContainer.attr('transform', `translate(${width}, 0)`).call(yAxis);
 
 let points = [];
@@ -78,8 +75,8 @@ const scatterplot = createScatterplot({
   width,
   height,
   pointSize,
-  xDomain,
-  yDomain,
+  xScale,
+  yScale,
 });
 
 console.log(`Scatterplot v${scatterplot.get('version')}`);
@@ -87,12 +84,12 @@ console.log(`Scatterplot v${scatterplot.get('version')}`);
 scatterplot.subscribe('select', selectHandler);
 scatterplot.subscribe('deselect', deselectHandler);
 scatterplot.subscribe('view', (event) => {
-  xAxisContainer.call(xAxis.scale(xScale.domain(event.xDomainView)));
-  yAxisContainer.call(yAxis.scale(yScale.domain(event.yDomainView)));
+  xAxisContainer.call(xAxis.scale(event.xScale));
+  yAxisContainer.call(yAxis.scale(event.yScale));
 });
 
-xAxisContainer.call(xAxis.scale(xScale.domain(scatterplot.get('xDomainView'))));
-yAxisContainer.call(yAxis.scale(yScale.domain(scatterplot.get('yDomainView'))));
+xAxisContainer.call(xAxis.scale(scatterplot.get('xScale')));
+yAxisContainer.call(yAxis.scale(scatterplot.get('yScale')));
 
 const resizeHandler = () => {
   ({ width, height } = canvas.getBoundingClientRect());
