@@ -1,11 +1,13 @@
-/* eslint no-console: 1 */
+/* eslint no-console: 1, no-undef: 1 */
 
 import '@babel/polyfill';
 import { test } from 'zora';
+import { scaleLinear } from 'd3-scale';
+import { mat4 } from 'gl-matrix';
+
 import { version } from '../package.json';
 
-// import { mat4 } from 'gl-matrix';
-
+// import createScatterplot from '../src';
 import createScatterplot, { createRegl, createTextureFromUrl } from '../src';
 import {
   DEFAULT_COLOR_NORMAL,
@@ -102,6 +104,8 @@ test('createScatterplot()', (t) => {
     DEFAULT_HEIGHT,
     'scatterplot should have default height'
   );
+
+  scatterplot.destroy();
 });
 
 test('createScatterplot({ cameraTarget, cameraDistance, cameraRotation, cameraView })', (t) => {
@@ -154,6 +158,9 @@ test('createScatterplot({ cameraTarget, cameraDistance, cameraRotation, cameraVi
     scatterplot2.get('cameraView'),
     `The camera view should be ${cameraView}`
   );
+
+  scatterplot.destroy();
+  scatterplot2.destroy();
 });
 
 test('createTextureFromUrl()', async (t) => {
@@ -192,6 +199,8 @@ test('get("canvas"), get("regl"), and get("version")', async (t) => {
     version,
     `version should be set to ${version}`
   );
+
+  scatterplot.destroy();
 });
 
 test('set({ width, height })', (t) => {
@@ -231,6 +240,8 @@ test('set({ width, height })', (t) => {
     h2 * window.devicePixelRatio,
     `height should be set to ${h2 * window.devicePixelRatio}px`
   );
+
+  scatterplot.destroy();
 });
 
 test('set({ aspectRatio })', (t) => {
@@ -245,6 +256,8 @@ test('set({ aspectRatio })', (t) => {
     aspectRatio,
     `aspectRatio should be set to ${aspectRatio}`
   );
+
+  scatterplot.destroy();
 });
 
 test('set({ backgroundColor })', (t) => {
@@ -260,6 +273,8 @@ test('set({ backgroundColor })', (t) => {
       .every((v, i) => v === backgroundNrgba[i]),
     'background color should be red and and converted to normalized RGBA'
   );
+
+  scatterplot.destroy();
 });
 
 test('set({ backgroundImage })', async (t) => {
@@ -327,6 +342,8 @@ test('set({ backgroundImage })', async (t) => {
     16,
     'base64 background image should be supported'
   );
+
+  scatterplot.destroy();
 });
 
 test('set({ cameraTarget, cameraDistance, cameraRotation, cameraView })', (t) => {
@@ -359,6 +376,8 @@ test('set({ cameraTarget, cameraDistance, cameraRotation, cameraView })', (t) =>
       `${setting} should not be nullifyable`
     );
   });
+
+  scatterplot.destroy();
 });
 
 test('set({ colorBy })', (t) => {
@@ -377,6 +396,8 @@ test('set({ colorBy })', (t) => {
   scatterplot.set({ colorBy: null });
 
   t.equal(scatterplot.get('colorBy'), null, 'colorBy should be nullifyable');
+
+  scatterplot.destroy();
 });
 
 test('set({ pointColor, pointColorActive, pointColorHover }) single color', (t) => {
@@ -429,6 +450,8 @@ test('set({ pointColor, pointColorActive, pointColorHover }) single color', (t) 
     scatterplot.get('pointColor').every((component) => component === 1),
     'should default to white when setting an invalid color point color from before'
   );
+
+  scatterplot.destroy();
 });
 
 test('set({ pointColor }) multiple colors', (t) => {
@@ -449,6 +472,8 @@ test('set({ pointColor }) multiple colors', (t) => {
       .every((color, i) => color.every((c, j) => c === pointColor[i][j])),
     'should accepts multiple normalized RGBA for point color'
   );
+
+  scatterplot.destroy();
 });
 
 test('set({ pointColor, pointColorActive, pointColorHover }) multiple colors', (t) => {
@@ -495,6 +520,8 @@ test('set({ pointColor, pointColorActive, pointColorHover }) multiple colors', (
       .every((color, i) => color.every((c, j) => c === pointColorHover[i][j])),
     'should accepts multiple normalized RGBA for point color hover'
   );
+
+  scatterplot.destroy();
 });
 
 test('set({ opacity })', async (t) => {
@@ -517,6 +544,8 @@ test('set({ opacity })', async (t) => {
     opacity,
     'opacity should not be nullifyable'
   );
+
+  scatterplot.destroy();
 });
 
 test('set({ lassoColor, lassoMinDist, lassoMinDelay, lassoClearEvent })', async (t) => {
@@ -599,6 +628,8 @@ test('set({ lassoColor, lassoMinDist, lassoMinDelay, lassoClearEvent })', async 
     lassoClearEvent,
     'lassoClearEvent should not be nullifyable'
   );
+
+  scatterplot.destroy();
 });
 
 test('set({ pointOutlineWidth })', async (t) => {
@@ -621,6 +652,8 @@ test('set({ pointOutlineWidth })', async (t) => {
     pointOutlineWidth,
     'pointOutlineWidth should not be nullifyable'
   );
+
+  scatterplot.destroy();
 });
 
 test('set({ pointSize })', async (t) => {
@@ -643,6 +676,8 @@ test('set({ pointSize })', async (t) => {
     pointSize,
     'pointSize should not be nullifyable'
   );
+
+  scatterplot.destroy();
 });
 
 test('set({ pointSizeSelected })', async (t) => {
@@ -665,6 +700,8 @@ test('set({ pointSizeSelected })', async (t) => {
     pointSizeSelected,
     'pointSizeSelected should not be nullifyable'
   );
+
+  scatterplot.destroy();
 });
 
 test('set({ showRecticle, recticleColor })', async (t) => {
@@ -716,206 +753,241 @@ test('set({ showRecticle, recticleColor })', async (t) => {
     recticleColor,
     'recticleColor should not be nullifyable'
   );
+
+  scatterplot.destroy();
 });
 
 /* ---------------------------------- events -------------------------------- */
 
-test('draw(), clear(), publish("select")', async (t) => {
-  const dim = 200;
-  const hdim = dim / 2;
-  const canvas = createCanvas(dim, dim);
-  const scatterplot = createScatterplot({ canvas, width: dim, height: dim });
+test('tests involving mouse events', async (t2) => {
+  await t2.test('draw(), clear(), publish("select")', async (t) => {
+    const dim = 200;
+    const hdim = dim / 2;
+    const canvas = createCanvas(dim, dim);
+    const scatterplot = createScatterplot({ canvas, width: dim, height: dim });
 
-  const points = [
-    [0, 0],
-    [1, 1],
-    [1, -1],
-    [-1, -1],
-    [-1, 1],
-  ];
-  await scatterplot.draw(points);
-  // The second draw call should not block the drawing of the points!
-  // This test is related to a previous issue caused by `drawRaf` as `withRaf`
-  // overwrites previous arguments. While that is normally expected, this
-  // should not overwrite the points from above
-  await scatterplot.draw();
+    const points = [
+      [0, 0],
+      [1, 1],
+      [1, -1],
+      [-1, -1],
+      [-1, 1],
+    ];
+    await scatterplot.draw(points);
+    // The second draw call should not block the drawing of the points!
+    // This test is related to a previous issue caused by `drawRaf` as `withRaf`
+    // overwrites previous arguments. While that is normally expected, this
+    // should not overwrite the points from above
+    await scatterplot.draw();
 
-  // TODO: fix this!
-  // await wait(250);
+    let selectedPoints = [];
+    const selectHandler = ({ points: newSelectedPoints }) => {
+      selectedPoints = [...newSelectedPoints];
+    };
+    const deselectHandler = () => {
+      selectedPoints = [];
+    };
+    scatterplot.subscribe('select', selectHandler);
+    scatterplot.subscribe('deselect', deselectHandler);
 
-  let selectedPoints = [];
-  const selectHandler = ({ points: newSelectedPoints }) => {
-    selectedPoints = [...newSelectedPoints];
-  };
-  const deselectHandler = () => {
-    selectedPoints = [];
-  };
-  scatterplot.subscribe('select', selectHandler);
-  scatterplot.subscribe('deselect', deselectHandler);
+    // Test single selection via mouse clicks
+    canvas.dispatchEvent(createMouseEvent('mousedown', hdim, hdim));
+    canvas.dispatchEvent(createMouseEvent('click', hdim, hdim));
 
-  // Test single selection via mouse clicks
-  canvas.dispatchEvent(createMouseEvent('mousedown', hdim, hdim));
-  canvas.dispatchEvent(createMouseEvent('click', hdim, hdim));
+    t.equal(selectedPoints.length, 1, 'should have selected one point');
+    t.equal(selectedPoints[0], 0, 'should have selected the first point');
 
-  t.equal(selectedPoints.length, 1, 'should have selected one point');
-  t.equal(selectedPoints[0], 0, 'should have selected the first point');
+    // Test deselection
+    canvas.dispatchEvent(createMouseEvent('dblclick', hdim, hdim));
 
-  // Test deselection
-  canvas.dispatchEvent(createMouseEvent('dblclick', hdim, hdim));
+    t.equal(selectedPoints.length, 0, 'should have deselected one point');
 
-  t.equal(selectedPoints.length, 0, 'should have deselected one point');
+    // Test that mousedown + mousemove + click is not interpreted as a click when
+    // the cursor moved more than `DEFAULT_LASSO_MIN_DIST` in between mousedown and
+    // mouseup
+    canvas.dispatchEvent(
+      createMouseEvent('mousedown', hdim - DEFAULT_LASSO_MIN_DIST, hdim)
+    );
+    canvas.dispatchEvent(createMouseEvent('click', hdim, hdim));
 
-  // Test that mousedown + mousemove + click is not interpreted as a click when
-  // the cursor moved more than `DEFAULT_LASSO_MIN_DIST` in between mousedown and
-  // mouseup
-  canvas.dispatchEvent(
-    createMouseEvent('mousedown', hdim - DEFAULT_LASSO_MIN_DIST, hdim)
-  );
-  canvas.dispatchEvent(createMouseEvent('click', hdim, hdim));
+    t.equal(selectedPoints.length, 0, 'should *not* have selected one point');
 
-  t.equal(selectedPoints.length, 0, 'should *not* have selected one point');
+    // Test that clearing the points works. The selection that worked previously
+    // should not work anymore
+    scatterplot.clear();
+    window.dispatchEvent(createMouseEvent('mousedown', hdim, hdim));
+    canvas.dispatchEvent(createMouseEvent('click', hdim, hdim));
 
-  // Test that clearing the points works. The selection that worked previously
-  // should not work anymore
-  scatterplot.clear();
-  window.dispatchEvent(createMouseEvent('mousedown', hdim, hdim));
-  canvas.dispatchEvent(createMouseEvent('click', hdim, hdim));
+    t.equal(selectedPoints.length, 0, 'should *not* have selected one point');
 
-  t.equal(selectedPoints.length, 0, 'should *not* have selected one point');
-});
-
-test('lasso selection with publish("select")', async (t) => {
-  const dim = 200;
-  const hdim = dim / 2;
-  const canvas = createCanvas(dim, dim);
-  const scatterplot = createScatterplot({ canvas, width: dim, height: dim });
-
-  const points = [
-    [0, 0],
-    [1, 1],
-    [1, -1],
-    [-1, -1],
-    [-1, 1],
-  ];
-  await scatterplot.draw(points);
-
-  // TODO: fix this!
-  // await wait(250);
-
-  let selectedPoints = [];
-  const selectHandler = ({ points: newSelectedPoints }) => {
-    selectedPoints = [...newSelectedPoints];
-  };
-  const deselectHandler = () => {
-    selectedPoints = [];
-  };
-  scatterplot.subscribe('select', selectHandler);
-  scatterplot.subscribe('deselect', deselectHandler);
-
-  // Test multi selections via mousedown + mousemove
-  canvas.dispatchEvent(
-    createMouseEvent('mousedown', dim * 1.125, hdim, { shiftKey: true })
-  );
-
-  // Needed to first digest the mousedown event
-  await wait(0);
-
-  const mousePositions = [
-    [dim * 1.125, hdim],
-    [hdim, -dim * 0.125],
-    [-dim * 0.125, -dim * 0.125],
-    [-dim * 0.125, dim * 0.125],
-    [0, dim * 0.9],
-    [dim * 0.1, dim * 0.9],
-    [dim * 0.1, dim * 1.125],
-    [dim * 1.125, dim * 1.125],
-  ];
-
-  await asyncForEach(mousePositions, async (mousePosition) => {
-    window.dispatchEvent(createMouseEvent('mousemove', ...mousePosition));
-    await wait(DEFAULT_LASSO_MIN_DELAY + 5);
+    scatterplot.destroy();
   });
 
-  window.dispatchEvent(createMouseEvent('mouseup'));
+  await t2.test('lasso selection with publish("select")', async (t) => {
+    const dim = 200;
+    const hdim = dim / 2;
+    const canvas = createCanvas(dim, dim);
+    const scatterplot = createScatterplot({ canvas, width: dim, height: dim });
 
-  t.equal(selectedPoints.length, 3, 'should have selected 3 points');
-  t.deepEqual(
-    selectedPoints,
-    [0, 2, 4],
-    'should have selected the first, third, and fifth point'
+    const points = [
+      [0, 0],
+      [1, 1],
+      [1, -1],
+      [-1, -1],
+      [-1, 1],
+    ];
+    await scatterplot.draw(points);
+
+    let selectedPoints = [];
+    const selectHandler = ({ points: newSelectedPoints }) => {
+      selectedPoints = [...newSelectedPoints];
+    };
+    const deselectHandler = () => {
+      selectedPoints = [];
+    };
+    scatterplot.subscribe('select', selectHandler);
+    scatterplot.subscribe('deselect', deselectHandler);
+
+    // Test multi selections via mousedown + mousemove
+    canvas.dispatchEvent(
+      createMouseEvent('mousedown', dim * 1.125, hdim, { shiftKey: true })
+    );
+
+    // Needed to first digest the mousedown event
+    await wait(0);
+
+    const mousePositions = [
+      [dim * 1.125, hdim],
+      [hdim, -dim * 0.125],
+      [-dim * 0.125, -dim * 0.125],
+      [-dim * 0.125, dim * 0.125],
+      [0, dim * 0.9],
+      [dim * 0.1, dim * 0.9],
+      [dim * 0.1, dim * 1.125],
+      [dim * 1.125, dim * 1.125],
+    ];
+
+    await asyncForEach(mousePositions, async (mousePosition) => {
+      window.dispatchEvent(createMouseEvent('mousemove', ...mousePosition));
+      await wait(DEFAULT_LASSO_MIN_DELAY + 5);
+    });
+
+    window.dispatchEvent(createMouseEvent('mouseup'));
+
+    t.equal(selectedPoints.length, 3, 'should have selected 3 points');
+    t.deepEqual(
+      selectedPoints,
+      [0, 2, 4],
+      'should have selected the first, third, and fifth point'
+    );
+
+    scatterplot.destroy();
+  });
+
+  await t2.test(
+    'point hover with publish("pointover") and publish("pointout")',
+    async (t) => {
+      const dim = 200;
+      const hdim = dim / 2;
+      const canvas = createCanvas(dim, dim);
+      const scatterplot = createScatterplot({
+        canvas,
+        width: dim,
+        height: dim,
+      });
+
+      const points = [
+        [0, 0],
+        [1, 1],
+        [1, -1],
+        [-1, -1],
+        [-1, 1],
+      ];
+      await scatterplot.draw(points);
+
+      let hoveredPoint = null;
+      const pointoverHandler = (point) => {
+        hoveredPoint = point;
+      };
+      const pointoutHandler = () => {
+        hoveredPoint = null;
+      };
+      scatterplot.subscribe('pointover', pointoverHandler);
+      scatterplot.subscribe('pointout', pointoutHandler);
+
+      // Test single selection via mouse clicks
+      canvas.dispatchEvent(createMouseEvent('mouseenter', hdim, hdim));
+      await wait(250);
+      window.dispatchEvent(createMouseEvent('mousemove', hdim, hdim));
+      await wait(250);
+
+      t.equal(hoveredPoint, 0, 'should be hovering point 0 (in the middle)');
+
+      // Test deselection
+      window.dispatchEvent(createMouseEvent('mousemove', hdim / 2, hdim));
+
+      t.equal(hoveredPoint, null, 'should not be hovering any point');
+
+      scatterplot.destroy();
+    }
   );
+
+  await t2.test('publish("view")', async (t) => {
+    const dim = 200;
+    const hdim = dim / 2;
+    const canvas = createCanvas(dim, dim);
+    const xScale = scaleLinear().domain([-5, 5]);
+    const yScale = scaleLinear().domain([0, 0.5]);
+
+    const scatterplot = createScatterplot({
+      canvas,
+      width: dim,
+      height: dim,
+      xScale,
+      yScale,
+    });
+    await scatterplot.draw([[0, 0]]);
+
+    const predictedView = mat4.fromTranslation([], [0, -1, 0]);
+
+    let currentView;
+    let currentCamera;
+    const viewHandler = ({ camera, view }) => {
+      currentCamera = camera;
+      currentView = view;
+    };
+    scatterplot.subscribe('view', viewHandler);
+
+    // window.dispatchEvent(createMouseEvent('mouseup', hdim, hdim));
+    // window.dispatchEvent(createMouseEvent('mousemove', hdim, hdim));
+    await wait(50);
+
+    canvas.dispatchEvent(
+      createMouseEvent('mousedown', hdim, hdim, { buttons: 1 })
+    );
+    await wait(50);
+    window.dispatchEvent(createMouseEvent('mousemove', 0, hdim));
+    await wait(50);
+
+    t.deepEqual(
+      Array.from(currentView),
+      predictedView,
+      'should have published the translated view'
+    );
+
+    t.ok(currentCamera, 'should have published the camera');
+
+    t.deepEqual(xScale.domain(), [-5, 5], 'should have published the camera');
+
+    t.deepEqual(
+      yScale.domain(),
+      [0.25, 0.75],
+      'should have published the camera'
+    );
+
+    scatterplot.destroy();
+  });
 });
-
-test('point hover with publish("pointover") and publish("pointout")', async (t) => {
-  const dim = 200;
-  const hdim = dim / 2;
-  const canvas = createCanvas(dim, dim);
-  const scatterplot = createScatterplot({ canvas, width: dim, height: dim });
-
-  const points = [
-    [0, 0],
-    [1, 1],
-    [1, -1],
-    [-1, -1],
-    [-1, 1],
-  ];
-  await scatterplot.draw(points);
-
-  // TODO: fix this!
-  // await wait(250);
-
-  let hoveredPoint = null;
-  const pointoverHandler = (point) => {
-    hoveredPoint = point;
-  };
-  const pointoutHandler = () => {
-    hoveredPoint = null;
-  };
-  scatterplot.subscribe('pointover', pointoverHandler);
-  scatterplot.subscribe('pointout', pointoutHandler);
-
-  // Test single selection via mouse clicks
-  canvas.dispatchEvent(createMouseEvent('mouseenter', hdim, hdim));
-  await wait(250);
-  window.dispatchEvent(createMouseEvent('mousemove', hdim, hdim));
-  await wait(250);
-
-  t.equal(hoveredPoint, 0, 'should be hovering point 0 (in the middle)');
-
-  // Test deselection
-  window.dispatchEvent(createMouseEvent('mousemove', hdim / 2, hdim));
-
-  t.equal(hoveredPoint, null, 'should not be hovering any point');
-});
-
-// test('publish("view")', async t => {
-//   const dim = 200;
-//   const hdim = dim / 2;
-//   const canvas = createCanvas(dim, dim);
-//   const scatterplot = createScatterplot({ canvas, width: dim, height: dim });
-
-//   const translatedView = mat4.fromTranslation([], [-1, 0, 0]);
-
-//   let view;
-//   const viewHandler = newView => {
-//     view = newView;
-//   };
-//   scatterplot.subscribe('view', viewHandler);
-
-//   // Test panning with mousedown + mousemove
-//   // Somehow the mousedown event is not registered by `mouse-pressed` and hence
-//   // panning is not registered
-//   canvas.dispatchEvent(createMouseEvent('mousedown', hdim, hdim, { button: 0 }));
-//   await wait(50);
-//   canvas.dispatchEvent(createMouseEvent('mousemove', 0, hdim));
-//   await wait(50);
-
-//   t.deepEqual(
-//     view,
-//     translatedView,
-//     'should have published the translated view'
-//   );
-// });
 
 /* ----------------------------- Other Methods ------------------------------ */
 
@@ -931,9 +1003,6 @@ test('select()', async (t) => {
   ];
 
   await scatterplot.draw(points);
-
-  // TODO: fix this!
-  // await wait(250);
 
   let selectedPoints = [];
   const selectHandler = ({ points: newSelectedPoints }) => {
@@ -979,4 +1048,6 @@ test('select()', async (t) => {
     flatArrayEqual([0, 2, 4], selectedPoints),
     'should have silently deselected points'
   );
+
+  scatterplot.destroy();
 });

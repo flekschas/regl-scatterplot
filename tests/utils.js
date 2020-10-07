@@ -9,6 +9,19 @@ export const createCanvas = (width = 200, height = 200) => {
   const canvas = document.createElement('canvas');
   canvas.width = width;
   canvas.height = height;
+
+  // Hacky but necessary
+  canvas.getBoundingClientRect = () => ({
+    width,
+    height,
+    top: 0,
+    right: width,
+    bottom: height,
+    left: 0,
+    x: 0,
+    y: 0,
+  });
+
   return canvas;
 };
 
