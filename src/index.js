@@ -1313,6 +1313,7 @@ const createScatterplot = (initialProperties = {}) => {
   const init = () => {
     updateViewAspectRatio();
     initCamera();
+    updateScales();
 
     lasso = createLine(regl, { color: lassoColor, width: 3, is2d: true });
     recticleHLine = createLine(regl, {

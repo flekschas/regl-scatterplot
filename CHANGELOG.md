@@ -1,6 +1,6 @@
 ## Next
 
-- Allow synchronizing x and y scales via `scatterplot.set('xScale', xScale)` and `scatterplot.subscribe('view', ({ xScale }) => { ... })`. The scales need to be a D3 scale function.
+- Allow synchronizing x and y scales via `scatterplot.set('xScale', xScale)` and `scatterplot.subscribe('view', ({ xScale }) => { ... })`. The scales need to be a D3 scale function. (#29)
 
 ## v0.10.1
 
