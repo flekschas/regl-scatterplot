@@ -48,6 +48,10 @@ let { width, height } = canvas.getBoundingClientRect();
 xAxisContainer.attr('transform', `translate(0, ${height})`).call(xAxis);
 yAxisContainer.attr('transform', `translate(${width}, 0)`).call(yAxis);
 
+// Render grid
+xAxis.tickSizeInner(-height);
+yAxis.tickSizeInner(-width);
+
 let points = [];
 let numPoints = 100000;
 let pointSize = 2;
