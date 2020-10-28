@@ -7,7 +7,7 @@
 [![code style prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
 [![regl-scatterplot demo](https://img.shields.io/badge/demo-online-6ae3c7.svg)](https://flekschas.github.io/regl-scatterplot/)
 
-> A highly-scalable pan-and-zoomable scatter plot rendered with WebGL using [Regl](https://github.com/regl-project/regl). This library sacrifices feature richness for speed to allow rendering up to 2 million points (depending on your hardware of course) including fast lasso selection.
+> A highly-scalable pan-and-zoomable scatter plot rendered with WebGL using [Regl](https://github.com/regl-project/regl). This library sacrifices feature richness for speed to allow rendering up to 2 million points (depending on your hardware of course) including fast lasso selection. Also, the [footprint of regl-scatterplot](https://bundlephobia.com/result?p=regl-scatterplot) is kept to a minimum.
 
 <p>
   <img src="https://user-images.githubusercontent.com/932103/62905669-7679f380-bd39-11e9-9528-86ee56d6dfba.gif" />
