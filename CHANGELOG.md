@@ -1,6 +1,6 @@
 ## Next
 
-## v0.11.1
+## v0.12.0
 
 - Add `deselectOnDblClick` and `deselectOnEscape` to allow disabling deselection on double click or escape when set to `false` (#31)
 - Fix an issue updating the x and y scale domains (#30)
