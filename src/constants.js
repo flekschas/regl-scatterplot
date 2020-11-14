@@ -49,3 +49,5 @@ export const DEFAULT_BACKGROUND_IMAGE = null;
 export const DEFAULT_LASSO_COLOR = [0, 0.666666667, 1, 1];
 export const DEFAULT_SHOW_RECTICLE = false;
 export const DEFAULT_RECTICLE_COLOR = [1, 1, 1, 0.5];
+export const DEFAULT_DESELECT_ON_DBL_CLICK = true;
+export const DEFAULT_DESELECT_ON_ESCAPE = true;

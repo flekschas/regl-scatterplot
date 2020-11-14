@@ -24,6 +24,8 @@ import {
   DEFAULT_COLOR_ACTIVE,
   DEFAULT_COLOR_HOVER,
   DEFAULT_DATA_ASPECT_RATIO,
+  DEFAULT_DESELECT_ON_DBL_CLICK,
+  DEFAULT_DESELECT_ON_ESCAPE,
   DEFAULT_DISTANCE,
   DEFAULT_HEIGHT,
   DEFAULT_LASSO_COLOR,
@@ -98,6 +100,8 @@ const createScatterplot = (initialProperties = {}) => {
     cameraView: initialCameraView,
     canvas: initialCanvas = document.createElement('canvas'),
     colorBy: initialColorBy = DEFAULT_COLOR_BY,
+    deselectOnDblClick: initialDeselectOnDblClick = DEFAULT_DESELECT_ON_DBL_CLICK,
+    deselectOnEscape: initialDeselectOnEscape = DEFAULT_DESELECT_ON_ESCAPE,
     lassoColor: initialLassoColor = DEFAULT_LASSO_COLOR,
     lassoMinDelay: initialLassoMinDelay = DEFAULT_LASSO_MIN_DELAY,
     lassoMinDist: initialLassoMinDist = DEFAULT_LASSO_MIN_DIST,
@@ -155,6 +159,8 @@ const createScatterplot = (initialProperties = {}) => {
   let recticleHLine;
   let recticleVLine;
   let recticleColor = toRgba(initialRecticleColor, true);
+  let deselectOnDblClick = initialDeselectOnDblClick;
+  let deselectOnEscape = initialDeselectOnEscape;
 
   let pointColors = isMultipleColors(initialPointColor)
     ? initialPointColor
@@ -408,7 +414,7 @@ const createScatterplot = (initialProperties = {}) => {
   };
 
   const mouseDblClickHandler = () => {
-    deselect();
+    if (deselectOnDblClick) deselect();
   };
 
   const mouseMoveHandler = (event) => {
@@ -1062,6 +1068,14 @@ const createScatterplot = (initialProperties = {}) => {
     yDomainSize = yScale ? yScale.domain()[1] - yScale.domain()[0] : 0;
   };
 
+  const setDeselectOnDblClick = (newDeselectOnDblClick) => {
+    deselectOnDblClick = !!newDeselectOnDblClick;
+  };
+
+  const setDeselectOnEscape = (newDeselectOnEscape) => {
+    deselectOnEscape = !!newDeselectOnEscape;
+  };
+
   /**
    * Update Regl's viewport, drawingBufferWidth, and drawingBufferHeight
    *
@@ -1087,6 +1101,8 @@ const createScatterplot = (initialProperties = {}) => {
     if (property === 'cameraView') return camera.view;
     if (property === 'canvas') return canvas;
     if (property === 'colorBy') return colorBy;
+    if (property === 'deselectOnDblClick') return deselectOnDblClick;
+    if (property === 'deselectOnEscape') return deselectOnEscape;
     if (property === 'height') return height;
     if (property === 'lassoColor') return lassoColor;
     if (property === 'lassoMinDelay') return lassoMinDelay;
@@ -1223,6 +1239,14 @@ const createScatterplot = (initialProperties = {}) => {
       setYScale(properties.yScale);
     }
 
+    if (properties.deselectOnDblClick !== undefined) {
+      setDeselectOnDblClick(properties.deselectOnDblClick);
+    }
+
+    if (properties.deselectOnEscape !== undefined) {
+      setDeselectOnEscape(properties.deselectOnEscape);
+    }
+
     updateViewAspectRatio();
     camera.refresh();
     refresh();
@@ -1285,7 +1309,7 @@ const createScatterplot = (initialProperties = {}) => {
   const keyUpHandler = ({ key }) => {
     switch (key) {
       case 'Escape':
-        deselect();
+        if (deselectOnEscape) deselect();
         break;
       default:
       // Nothing
