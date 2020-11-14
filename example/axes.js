@@ -97,10 +97,19 @@ yAxisContainer.call(yAxis.scale(scatterplot.get('yScale')));
 
 const resizeHandler = () => {
   ({ width, height } = canvas.getBoundingClientRect());
+
+  xAxisContainer.attr('transform', `translate(0, ${height})`).call(xAxis);
+  yAxisContainer.attr('transform', `translate(${width}, 0)`).call(yAxis);
+
+  // Render grid
+  xAxis.tickSizeInner(-height);
+  yAxis.tickSizeInner(-width);
+
   scatterplot.set({ width, height });
 };
 
 window.addEventListener('resize', resizeHandler);
+window.addEventListener('orientationchange', resizeHandler);
 
 const generatePoints = (num) =>
   new Array(num).fill().map(() => [
