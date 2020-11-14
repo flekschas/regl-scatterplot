@@ -543,13 +543,43 @@ const createScatterplot = (initialProperties = {}) => {
     }
   );
 
+  const computeDomainView = () => {
+    const xyStartPt = getScatterGlPos(-1, -1);
+    const xyEndPt = getScatterGlPos(1, 1);
+
+    const xStart = (xyStartPt[0] + 1) / 2;
+    const xEnd = (xyEndPt[0] + 1) / 2;
+    const yStart = (xyStartPt[1] + 1) / 2;
+    const yEnd = (xyEndPt[1] + 1) / 2;
+
+    const xDomainView = [
+      xDomainStart + xStart * xDomainSize,
+      xDomainStart + xEnd * xDomainSize,
+    ];
+    const yDomainView = [
+      yDomainStart + yStart * yDomainSize,
+      yDomainStart + yEnd * yDomainSize,
+    ];
+
+    return [xDomainView, yDomainView];
+  };
+
+  const updateScales = () => {
+    if (!xScale && !yScale) return;
+
+    const [xDomainView, yDomainView] = computeDomainView();
+
+    if (xScale) xScale.domain(xDomainView);
+    if (yScale) yScale.domain(yDomainView);
+  };
+
   const setHeight = (newHeight) => {
     if (!+newHeight || +newHeight <= 0) return;
     height = +newHeight;
     canvas.height = height * window.devicePixelRatio;
     if (yScale) {
-      yDomainSize = yScale.domain()[1] - yScale.domain()[0];
       yScale.range([height, 0]);
+      updateScales();
     }
   };
 
@@ -573,8 +603,8 @@ const createScatterplot = (initialProperties = {}) => {
     width = +newWidth;
     canvas.width = width * window.devicePixelRatio;
     if (xScale) {
-      xDomainSize = xScale.domain()[1] - xScale.domain()[0];
       xScale.range([0, width]);
+      updateScales();
     }
   };
 
@@ -619,36 +649,6 @@ const createScatterplot = (initialProperties = {}) => {
   const getIsColoredByCategory = () => (colorBy === 'category') * 1;
   const getIsColoredByValue = () => (colorBy === 'value') * 1;
   const getMaxColorTexIdx = () => pointColors.length - 1;
-
-  const computeDomainView = () => {
-    const xyStartPt = getScatterGlPos(-1, -1);
-    const xyEndPt = getScatterGlPos(1, 1);
-
-    const xStart = (xyStartPt[0] + 1) / 2;
-    const xEnd = (xyEndPt[0] + 1) / 2;
-    const yStart = (xyStartPt[1] + 1) / 2;
-    const yEnd = (xyEndPt[1] + 1) / 2;
-
-    const xDomainView = [
-      xDomainStart + xStart * xDomainSize,
-      xDomainStart + xEnd * xDomainSize,
-    ];
-    const yDomainView = [
-      yDomainStart + yStart * yDomainSize,
-      yDomainStart + yEnd * yDomainSize,
-    ];
-
-    return [xDomainView, yDomainView];
-  };
-
-  const updateScales = () => {
-    if (!xScale && !yScale) return;
-
-    const [xDomainView, yDomainView] = computeDomainView();
-
-    if (xScale) xScale.domain(xDomainView);
-    if (yScale) yScale.domain(yDomainView);
-  };
 
   const drawPoints = (
     getPointSizeExtra,
@@ -1050,8 +1050,8 @@ const createScatterplot = (initialProperties = {}) => {
     if (!newXScale) return;
 
     xScale = newXScale;
-    xDomainStart = xScale.domain()[0];
-    xDomainSize = xScale ? xScale.domain()[1] - xScale.domain()[0] : 0;
+    xDomainStart = newXScale.domain()[0];
+    xDomainSize = newXScale ? newXScale.domain()[1] - newXScale.domain()[0] : 0;
   };
 
   const setYScale = (newYScale) => {

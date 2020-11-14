@@ -1,5 +1,9 @@
 ## Next
 
+## v0.11.1
+
+- Fix an issue updating the x and y scale domains (#30)
+
 ## v0.11.0
 
 - Allow synchronizing D3 x and y scales with the scatterplot view. See [README.md](README.md#synchronize-d3-x-and-y-scales-with-the-scatterplot-view) for more details. (#29)
