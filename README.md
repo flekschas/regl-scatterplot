@@ -132,25 +132,29 @@ _DEPRECATED! Use [`scatterplot.createTextureFromUrl()`](#scatterplot.createTextu
 
 ### Methods
 
-<a name="scatterplot.draw" href="#scatterplot.draw">#</a> scatterplot.<b>draw</b>(<i>points</i>)
+<a name="scatterplot.draw" href="#scatterplot.draw">#</a> scatterplot.<b>draw</b>(<i>points</i>, <i>options</i>)
 
 Sets and draws `points`. Note that repeatedly calling this method without specifying `points` will not clear previously set points. To clear points use [`scatterplot.clear()`](#scatterplot.clear)
 
 **Arguments:**
 
 - `points` is an array of quadruples defining the point data. Each quadruple must be of the form `[x, y, category, value]` where `category` and `value` are optional and can be used for [coloring the points](#color-by-value-or-category).
+- `options` is an object with the following properties:
+  - `transition` [default: `false`]: if `true` and if the current number of points equals `points.length`, the current points will be transitioned to the new points
+  - `transitionDuration` [default: `500`]: the duration in milliseconds over which the transition should occur
+  - `transitionEasing` [default: `cubicInOut`]: the easing function, which determines how intermediate values of the transition are calculated
 
-**Returns:** a Promise object that resolves once the points have been drawn.
+**Returns:** a Promise object that resolves once the points have been drawn or transitioned.
 
 **Examples:**
 
 ```javascript
 const points = [
   [
-    // The X position
-    2,
-    // The Y position
-    1,
+    // The relative X position in normalized device coordinates
+    0.9,
+    // The relative Y position in normalized device coordinates
+    0.3,
     // The category, which defaults to `0` if `undefined`
     0,
     // Some value, which defaults to `0` if `undefined`
@@ -165,6 +169,11 @@ scatterplot.draw(points);
 // Lets redraw the scatterplot. Since `draw` is caching the points you don't
 // have to specify the points here again if they didn't change.
 scatterplot.draw();
+
+// If we want to animate the transition of our point from above to another
+// x,y position, we can also do this by drawing a new point while enableing
+// transition via the `options` argument.
+scatterplot.draw([[0.6, 0.6, 0, 0.6]], { transition: true });
 
 // Lets actively unset the points. Since `draw()` assumes that you want to
 // redraw existing points you have to actively pass in an empty array.
