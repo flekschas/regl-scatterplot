@@ -991,6 +991,36 @@ test('tests involving mouse events', async (t2) => {
 
 /* ----------------------------- Other Methods ------------------------------ */
 
+test('draw() with transition', async (t) => {
+  const scatterplot = createScatterplot({ canvas: createCanvas() });
+
+  let numDrawCalls = 0;
+  let numTransitionStartCalls = 0;
+  let numTransitionEndCalls = 0;
+
+  scatterplot.subscribe('draw', () => numDrawCalls++);
+  scatterplot.subscribe('transition-start', () => numTransitionStartCalls++);
+  scatterplot.subscribe('transition-end', () => numTransitionEndCalls++);
+
+  await scatterplot.draw([[0, 0]]);
+
+  t.equal(numDrawCalls, 1, 'should have one draw call');
+
+  const t0 = performance.now();
+  const transitionDuration = 250;
+
+  await scatterplot.draw([[1, 1]], { transition: true, transitionDuration });
+
+  t.equal(numTransitionStartCalls, 1, 'transition should have started once');
+  t.equal(numTransitionEndCalls, 1, 'transition should have ended once');
+  t.ok(
+    performance.now() - t0 >= transitionDuration,
+    `transition should have taken ${transitionDuration}msec or a bit longer`
+  );
+
+  scatterplot.destroy();
+});
+
 test('select()', async (t) => {
   const scatterplot = createScatterplot({ canvas: createCanvas() });
 
