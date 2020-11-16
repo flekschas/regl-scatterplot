@@ -1,3 +1,13 @@
+import {
+  cubicIn,
+  cubicInOut,
+  cubicOut,
+  linear,
+  quadIn,
+  quadInOut,
+  quadOut,
+} from '@flekschas/utils';
+
 export const COLOR_ACTIVE_IDX = 1;
 export const COLOR_BG_IDX = 3;
 export const COLOR_HOVER_IDX = 2;
@@ -5,6 +15,18 @@ export const COLOR_NORMAL_IDX = 0;
 export const COLOR_NUM_STATES = 4;
 export const FLOAT_BYTES = Float32Array.BYTES_PER_ELEMENT;
 export const GL_EXTENSIONS = ['OES_standard_derivatives', 'OES_texture_float'];
+
+// Easing
+export const EASING_FNS = {
+  cubicIn,
+  cubicInOut,
+  cubicOut,
+  linear,
+  quadIn,
+  quadInOut,
+  quadOut,
+};
+export const DEFAULT_EASING = cubicInOut;
 
 // Default lasso
 export const LASSO_CLEAR_ON_DESELECT = 'deselect';

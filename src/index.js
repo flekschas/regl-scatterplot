@@ -10,6 +10,8 @@ import BG_FS from './bg.fs';
 import BG_VS from './bg.vs';
 import POINT_FS from './point.fs';
 import POINT_VS from './point.vs';
+import POINT_UPDATE_FS from './point-update.fs';
+import POINT_UPDATE_VS from './point-update.vs';
 
 import {
   COLOR_ACTIVE_IDX,
@@ -27,6 +29,7 @@ import {
   DEFAULT_DESELECT_ON_DBL_CLICK,
   DEFAULT_DESELECT_ON_ESCAPE,
   DEFAULT_DISTANCE,
+  DEFAULT_EASING,
   DEFAULT_HEIGHT,
   DEFAULT_LASSO_COLOR,
   DEFAULT_LASSO_MIN_DELAY,
@@ -41,6 +44,7 @@ import {
   DEFAULT_TARGET,
   DEFAULT_VIEW,
   DEFAULT_WIDTH,
+  EASING_FNS,
   FLOAT_BYTES,
   LASSO_CLEAR_EVENTS,
   LASSO_CLEAR_ON_DESELECT,
@@ -177,10 +181,17 @@ const createScatterplot = (initialProperties = {}) => {
   pointColorsHover = pointColorsHover.map((color) => toRgba(color, true));
 
   let stateTex; // Stores the point texture holding x, y, category, and value
+  let prevStateTex; // Stores the previous point texture. Used for transitions
+  let tmpStateTex; // Stores a temporary point texture. Used for transitions
+  let tmpStateBuffer; // Temporary frame buffer
   let stateTexRes = 0; // Width and height of the texture
   let normalPointsIndexBuffer; // Buffer holding the indices pointing to the correct texel
   let selectedPointsIndexBuffer; // Used for pointing to the selected texels
   let hoveredPointIndexBuffer; // Used for pointing to the hovered texels
+
+  let isTransitioning = false;
+  let transitionStartTime = null;
+  let transitionRafId = null;
 
   let colorTex; // Stores the color texture
   let colorTexRes = 0; // Width and height of the texture
@@ -645,7 +656,7 @@ const createScatterplot = (initialProperties = {}) => {
   const getSelectedPointsIndexBuffer = () => selectedPointsIndexBuffer;
   const getPointSize = () => pointSize * window.devicePixelRatio;
   const getNormalPointSizeExtra = () => 0;
-  const getStateTex = () => stateTex;
+  const getStateTex = () => tmpStateTex || stateTex;
   const getStateTexRes = () => stateTexRes;
   const getProjection = () => projection;
   const getView = () => camera.view;
@@ -655,6 +666,25 @@ const createScatterplot = (initialProperties = {}) => {
   const getIsColoredByCategory = () => (colorBy === 'category') * 1;
   const getIsColoredByValue = () => (colorBy === 'value') * 1;
   const getMaxColorTexIdx = () => pointColors.length - 1;
+
+  const updatePoints = regl({
+    framebuffer: () => tmpStateBuffer,
+
+    vert: POINT_UPDATE_VS,
+    frag: POINT_UPDATE_FS,
+
+    attributes: {
+      position: [-4, 0, 4, 4, 4, -4],
+    },
+
+    uniforms: {
+      startStateTex: () => prevStateTex,
+      endStateTex: () => stateTex,
+      t: (ctx, props) => props.t,
+    },
+
+    count: 3,
+  });
 
   const drawPoints = (
     getPointSizeExtra,
@@ -888,6 +918,40 @@ const createScatterplot = (initialProperties = {}) => {
     });
   };
 
+  const cachePoints = (newPoints) => {
+    if (!stateTex) return false;
+
+    if (isTransitioning) {
+      const tmp = prevStateTex;
+      prevStateTex = tmpStateTex;
+      tmp.destroy();
+    } else {
+      prevStateTex = stateTex;
+    }
+
+    tmpStateTex = createStateTexture(newPoints);
+    tmpStateBuffer = regl.framebuffer({
+      color: tmpStateTex,
+      depth: false,
+      stencil: false,
+    });
+    stateTex = undefined;
+
+    return true;
+  };
+
+  const clearCachedPoints = () => {
+    if (prevStateTex) {
+      prevStateTex.destroy();
+      prevStateTex = undefined;
+    }
+
+    if (tmpStateTex) {
+      tmpStateTex.destroy();
+      tmpStateTex = undefined;
+    }
+  };
+
   const setPoints = (newPoints) => {
     isInit = false;
 
@@ -912,7 +976,7 @@ const createScatterplot = (initialProperties = {}) => {
     isInit = true;
   };
 
-  const draw = (showRecticleOnce = false) => {
+  const draw = (showRecticleOnce) => {
     if (!isInit || !regl) return;
 
     regl.clear({
@@ -959,11 +1023,85 @@ const createScatterplot = (initialProperties = {}) => {
 
   const drawRaf = withRaf(draw, drawHandler);
 
-  const publicDraw = (newPoints, showRecticleOnce = false) =>
+  const tween = (duration, easing, drawArgs) => {
+    if (!transitionStartTime) transitionStartTime = performance.now();
+
+    const dt = performance.now() - transitionStartTime;
+
+    updatePoints({ t: Math.min(1, Math.max(0, easing(dt / duration))) });
+
+    draw.apply(drawArgs);
+    pubSub.publish('draw');
+
+    return dt < duration;
+  };
+
+  const endTransition = () => {
+    isTransitioning = false;
+    transitionStartTime = null;
+
+    clearCachedPoints();
+
+    pubSub.publish('transition-end');
+  };
+
+  const transition = (duration, easing, drawArgs) => {
+    transitionRafId = window.requestAnimationFrame(() => {
+      if (tween(duration, easing, drawArgs))
+        transition(duration, easing, drawArgs);
+      else endTransition();
+    });
+  };
+
+  const startTransition = (
+    { duration = 500, easing = DEFAULT_EASING },
+    drawArgs = []
+  ) => {
+    const easingFn = isString(easing)
+      ? EASING_FNS[easing] || DEFAULT_EASING
+      : easing;
+
+    if (isTransitioning) {
+      pubSub.publish('transition-end');
+      window.cancelAnimationFrame(transitionRafId);
+    }
+
+    isTransitioning = true;
+    transitionStartTime = null;
+
+    transition(duration, easingFn, drawArgs);
+    pubSub.publish('transition-start');
+  };
+
+  const publicDraw = (newPoints, options = {}) =>
     new Promise((resolve) => {
-      if (newPoints) setPoints(newPoints);
-      pubSub.subscribe('draw', resolve, 1);
-      drawRaf(showRecticleOnce);
+      let pointsCached = false;
+      if (newPoints) {
+        if (options.transition) {
+          if (newPoints.length === numPoints) {
+            pointsCached = cachePoints(newPoints);
+          } else {
+            console.warn(
+              'Cannot transition! The number of points between the previous and current draw call must be identical.'
+            );
+          }
+        }
+        setPoints(newPoints);
+      }
+
+      if (transition && pointsCached) {
+        pubSub.subscribe('transition-end', resolve, 1);
+        startTransition(
+          {
+            duration: options.transitionDuration,
+            easing: options.transitionEasing,
+          },
+          [options.showRecticleOnce]
+        );
+      } else {
+        pubSub.subscribe('draw', resolve, 1);
+        drawRaf(options.showRecticleOnce);
+      }
     });
 
   const withDraw = (f) => (...args) => {

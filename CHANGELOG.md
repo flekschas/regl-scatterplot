@@ -1,5 +1,9 @@
 ## Next
 
+## v0.13.0
+
+- Add support for transitioning points via `scatterplot.draw(updatedPoints, { transition: true})`
+
 ## v0.12.0
 
 - Add `deselectOnDblClick` and `deselectOnEscape` to allow disabling deselection on double click or escape when set to `false` (#31)
