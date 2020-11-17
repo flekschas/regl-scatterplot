@@ -67,7 +67,6 @@ const scatterplot = createScatterplot({
   recticleColor,
 });
 
-console.log(scatterplot.get('pointColorActive'));
 console.log(`Scatterplot v${scatterplot.get('version')}`);
 
 scatterplot.subscribe('pointover', pointoverHandler);
