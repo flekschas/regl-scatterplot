@@ -3,6 +3,7 @@
 ## v0.13.0
 
 - Add support for transitioning points via `scatterplot.draw(updatedPoints, { transition: true})`
+- Add support for size encoding the points' category or value via `scatterplot.set({ sizeBy })`
 
 ## v0.12.0
 

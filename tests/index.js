@@ -1,4 +1,4 @@
-/* eslint no-console: 1, no-undef: 1 */
+/* eslint no-console: 1, no-undef: 1, no-unused-vars: 1 */
 
 import '@babel/polyfill';
 import { test } from 'zora';
@@ -7,7 +7,6 @@ import { mat4 } from 'gl-matrix';
 
 import { version } from '../package.json';
 
-// import createScatterplot from '../src';
 import createScatterplot, { createRegl, createTextureFromUrl } from '../src';
 import {
   DEFAULT_COLOR_NORMAL,
@@ -400,6 +399,26 @@ test('set({ colorBy })', (t) => {
   scatterplot.destroy();
 });
 
+test('set({ sizeBy })', (t) => {
+  const scatterplot = createScatterplot({ canvas: createCanvas() });
+
+  const sizeBy = 'category';
+
+  scatterplot.set({ sizeBy });
+
+  t.equal(
+    scatterplot.get('sizeBy'),
+    sizeBy,
+    `sizeBy should be set to ${sizeBy}`
+  );
+
+  scatterplot.set({ sizeBy: null });
+
+  t.equal(scatterplot.get('sizeBy'), null, 'sizeBy should be nullifyable');
+
+  scatterplot.destroy();
+});
+
 test('set({ pointColor, pointColorActive, pointColorHover }) single color', (t) => {
   const canvas = createCanvas();
   const scatterplot = createScatterplot({ canvas });
@@ -663,18 +682,23 @@ test('set({ pointSize })', async (t) => {
 
   scatterplot.set({ pointSize });
 
-  t.equal(
-    scatterplot.get('pointSize'),
-    pointSize,
+  t.ok(
+    flatArrayEqual(scatterplot.get('pointSize'), [pointSize]),
     `pointSize should be set to ${pointSize}`
   );
 
   scatterplot.set({ pointSize: 0 });
 
-  t.equal(
-    scatterplot.get('pointSize'),
-    pointSize,
+  t.ok(
+    flatArrayEqual(scatterplot.get('pointSize'), [pointSize]),
     'pointSize should not be nullifyable'
+  );
+
+  scatterplot.set({ pointSize: [2, 4, 6] });
+
+  t.ok(
+    flatArrayEqual([2, 4, 6], scatterplot.get('pointSize')),
+    'pointSize should accept multiple sizes'
   );
 
   scatterplot.destroy();

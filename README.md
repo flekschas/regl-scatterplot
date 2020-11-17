@@ -70,7 +70,7 @@ scatterplot.draw([
 ]);
 ```
 
-To color points by category, set `pointColor` to a list of colors. For performance reasons, regl-scatterplot assumes that the category `0` refers to the first color, `1` refers to the second color, etc. Mathematically, regl-scatterplot maps categories to colors as follows: `category => category % colors.length`.
+To color points by category, set `pointColor` to an array of colors. For performance reasons, regl-scatterplot assumes that the category `0` refers to the first color, `1` refers to the second color, etc. Mathematically, regl-scatterplot maps categories to colors as follows: `category => category % colors.length`.
 
 ```javascript
 const colorsCat = ['#3a78aa', '#aa3a99'];
@@ -85,6 +85,37 @@ scatterplot.set({ colorBy: 'value', pointColor: blackToWhite });
 ```
 
 For a complete example see [example/index.js](example/index.js).
+
+#### Size by value or category
+
+Similar to [coloring by value or category](#color-by-value-or-category), you can encode the value or category as the point size.
+
+```javascript
+scatterplot.draw([
+  // x, y, category, value
+  [0.2, -0.1, 0, 0.1337],
+  [0.3, 0.1, 1, 0.3371],
+  [-0.9, 0.8, 2, 0.3713],
+]);
+```
+
+To color points by category, set `pointSize` to an array of sizes. For performance reasons, regl-scatterplot assumes that the category `0` refers to the first size, `1` refers to the second size, etc.
+
+```javascript
+const pointSize = [2, 4, 6];
+scatterplot.set({ sizeBy: 'category', pointSize: colorsCat });
+```
+
+To apply _"continuous"_ point sizes use `sizeBy: 'value'` and set `pointSize` to a precomputed array of point sizes. For performance reasons, regl-scatterplot assumes that the values are in `[0,1]` .
+
+```javascript
+const pointSize = Array(100)
+  .fill()
+  .map((v, i) => i + 1);
+scatterplot.set({ sizeBy: 'value', pointSize });
+```
+
+For a complete example see [example/size-encoding.js](example/size-encoding.js).
 
 #### Synchronize D3 x and y scales with the scatterplot view
 
@@ -138,7 +169,7 @@ Sets and draws `points`. Note that repeatedly calling this method without specif
 
 **Arguments:**
 
-- `points` is an array of quadruples defining the point data. Each quadruple must be of the form `[x, y, category, value]` where `category` and `value` are optional and can be used for [coloring the points](#color-by-value-or-category).
+- `points` is an array of quadruples defining the point data. Each quadruple must be of the form `[x, y, category, value]` where `category` and `value` are optional and can be used for [color encoding](#color-by-value-or-category) or [size encoding](#size-by-value-or-category).
 - `options` is an object with the following properties:
   - `transition` [default: `false`]: if `true` and if the current number of points equals `points.length`, the current points will be transitioned to the new points
   - `transitionDuration` [default: `500`]: the duration in milliseconds over which the transition should occur
@@ -157,7 +188,7 @@ const points = [
     0.3,
     // The category, which defaults to `0` if `undefined`
     0,
-    // Some value, which defaults to `0` if `undefined`
+    // A continuous value between [0,1], which defaults to `0` if `undefined`
     0.5,
   ],
 ];
@@ -213,6 +244,7 @@ Clears previously drawn points.
 | cameraRotation     | float           | `0`                                 |                                                                 | `true`   | `false`     |
 | cameraView         | Float32Array    | `[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1`] |                                                                 | `true`   | `false`     |
 | colorBy            | string          | `null`                              | `category` or `value`                                           | `true`   | `true`      |
+| sizeBy             | string          | `null`                              | `category` or `value`                                           | `true`   | `true`      |
 | deselectOnDblClick | boolean         | `true`                              |                                                                 | `true`   | `false`     |
 | deselectOnEscape   | boolean         | `true`                              |                                                                 | `true`   | `false`     |
 | opacity            | float           | `1`                                 | > 0                                                             | `true`   | `false`     |
