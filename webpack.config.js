@@ -7,6 +7,7 @@ module.exports = (env, argv) => ({
     twoInstances: './example/two-instances.js',
     axes: './example/axes.js',
     transition: './example/transition.js',
+    sizeEncoding: './example/size-encoding.js',
   },
   output: {
     path: `${__dirname}/docs`,
@@ -52,6 +53,11 @@ module.exports = (env, argv) => ({
       template: 'example/index.html',
       filename: 'transition.html',
       chunks: ['transition'],
+    }),
+    new HtmlWebpackPlugin({
+      template: 'example/index.html',
+      filename: 'size-encoding.html',
+      chunks: ['sizeEncoding'],
     }),
   ],
 });
