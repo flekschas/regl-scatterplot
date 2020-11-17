@@ -40,6 +40,7 @@ import {
   DEFAULT_POINT_OUTLINE_WIDTH,
   DEFAULT_POINT_SIZE,
   DEFAULT_POINT_SIZE_SELECTED,
+  DEFAULT_SIZE_BY,
   DEFAULT_ROTATION,
   DEFAULT_TARGET,
   DEFAULT_VIEW,
@@ -57,6 +58,8 @@ import {
   createTextureFromUrl,
   dist,
   getBBox,
+  isConditionalArray,
+  isPositiveNumber,
   isMultipleColors,
   isPointInPolygon,
   isString,
@@ -118,6 +121,7 @@ const createScatterplot = (initialProperties = {}) => {
     pointSize: initialPointSize = DEFAULT_POINT_SIZE,
     pointSizeSelected: initialPointSizeSelected = DEFAULT_POINT_SIZE_SELECTED,
     pointOutlineWidth: initialPointOutlineWidth = DEFAULT_POINT_OUTLINE_WIDTH,
+    sizeBy: initialSizeBy = DEFAULT_SIZE_BY,
     width: initialWidth = DEFAULT_WIDTH,
     height: initialHeight = DEFAULT_HEIGHT,
     target: initialTarget,
@@ -136,7 +140,11 @@ const createScatterplot = (initialProperties = {}) => {
   let canvas = initialCanvas;
   let width = initialWidth;
   let height = initialHeight;
-  let pointSize = initialPointSize;
+  let pointSize = isConditionalArray(initialPointSize, isPositiveNumber, {
+    minLength: 1,
+  })
+    ? [...initialPointSize]
+    : [initialPointSize];
   let pointSizeSelected = initialPointSizeSelected;
   let pointOutlineWidth = initialPointOutlineWidth;
   let regl = initialRegl || createRegl(initialCanvas);
@@ -167,13 +175,13 @@ const createScatterplot = (initialProperties = {}) => {
   let deselectOnEscape = initialDeselectOnEscape;
 
   let pointColors = isMultipleColors(initialPointColor)
-    ? initialPointColor
+    ? [...initialPointColor]
     : [initialPointColor];
   let pointColorsActive = isMultipleColors(initialPointColorActive)
-    ? initialPointColorActive
+    ? [...initialPointColorActive]
     : [initialPointColorActive];
   let pointColorsHover = isMultipleColors(initialPointColorHover)
-    ? initialPointColorHover
+    ? [...initialPointColorHover]
     : [initialPointColorHover];
 
   pointColors = pointColors.map((color) => toRgba(color, true));
@@ -193,10 +201,13 @@ const createScatterplot = (initialProperties = {}) => {
   let transitionStartTime = null;
   let transitionRafId = null;
 
-  let colorTex; // Stores the color texture
+  let colorTex; // Stores the point color texture
   let colorTexRes = 0; // Width and height of the texture
+  let pointSizeTex; // Stores the point sizes
+  let pointSizeTexRes = 0; // Width and height of the texture
 
   let colorBy = initialColorBy;
+  let sizeBy = initialSizeBy;
   let isViewChanged = false;
   let isInit = false;
 
@@ -454,6 +465,21 @@ const createScatterplot = (initialProperties = {}) => {
     drawRaf(); // eslint-disable-line no-use-before-define
   };
 
+  const createPointSizeTexture = () => {
+    const numPointSizes = pointSize.length;
+    pointSizeTexRes = Math.max(2, Math.ceil(Math.sqrt(numPointSizes)));
+    const rgba = new Float32Array(pointSizeTexRes ** 2 * 4);
+    pointSize.forEach((size, i) => {
+      rgba[i * 4] = size;
+    });
+
+    return regl.texture({
+      data: rgba,
+      shape: [pointSizeTexRes, pointSizeTexRes, 4],
+      type: 'float',
+    });
+  };
+
   const getColors = () => {
     const n = pointColors.length;
     const n2 = pointColorsActive.length;
@@ -601,8 +627,12 @@ const createScatterplot = (initialProperties = {}) => {
   };
 
   const setPointSize = (newPointSize) => {
-    if (!+newPointSize || +newPointSize <= 0) return;
-    pointSize = +newPointSize;
+    if (isConditionalArray(newPointSize, isPositiveNumber, { minLength: 1 }))
+      pointSize = [...newPointSize];
+
+    if (isPositiveNumber(+newPointSize)) pointSize = [+newPointSize];
+
+    pointSizeTex = createPointSizeTexture();
   };
 
   const setPointSizeSelected = (newPointSizeSelected) => {
@@ -649,12 +679,29 @@ const createScatterplot = (initialProperties = {}) => {
     colorTex = createColorTexture();
   };
 
+  const setSizeBy = (type) => {
+    switch (type) {
+      case 'category':
+        sizeBy = 'category';
+        break;
+
+      case 'value':
+        sizeBy = 'value';
+        break;
+
+      default:
+        sizeBy = DEFAULT_SIZE_BY;
+    }
+  };
+
   const getBackgroundImage = () => backgroundImage;
   const getColorTex = () => colorTex;
   const getColorTexRes = () => colorTexRes;
+  const getDevicePixelRatio = () => window.devicePixelRatio;
   const getNormalPointsIndexBuffer = () => normalPointsIndexBuffer;
   const getSelectedPointsIndexBuffer = () => selectedPointsIndexBuffer;
-  const getPointSize = () => pointSize * window.devicePixelRatio;
+  const getPointSizeTex = () => pointSizeTex;
+  const getPointSizeTexRes = () => pointSizeTexRes;
   const getNormalPointSizeExtra = () => 0;
   const getStateTex = () => tmpStateTex || stateTex;
   const getStateTexRes = () => stateTexRes;
@@ -665,7 +712,10 @@ const createScatterplot = (initialProperties = {}) => {
   const getNormalNumPoints = () => numPoints;
   const getIsColoredByCategory = () => (colorBy === 'category') * 1;
   const getIsColoredByValue = () => (colorBy === 'value') * 1;
+  const getIsSizedByCategory = () => (sizeBy === 'category') * 1;
+  const getIsSizedByValue = () => (sizeBy === 'value') * 1;
   const getMaxColorTexIdx = () => pointColors.length - 1;
+  const getMaxPointSizeTexIdx = () => pointSize.length;
 
   const updatePoints = regl({
     framebuffer: () => tmpStateBuffer,
@@ -719,8 +769,10 @@ const createScatterplot = (initialProperties = {}) => {
         projection: getProjection,
         model: getModel,
         view: getView,
+        devicePixelRatio: getDevicePixelRatio,
         scaling: getScaling,
-        pointSize: getPointSize,
+        pointSizeTex: getPointSizeTex,
+        pointSizeTexRes: getPointSizeTexRes,
         pointSizeExtra: getPointSizeExtra,
         globalState,
         colorTex: getColorTex,
@@ -729,8 +781,11 @@ const createScatterplot = (initialProperties = {}) => {
         stateTexRes: getStateTexRes,
         isColoredByCategory: getIsColoredByCategory,
         isColoredByValue: getIsColoredByValue,
+        isSizedByCategory: getIsSizedByCategory,
+        isSizedByValue: getIsSizedByValue,
         maxColorTexIdx: getMaxColorTexIdx,
         numColorStates: COLOR_NUM_STATES,
+        maxPointSizeTexIdx: getMaxPointSizeTexIdx,
       },
 
       count: getNumPoints,
@@ -1239,6 +1294,7 @@ const createScatterplot = (initialProperties = {}) => {
     if (property === 'cameraView') return camera.view;
     if (property === 'canvas') return canvas;
     if (property === 'colorBy') return colorBy;
+    if (property === 'sizeBy') return sizeBy;
     if (property === 'deselectOnDblClick') return deselectOnDblClick;
     if (property === 'deselectOnEscape') return deselectOnEscape;
     if (property === 'height') return height;
@@ -1317,6 +1373,18 @@ const createScatterplot = (initialProperties = {}) => {
       setPointColorsHover(properties.pointColorHover);
     }
 
+    if (properties.pointSize !== undefined) {
+      setPointSize(properties.pointSize);
+    }
+
+    if (properties.pointSizeSelected !== undefined) {
+      setPointSizeSelected(properties.pointSizeSelected);
+    }
+
+    if (properties.sizeBy !== undefined) {
+      setSizeBy(properties.sizeBy);
+    }
+
     if (properties.opacity !== undefined) {
       setOpacity(properties.opacity);
     }
@@ -1347,14 +1415,6 @@ const createScatterplot = (initialProperties = {}) => {
 
     if (properties.pointOutlineWidth !== undefined) {
       setPointOutlineWidth(properties.pointOutlineWidth);
-    }
-
-    if (properties.pointSize !== undefined) {
-      setPointSize(properties.pointSize);
-    }
-
-    if (properties.pointSizeSelected !== undefined) {
-      setPointSizeSelected(properties.pointSizeSelected);
     }
 
     if (properties.height !== undefined) {
@@ -1502,6 +1562,7 @@ const createScatterplot = (initialProperties = {}) => {
     });
 
     colorTex = createColorTexture();
+    pointSizeTex = createPointSizeTexture();
 
     // Set dimensions
     set({ backgroundImage: initialBackgroundImage, width, height });

@@ -102,6 +102,11 @@ export const hexToRgb = (hex, isNormalize = false) =>
     .match(/.{2}/g)
     .map((x) => parseInt(x, 16) / 255 ** isNormalize);
 
+export const isConditionalArray = (a, condition, { minLength = 0 } = {}) =>
+  Array.isArray(a) && a.length >= minLength && a.every(condition);
+
+export const isPositiveNumber = (x) => !Number.isNaN(+x) && +x > 0;
+
 /**
  * Create a function to limit choices to a predefined list
  * @param   {array}  choices  Array of acceptable choices
