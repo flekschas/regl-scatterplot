@@ -200,6 +200,7 @@ const createScatterplot = (initialProperties = {}) => {
   let isTransitioning = false;
   let transitionStartTime = null;
   let transitionRafId = null;
+  let preTransitionShowRecticle = showRecticle;
 
   let colorTex; // Stores the point color texture
   let colorTexRes = 0; // Width and height of the texture
@@ -1094,6 +1095,7 @@ const createScatterplot = (initialProperties = {}) => {
   const endTransition = () => {
     isTransitioning = false;
     transitionStartTime = null;
+    showRecticle = preTransitionShowRecticle;
 
     clearCachedPoints();
 
@@ -1123,6 +1125,8 @@ const createScatterplot = (initialProperties = {}) => {
 
     isTransitioning = true;
     transitionStartTime = null;
+    preTransitionShowRecticle = showRecticle;
+    showRecticle = false;
 
     transition(duration, easingFn, drawArgs);
     pubSub.publish('transition-start');

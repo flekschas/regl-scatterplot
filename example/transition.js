@@ -160,14 +160,16 @@ setNumPoint(numPoints);
 
 let i = 0;
 const transitionPoints = () => {
-  i = (i + 1) % pointStates.length;
+  i++;
   scatterplot
-    .draw(pointStates[i], {
+    .draw(pointStates[i % pointStates.length], {
       transition: true,
-      transitionDuration: 1000,
+      transitionDuration: 1000 - ((i - 1) % 5) * 150,
       transitionEasing: 'quadInOut',
     })
-    .then(transitionPoints);
+    .then(() => {
+      setTimeout(transitionPoints, +!(i % 5) * 3000);
+    });
 };
 
 transitionPoints();
