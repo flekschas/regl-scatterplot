@@ -316,7 +316,7 @@ scatterplot.set({ backgroundImage: 'https://server.com/my-image.png' });
 // If you need to know when the image was loaded you have two options. First,
 // you can listen to the following event
 scatterplot.subscribe(
-  'background-image-ready',
+  'backgroundImageReady',
   () => {
     console.log('Background image is now loaded and rendered!');
   },
@@ -415,15 +415,12 @@ Sets the view back to the initially defined view.
 
 Subscribe to an event.
 
-**eventName** needs to be one of the following events:
+**Arguments:**
 
-- `pointover` [payload: `point`]: broadcasted when the mouse cursor is over a point
-- `pointout` [payload: `point`]: broadcasted when the mouse cursor moves out of a point
-- `select` [payload: `{ points }`]: broadcasted when points are selected
-- `deselect` [payload: `undefined`]: broadcasted when points are deselected
-- `view` [payload: `{ camera, view, xScale, yScale }`]: broadcasted when the view changes
+- `eventName` needs to be [a valid event name](#events).
+- `eventHandler` needs to be a callback function that can receive the payload.
 
-**eventHandler** needs to be a callback function that can receive the payload.
+**Returns:** an unsubscriber object that can be passed into [`unsubscribe()`](#scatterplot.unsubscribe).
 
 <a name="scatterplot.unsubscribe" href="#scatterplot.unsubscribe">#</a> scatterplot.<b>unsubscribe</b>(<i>eventName</i>, <i>eventHandler</i>)
 
@@ -435,6 +432,22 @@ events.
 **Returns:** a Promise that resolves to a [Regl texture](https://github.com/regl-project/regl/blob/gh-pages/API.md#textures) that can be used, for example, as the [background image](#).
 
 **url:** the URL to an image.
+
+### Events
+
+| Name                 | Trigger                                    | Payload                            |
+| -------------------- | ------------------------------------------ | ---------------------------------- |
+| backgroundImageReady | when the background image was loaded       | `undefined`                        |
+| pointOver            | when the mouse cursor is over a point      | pointIndex                         |
+| pointOut             | when the mouse cursor moves out of a point | pointIndex                         |
+| select               | when points are selected                   | `{ points }`                       |
+| deselect             | when points are deselected                 | `undefined`                        |
+| view                 | when the view has changes                  | `{ camera, view, xScale, yScale }` |
+| draw                 | when the plot was drawn                    | `{ camera, view, xScale, yScale }` |
+| lassoStart           | when the lasso selection started           | `undefined`                        |
+| lassoEnd             | when the lasso selection ended             | `createRegl(canvas)`               |
+| transitionStart      | when points started to transition          | `undefined`                        |
+| transitionEnd        | when points ended to transition            | `createRegl(canvas)`               |
 
 ## Trouble Shooting
 
