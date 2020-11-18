@@ -1,5 +1,9 @@
 ## Next
 
+## v0.14.0
+
+- Add `lassoStart`, `lassoExtend`, and `lassoEnd` events
+
 ## v0.13.0
 
 - Add support for transitioning points via `scatterplot.draw(updatedPoints, { transition: true})`

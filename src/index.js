@@ -328,6 +328,8 @@ const createScatterplot = (initialProperties = {}) => {
         }
       }
     }
+
+    pubSub.publish('lassoExtend', { coordinates: lassoPoints });
   };
   let lassoExtendDb = withThrottle(lassoExtend, lassoMinDelay);
 
@@ -390,6 +392,7 @@ const createScatterplot = (initialProperties = {}) => {
     // Make sure we start a new lasso selection
     lassoPrevMousePos = undefined;
     lassoClear();
+    pubSub.publish('lassoStart');
   };
 
   const lassoEnd = () => {
@@ -399,6 +402,9 @@ const createScatterplot = (initialProperties = {}) => {
     // console.log(`found ${pointsInLasso.length} in ${performance.now() - t0} msec`);
     select(pointsInLasso);
     lassoPrevMousePos = undefined;
+    pubSub.publish('lassoEnd', {
+      coordinates: lassoPoints,
+    });
     if (lassoClearEvent === LASSO_CLEAR_ON_END) lassoClear();
   };
 
@@ -1099,7 +1105,7 @@ const createScatterplot = (initialProperties = {}) => {
 
     clearCachedPoints();
 
-    pubSub.publish('transition-end');
+    pubSub.publish('transitionEnd');
   };
 
   const transition = (duration, easing, drawArgs) => {
@@ -1119,7 +1125,7 @@ const createScatterplot = (initialProperties = {}) => {
       : easing;
 
     if (isTransitioning) {
-      pubSub.publish('transition-end');
+      pubSub.publish('transitionEnd');
       window.cancelAnimationFrame(transitionRafId);
     }
 
@@ -1129,7 +1135,7 @@ const createScatterplot = (initialProperties = {}) => {
     showRecticle = false;
 
     transition(duration, easingFn, drawArgs);
-    pubSub.publish('transition-start');
+    pubSub.publish('transitionStart');
   };
 
   const publicDraw = (newPoints, options = {}) =>
@@ -1149,7 +1155,7 @@ const createScatterplot = (initialProperties = {}) => {
       }
 
       if (transition && pointsCached) {
-        pubSub.subscribe('transition-end', resolve, 1);
+        pubSub.subscribe('transitionEnd', resolve, 1);
         startTransition(
           {
             duration: options.transitionDuration,

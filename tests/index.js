@@ -847,66 +847,88 @@ test('tests involving mouse events', async (t2) => {
     scatterplot.destroy();
   });
 
-  await t2.test('lasso selection with publish("select")', async (t) => {
-    const dim = 200;
-    const hdim = dim / 2;
-    const canvas = createCanvas(dim, dim);
-    const scatterplot = createScatterplot({ canvas, width: dim, height: dim });
+  await t2.test(
+    'lasso selection (with events: select, lassoStart, lassoExtend, and lassoEnd)',
+    async (t) => {
+      const dim = 200;
+      const hdim = dim / 2;
+      const canvas = createCanvas(dim, dim);
+      const scatterplot = createScatterplot({
+        canvas,
+        width: dim,
+        height: dim,
+      });
 
-    const points = [
-      [0, 0],
-      [1, 1],
-      [1, -1],
-      [-1, -1],
-      [-1, 1],
-    ];
-    await scatterplot.draw(points);
+      const points = [
+        [0, 0],
+        [1, 1],
+        [1, -1],
+        [-1, -1],
+        [-1, 1],
+      ];
+      await scatterplot.draw(points);
 
-    let selectedPoints = [];
-    const selectHandler = ({ points: newSelectedPoints }) => {
-      selectedPoints = [...newSelectedPoints];
-    };
-    const deselectHandler = () => {
-      selectedPoints = [];
-    };
-    scatterplot.subscribe('select', selectHandler);
-    scatterplot.subscribe('deselect', deselectHandler);
+      let selectedPoints = [];
+      const selectHandler = ({ points: newSelectedPoints }) => {
+        selectedPoints = [...newSelectedPoints];
+      };
+      const deselectHandler = () => {
+        selectedPoints = [];
+      };
+      scatterplot.subscribe('select', selectHandler);
+      scatterplot.subscribe('deselect', deselectHandler);
 
-    // Test multi selections via mousedown + mousemove
-    canvas.dispatchEvent(
-      createMouseEvent('mousedown', dim * 1.125, hdim, { shiftKey: true })
-    );
+      let lassoStartCount = 0;
+      let lassoExtendCount = 0;
+      let lassoEndCount = 0;
+      scatterplot.subscribe('lassoStart', () => ++lassoStartCount);
+      scatterplot.subscribe('lassoExtend', () => ++lassoExtendCount);
+      scatterplot.subscribe('lassoEnd', () => ++lassoEndCount);
 
-    // Needed to first digest the mousedown event
-    await wait(0);
+      // Test multi selections via mousedown + mousemove
+      canvas.dispatchEvent(
+        createMouseEvent('mousedown', dim * 1.125, hdim, { shiftKey: true })
+      );
 
-    const mousePositions = [
-      [dim * 1.125, hdim],
-      [hdim, -dim * 0.125],
-      [-dim * 0.125, -dim * 0.125],
-      [-dim * 0.125, dim * 0.125],
-      [0, dim * 0.9],
-      [dim * 0.1, dim * 0.9],
-      [dim * 0.1, dim * 1.125],
-      [dim * 1.125, dim * 1.125],
-    ];
+      // Needed to first digest the mousedown event
+      await wait(0);
 
-    await asyncForEach(mousePositions, async (mousePosition) => {
-      window.dispatchEvent(createMouseEvent('mousemove', ...mousePosition));
-      await wait(DEFAULT_LASSO_MIN_DELAY + 5);
-    });
+      const mousePositions = [
+        [dim * 1.125, hdim],
+        [hdim, -dim * 0.125],
+        [-dim * 0.125, -dim * 0.125],
+        [-dim * 0.125, dim * 0.125],
+        [0, dim * 0.9],
+        [dim * 0.1, dim * 0.9],
+        [dim * 0.1, dim * 1.125],
+        [dim * 1.125, dim * 1.125],
+      ];
 
-    window.dispatchEvent(createMouseEvent('mouseup'));
+      await asyncForEach(mousePositions, async (mousePosition) => {
+        window.dispatchEvent(createMouseEvent('mousemove', ...mousePosition));
+        await wait(DEFAULT_LASSO_MIN_DELAY + 5);
+      });
 
-    t.equal(selectedPoints.length, 3, 'should have selected 3 points');
-    t.deepEqual(
-      selectedPoints,
-      [0, 2, 4],
-      'should have selected the first, third, and fifth point'
-    );
+      window.dispatchEvent(createMouseEvent('mouseup'));
 
-    scatterplot.destroy();
-  });
+      t.equal(selectedPoints.length, 3, 'should have selected 3 points');
+      t.deepEqual(
+        selectedPoints,
+        [0, 2, 4],
+        'should have selected the first, third, and fifth point'
+      );
+
+      t.equal(lassoStartCount, 1, 'should have triggered lassoStart once');
+      t.equal(
+        lassoExtendCount,
+        mousePositions.length,
+        'should have triggered lassoExtend once'
+      );
+      t.equal(lassoEndCount, 1, 'should have triggered lassoEnd once');
+
+      scatterplot.destroy();
+    }
+  );
 
   await t2.test(
     'point hover with publish("pointover") and publish("pointout")',
@@ -1023,8 +1045,8 @@ test('draw() with transition', async (t) => {
   let numTransitionEndCalls = 0;
 
   scatterplot.subscribe('draw', () => numDrawCalls++);
-  scatterplot.subscribe('transition-start', () => numTransitionStartCalls++);
-  scatterplot.subscribe('transition-end', () => numTransitionEndCalls++);
+  scatterplot.subscribe('transitionStart', () => numTransitionStartCalls++);
+  scatterplot.subscribe('transitionEnd', () => numTransitionEndCalls++);
 
   await scatterplot.draw([[0, 0]]);
 
