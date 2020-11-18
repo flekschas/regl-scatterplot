@@ -4,6 +4,10 @@
 
 - Add `lassoStart`, `lassoExtend`, and `lassoEnd` events
 
+**Breaking changes:**
+
+- Renamed event `background-image-ready` to `backgroundImageReady` for consistency
+
 ## v0.13.0
 
 - Add support for transitioning points via `scatterplot.draw(updatedPoints, { transition: true})`

@@ -317,7 +317,7 @@ test('set({ backgroundImage })', async (t) => {
   scatterplot.set({ backgroundImage: 'https://picsum.photos/300/200/' });
 
   await new Promise((resolve) =>
-    scatterplot.subscribe('background-image-ready', resolve, 1)
+    scatterplot.subscribe('backgroundImageReady', resolve, 1)
   );
 
   t.equal(
@@ -333,7 +333,7 @@ test('set({ backgroundImage })', async (t) => {
   });
 
   await new Promise((resolve) =>
-    scatterplot.subscribe('background-image-ready', resolve, 1)
+    scatterplot.subscribe('backgroundImageReady', resolve, 1)
   );
 
   t.equal(

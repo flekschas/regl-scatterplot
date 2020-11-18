@@ -1188,7 +1188,7 @@ const createScatterplot = (initialProperties = {}) => {
       createTextureFromUrl(regl, newBackgroundImage).then((texture) => {
         backgroundImage = texture;
         drawRaf();
-        pubSub.publish('background-image-ready');
+        pubSub.publish('backgroundImageReady');
       });
     } else {
       backgroundImage = newBackgroundImage;
