@@ -881,9 +881,13 @@ test('tests involving mouse events', async (t2) => {
       let lassoStartCount = 0;
       let lassoExtendCount = 0;
       let lassoEndCount = 0;
+      let lassoEndCoordinates = [];
       scatterplot.subscribe('lassoStart', () => ++lassoStartCount);
       scatterplot.subscribe('lassoExtend', () => ++lassoExtendCount);
-      scatterplot.subscribe('lassoEnd', () => ++lassoEndCount);
+      scatterplot.subscribe('lassoEnd', ({ coordinates }) => {
+        ++lassoEndCount;
+        lassoEndCoordinates = coordinates;
+      });
 
       // Test multi selections via mousedown + mousemove
       canvas.dispatchEvent(
@@ -923,6 +927,11 @@ test('tests involving mouse events', async (t2) => {
         lassoExtendCount,
         mousePositions.length,
         'should have triggered lassoExtend once'
+      );
+      t.equal(
+        lassoEndCoordinates.length,
+        mousePositions.length,
+        `should have created a lasso with ${mousePositions.length} points`
       );
       t.equal(lassoEndCount, 1, 'should have triggered lassoEnd once');
 

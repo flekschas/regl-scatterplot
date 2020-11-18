@@ -444,8 +444,9 @@ events.
 | deselect             | when points are deselected                 | `undefined`                        |
 | view                 | when the view has changes                  | `{ camera, view, xScale, yScale }` |
 | draw                 | when the plot was drawn                    | `{ camera, view, xScale, yScale }` |
-| lassoStart           | when the lasso selection started           | `undefined`                        |
-| lassoEnd             | when the lasso selection ended             | `createRegl(canvas)`               |
+| lassoStart           | when the lasso selection has started       | `undefined`                        |
+| lassoExtend          | when the lasso selection has extended      | `{ coordinates }`                  |
+| lassoEnd             | when the lasso selection has ended         | `{ coordinates }`                  |
 | transitionStart      | when points started to transition          | `undefined`                        |
 | transitionEnd        | when points ended to transition            | `createRegl(canvas)`               |
 
