@@ -7,6 +7,7 @@
 **Breaking changes:**
 
 - Renamed event `background-image-ready` to `backgroundImageReady` for consistency
+- Switched to asynchronously broadcasted events to decouple regl-scatterplot's execution flow from the event handler. You can switch back to the old behavior if you like by initializing the scatterplot via `createScatterplot({ syncEvents: true })`
 
 ## v0.13.0
 
