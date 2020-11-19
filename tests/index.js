@@ -811,18 +811,23 @@ test('tests involving mouse events', async (t2) => {
     const deselectHandler = () => {
       selectedPoints = [];
     };
-    scatterplot.subscribe('select', selectHandler);
+    // Event names should be case insensitive. Let's test it
+    scatterplot.subscribe('sElEcT', selectHandler);
     scatterplot.subscribe('deselect', deselectHandler);
 
     // Test single selection via mouse clicks
     canvas.dispatchEvent(createMouseEvent('mousedown', hdim, hdim));
     canvas.dispatchEvent(createMouseEvent('click', hdim, hdim));
 
+    await wait(0);
+
     t.equal(selectedPoints.length, 1, 'should have selected one point');
     t.equal(selectedPoints[0], 0, 'should have selected the first point');
 
     // Test deselection
     canvas.dispatchEvent(createMouseEvent('dblclick', hdim, hdim));
+
+    await wait(0);
 
     t.equal(selectedPoints.length, 0, 'should have deselected one point');
 
@@ -834,6 +839,8 @@ test('tests involving mouse events', async (t2) => {
     );
     canvas.dispatchEvent(createMouseEvent('click', hdim, hdim));
 
+    await wait(0);
+
     t.equal(selectedPoints.length, 0, 'should *not* have selected one point');
 
     // Test that clearing the points works. The selection that worked previously
@@ -841,6 +848,8 @@ test('tests involving mouse events', async (t2) => {
     scatterplot.clear();
     window.dispatchEvent(createMouseEvent('mousedown', hdim, hdim));
     canvas.dispatchEvent(createMouseEvent('click', hdim, hdim));
+
+    await wait(0);
 
     t.equal(selectedPoints.length, 0, 'should *not* have selected one point');
 
@@ -915,6 +924,8 @@ test('tests involving mouse events', async (t2) => {
 
       window.dispatchEvent(createMouseEvent('mouseup'));
 
+      await wait(0);
+
       t.equal(selectedPoints.length, 3, 'should have selected 3 points');
       t.deepEqual(
         selectedPoints,
@@ -980,6 +991,8 @@ test('tests involving mouse events', async (t2) => {
 
       // Test deselection
       window.dispatchEvent(createMouseEvent('mousemove', hdim / 2, hdim));
+
+      await wait(0);
 
       t.equal(hoveredPoint, null, 'should not be hovering any point');
 

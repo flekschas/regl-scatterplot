@@ -90,7 +90,10 @@ const checkDeprecations = (properties) => {
 };
 
 const createScatterplot = (initialProperties = {}) => {
-  const pubSub = createPubSub();
+  const pubSub = createPubSub({
+    async: !initialProperties.syncEvents,
+    caseInsensitive: true,
+  });
   const scratch = new Float32Array(16);
   const mousePosition = [0, 0];
 

@@ -232,6 +232,7 @@ Clears previously drawn points.
 | ------------------ | --------------- | ----------------------------------- | --------------------------------------------------------------- | -------- | ----------- |
 | canvas             | object          | `document.createElement('canvas')`  |                                                                 | `false`  | `false`     |
 | regl               | object          | `createRegl(canvas)`                |                                                                 | `false`  | `false`     |
+| syncEvents         | boolean         | `false`                             |                                                                 | `false`  | `false`     |
 | version            | string          |                                     |                                                                 | `false`  | `false`     |
 | width              | integer         | `300`                               | > 0                                                             | `true`   | `false`     |
 | height             | integer         | `200`                               | > 0                                                             | `true`   | `false`     |
@@ -287,6 +288,12 @@ Clears previously drawn points.
 - Points can currently by colored by _category_ and _value_.
 
 - The size of selected points is given by `pointSize + pointSizeSelected`
+
+- By default, events are published asynchronously to decouple regl-scatterplot's
+  execution flow from the event consumer's process. However, you can enable
+  synchronous event broadcasting at your own risk via
+  `createScatterplot({ syncEvents: true })`. This property can't be changed
+  after initialization!
 
 **Examples:**
 
