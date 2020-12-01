@@ -13,6 +13,8 @@ import POINT_VS from './point.vs';
 import POINT_UPDATE_FS from './point-update.fs';
 import POINT_UPDATE_VS from './point-update.vs';
 
+import createSplineCurve from './spline-curve';
+
 import {
   COLOR_ACTIVE_IDX,
   COLOR_BG_IDX,
@@ -171,6 +173,7 @@ const createScatterplot = (initialProperties = {}) => {
   let projection;
   let model;
   let showRecticle = initialShowRecticle;
+  let pointConnections;
   let recticleHLine;
   let recticleVLine;
   let recticleColor = toRgba(initialRecticleColor, true);
@@ -1041,6 +1044,19 @@ const createScatterplot = (initialProperties = {}) => {
     isInit = true;
   };
 
+  const setPointConnections = (newPoints) =>
+    new Promise((resolve) => {
+      if (!newPoints.length) {
+        pointConnections.setPoints([]);
+        resolve();
+      } else {
+        createSplineCurve(newPoints).then((curvePoints) => {
+          pointConnections.setPoints(curvePoints);
+          resolve();
+        });
+      }
+    });
+
   const draw = (showRecticleOnce) => {
     if (!isInit || !regl) return;
 
@@ -1058,6 +1074,12 @@ const createScatterplot = (initialProperties = {}) => {
     }
 
     // The draw order of the following calls is important!
+    if (!isTransitioning)
+      pointConnections.draw({
+        projection: getProjection(),
+        model: getModel(),
+        view: getView(),
+      });
     drawPointBodies();
     if (!mouseDown && (showRecticle || showRecticleOnce)) drawRecticle();
     if (hoveredPoint >= 0) drawHoveredPoint();
@@ -1155,10 +1177,25 @@ const createScatterplot = (initialProperties = {}) => {
           }
         }
         setPoints(newPoints);
+        if (options.connectPoints) {
+          setPointConnections(newPoints).then(() => {
+            drawRaf(options.showRecticleOnce);
+          });
+        }
       }
 
       if (transition && pointsCached) {
-        pubSub.subscribe('transitionEnd', resolve, 1);
+        pubSub.subscribe(
+          'transitionEnd',
+          () => {
+            // Point connects cannot be transitioned yet so we hide them during
+            // the transition. Hence, we need to make sure we call `draw()` once
+            // the transition has ended.
+            drawRaf(options.showRecticleOnce);
+            resolve();
+          },
+          1
+        );
         startTransition(
           {
             duration: options.transitionDuration,
@@ -1543,6 +1580,7 @@ const createScatterplot = (initialProperties = {}) => {
 
   const clear = () => {
     setPoints([]);
+    pointConnections.clear();
   };
 
   const init = () => {
@@ -1551,6 +1589,11 @@ const createScatterplot = (initialProperties = {}) => {
     updateScales();
 
     lasso = createLine(regl, { color: lassoColor, width: 3, is2d: true });
+    pointConnections = createLine(regl, {
+      color: [1, 1, 1, 0.1],
+      width: 2,
+      is2d: true,
+    });
     recticleHLine = createLine(regl, {
       color: recticleColor,
       width: 1,
