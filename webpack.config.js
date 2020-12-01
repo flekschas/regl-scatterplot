@@ -8,6 +8,7 @@ module.exports = (env, argv) => ({
     axes: './example/axes.js',
     transition: './example/transition.js',
     sizeEncoding: './example/size-encoding.js',
+    connectedPoints: './example/connected-points.js',
   },
   output: {
     path: `${__dirname}/docs`,
@@ -58,6 +59,11 @@ module.exports = (env, argv) => ({
       template: 'example/index.html',
       filename: 'size-encoding.html',
       chunks: ['sizeEncoding'],
+    }),
+    new HtmlWebpackPlugin({
+      template: 'example/index.html',
+      filename: 'connected-points.html',
+      chunks: ['connectedPoints'],
     }),
   ],
 });
