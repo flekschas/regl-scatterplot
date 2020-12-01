@@ -4,6 +4,15 @@
 const worker = function worker() {
   const state = {};
 
+  /**
+   * Catmull-Rom interpolation
+   * @param {number} t - Progress value
+   * @param {array} p0 - First point
+   * @param {array} p1 - Second point
+   * @param {array} p2 - Third point
+   * @param {array} p3 - Forth point
+   * @return {number} Interpolated value
+   */
   const catmullRom = (t, p0, p1, p2, p3) => {
     const v0 = (p2 - p0) * 0.5;
     const v1 = (p3 - p1) * 0.5;
@@ -15,7 +24,14 @@ const worker = function worker() {
     );
   };
 
-  const getPoint = (t, points, maxPointIdx) => {
+  /**
+   * Interpolate a point with Catmull-Rom
+   * @param {number} t - Progress value
+   * @param {array} points - Key points
+   * @param {number}  maxPointIdx - Highest point index. Same as array.length - 1
+   * @return {array} Interpolated point
+   */
+  const interpolatePoint = (t, points, maxPointIdx) => {
     const p = maxPointIdx * t;
 
     const intPoint = Math.floor(p);
@@ -32,8 +48,27 @@ const worker = function worker() {
     ];
   };
 
+  /**
+   * Square distance
+   * @param {number} x1 - First x coordinate
+   * @param {number} y1 - First y coordinate
+   * @param {number} x2 - Second x coordinate
+   * @param {number} y2 - Second y coordinate
+   * @return {number} Distance
+   */
   const sqDist = (x1, y1, x2, y2) => (x1 - x2) ** 2 + (y1 - y2) ** 2;
 
+  /**
+   * Douglas Peucker square segment distance
+   * Implementation from https://github.com/mourner/simplify-js
+   * @author Vladimir Agafonkin
+   * @copyright Vladimir Agafonkin 2013
+   * @license BSD
+   * @param {array} p - Point
+   * @param {array} p1 - First boundary point
+   * @param {array} p2 - Second boundary point
+   * @return {number} Distance
+   */
   const sqSegDist = (p, p1, p2) => {
     let x = p1[0];
     let y = p1[1];
@@ -58,6 +93,19 @@ const worker = function worker() {
     return dx * dx + dy * dy;
   };
 
+  /**
+   * Douglas Peucker step function
+   * Implementation from https://github.com/mourner/simplify-js
+   * @author Vladimir Agafonkin
+   * @copyright Vladimir Agafonkin 2013
+   * @license BSD
+   * @param   {[type]}  points  [description]
+   * @param   {[type]}  first  [description]
+   * @param   {[type]}  last  [description]
+   * @param   {[type]}  tolerance  [description]
+   * @param   {[type]}  simplified  [description]
+   * @return  {[type]}  [description]
+   */
   const simplifyDPStep = (points, first, last, tolerance, simplified) => {
     let maxDist = tolerance;
     let index;
@@ -80,17 +128,33 @@ const worker = function worker() {
     }
   };
 
-  const simplifyDouglasPeucker = (points, sqTolerance) => {
+  /**
+   * Douglas Peucker. Implementation from https://github.com/mourner/simplify-js
+   * @author Vladimir Agafonkin
+   * @copyright Vladimir Agafonkin 2013
+   * @license BSD
+   * @param {array} points - List of points to be simplified
+   * @param {number} tolerance - Tolerance level. Points below this distance level will be ignored
+   * @return {array} Simplified point list
+   */
+  const simplifyDouglasPeucker = (points, tolerance) => {
     const last = points.length - 1;
     const simplified = [points[0]];
 
-    simplifyDPStep(points, 0, last, sqTolerance, simplified);
+    simplifyDPStep(points, 0, last, tolerance, simplified);
     simplified.push(points[last]);
 
     return simplified;
   };
 
-  const getPoints = (
+  /**
+   * Interpolate intermediate points between key points
+   * @param {array} points - Fixed key points
+   * @param {number} options.maxIntPointsPerSegment - Maximum number of points between two key points
+   * @param {number} options.tolerance - Simplification tolerance
+   * @return {array} Interpolated points including key points
+   */
+  const interpolatePoints = (
     points,
     { maxIntPointsPerSegment = 100, tolerance = 0.002 } = {}
   ) => {
@@ -112,7 +176,7 @@ const worker = function worker() {
 
       for (let j = 1; j < maxIntPointsPerSegment; j++) {
         const t = (i * maxIntPointsPerSegment + j) / maxOutPoints;
-        const intPoint = getPoint(t, points, maxPointIdx);
+        const intPoint = interpolatePoint(t, points, maxPointIdx);
 
         // Check squared distance simplification
         if (
@@ -139,21 +203,26 @@ const worker = function worker() {
     return outPoints.flat();
   };
 
-  const stratifyPoints = (points) => {
-    const stratifiedPoints = [];
+  /**
+   * Group points by line assignment (the fifth component of a point)
+   * @param {array} points - Flat list of points
+   * @return {array} List of lists of ordered points by line
+   */
+  const groupPoints = (points) => {
+    const groupedPoints = [];
 
     points.forEach((point) => {
       const isStruct = Array.isArray(point[4]);
       const segId = isStruct ? point[4][0] : point[4];
 
-      if (!stratifiedPoints[segId]) stratifiedPoints[segId] = [];
+      if (!groupedPoints[segId]) groupedPoints[segId] = [];
 
-      if (isStruct) stratifiedPoints[segId][point[4][1]] = point;
-      else stratifiedPoints[segId].push(point);
+      if (isStruct) groupedPoints[segId][point[4][1]] = point;
+      else groupedPoints[segId].push(point);
     });
 
     // The filtering ensures that non-existing array entries are removed
-    return stratifiedPoints.filter((x) => x).map((x) => x.filter((v) => v));
+    return groupedPoints.filter((x) => x).map((x) => x.filter((v) => v));
   };
 
   self.onmessage = function onmessage(event) {
@@ -164,10 +233,10 @@ const worker = function worker() {
 
     state.points = event.data.points;
 
-    const stratifiedPoints = stratifyPoints(event.data.points);
+    const groupedPoints = groupPoints(event.data.points);
 
-    const outPoints = stratifiedPoints.map((connectedPoints, i) => {
-      const curvePoints = getPoints(
+    const outPoints = groupedPoints.map((connectedPoints, i) => {
+      const curvePoints = interpolatePoints(
         connectedPoints,
         event.data.options,
         i === 0
