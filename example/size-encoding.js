@@ -58,8 +58,6 @@ const scatterplot = createScatterplot({
   recticleColor,
 });
 
-console.log('showRecticle', showRecticle);
-
 console.log(`Scatterplot v${scatterplot.get('version')}`);
 
 scatterplot.subscribe('select', selectHandler);
