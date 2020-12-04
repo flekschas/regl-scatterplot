@@ -3,11 +3,14 @@ precision highp float;
 
 uniform sampler2D colorTex;
 uniform float colorTexRes;
+uniform float colorTexEps;
 uniform sampler2D stateTex;
 uniform float stateTexRes;
+uniform float stateTexEps;
 uniform float devicePixelRatio;
 uniform sampler2D pointSizeTex;
 uniform float pointSizeTexRes;
+uniform float pointSizeTexEps;
 uniform float pointSizeExtra;
 uniform float numPoints;
 uniform float globalState;
@@ -30,11 +33,10 @@ varying vec4 color;
 
 void main() {
   // First get the state
-  float eps = 0.5 / stateTexRes;
-  float stateRowIndex = floor((stateIndex + eps) / stateTexRes);
+  float stateRowIndex = floor((stateIndex + stateTexEps) / stateTexRes);
   vec2 stateTexIndex = vec2(
-    (stateIndex / stateTexRes) - stateRowIndex + eps,
-    stateRowIndex / stateTexRes + eps
+    (stateIndex / stateTexRes) - stateRowIndex + stateTexEps,
+    stateRowIndex / stateTexRes + stateTexEps
   );
 
   vec4 state = texture2D(stateTex, stateTexIndex);
@@ -44,21 +46,19 @@ void main() {
   // Determine color index
   float colorIndexCat = state.z * isColoredByCategory;
   float colorIndexVal = floor(state.w * maxColorTexIdx) * isColoredByValue;
-  float colorIndex = colorIndexCat + colorIndexVal;
   // Multiply by the number of color states per color
   // I.e., normal, active, hover, background, etc.
-  colorIndex *= numColorStates;
+  float colorIndex = (colorIndexCat + colorIndexVal) * numColorStates;
   // Half a "pixel" or "texel" in texture coordinates
-  eps = 0.5 / colorTexRes;
   float colorLinearIndex = colorIndex + globalState;
   // Need to add cEps here to avoid floating point issue that can lead to
   // dramatic changes in which color is loaded as floor(3/2.9999) = 1 but
   // floor(3/3.0001) = 0!
-  float colorRowIndex = floor((colorLinearIndex + eps) / colorTexRes);
+  float colorRowIndex = floor((colorLinearIndex + colorTexEps) / colorTexRes);
 
   vec2 colorTexIndex = vec2(
-    (colorLinearIndex / colorTexRes) - colorRowIndex + eps,
-    colorRowIndex / colorTexRes + eps
+    (colorLinearIndex / colorTexRes) - colorRowIndex + colorTexEps,
+    colorRowIndex / colorTexRes + colorTexEps
   );
 
   color = texture2D(colorTex, colorTexIndex);
@@ -72,11 +72,10 @@ void main() {
   float pointSizeIndexVal = floor(state.w * maxPointSizeTexIdx) * isSizedByValue;
   float pointSizeIndex = pointSizeIndexCat + pointSizeIndexVal;
 
-  eps = 0.5 / pointSizeTexRes;
-  float pointSizeRowIndex = floor((pointSizeIndex + eps) / pointSizeTexRes);
+  float pointSizeRowIndex = floor((pointSizeIndex + pointSizeTexEps) / pointSizeTexRes);
   vec2 pointSizeTexIndex = vec2(
-    (pointSizeIndex / pointSizeTexRes) - pointSizeRowIndex + eps,
-    pointSizeRowIndex / pointSizeTexRes + eps
+    (pointSizeIndex / pointSizeTexRes) - pointSizeRowIndex + pointSizeTexEps,
+    pointSizeRowIndex / pointSizeTexRes + pointSizeTexEps
   );
   float pointSize = texture2D(pointSizeTex, pointSizeTexIndex).x;
 

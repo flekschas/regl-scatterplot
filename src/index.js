@@ -788,14 +788,17 @@ const createScatterplot = (initialProperties = {}) => {
   const getBackgroundImage = () => backgroundImage;
   const getColorTex = () => colorTex;
   const getColorTexRes = () => colorTexRes;
+  const getColorTexEps = () => 0.5 / colorTexRes;
   const getDevicePixelRatio = () => window.devicePixelRatio;
   const getNormalPointsIndexBuffer = () => normalPointsIndexBuffer;
   const getSelectedPointsIndexBuffer = () => selectedPointsIndexBuffer;
   const getPointSizeTex = () => pointSizeTex;
   const getPointSizeTexRes = () => pointSizeTexRes;
+  const getPointSizeTexEps = () => 0.5 / pointSizeTexRes;
   const getNormalPointSizeExtra = () => 0;
   const getStateTex = () => tmpStateTex || stateTex;
   const getStateTexRes = () => stateTexRes;
+  const getStateTexEps = () => 0.5 / stateTexRes;
   const getProjection = () => projection;
   const getView = () => camera.view;
   const getModel = () => model;
@@ -864,12 +867,15 @@ const createScatterplot = (initialProperties = {}) => {
         scaling: getScaling,
         pointSizeTex: getPointSizeTex,
         pointSizeTexRes: getPointSizeTexRes,
+        pointSizeTexEps: getPointSizeTexEps,
         pointSizeExtra: getPointSizeExtra,
         globalState,
         colorTex: getColorTex,
         colorTexRes: getColorTexRes,
+        colorTexEps: getColorTexEps,
         stateTex: getStateTex,
         stateTexRes: getStateTexRes,
+        stateTexEps: getStateTexEps,
         isColoredByCategory: getIsColoredByCategory,
         isColoredByValue: getIsColoredByValue,
         isSizedByCategory: getIsSizedByCategory,
