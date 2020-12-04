@@ -364,19 +364,19 @@ const createScatterplot = (initialProperties = {}) => {
     if (lasso) lasso.clear();
   };
 
-  const hasPointConnections = (points) => points.length && points[0].length > 4;
+  const hasPointConnections = (point) => point && point.length > 4;
 
-  const setPointConnectionColorState = (points, stateIndex) => {
+  const setPointConnectionColorState = (pointIdxs, stateIndex) => {
     if (
       computingPointConnectionCurves ||
       !showPointConnections ||
-      !hasPointConnections(points)
+      !hasPointConnections(searchIndex.points[pointIdxs[0]])
     )
       return;
 
     // Get line IDs
     const lineIds = Object.keys(
-      points.reduce((ids, pointIdx) => {
+      pointIdxs.reduce((ids, pointIdx) => {
         const point = searchIndex.points[pointIdx];
         const isStruct = Array.isArray(point[4]);
         const lineId = isStruct ? point[4][0] : point[4];
@@ -1294,7 +1294,8 @@ const createScatterplot = (initialProperties = {}) => {
         setPoints(newPoints);
         if (
           showPointConnections ||
-          (options.showPointConnectionsOnce && hasPointConnections(newPoints))
+          (options.showPointConnectionsOnce &&
+            hasPointConnections(newPoints[0]))
         ) {
           setPointConnections(newPoints).then(() => {
             pubSub.publish('pointConnectionsDraw');
