@@ -227,41 +227,42 @@ Clears previously drawn points.
 
 **Properties:**
 
-| Name               | Type            | Default                             | Constraints                                                     | Settable | Nullifiable |
-| ------------------ | --------------- | ----------------------------------- | --------------------------------------------------------------- | -------- | ----------- |
-| canvas             | object          | `document.createElement('canvas')`  |                                                                 | `false`  | `false`     |
-| regl               | object          | `createRegl(canvas)`                |                                                                 | `false`  | `false`     |
-| syncEvents         | boolean         | `false`                             |                                                                 | `false`  | `false`     |
-| version            | string          |                                     |                                                                 | `false`  | `false`     |
-| width              | integer         | `300`                               | > 0                                                             | `true`   | `false`     |
-| height             | integer         | `200`                               | > 0                                                             | `true`   | `false`     |
-| aspectRatio        | float           | `1.0`                               | > 0                                                             | `true`   | `false`     |
-| backgroundColor    | string or array | rgba(0, 0, 0, 1)                    | hex, rgb, rgba                                                  | `true`   | `false`     |
-| backgroundImage    | function        | `null`                              | Regl texture                                                    | `true`   | `true`      |
-| camera             | object          |                                     | See [dom-2d-camera](https://github.com/flekschas/dom-2d-camera) | `false`  | `false`     |
-| cameraTarget       | tuple           | `[0, 0]`                            |                                                                 | `true`   | `false`     |
-| cameraDistance     | float           | `1`                                 | > 0                                                             | `true`   | `false`     |
-| cameraRotation     | float           | `0`                                 |                                                                 | `true`   | `false`     |
-| cameraView         | Float32Array    | `[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1`] |                                                                 | `true`   | `false`     |
-| colorBy            | string          | `null`                              | `category` or `value`                                           | `true`   | `true`      |
-| sizeBy             | string          | `null`                              | `category` or `value`                                           | `true`   | `true`      |
-| deselectOnDblClick | boolean         | `true`                              |                                                                 | `true`   | `false`     |
-| deselectOnEscape   | boolean         | `true`                              |                                                                 | `true`   | `false`     |
-| opacity            | float           | `1`                                 | > 0                                                             | `true`   | `false`     |
-| pointColor         | quadruple       | `[0.66, 0.66, 0.66, 1]`             | single value or list of hex, rgb, rgba                          | `true`   | `false`     |
-| pointColorActive   | quadruple       | `[0, 0.55, 1, 1]`                   | single value or list of hex, rgb, rgba                          | `true`   | `false`     |
-| pointColorHover    | quadruple       | `[1, 1, 1, 1]`                      | single value or list of hex, rgb, rgba                          | `true`   | `false`     |
-| pointOutlineWidth  | integer         | `2`                                 | >= 0                                                            | `true`   | `false`     |
-| pointSize          | integer         | `6`                                 | > 0                                                             | `true`   | `false`     |
-| pointSizeSelected  | integer         | `2`                                 | >= 0                                                            | `true`   | `false`     |
-| lassoColor         | quadruple       | rgba(0, 0.667, 1, 1)                | hex, rgb, rgba                                                  | `true`   | `false`     |
-| lassoMinDelay      | integer         | 15                                  | >= 0                                                            | `true`   | `false`     |
-| lassoMinDist       | integer         | 4                                   | >= 0                                                            | `true`   | `false`     |
-| lassoClearEvent    | string          | `'lassoEnd'`                        | `'lassoEnd'` or `'deselect'`                                    | `true`   | `false`     |
-| showRecticle       | boolean         | `false`                             | `true` or `false`                                               | `true`   | `false`     |
-| recticleColor      | quadruple       | rgba(1, 1, 1, .5)                   | hex, rgb, rgba                                                  | `true`   | `false`     |
-| xScale             | function        | `null`                              | must follow the D3 scale API                                    | `true`   | `true`      |
-| yScale             | function        | `null`                              | must follow the D3 scale API                                    | `true`   | `true`      |
+| Name                    | Type            | Default                             | Constraints                                                     | Settable | Nullifiable |
+| ----------------------- | --------------- | ----------------------------------- | --------------------------------------------------------------- | -------- | ----------- |
+| canvas                  | object          | `document.createElement('canvas')`  |                                                                 | `false`  | `false`     |
+| regl                    | object          | `createRegl(canvas)`                |                                                                 | `false`  | `false`     |
+| syncEvents              | boolean         | `false`                             |                                                                 | `false`  | `false`     |
+| version                 | string          |                                     |                                                                 | `false`  | `false`     |
+| width                   | integer         | `300`                               | > 0                                                             | `true`   | `false`     |
+| height                  | integer         | `200`                               | > 0                                                             | `true`   | `false`     |
+| aspectRatio             | float           | `1.0`                               | > 0                                                             | `true`   | `false`     |
+| backgroundColor         | string or array | rgba(0, 0, 0, 1)                    | hex, rgb, rgba                                                  | `true`   | `false`     |
+| backgroundImage         | function        | `null`                              | Regl texture                                                    | `true`   | `true`      |
+| camera                  | object          |                                     | See [dom-2d-camera](https://github.com/flekschas/dom-2d-camera) | `false`  | `false`     |
+| cameraTarget            | tuple           | `[0, 0]`                            |                                                                 | `true`   | `false`     |
+| cameraDistance          | float           | `1`                                 | > 0                                                             | `true`   | `false`     |
+| cameraRotation          | float           | `0`                                 |                                                                 | `true`   | `false`     |
+| cameraView              | Float32Array    | `[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1`] |                                                                 | `true`   | `false`     |
+| colorBy                 | string          | `null`                              | `category` or `value`                                           | `true`   | `true`      |
+| sizeBy                  | string          | `null`                              | `category` or `value`                                           | `true`   | `true`      |
+| deselectOnDblClick      | boolean         | `true`                              |                                                                 | `true`   | `false`     |
+| deselectOnEscape        | boolean         | `true`                              |                                                                 | `true`   | `false`     |
+| opacity                 | float           | `1`                                 | > 0                                                             | `true`   | `false`     |
+| pointColor              | quadruple       | `[0.66, 0.66, 0.66, 1]`             | single value or list of hex, rgb, rgba                          | `true`   | `false`     |
+| pointColorActive        | quadruple       | `[0, 0.55, 1, 1]`                   | single value or list of hex, rgb, rgba                          | `true`   | `false`     |
+| pointColorHover         | quadruple       | `[1, 1, 1, 1]`                      | single value or list of hex, rgb, rgba                          | `true`   | `false`     |
+| pointOutlineWidth       | integer         | `2`                                 | >= 0                                                            | `true`   | `false`     |
+| pointSize               | integer         | `6`                                 | > 0                                                             | `true`   | `false`     |
+| pointSizeSelected       | integer         | `2`                                 | >= 0                                                            | `true`   | `false`     |
+| pointSizeMouseDetection | string/integer  | `'auto'`                            | can be either 'auto' (derived from `pointSize`) or >= 0         | `true`   | `false`     |
+| lassoColor              | quadruple       | rgba(0, 0.667, 1, 1)                | hex, rgb, rgba                                                  | `true`   | `false`     |
+| lassoMinDelay           | integer         | 15                                  | >= 0                                                            | `true`   | `false`     |
+| lassoMinDist            | integer         | 4                                   | >= 0                                                            | `true`   | `false`     |
+| lassoClearEvent         | string          | `'lassoEnd'`                        | `'lassoEnd'` or `'deselect'`                                    | `true`   | `false`     |
+| showRecticle            | boolean         | `false`                             | `true` or `false`                                               | `true`   | `false`     |
+| recticleColor           | quadruple       | rgba(1, 1, 1, .5)                   | hex, rgb, rgba                                                  | `true`   | `false`     |
+| xScale                  | function        | `null`                              | must follow the D3 scale API                                    | `true`   | `true`      |
+| yScale                  | function        | `null`                              | must follow the D3 scale API                                    | `true`   | `true`      |
 
 **Notes:**
 
