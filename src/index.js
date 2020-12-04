@@ -183,6 +183,7 @@ const createScatterplot = (initialProperties = {}) => {
   let mouseDownPosition = [0, 0];
   let numPoints = 0;
   let selection = [];
+  const selectionSet = new Set();
   let lassoPos = [];
   let lassoPoints = [];
   let lassoPrevMousePos;
@@ -406,12 +407,18 @@ const createScatterplot = (initialProperties = {}) => {
       if (!preventEvent) pubSub.publish('deselect');
       setPointConnectionColorState(selection, 0);
       selection = [];
+      selectionSet.clear();
       drawRaf(); // eslint-disable-line no-use-before-define
     }
   };
 
   const select = (points, { preventEvent = false } = {}) => {
     selection = points;
+
+    selectionSet.clear();
+    points.forEach((point) => {
+      selectionSet.add(point);
+    });
 
     selectedPointsIndexBuffer({
       usage: 'dynamic',
@@ -515,6 +522,8 @@ const createScatterplot = (initialProperties = {}) => {
   const blurHandler = () => {
     if (!isInit) return;
 
+    if (+hoveredPoint >= 0 && !selectionSet.has(hoveredPoint))
+      setPointConnectionColorState([hoveredPoint], 0);
     hoveredPoint = undefined;
     isMouseInCanvas = false;
     mouseUpHandler();
@@ -1757,12 +1766,16 @@ const createScatterplot = (initialProperties = {}) => {
       needsRedraw = true;
       const oldHoveredPoint = hoveredPoint;
       const newHoveredPoint = point !== hoveredPoint;
-      if (+oldHoveredPoint >= 0 && newHoveredPoint) {
+      if (
+        +oldHoveredPoint >= 0 &&
+        newHoveredPoint &&
+        !selectionSet.has(oldHoveredPoint)
+      ) {
         setPointConnectionColorState([oldHoveredPoint], 0);
       }
       hoveredPoint = point;
       hoveredPointIndexBuffer.subdata([point]);
-      setPointConnectionColorState([point], 2);
+      if (!selectionSet.has(point)) setPointConnectionColorState([point], 2);
       if (newHoveredPoint) pubSub.publish('pointover', hoveredPoint);
     } else {
       needsRedraw = hoveredPoint;
