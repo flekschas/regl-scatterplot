@@ -1755,14 +1755,22 @@ const createScatterplot = (initialProperties = {}) => {
 
     if (point >= 0) {
       needsRedraw = true;
+      const oldHoveredPoint = hoveredPoint;
       const newHoveredPoint = point !== hoveredPoint;
+      if (+oldHoveredPoint >= 0 && newHoveredPoint) {
+        setPointConnectionColorState([oldHoveredPoint], 0);
+      }
       hoveredPoint = point;
       hoveredPointIndexBuffer.subdata([point]);
+      setPointConnectionColorState([point], 2);
       if (newHoveredPoint) pubSub.publish('pointover', hoveredPoint);
     } else {
       needsRedraw = hoveredPoint;
       hoveredPoint = undefined;
-      if (+needsRedraw >= 0) pubSub.publish('pointout', needsRedraw);
+      if (+needsRedraw >= 0) {
+        setPointConnectionColorState([needsRedraw], 0);
+        pubSub.publish('pointout', needsRedraw);
+      }
     }
 
     if (needsRedraw) drawRaf(null, showRecticleOnce);
