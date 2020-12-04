@@ -1,9 +1,8 @@
 # WebGl 2D Scatterplot with Regl
 
 [![npm version](https://img.shields.io/npm/v/regl-scatterplot.svg)](https://www.npmjs.com/package/regl-scatterplot)
-[![node stability](https://img.shields.io/badge/stability-experimental-EC5314.svg)](https://nodejs.org/api/documentation.html#documentation_stability_index)
-[![build status](https://travis-ci.org/flekschas/regl-scatterplot.svg?branch=master)](https://travis-ci.org/flekschas/regl-scatterplot)
-[![File Size](http://img.badgesize.io/https://unpkg.com/regl-scatterplot/dist/regl-scatterplot.min.js?compression=gzip&color=e17fff)](https://unpkg.com/regl-scatterplot/dist/regl-scatterplot.min.js)
+[![build status](https://github.com/flekschas/regl-scatterplot/workflows/build/badge.svg)](https://github.com/flekschas/regl-scatterplot/actions?query=workflow%3Abuild)
+[![File Size](http://img.badgesize.io/https://unpkg.com/regl-scatterplot/dist/regl-scatterplot.min.js?compression=gzip&color=e17fff)](https://bundlephobia.com/result?p=regl-scatterplot)
 [![code style prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
 [![regl-scatterplot demo](https://img.shields.io/badge/demo-online-6ae3c7.svg)](https://flekschas.github.io/regl-scatterplot/)
 
