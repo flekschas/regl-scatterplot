@@ -209,7 +209,7 @@ const worker = function worker() {
    * @return {array} List of lists of ordered points by line
    */
   const groupPoints = (points) => {
-    const groupedPoints = [];
+    const groupedPoints = {};
 
     points.forEach((point) => {
       const isStruct = Array.isArray(point[4]);
@@ -222,7 +222,13 @@ const worker = function worker() {
     });
 
     // The filtering ensures that non-existing array entries are removed
-    return groupedPoints.filter((x) => x).map((x) => x.filter((v) => v));
+    Object.entries(groupedPoints).forEach((idPoints) => {
+      groupedPoints[idPoints[0]] = idPoints[1].filter((v) => v);
+      // Store the first point as the reference
+      groupedPoints[idPoints[0]].reference = idPoints[1][0];
+    });
+
+    return groupedPoints;
   };
 
   self.onmessage = function onmessage(event) {
@@ -235,16 +241,20 @@ const worker = function worker() {
 
     const groupedPoints = groupPoints(event.data.points);
 
-    const outPoints = groupedPoints.map((connectedPoints, i) => {
-      const curvePoints = interpolatePoints(
-        connectedPoints,
-        event.data.options,
-        i === 0
-      );
-      return curvePoints;
+    self.postMessage({
+      points: Object.entries(groupedPoints).reduce(
+        (curvePoints, idAndPoints) => {
+          curvePoints[idAndPoints[0]] = interpolatePoints(
+            idAndPoints[1],
+            event.data.options
+          );
+          // Make sure the reference is passed on
+          curvePoints[idAndPoints[0]].reference = idAndPoints[1].reference;
+          return curvePoints;
+        },
+        {}
+      ),
     });
-
-    self.postMessage({ points: outPoints });
   };
 };
 

@@ -1,5 +1,18 @@
 ## Next
 
+## v0.15.0
+
+- Add the ability to connect points visually
+
+**Breaking changes:**
+
+- Removed the following deplicated properties:
+  - `background` (use `backgroundColor` instead)
+  - `distance` (use `cameraDistance` instead)
+  - `rotation` (use `cameraRotation` instead)
+  - `target` (use `cameraTarget` instead)
+  - `view` (use `cameraView` instead)
+
 ## v0.14.0
 
 - Add `lassoStart`, `lassoExtend`, and `lassoEnd` events

@@ -18,7 +18,7 @@ exampleEl.removeAttribute('href');
 let { width, height } = canvas.getBoundingClientRect();
 
 let points = [];
-let numPoints = 1000;
+let numPoints = 9000;
 let pointSize = 1;
 let opacity = 1;
 let selection = [];
@@ -28,6 +28,9 @@ const lassoMinDelay = 10;
 const lassoMinDist = 2;
 const showRecticle = true;
 const recticleColor = [1, 1, 0.878431373, 0.33];
+const showPointConnections = true;
+const pointConnectionColor = [1, 1, 1, 0.15];
+const pointConnectionSize = 2;
 
 const selectHandler = ({ points: selectedPoints }) => {
   console.log('Selected:', selectedPoints);
@@ -54,6 +57,9 @@ const scatterplot = createScatterplot({
   pointSize,
   showRecticle,
   recticleColor,
+  showPointConnections,
+  pointConnectionColor,
+  pointConnectionSize,
 });
 
 console.log(`Scatterplot v${scatterplot.get('version')}`);
@@ -69,20 +75,21 @@ const resizeHandler = () => {
 window.addEventListener('resize', resizeHandler);
 
 const generatePoints = (num) => {
-  const groupNum = Math.round(num / 3);
-  const groupStepNum = Math.round(groupNum / 5);
+  const numPointsPerGroup = Math.round(num / 3); // 12.000 / 3 => 4000
+  const numPointsPerStep = Math.round(numPointsPerGroup / 5); // 4000 / 5 => 800
+  // 800 * 3 => 2400
 
   const outPoints = [];
 
   for (let g = 0; g < 3; g++) {
-    for (let i = 0; i < groupStepNum; i++) {
+    for (let i = 0; i < numPointsPerStep; i++) {
       for (let s = 0; s < 5; s++) {
         outPoints.push([
           -0.6 + g * 0.6 + (Math.random() * 0.3 - 0.15), // x
           -0.9 + s * 0.45, // y
           g, // category
           Math.random(), // value
-          g * groupStepNum + i, // to identify connected points
+          g * numPointsPerStep + i, // to identify connected points
         ]);
       }
     }
@@ -145,7 +152,22 @@ resetEl.addEventListener('click', resetClickHandler);
 
 scatterplot.set({
   colorBy: 'category',
-  pointColor: ['#ff80cb', '#57c7ff', '#eee462'],
+  pointColor: [
+    [255, 128, 203, 128],
+    [87, 199, 255, 128],
+    [238, 228, 98, 128],
+  ],
+  pointConnectionColorBy: 'category',
+  pointConnectionColor: [
+    [255, 128, 203, 6],
+    [87, 199, 255, 6],
+    [238, 228, 98, 6],
+  ],
+  pointConnectionColorActive: [
+    [255, 128, 203, 200],
+    [87, 199, 255, 200],
+    [238, 228, 98, 200],
+  ],
   sizeBy: 'value',
 });
 
