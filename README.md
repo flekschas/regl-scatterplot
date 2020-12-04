@@ -25,6 +25,13 @@
 - **Select multiple dots**: While pressing <kbd>SHIFT</kbd>, click and drag your mouse. All items within the lasso will be selected.
 - **Deselect**: Double-click onto an empty region.
 
+**Supported Visual Encodings:**
+
+- x/y point position (obviously)
+- categorical and continuous color encoding (including opacity)
+- categorical and continuous size encoding
+- point connections (stemming for example from time series data)
+
 ## Install
 
 ```
