@@ -3,6 +3,7 @@
 ## v0.15.0
 
 - Add the ability to connect points visually
+- Fix an issue with detecting points when using variable point sizes
 
 **Breaking changes:**
 

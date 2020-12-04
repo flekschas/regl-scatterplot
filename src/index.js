@@ -52,6 +52,7 @@ import {
   DEFAULT_POINT_OUTLINE_WIDTH,
   DEFAULT_POINT_SIZE,
   DEFAULT_POINT_SIZE_SELECTED,
+  DEFAULT_POINT_SIZE_MOUSE_DETECTION,
   DEFAULT_SIZE_BY,
   DEFAULT_ROTATION,
   DEFAULT_TARGET,
@@ -140,6 +141,7 @@ const createScatterplot = (initialProperties = {}) => {
     showPointConnections = DEFAULT_SHOW_POINT_CONNECTIONS,
     pointSize = DEFAULT_POINT_SIZE,
     pointSizeSelected = DEFAULT_POINT_SIZE_SELECTED,
+    pointSizeMouseDetection = DEFAULT_POINT_SIZE_MOUSE_DETECTION,
     pointOutlineWidth = DEFAULT_POINT_OUTLINE_WIDTH,
     sizeBy = DEFAULT_SIZE_BY,
     width = DEFAULT_WIDTH,
@@ -193,6 +195,7 @@ const createScatterplot = (initialProperties = {}) => {
   let pointConnectionMap;
   let recticleHLine;
   let recticleVLine;
+  let computedPointSizeMouseDetection;
 
   let stateTex; // Stores the point texture holding x, y, category, and value
   let prevStateTex; // Stores the previous point texture. Used for transitions
@@ -279,7 +282,7 @@ const createScatterplot = (initialProperties = {}) => {
     const scaling = camera.scaling;
     const scaledPointSize =
       2 *
-      pointSize *
+      computedPointSizeMouseDetection *
       (min(1.0, scaling) + Math.log2(max(1.0, scaling))) *
       window.devicePixelRatio;
 
@@ -306,7 +309,8 @@ const createScatterplot = (initialProperties = {}) => {
       }
     });
 
-    if (minDist < (pointSize / width) * 2) return clostestPoint;
+    if (minDist < (computedPointSizeMouseDetection / width) * 2)
+      return clostestPoint;
     return -1;
   };
 
@@ -682,6 +686,16 @@ const createScatterplot = (initialProperties = {}) => {
     }
   };
 
+  const computePointSizeMouseDetection = () => {
+    computedPointSizeMouseDetection = pointSizeMouseDetection;
+
+    if (pointSizeMouseDetection === 'auto') {
+      computedPointSizeMouseDetection = Array.isArray(pointSize)
+        ? pointSize[Math.floor(pointSize.length / 2)]
+        : pointSize;
+    }
+  };
+
   const setPointSize = (newPointSize) => {
     if (isConditionalArray(newPointSize, isPositiveNumber, { minLength: 1 }))
       pointSize = [...newPointSize];
@@ -689,6 +703,7 @@ const createScatterplot = (initialProperties = {}) => {
     if (isPositiveNumber(+newPointSize)) pointSize = [+newPointSize];
 
     pointSizeTex = createPointSizeTexture();
+    computePointSizeMouseDetection();
   };
 
   const setPointSizeSelected = (newPointSizeSelected) => {
@@ -1486,6 +1501,11 @@ const createScatterplot = (initialProperties = {}) => {
     pointConnectionTolerance = Math.max(0, newPointConnectionTolerance);
   };
 
+  const setPointSizeMouseDetection = (newPointSizeMouseDetection) => {
+    pointSizeMouseDetection = newPointSizeMouseDetection;
+    computePointSizeMouseDetection();
+  };
+
   /**
    * Update Regl's viewport, drawingBufferWidth, and drawingBufferHeight
    *
@@ -1533,6 +1553,7 @@ const createScatterplot = (initialProperties = {}) => {
     if (property === 'pointOutlineWidth') return pointOutlineWidth;
     if (property === 'pointSize') return pointSize;
     if (property === 'pointSizeSelected') return pointSizeSelected;
+    if (property === 'pointSizeMouseDetection') return pointSizeMouseDetection;
     if (property === 'showPointConnections') return showPointConnections;
     if (property === 'pointConnectionColor') return pointConnectionColor;
     if (property === 'pointConnectionColorActive')
@@ -1611,6 +1632,10 @@ const createScatterplot = (initialProperties = {}) => {
 
     if (properties.pointSizeSelected !== undefined) {
       setPointSizeSelected(properties.pointSizeSelected);
+    }
+
+    if (properties.pointSizeMouseDetection !== undefined) {
+      setPointSizeMouseDetection(properties.pointSizeMouseDetection);
     }
 
     if (properties.sizeBy !== undefined) {
@@ -1828,6 +1853,7 @@ const createScatterplot = (initialProperties = {}) => {
       width: 1,
       is2d: true,
     });
+    computePointSizeMouseDetection();
 
     // Event listeners
     canvas.addEventListener('wheel', wheelHandler);
