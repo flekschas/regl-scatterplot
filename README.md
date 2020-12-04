@@ -1,10 +1,10 @@
 # WebGl 2D Scatterplot with Regl
 
-[![npm version](https://img.shields.io/npm/v/regl-scatterplot.svg)](https://www.npmjs.com/package/regl-scatterplot)
-[![build status](https://github.com/flekschas/regl-scatterplot/workflows/build/badge.svg)](https://github.com/flekschas/regl-scatterplot/actions?query=workflow%3Abuild)
-[![File Size](http://img.badgesize.io/https://unpkg.com/regl-scatterplot/dist/regl-scatterplot.min.js?compression=gzip&color=e17fff)](https://bundlephobia.com/result?p=regl-scatterplot)
-[![code style prettier](https://img.shields.io/badge/code_style-prettier-ff69b4.svg)](https://github.com/prettier/prettier)
-[![regl-scatterplot demo](https://img.shields.io/badge/demo-online-6ae3c7.svg)](https://flekschas.github.io/regl-scatterplot/)
+[![npm version](https://img.shields.io/npm/v/regl-scatterplot.svg?color=1a8cff&style=flat-square)](https://www.npmjs.com/package/regl-scatterplot)
+[![build status](https://img.shields.io/github/workflow/status/flekschas/regl-scatterplot/build?color=139ce9&style=flat-square)](https://github.com/flekschas/regl-scatterplot/actions?query=workflow%3Abuild)
+[![file size](http://img.badgesize.io/https://unpkg.com/regl-scatterplot/dist/regl-scatterplot.min.js?compression=gzip&color=0dacd4&style=flat-square)](https://bundlephobia.com/result?p=regl-scatterplot)
+[![code style prettier](https://img.shields.io/badge/code_style-prettier-06bcbe.svg?style=flat-square)](https://github.com/prettier/prettier)
+[![regl-scatterplot demo](https://img.shields.io/badge/demo-online-00cca9.svg?style=flat-square)](https://flekschas.github.io/regl-scatterplot/)
 
 > A highly-scalable pan-and-zoomable scatter plot rendered with WebGL using [Regl](https://github.com/regl-project/regl). This library sacrifices feature richness for speed to allow rendering up to 2 million points (depending on your hardware of course) including fast lasso selection. Also, the [footprint of regl-scatterplot](https://bundlephobia.com/result?p=regl-scatterplot) is kept to a minimum.
 
