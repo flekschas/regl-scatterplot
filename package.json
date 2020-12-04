@@ -30,7 +30,7 @@
     "watch": "rollup -cw"
   },
   "dependencies": {
-    "@flekschas/utils": "^0.25.0",
+    "@flekschas/utils": "^0.26.0",
     "camera-2d-simple": "~2.2.1",
     "dom-2d-camera": "~1.0.2",
     "gl-matrix": "~3.3.0",

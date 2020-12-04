@@ -5,6 +5,7 @@ import withThrottle from 'lodash-es/throttle';
 import withRaf from 'with-raf';
 import { mat4, vec4 } from 'gl-matrix';
 import createLine from 'regl-line';
+import { unionIntegers } from '@flekschas/utils';
 
 import BG_FS from './bg.fs';
 import BG_VS from './bg.vs';
@@ -418,12 +419,16 @@ const createScatterplot = (initialProperties = {}) => {
     }
   };
 
-  const select = (points, { preventEvent = false } = {}) => {
-    selection = points;
+  const select = (pointIdxs, { merge = false, preventEvent = false } = {}) => {
+    if (merge) {
+      selection = unionIntegers(selection, pointIdxs);
+    } else {
+      selection = pointIdxs;
+    }
 
     selectionSet.clear();
-    points.forEach((point) => {
-      selectionSet.add(point);
+    pointIdxs.forEach((pointIdx) => {
+      selectionSet.add(pointIdx);
     });
 
     selectedPointsIndexBuffer({
@@ -457,12 +462,12 @@ const createScatterplot = (initialProperties = {}) => {
     pubSub.publish('lassoStart');
   };
 
-  const lassoEnd = () => {
+  const lassoEnd = ({ mergeSelections = false } = {}) => {
     camera.config({ isFixed: false });
     // const t0 = performance.now();
     const pointsInLasso = findPointsInLasso(lassoPos);
     // console.log(`found ${pointsInLasso.length} in ${performance.now() - t0} msec`);
-    select(pointsInLasso);
+    select(pointsInLasso, { merge: mergeSelections });
     lassoPrevMousePos = undefined;
     pubSub.publish('lassoEnd', {
       coordinates: lassoPoints,
@@ -481,14 +486,14 @@ const createScatterplot = (initialProperties = {}) => {
     if (mouseDownShift) lassoStart();
   };
 
-  const mouseUpHandler = () => {
+  const mouseUpHandler = (event) => {
     if (!isInit) return;
 
     mouseDown = false;
 
     if (mouseDownShift) {
       mouseDownShift = false;
-      lassoEnd();
+      lassoEnd({ mergeSelections: event.metaKey });
     }
   };
 
@@ -496,12 +501,12 @@ const createScatterplot = (initialProperties = {}) => {
     if (!isInit) return;
 
     const currentMousePosition = getRelativeMousePosition(event);
-    const clickDist = dist(...currentMousePosition, ...mouseDownPosition);
 
-    if (clickDist >= lassoMinDist) return;
+    if (dist(...currentMousePosition, ...mouseDownPosition) >= lassoMinDist)
+      return;
 
     const clostestPoint = raycast();
-    if (clostestPoint >= 0) select([clostestPoint]);
+    if (clostestPoint >= 0) select([clostestPoint], { merge: event.metaKey });
   };
 
   const mouseDblClickHandler = () => {
