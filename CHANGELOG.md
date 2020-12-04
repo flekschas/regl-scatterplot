@@ -4,6 +4,8 @@
 
 - Add the ability to connect points visually
 - Add support for multi-selections by holding down <kbd>CMD</kbd> during click- or lasso-selections
+- Add `performanceMode` to allow drawing up to 20 million points
+- Fix an issue with the point size between devices with different pixel ratios
 - Fix an issue with detecting points when using variable point sizes
 
 **Breaking changes:**
