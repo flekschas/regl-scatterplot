@@ -79,7 +79,7 @@ void main() {
   );
   float pointSize = texture2D(pointSizeTex, pointSizeTexIndex).x;
 
-  gl_PointSize = pointSize * finalScaling + pointSizeExtra * devicePixelRatio;
+  gl_PointSize = (pointSize * finalScaling + pointSizeExtra) * devicePixelRatio;
 }
 `;
 
