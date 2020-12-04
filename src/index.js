@@ -10,6 +10,7 @@ import { unionIntegers } from '@flekschas/utils';
 import BG_FS from './bg.fs';
 import BG_VS from './bg.vs';
 import POINT_FS from './point.fs';
+import POINT_SIMPLE_FS from './point-simple.fs';
 import POINT_VS from './point.vs';
 import POINT_UPDATE_FS from './point-update.fs';
 import POINT_UPDATE_VS from './point-update.vs';
@@ -59,6 +60,7 @@ import {
   DEFAULT_TARGET,
   DEFAULT_VIEW,
   DEFAULT_WIDTH,
+  DEFAULT_PERFORMANCE_MODE,
   EASING_FNS,
   FLOAT_BYTES,
   LASSO_CLEAR_EVENTS,
@@ -148,6 +150,9 @@ const createScatterplot = (initialProperties = {}) => {
     width = DEFAULT_WIDTH,
     height = DEFAULT_HEIGHT,
   } = initialProperties;
+
+  // The following properties cannod be changed after the initialization
+  const { performanceMode = DEFAULT_PERFORMANCE_MODE } = initialProperties;
 
   checkReglExtensions(regl);
 
@@ -837,11 +842,11 @@ const createScatterplot = (initialProperties = {}) => {
     globalState = COLOR_NORMAL_IDX
   ) =>
     regl({
-      frag: POINT_FS,
+      frag: performanceMode ? POINT_SIMPLE_FS : POINT_FS,
       vert: POINT_VS,
 
       blend: {
-        enable: true,
+        enable: !performanceMode,
         func: {
           srcRGB: 'src alpha',
           srcAlpha: 'one',

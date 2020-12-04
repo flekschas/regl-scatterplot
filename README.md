@@ -263,6 +263,7 @@ Clears previously drawn points.
 | recticleColor           | quadruple       | rgba(1, 1, 1, .5)                   | hex, rgb, rgba                                                  | `true`   | `false`     |
 | xScale                  | function        | `null`                              | must follow the D3 scale API                                    | `true`   | `true`      |
 | yScale                  | function        | `null`                              | must follow the D3 scale API                                    | `true`   | `true`      |
+| performanceMode         | boolean         | `false`                             | can only be set during initialization!                          | `true`   | `false`     |
 
 **Notes:**
 
@@ -278,7 +279,7 @@ Clears previously drawn points.
 - The background image must be a Regl texture. To easily set a remote
   image as the background please use [`createTextureFromUrl`](#const-texture--createTextureFromUrlregl-url-isCrossOrigin).
 
-- The scatterplot understan 4 colors per color representing 4 states, representing:
+- The scatterplot understands 4 colors per color representing 4 states, representing:
 
   - normal (`pointColor`): the normal color of points.
   - active (`pointColorActive`): used for coloring selected points.
@@ -294,6 +295,14 @@ Clears previously drawn points.
   synchronous event broadcasting at your own risk via
   `createScatterplot({ syncEvents: true })`. This property can't be changed
   after initialization!
+
+- If you need to draw more than 2 million points, you might want to set
+  `performanceMode` to `true` during the initialization to boost the
+  performance. In performance mode, points will be drawn as simple squares and
+  color blending is disabled. This should allow you to draw up to 20 million
+  points (or more depending on your hardware). Make sure to reduce the
+  `pointSize` as you render more and more points (e.g., `0.25` for 20 million
+  works for me) to ensure good performance.
 
 **Examples:**
 
