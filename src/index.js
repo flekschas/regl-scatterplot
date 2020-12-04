@@ -194,6 +194,7 @@ const createScatterplot = (initialProperties = {}) => {
   let model;
   let pointConnections;
   let pointConnectionMap;
+  let computingPointConnectionCurves;
   let recticleHLine;
   let recticleVLine;
   let computedPointSizeMouseDetection;
@@ -366,7 +367,12 @@ const createScatterplot = (initialProperties = {}) => {
   const hasPointConnections = (points) => points.length && points[0].length > 4;
 
   const setPointConnectionColorState = (points, stateIndex) => {
-    if (!showPointConnections && !hasPointConnections(points)) return;
+    if (
+      computingPointConnectionCurves ||
+      !showPointConnections ||
+      !hasPointConnections(points)
+    )
+      return;
 
     // Get line IDs
     const lineIds = Object.keys(
@@ -1147,10 +1153,11 @@ const createScatterplot = (initialProperties = {}) => {
 
   const setPointConnections = (newPoints) =>
     new Promise((resolve) => {
+      pointConnections.setPoints([]);
       if (!newPoints.length) {
-        pointConnections.setPoints([]);
         resolve();
       } else {
+        computingPointConnectionCurves = true;
         createSplineCurve(newPoints, {
           maxIntPointsPerSegment: pointConnectionMaxIntPointsPerSegment,
           tolerance: pointConnectionTolerance,
@@ -1159,6 +1166,7 @@ const createScatterplot = (initialProperties = {}) => {
           pointConnections.setPoints(Object.values(curvePoints), {
             colorIndices: getPointConnectionColorIndices(),
           });
+          computingPointConnectionCurves = false;
           resolve();
         });
       }
