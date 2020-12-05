@@ -32,6 +32,12 @@ export const EASING_FNS = {
 };
 export const DEFAULT_EASING = cubicInOut;
 
+// Interaction modes
+export const PAN_ZOOM_MODE = 'panZoom';
+export const LASSO_MODE = 'lasso';
+export const INTERACTION_MODES = [PAN_ZOOM_MODE, LASSO_MODE];
+export const DEFAULT_INTERACTION_MODE = PAN_ZOOM_MODE;
+
 // Default lasso
 export const LASSO_CLEAR_ON_DESELECT = 'deselect';
 export const LASSO_CLEAR_ON_END = 'lassoEnd';

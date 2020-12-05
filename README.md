@@ -22,7 +22,8 @@
 - **Zoom**: Scroll vertically.
 - **Rotate**: While pressing <kbd>ALT</kbd>, click and drag your mouse.
 - **Select a single dot**: Click on a dot with your mouse.
-- **Select multiple dots**: While pressing <kbd>SHIFT</kbd>, click and drag your mouse. All items within the lasso will be selected.
+- **Select multiple dots at once**: While pressing <kbd>SHIFT</kbd>, click and drag your mouse. All items within the lasso will be selected.
+- **Select multiple dots one after the other**: While pressing <kbd>CMD</kbd>, click on multiple dots or lasso multiple times.
 - **Deselect**: Double-click onto an empty region.
 
 ## Install
@@ -258,11 +259,12 @@ Clears previously drawn points.
 | lassoColor              | quadruple       | rgba(0, 0.667, 1, 1)                | hex, rgb, rgba                                                  | `true`   | `false`     |
 | lassoMinDelay           | integer         | 15                                  | >= 0                                                            | `true`   | `false`     |
 | lassoMinDist            | integer         | 4                                   | >= 0                                                            | `true`   | `false`     |
-| lassoClearEvent         | string          | `'lassoEnd'`                        | `'lassoEnd'` or `'deselect'`                                    | `true`   | `false`     |
+| lassoClearEvent         | string          | `'lassoEnd'`                        | one of `'lassoEnd'` or `'deselect'`                             | `true`   | `false`     |
 | showRecticle            | boolean         | `false`                             | `true` or `false`                                               | `true`   | `false`     |
 | recticleColor           | quadruple       | rgba(1, 1, 1, .5)                   | hex, rgb, rgba                                                  | `true`   | `false`     |
 | xScale                  | function        | `null`                              | must follow the D3 scale API                                    | `true`   | `true`      |
 | yScale                  | function        | `null`                              | must follow the D3 scale API                                    | `true`   | `true`      |
+| interactionMode         | string          | `'panZoom'`                         | one of `'panZoom'` or `'lasso'`                                 | `true`   | `false`     |
 | performanceMode         | boolean         | `false`                             | can only be set during initialization!                          | `true`   | `false`     |
 
 **Notes:**
@@ -295,6 +297,15 @@ Clears previously drawn points.
   synchronous event broadcasting at your own risk via
   `createScatterplot({ syncEvents: true })`. This property can't be changed
   after initialization!
+
+- The scatter plot currently operates in two interaction modes:
+
+  - panning and zooming (default)
+  - lassoing
+
+  By default the lassoing mode is activated by holding down <kbd>shift</kbd>.
+  However, you can also activate it manually by setting `interactionMode` to
+  `true`.
 
 - If you need to draw more than 2 million points, you might want to set
   `performanceMode` to `true` during the initialization to boost the

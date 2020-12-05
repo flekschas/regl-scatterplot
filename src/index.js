@@ -66,6 +66,10 @@ import {
   LASSO_CLEAR_EVENTS,
   LASSO_CLEAR_ON_DESELECT,
   LASSO_CLEAR_ON_END,
+  PAN_ZOOM_MODE,
+  LASSO_MODE,
+  INTERACTION_MODES,
+  DEFAULT_INTERACTION_MODE,
 } from './constants';
 
 import {
@@ -149,6 +153,7 @@ const createScatterplot = (initialProperties = {}) => {
     sizeBy = DEFAULT_SIZE_BY,
     width = DEFAULT_WIDTH,
     height = DEFAULT_HEIGHT,
+    interactionMode = DEFAULT_INTERACTION_MODE,
   } = initialProperties;
 
   // The following properties cannod be changed after the initialization
@@ -185,7 +190,8 @@ const createScatterplot = (initialProperties = {}) => {
   let camera;
   let lasso;
   let mouseDown = false;
-  let mouseDownShift = false;
+  let isLassoEnabled = false;
+  let isLassoing = false;
   let mouseDownPosition = [0, 0];
   let numPoints = 0;
   let selection = [];
@@ -331,6 +337,7 @@ const createScatterplot = (initialProperties = {}) => {
       lassoPos = [...point];
       lassoPoints = [point];
       lassoPrevMousePos = currMousePos;
+      isLassoing = true;
     } else {
       const d = dist(...currMousePos, ...lassoPrevMousePos);
 
@@ -468,7 +475,8 @@ const createScatterplot = (initialProperties = {}) => {
   };
 
   const lassoEnd = ({ mergeSelections = false } = {}) => {
-    camera.config({ isFixed: false });
+    isLassoing = false;
+    if (interactionMode === PAN_ZOOM_MODE) camera.config({ isFixed: false });
     // const t0 = performance.now();
     const pointsInLasso = findPointsInLasso(lassoPos);
     // console.log(`found ${pointsInLasso.length} in ${performance.now() - t0} msec`);
@@ -486,18 +494,18 @@ const createScatterplot = (initialProperties = {}) => {
     mouseDown = true;
 
     mouseDownPosition = getRelativeMousePosition(event);
-    mouseDownShift = event.shiftKey;
+    isLassoEnabled = interactionMode === LASSO_MODE || event.shiftKey;
 
-    if (mouseDownShift) lassoStart();
+    if (isLassoEnabled) lassoStart();
   };
 
   const mouseUpHandler = (event) => {
     if (!isInit) return;
 
     mouseDown = false;
+    isLassoEnabled = false;
 
-    if (mouseDownShift) {
-      mouseDownShift = false;
+    if (isLassoing) {
       lassoEnd({ mergeSelections: event.metaKey });
     }
   };
@@ -524,12 +532,12 @@ const createScatterplot = (initialProperties = {}) => {
     getRelativeMousePosition(event);
 
     // Only ray cast if the mouse cursor is inside
-    if (isMouseInCanvas && !mouseDownShift) {
+    if (isMouseInCanvas && !isLassoEnabled) {
       const clostestPoint = raycast();
       hover(clostestPoint); // eslint-disable-line no-use-before-define
     }
 
-    if (mouseDownShift) lassoExtendDb();
+    if (isLassoEnabled) lassoExtendDb();
 
     // Always redraw when mousedown as the user might have panned or lassoed
     if (mouseDown) drawRaf(); // eslint-disable-line no-use-before-define
@@ -1540,6 +1548,24 @@ const createScatterplot = (initialProperties = {}) => {
     computePointSizeMouseDetection();
   };
 
+  const setInteractionMode = (newMode) => {
+    interactionMode = limit(
+      INTERACTION_MODES,
+      DEFAULT_INTERACTION_MODE
+    )(newMode);
+
+    switch (interactionMode) {
+      case LASSO_MODE:
+        camera.config({ isFixed: true });
+        break;
+
+      case PAN_ZOOM_MODE:
+      default:
+        camera.config({ isFixed: false });
+        break;
+    }
+  };
+
   /**
    * Update Regl's viewport, drawingBufferWidth, and drawingBufferHeight
    *
@@ -1610,6 +1636,8 @@ const createScatterplot = (initialProperties = {}) => {
     if (property === 'width') return width;
     if (property === 'xScale') return xScale;
     if (property === 'yScale') return yScale;
+    if (property === 'performanceMode') return performanceMode;
+    if (property === 'interactionMode') return interactionMode;
 
     return undefined;
   };
@@ -1776,6 +1804,10 @@ const createScatterplot = (initialProperties = {}) => {
 
     if (properties.deselectOnEscape !== undefined) {
       setDeselectOnEscape(properties.deselectOnEscape);
+    }
+
+    if (properties.interactionMode !== undefined) {
+      setInteractionMode(properties.interactionMode);
     }
 
     updateViewAspectRatio();
