@@ -9,6 +9,7 @@ const pointSizeEl = document.querySelector('#point-size');
 const pointSizeValEl = document.querySelector('#point-size-value');
 const opacityEl = document.querySelector('#opacity');
 const opacityValEl = document.querySelector('#opacity-value');
+const lassoEl = document.querySelector('#lasso');
 const resetEl = document.querySelector('#reset');
 const exampleEl = document.querySelector('#example-basic');
 
@@ -69,8 +70,8 @@ const scatterplot = createScatterplot({
 
 console.log(`Scatterplot v${scatterplot.get('version')}`);
 
-scatterplot.subscribe('pointover', pointoverHandler);
-scatterplot.subscribe('pointout', pointoutHandler);
+// scatterplot.subscribe('pointover', pointoverHandler);
+// scatterplot.subscribe('pointout', pointoutHandler);
 scatterplot.subscribe('select', selectHandler);
 scatterplot.subscribe('deselect', deselectHandler);
 
@@ -129,6 +130,15 @@ const setOpacity = (newOpacity) => {
 const opacityInputHandler = (event) => setOpacity(+event.target.value);
 
 opacityEl.addEventListener('input', opacityInputHandler);
+
+const lassoChangeHandler = (event) => {
+  console.log(event.target.checked);
+  scatterplot.set({
+    interactionMode: event.target.checked ? 'lasso' : 'panZoom',
+  });
+};
+
+lassoEl.addEventListener('change', lassoChangeHandler);
 
 const resetClickHandler = () => {
   scatterplot.reset();
