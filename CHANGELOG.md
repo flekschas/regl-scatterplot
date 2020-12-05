@@ -8,6 +8,7 @@
 - Add `performanceMode` to allow drawing up to 20 million points
 - Fix an issue with the point size between devices with different pixel ratios
 - Fix an issue with detecting points when using variable point sizes
+- Fix an issue that drew the background image before it was loaded
 
 **Breaking changes:**
 

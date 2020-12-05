@@ -1208,7 +1208,8 @@ const createScatterplot = (initialProperties = {}) => {
     // Update camera
     isViewChanged = camera.tick();
 
-    if (backgroundImage) {
+    // eslint-disable-next-line no-underscore-dangle
+    if (backgroundImage && backgroundImage._reglType) {
       drawBackgroundImage();
     }
 
@@ -1385,8 +1386,11 @@ const createScatterplot = (initialProperties = {}) => {
         drawRaf();
         pubSub.publish('backgroundImageReady');
       });
-    } else {
+      // eslint-disable-next-line no-underscore-dangle
+    } else if (newBackgroundImage._reglType === 'texture2d') {
       backgroundImage = newBackgroundImage;
+    } else {
+      backgroundImage = null;
     }
   };
 
