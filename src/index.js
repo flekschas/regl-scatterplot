@@ -435,6 +435,9 @@ const createScatterplot = (initialProperties = {}) => {
     if (merge) {
       selection = unionIntegers(selection, pointIdxs);
     } else {
+      // Unset previously highlight point connections
+      if (selection && selection.length)
+        setPointConnectionColorState(selection, 0);
       selection = pointIdxs;
     }
 
