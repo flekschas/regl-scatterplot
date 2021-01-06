@@ -35,7 +35,7 @@
 ## Install
 
 ```
-npm -i regl-scatterplot
+npm i regl-scatterplot
 ```
 
 ## Getting started
