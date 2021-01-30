@@ -1,4 +1,4 @@
-const SHADER = `precision mediump float;
+const SHADER = `precision highp float;
 
 uniform sampler2D startStateTex;
 uniform sampler2D endStateTex;

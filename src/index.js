@@ -115,6 +115,7 @@ const createScatterplot = (initialProperties = {}) => {
     caseInsensitive: true,
   });
   const scratch = new Float32Array(16);
+  const pvm = new Float32Array(16);
   const mousePosition = [0, 0];
 
   checkDeprecations(initialProperties);
@@ -187,6 +188,15 @@ const createScatterplot = (initialProperties = {}) => {
   pointConnectionColorActive = toRgba(pointConnectionColorActive, true);
   pointConnectionColorHover = toRgba(pointConnectionColorHover, true);
 
+  const fboRes = [
+    Math.floor(width * window.devicePixelRatio),
+    Math.floor(height * window.devicePixelRatio),
+  ];
+  const fbo = regl.framebuffer({
+    width: fboRes[0],
+    height: fboRes[1],
+    colorType: 'float',
+  });
   let camera;
   let lasso;
   let mouseDown = false;
@@ -630,10 +640,17 @@ const createScatterplot = (initialProperties = {}) => {
     });
   };
 
+  const updateFbo = () => {
+    fboRes[0] = Math.floor(width * window.devicePixelRatio);
+    fboRes[1] = Math.floor(height * window.devicePixelRatio);
+    fbo.resize(...fboRes);
+  };
+
   const updateViewAspectRatio = () => {
     viewAspectRatio = width / height;
     projection = mat4.fromScaling([], [1 / viewAspectRatio, 1, 1]);
     model = mat4.fromScaling([], [dataAspectRatio, 1, 1]);
+    updateFbo();
   };
 
   const setDataAspectRatio = (newDataAspectRatio) => {
@@ -818,7 +835,10 @@ const createScatterplot = (initialProperties = {}) => {
   const getProjection = () => projection;
   const getView = () => camera.view;
   const getModel = () => model;
-  const getScaling = () => camera.scaling;
+  const getProjectionViewModel = () =>
+    mat4.multiply(pvm, projection, mat4.multiply(pvm, camera.view, model));
+  const getScaling = () =>
+    min(1.0, camera.scaling) + Math.log2(max(1.0, camera.scaling));
   const getNormalNumPoints = () => numPoints;
   const getIsColoredByCategory = () => (colorBy === 'category') * 1;
   const getIsColoredByValue = () => (colorBy === 'value') * 1;
@@ -844,6 +864,32 @@ const createScatterplot = (initialProperties = {}) => {
     },
 
     count: 3,
+  });
+
+  const copyToScreen = regl({
+    vert: `
+      precision highp float;
+      attribute vec2 xy;
+      void main () {
+        gl_Position = vec4(xy, 0, 1);
+      }`,
+    frag: `
+      precision highp float;
+      uniform vec2 srcRes;
+      uniform sampler2D src;
+
+      void main () {
+        gl_FragColor = texture2D(src, gl_FragCoord.xy / srcRes);
+      }`,
+    attributes: {
+      xy: [-4, -4, 4, -4, 0, 4],
+    },
+    uniforms: {
+      src: () => fbo,
+      srcRes: () => fboRes,
+    },
+    count: 3,
+    depth: { enable: false },
   });
 
   const drawPoints = (
@@ -876,9 +922,7 @@ const createScatterplot = (initialProperties = {}) => {
       },
 
       uniforms: {
-        projection: getProjection,
-        model: getModel,
-        view: getView,
+        projectionViewModel: getProjectionViewModel,
         devicePixelRatio: getDevicePixelRatio,
         scaling: getScaling,
         pointSizeTex: getPointSizeTex,
@@ -957,9 +1001,7 @@ const createScatterplot = (initialProperties = {}) => {
     },
 
     uniforms: {
-      projection: getProjection,
-      model: getModel,
-      view: getView,
+      projectionViewModel: getProjectionViewModel,
       texture: getBackgroundImage,
     },
 
@@ -969,12 +1011,10 @@ const createScatterplot = (initialProperties = {}) => {
   const drawPolygon2d = regl({
     vert: `
       precision mediump float;
-      uniform mat4 projection;
-      uniform mat4 model;
-      uniform mat4 view;
+      uniform mat4 projectionViewModel;
       attribute vec2 position;
       void main () {
-        gl_Position = projection * view * model * vec4(position, 0, 1);
+        gl_Position = projectionViewModel * vec4(position, 0, 1);
       }`,
 
     frag: `
@@ -1001,9 +1041,7 @@ const createScatterplot = (initialProperties = {}) => {
     },
 
     uniforms: {
-      projection: getProjection,
-      model: getModel,
-      view: getView,
+      projectionViewModel: getProjectionViewModel,
       color: () => lassoColor,
     },
 
@@ -1202,39 +1240,43 @@ const createScatterplot = (initialProperties = {}) => {
   const draw = (showRecticleOnce) => {
     if (!isInit || !regl) return;
 
-    regl.clear({
-      // background color (transparent)
-      color: [0, 0, 0, 0],
-      depth: 1,
-    });
+    fbo.use(() => {
+      regl.clear({
+        // background color (transparent)
+        color: [0, 0, 0, 0],
+        depth: 1,
+      });
 
-    // Update camera
-    isViewChanged = camera.tick();
+      // Update camera
+      isViewChanged = camera.tick();
 
-    // eslint-disable-next-line no-underscore-dangle
-    if (backgroundImage && backgroundImage._reglType) {
-      drawBackgroundImage();
-    }
+      // eslint-disable-next-line no-underscore-dangle
+      if (backgroundImage && backgroundImage._reglType) {
+        drawBackgroundImage();
+      }
 
-    // The draw order of the following calls is important!
-    if (!isTransitioning)
-      pointConnections.draw({
+      // The draw order of the following calls is important!
+      if (!isTransitioning)
+        pointConnections.draw({
+          projection: getProjection(),
+          model: getModel(),
+          view: getView(),
+        });
+      drawPointBodies();
+      if (!mouseDown && (showRecticle || showRecticleOnce)) drawRecticle();
+      if (hoveredPoint >= 0) drawHoveredPoint();
+      if (selection.length) drawSelectedPoint();
+
+      if (lassoPoints.length > 2) drawPolygon2d();
+
+      lasso.draw({
         projection: getProjection(),
         model: getModel(),
         view: getView(),
       });
-    drawPointBodies();
-    if (!mouseDown && (showRecticle || showRecticleOnce)) drawRecticle();
-    if (hoveredPoint >= 0) drawHoveredPoint();
-    if (selection.length) drawSelectedPoint();
-
-    if (lassoPoints.length > 2) drawPolygon2d();
-
-    lasso.draw({
-      projection: getProjection(),
-      model: getModel(),
-      view: getView(),
     });
+
+    copyToScreen();
 
     // Publish camera change
     if (isViewChanged) {

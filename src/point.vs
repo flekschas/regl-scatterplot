@@ -22,14 +22,13 @@ uniform float maxColorTexIdx;
 uniform float numColorStates;
 uniform float maxPointSizeTexIdx;
 uniform float scaling;
-uniform mat4 projection;
-uniform mat4 model;
-uniform mat4 view;
+uniform mat4 projectionViewModel;
 
 attribute float stateIndex;
 
 // variables to send to the fragment shader
 varying vec4 color;
+varying float finalPointSize;
 
 void main() {
   // First get the state
@@ -41,7 +40,7 @@ void main() {
 
   vec4 state = texture2D(stateTex, stateTexIndex);
 
-  gl_Position = projection * view * model * vec4(state.x, state.y, 0.0, 1.0);
+  gl_Position = projectionViewModel * vec4(state.x, state.y, 0.0, 1.0);
 
   // Determine color index
   float colorIndexCat = state.z * isColoredByCategory;
@@ -63,10 +62,6 @@ void main() {
 
   color = texture2D(colorTex, colorTexIndex);
 
-  // The final scaling consists of linear scaling in [0, 1] and log scaling
-  // in [1, [
-  float finalScaling = min(1.0, scaling) + log2(max(1.0, scaling));
-
   // Determine point size
   float pointSizeIndexCat = state.z * isSizedByCategory;
   float pointSizeIndexVal = floor(state.w * maxPointSizeTexIdx) * isSizedByValue;
@@ -79,7 +74,8 @@ void main() {
   );
   float pointSize = texture2D(pointSizeTex, pointSizeTexIndex).x;
 
-  gl_PointSize = (pointSize * finalScaling + pointSizeExtra) * devicePixelRatio;
+  finalPointSize = (pointSize * scaling + pointSizeExtra) * devicePixelRatio;
+  gl_PointSize = finalPointSize;
 }
 `;
 

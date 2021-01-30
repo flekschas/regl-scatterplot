@@ -1,4 +1,4 @@
-const FRAGMENT_SHADER = `precision mediump float;
+const FRAGMENT_SHADER = `precision highp float;
 
 varying vec4 color;
 
