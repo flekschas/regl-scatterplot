@@ -1,10 +1,11 @@
 import createDom2dCamera from 'dom-2d-camera';
 import KDBush from 'kdbush';
 import createPubSub from 'pub-sub-es';
-import withThrottle from 'lodash-es/throttle';
 import withRaf from 'with-raf';
 import { mat4, vec4 } from 'gl-matrix';
 import createLine from 'regl-line';
+
+import createLassoManager from './lasso-manager';
 
 import BG_FS from './bg.fs';
 import BG_VS from './bg.vs';
@@ -50,7 +51,7 @@ import {
   LASSO_CLEAR_EVENTS,
   LASSO_CLEAR_ON_DESELECT,
   LASSO_CLEAR_ON_END,
-  DEFAULT_LASSO_ON_CIRCLE_CLICK,
+  DEFAULT_LASSO_INITIATOR_ON_CLICK,
   KEY_ACTION_LASSO,
   KEY_ACTION_ROTATE,
   KEY_ACTIONS,
@@ -66,6 +67,8 @@ import {
   MOUSE_MODE_ROTATE,
   MOUSE_MODES,
   DEFAULT_MOUSE_MODE,
+  SINGLE_CLICK_DELAY,
+  LONG_CLICK_TIME,
 } from './constants';
 
 import {
@@ -133,7 +136,7 @@ const createScatterplot = (initialProperties = {}) => {
     lassoMinDelay: initialLassoMinDelay = DEFAULT_LASSO_MIN_DELAY,
     lassoMinDist: initialLassoMinDist = DEFAULT_LASSO_MIN_DIST,
     lassoClearEvent: initialLassoClearEvent = DEFAULT_LASSO_CLEAR_EVENT,
-    lassoOnCircleClick: initialLassoOnCircleClick = DEFAULT_LASSO_ON_CIRCLE_CLICK,
+    lassoInitiatorOnClick: initialLassoInitiatorOnClick = DEFAULT_LASSO_INITIATOR_ON_CLICK,
     keyMap: initialKeyMap = DEFAULT_KEY_MAP,
     mouseMode: initialMouseMode = DEFAULT_MOUSE_MODE,
     showRecticle: initialShowRecticle = DEFAULT_SHOW_RECTICLE,
@@ -174,6 +177,7 @@ const createScatterplot = (initialProperties = {}) => {
   let camera;
   let lasso;
   let mouseDown = false;
+  let mouseDownTime = null;
   let mouseDownPosition = [0, 0];
   let numPoints = 0;
   let selection = [];
@@ -182,10 +186,8 @@ const createScatterplot = (initialProperties = {}) => {
   let lassoMinDelay = +initialLassoMinDelay;
   let lassoMinDist = +initialLassoMinDist;
   let lassoClearEvent = initialLassoClearEvent;
-  let lassoOnCircleClick = initialLassoOnCircleClick;
-  let lassoPos = [];
-  let lassoPoints = [];
-  let lassoPrevMousePos;
+  let lassoInitiatorOnClick = initialLassoInitiatorOnClick;
+  let lassoPointsCurr = [];
   let mouseMode = initialMouseMode;
   let searchIndex;
   let viewAspectRatio;
@@ -201,6 +203,8 @@ const createScatterplot = (initialProperties = {}) => {
 
   let keyMap = initialKeyMap;
   let keyActionMap = flipObj(keyMap);
+
+  let lassoStartIndicatorTimeout;
 
   let pointColors = isMultipleColors(initialPointColor)
     ? [...initialPointColor]
@@ -263,7 +267,7 @@ const createScatterplot = (initialProperties = {}) => {
   }
 
   // Get a copy of the current mouse position
-  const getMousePos = () => mousePosition.slice();
+  // const getMousePos = () => mousePosition.slice();
 
   const getNdcX = (x) => -1 + (x / width) * 2;
 
@@ -334,32 +338,38 @@ const createScatterplot = (initialProperties = {}) => {
     return -1;
   };
 
-  const lassoExtend = () => {
-    const currMousePos = getMousePos();
-    const [xGl, yGl] = getMouseGlPos();
+  // const lassoExtend = () => {
+  //   const currMousePos = getMousePos();
+  //   const [xGl, yGl] = getMouseGlPos();
 
-    if (!lassoPrevMousePos) {
-      const point = getScatterGlPos(xGl, yGl);
-      lassoPos = [...point];
-      lassoPoints = [point];
-      lassoPrevMousePos = currMousePos;
-    } else {
-      const d = dist(...currMousePos, ...lassoPrevMousePos);
+  //   if (!lassoPrevMousePos) {
+  //     const point = getScatterGlPos(xGl, yGl);
+  //     lassoPos = [...point];
+  //     lassoPoints = [point];
+  //     lassoPrevMousePos = currMousePos;
+  //   } else {
+  //     const d = dist(...currMousePos, ...lassoPrevMousePos);
 
-      if (d > lassoMinDist) {
-        const point = getScatterGlPos(xGl, yGl);
-        lassoPos.push(...point);
-        lassoPoints.push(point);
-        lassoPrevMousePos = currMousePos;
-        if (lassoPos.length > 2) {
-          lasso.setPoints(lassoPos);
-        }
-      }
-    }
+  //     if (d > lassoMinDist) {
+  //       const point = getScatterGlPos(xGl, yGl);
+  //       lassoPos.push(...point);
+  //       lassoPoints.push(point);
+  //       lassoPrevMousePos = currMousePos;
+  //       if (lassoPos.length > 2) {
+  //         lasso.setPoints(lassoPos);
+  //       }
+  //     }
+  //   }
 
+  //   pubSub.publish('lassoExtend', { coordinates: lassoPoints });
+  // };
+  // let lassoExtendDb = withThrottle(lassoExtend, lassoMinDelay);
+
+  const lassoExtend = (lassoPoints, lassoPointsFlat) => {
+    lassoPointsCurr = lassoPoints;
+    lasso.setPoints(lassoPointsFlat);
     pubSub.publish('lassoExtend', { coordinates: lassoPoints });
   };
-  let lassoExtendDb = withThrottle(lassoExtend, lassoMinDelay);
 
   const findPointsInLasso = (lassoPolygon) => {
     // get the bounding box of the lasso selection...
@@ -377,8 +387,7 @@ const createScatterplot = (initialProperties = {}) => {
   };
 
   const lassoClear = () => {
-    lassoPos = [];
-    lassoPoints = [];
+    lassoPointsCurr = [];
     if (lasso) lasso.clear();
   };
 
@@ -417,24 +426,37 @@ const createScatterplot = (initialProperties = {}) => {
   const lassoStart = () => {
     // Fix camera for the lasso selection
     camera.config({ isFixed: true });
-    // Make sure we start a new lasso selection
-    lassoPrevMousePos = undefined;
+    mouseDown = true;
+    lassoActive = true;
     lassoClear();
     pubSub.publish('lassoStart');
   };
 
-  const lassoEnd = () => {
+  const lassoEnd = (lassoPoints, lassoPointsFlat) => {
     camera.config({ isFixed: false });
+    lassoPointsCurr = [...lassoPoints];
     // const t0 = performance.now();
-    const pointsInLasso = findPointsInLasso(lassoPos);
+    const pointsInLasso = findPointsInLasso(lassoPointsFlat);
     // console.log(`found ${pointsInLasso.length} in ${performance.now() - t0} msec`);
     select(pointsInLasso);
-    lassoPrevMousePos = undefined;
     pubSub.publish('lassoEnd', {
-      coordinates: lassoPoints,
+      coordinates: lassoPointsCurr,
     });
     if (lassoClearEvent === LASSO_CLEAR_ON_END) lassoClear();
   };
+
+  const lassoManager = createLassoManager(canvas, {
+    onStart: lassoStart,
+    onDraw: lassoExtend,
+    onEnd: lassoEnd,
+    startIndicatorShow: lassoInitiatorOnClick,
+    startIndicatorColor: 'rgba(255, 255, 255, 0.1)',
+    pointNorm: ([x, y]) => getScatterGlPos(getNdcX(x), getNdcY(y)),
+  });
+
+  lassoManager.startIndicator.style.border =
+    '1px dashed rgba(255, 255, 255, 0.33)';
+  lassoManager.startIndicator.style.color = 'rgba(255, 255, 255, 0.33)';
 
   const checkLassoMode = () => mouseMode === MOUSE_MODE_LASSO;
 
@@ -464,11 +486,10 @@ const createScatterplot = (initialProperties = {}) => {
     if (!isInit) return;
 
     mouseDown = true;
+    mouseDownTime = performance.now();
 
     mouseDownPosition = getRelativeMousePosition(event);
     lassoActive = checkLassoMode() || checkLassoKey(event);
-
-    if (lassoActive) lassoStart();
   };
 
   const mouseUpHandler = () => {
@@ -478,7 +499,7 @@ const createScatterplot = (initialProperties = {}) => {
 
     if (lassoActive) {
       lassoActive = false;
-      lassoEnd();
+      lassoManager.end();
     }
   };
 
@@ -490,11 +511,52 @@ const createScatterplot = (initialProperties = {}) => {
 
     if (clickDist >= lassoMinDist) return;
 
+    const clickTime = performance.now() - mouseDownTime;
+
+    if (lassoInitiatorOnClick && clickTime > LONG_CLICK_TIME) {
+      // Show lasso indicator on long click immideately
+      lassoManager.showStartIndicator(event);
+    } else {
+      // If the user clicked normally (i.e., fast) we'll only show the lasso
+      // indicator if the use click into the void
+      const clostestPoint = raycast();
+      if (clostestPoint >= 0) {
+        if (selection.length && lassoClearEvent === LASSO_CLEAR_ON_DESELECT) {
+          // Special case where we silently "deselect" the previous points by
+          // overriding the selection. Hence, we need to clear the lasso.
+          lassoClear();
+        }
+        select([clostestPoint]);
+      } else if (!lassoStartIndicatorTimeout) {
+        // We'll also wait to make sure the user didn't double click
+        lassoStartIndicatorTimeout = setTimeout(() => {
+          lassoStartIndicatorTimeout = null;
+          lassoManager.showStartIndicator(event);
+        }, SINGLE_CLICK_DELAY);
+      }
+    }
+
     const clostestPoint = raycast();
-    if (clostestPoint >= 0) select([clostestPoint]);
+    if (clickTime < LONG_CLICK_TIME && clostestPoint >= 0) {
+      if (selection.length && lassoClearEvent === LASSO_CLEAR_ON_DESELECT) {
+        // Special case where we silently "deselect" the previous points by
+        // overriding the selection. Hence, we need to clear the lasso.
+        lassoClear();
+      }
+      select([clostestPoint]);
+    } else if (!lassoStartIndicatorTimeout) {
+      lassoStartIndicatorTimeout = setTimeout(() => {
+        lassoStartIndicatorTimeout = null;
+        lassoManager.showStartIndicator(event);
+      }, SINGLE_CLICK_DELAY);
+    }
   };
 
   const mouseDblClickHandler = () => {
+    if (lassoStartIndicatorTimeout) {
+      clearTimeout(lassoStartIndicatorTimeout);
+      lassoStartIndicatorTimeout = null;
+    }
     if (deselectOnDblClick) deselect();
   };
 
@@ -509,7 +571,7 @@ const createScatterplot = (initialProperties = {}) => {
       hover(clostestPoint); // eslint-disable-line no-use-before-define
     }
 
-    if (lassoActive) lassoExtendDb();
+    if (lassoActive) lassoManager.extend(event, true);
 
     // Always redraw when mousedown as the user might have panned or lassoed
     if (mouseDown) drawRaf(); // eslint-disable-line no-use-before-define
@@ -943,7 +1005,7 @@ const createScatterplot = (initialProperties = {}) => {
     },
 
     attributes: {
-      position: () => lassoPoints,
+      position: () => lassoPointsCurr,
     },
 
     uniforms: {
@@ -954,7 +1016,7 @@ const createScatterplot = (initialProperties = {}) => {
     },
 
     elements: () =>
-      Array(lassoPoints.length - 2)
+      Array(lassoPointsCurr.length - 2)
         .fill()
         .map((_, i) => [0, i + 1, i + 2]),
   });
@@ -1112,7 +1174,7 @@ const createScatterplot = (initialProperties = {}) => {
     if (hoveredPoint >= 0) drawHoveredPoint();
     if (selection.length) drawSelectedPoint();
 
-    if (lassoPoints.length > 2) drawPolygon2d();
+    if (lassoPointsCurr.length > 2) drawPolygon2d();
 
     lasso.draw({
       projection: getProjection(),
@@ -1276,13 +1338,20 @@ const createScatterplot = (initialProperties = {}) => {
     if (!+newLassoMinDelay) return;
 
     lassoMinDelay = +newLassoMinDelay;
-    lassoExtendDb = withThrottle(lassoExtend, lassoMinDelay);
+
+    lassoManager.set({
+      minDelay: lassoMinDelay,
+    });
   };
 
   const setLassoMinDist = (newLassoMinDist) => {
     if (!+newLassoMinDist) return;
 
     lassoMinDist = +newLassoMinDist;
+
+    lassoManager.set({
+      minDist: lassoMinDist,
+    });
   };
 
   const setLassoClearEvent = (newLassoClearEvent) => {
@@ -1292,8 +1361,12 @@ const createScatterplot = (initialProperties = {}) => {
     )(newLassoClearEvent);
   };
 
-  const setLassoOnCircleClick = (newLassoOnCircleClick) => {
-    lassoOnCircleClick = Boolean(newLassoOnCircleClick);
+  const setLassoInitiatorOnClick = (newLassoInitiatorOnClick) => {
+    lassoInitiatorOnClick = Boolean(newLassoInitiatorOnClick);
+
+    lassoManager.set({
+      startIndicator: lassoInitiatorOnClick,
+    });
   };
 
   const setKeyMap = (newKeyMap) => {
@@ -1398,7 +1471,7 @@ const createScatterplot = (initialProperties = {}) => {
     if (property === 'lassoMinDelay') return lassoMinDelay;
     if (property === 'lassoMinDist') return lassoMinDist;
     if (property === 'lassoClearEvent') return lassoClearEvent;
-    if (property === 'lassoOnCircleClick') return lassoOnCircleClick;
+    if (property === 'lassoInitiatorOnClick') return lassoInitiatorOnClick;
     if (property === 'keyMap') return { ...keyMap };
     if (property === 'mouseMode') return mouseMode;
     if (property === 'opacity') return opacity;
@@ -1504,8 +1577,8 @@ const createScatterplot = (initialProperties = {}) => {
       setLassoClearEvent(properties.lassoClearEvent);
     }
 
-    if (properties.lassoOnCircleClick !== undefined) {
-      setLassoOnCircleClick(properties.lassoOnCircleClick);
+    if (properties.lassoInitiatorOnClick !== undefined) {
+      setLassoInitiatorOnClick(properties.lassoInitiatorOnClick);
     }
 
     if (properties.keyMap !== undefined) {
