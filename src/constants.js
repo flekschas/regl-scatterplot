@@ -16,6 +16,16 @@ export const COLOR_NUM_STATES = 4;
 export const FLOAT_BYTES = Float32Array.BYTES_PER_ELEMENT;
 export const GL_EXTENSIONS = ['OES_standard_derivatives', 'OES_texture_float'];
 
+export const MOUSE_MODE_PANZOOM = 'panZoom';
+export const MOUSE_MODE_LASSO = 'lasso';
+export const MOUSE_MODE_ROTATE = 'rotate';
+export const MOUSE_MODES = [
+  MOUSE_MODE_PANZOOM,
+  MOUSE_MODE_LASSO,
+  MOUSE_MODE_ROTATE,
+];
+export const DEFAULT_MOUSE_MODE = MOUSE_MODE_PANZOOM;
+
 // Easing
 export const EASING_FNS = {
   cubicIn,
@@ -32,9 +42,25 @@ export const DEFAULT_EASING = cubicInOut;
 export const LASSO_CLEAR_ON_DESELECT = 'deselect';
 export const LASSO_CLEAR_ON_END = 'lassoEnd';
 export const LASSO_CLEAR_EVENTS = [LASSO_CLEAR_ON_DESELECT, LASSO_CLEAR_ON_END];
+export const DEFAULT_LASSO_ON_CIRCLE_CLICK = true;
 export const DEFAULT_LASSO_MIN_DELAY = 10;
 export const DEFAULT_LASSO_MIN_DIST = 3;
 export const DEFAULT_LASSO_CLEAR_EVENT = LASSO_CLEAR_ON_END;
+
+// Key mapping
+export const KEY_ACTION_LASSO = 'lasso';
+export const KEY_ACTION_ROTATE = 'rotate';
+export const KEY_ACTIONS = [KEY_ACTION_LASSO, KEY_ACTION_ROTATE];
+export const KEY_ALT = 'alt';
+export const KEY_CMD = 'cmd';
+export const KEY_CTRL = 'ctrl';
+export const KEY_META = 'meta';
+export const KEY_SHIFT = 'shift';
+export const KEYS = [KEY_ALT, KEY_CMD, KEY_CTRL, KEY_META, KEY_SHIFT];
+export const DEFAULT_KEY_MAP = {
+  [KEY_ALT]: KEY_ACTION_ROTATE,
+  [KEY_SHIFT]: KEY_ACTION_LASSO,
+};
 
 // Default attribute
 export const DEFAULT_DATA_ASPECT_RATIO = 1;

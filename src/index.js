@@ -50,6 +50,22 @@ import {
   LASSO_CLEAR_EVENTS,
   LASSO_CLEAR_ON_DESELECT,
   LASSO_CLEAR_ON_END,
+  DEFAULT_LASSO_ON_CIRCLE_CLICK,
+  KEY_ACTION_LASSO,
+  KEY_ACTION_ROTATE,
+  KEY_ACTIONS,
+  KEY_ALT,
+  KEY_CMD,
+  KEY_CTRL,
+  KEY_META,
+  KEY_SHIFT,
+  KEYS,
+  DEFAULT_KEY_MAP,
+  MOUSE_MODE_PANZOOM,
+  MOUSE_MODE_LASSO,
+  MOUSE_MODE_ROTATE,
+  MOUSE_MODES,
+  DEFAULT_MOUSE_MODE,
 } from './constants';
 
 import {
@@ -67,6 +83,7 @@ import {
   toRgba,
   max,
   min,
+  flipObj,
 } from './utils';
 
 import { version } from '../package.json';
@@ -116,6 +133,9 @@ const createScatterplot = (initialProperties = {}) => {
     lassoMinDelay: initialLassoMinDelay = DEFAULT_LASSO_MIN_DELAY,
     lassoMinDist: initialLassoMinDist = DEFAULT_LASSO_MIN_DIST,
     lassoClearEvent: initialLassoClearEvent = DEFAULT_LASSO_CLEAR_EVENT,
+    lassoOnCircleClick: initialLassoOnCircleClick = DEFAULT_LASSO_ON_CIRCLE_CLICK,
+    keyMap: initialKeyMap = DEFAULT_KEY_MAP,
+    mouseMode: initialMouseMode = DEFAULT_MOUSE_MODE,
     showRecticle: initialShowRecticle = DEFAULT_SHOW_RECTICLE,
     recticleColor: initialRecticleColor = DEFAULT_RECTICLE_COLOR,
     pointColor: initialPointColor = DEFAULT_COLOR_NORMAL,
@@ -154,17 +174,19 @@ const createScatterplot = (initialProperties = {}) => {
   let camera;
   let lasso;
   let mouseDown = false;
-  let mouseDownShift = false;
   let mouseDownPosition = [0, 0];
   let numPoints = 0;
   let selection = [];
+  let lassoActive = false;
   let lassoColor = toRgba(initialLassoColor, true);
   let lassoMinDelay = +initialLassoMinDelay;
   let lassoMinDist = +initialLassoMinDist;
   let lassoClearEvent = initialLassoClearEvent;
+  let lassoOnCircleClick = initialLassoOnCircleClick;
   let lassoPos = [];
   let lassoPoints = [];
   let lassoPrevMousePos;
+  let mouseMode = initialMouseMode;
   let searchIndex;
   let viewAspectRatio;
   let dataAspectRatio = DEFAULT_DATA_ASPECT_RATIO;
@@ -176,6 +198,9 @@ const createScatterplot = (initialProperties = {}) => {
   let recticleColor = toRgba(initialRecticleColor, true);
   let deselectOnDblClick = initialDeselectOnDblClick;
   let deselectOnEscape = initialDeselectOnEscape;
+
+  let keyMap = initialKeyMap;
+  let keyActionMap = flipObj(keyMap);
 
   let pointColors = isMultipleColors(initialPointColor)
     ? [...initialPointColor]
@@ -411,15 +436,39 @@ const createScatterplot = (initialProperties = {}) => {
     if (lassoClearEvent === LASSO_CLEAR_ON_END) lassoClear();
   };
 
+  const checkLassoMode = () => mouseMode === MOUSE_MODE_LASSO;
+
+  const checkLassoKey = (event) => {
+    switch (keyActionMap[KEY_ACTION_LASSO]) {
+      case KEY_ALT:
+        return event.altKey;
+
+      case KEY_CMD:
+        return event.metaKey;
+
+      case KEY_CTRL:
+        return event.ctrlKey;
+
+      case KEY_META:
+        return event.metaKey;
+
+      case KEY_SHIFT:
+        return event.shiftKey;
+
+      default:
+        return false;
+    }
+  };
+
   const mouseDownHandler = (event) => {
     if (!isInit) return;
 
     mouseDown = true;
 
     mouseDownPosition = getRelativeMousePosition(event);
-    mouseDownShift = event.shiftKey;
+    lassoActive = checkLassoMode() || checkLassoKey(event);
 
-    if (mouseDownShift) lassoStart();
+    if (lassoActive) lassoStart();
   };
 
   const mouseUpHandler = () => {
@@ -427,8 +476,8 @@ const createScatterplot = (initialProperties = {}) => {
 
     mouseDown = false;
 
-    if (mouseDownShift) {
-      mouseDownShift = false;
+    if (lassoActive) {
+      lassoActive = false;
       lassoEnd();
     }
   };
@@ -455,12 +504,12 @@ const createScatterplot = (initialProperties = {}) => {
     getRelativeMousePosition(event);
 
     // Only ray cast if the mouse cursor is inside
-    if (isMouseInCanvas && !mouseDownShift) {
+    if (isMouseInCanvas && !lassoActive) {
       const clostestPoint = raycast();
       hover(clostestPoint); // eslint-disable-line no-use-before-define
     }
 
-    if (mouseDownShift) lassoExtendDb();
+    if (lassoActive) lassoExtendDb();
 
     // Always redraw when mousedown as the user might have panned or lassoed
     if (mouseDown) drawRaf(); // eslint-disable-line no-use-before-define
@@ -1243,6 +1292,40 @@ const createScatterplot = (initialProperties = {}) => {
     )(newLassoClearEvent);
   };
 
+  const setLassoOnCircleClick = (newLassoOnCircleClick) => {
+    lassoOnCircleClick = Boolean(newLassoOnCircleClick);
+  };
+
+  const setKeyMap = (newKeyMap) => {
+    keyMap = Object.entries(newKeyMap).reduce((map, [key, value]) => {
+      if (KEYS.includes(key) && KEY_ACTIONS.includes(value)) {
+        map[key] = value;
+      }
+      return map;
+    }, {});
+    keyActionMap = flipObj(keyMap);
+
+    if (keyActionMap[KEY_ACTION_ROTATE]) {
+      camera.config({
+        isRotate: true,
+        mouseDownMoveModKey: keyActionMap[KEY_ACTION_ROTATE],
+      });
+    } else {
+      camera.config({
+        isRotate: false,
+      });
+    }
+  };
+
+  const setMouseMode = (newMouseMode) => {
+    mouseMode = limit(MOUSE_MODES, MOUSE_MODE_PANZOOM)(newMouseMode);
+
+    camera.config({
+      defaultMouseDownMoveAction:
+        mouseMode === MOUSE_MODE_ROTATE ? 'rotate' : 'pan',
+    });
+  };
+
   const setShowRecticle = (newShowRecticle) => {
     if (newShowRecticle === null) return;
 
@@ -1315,6 +1398,9 @@ const createScatterplot = (initialProperties = {}) => {
     if (property === 'lassoMinDelay') return lassoMinDelay;
     if (property === 'lassoMinDist') return lassoMinDist;
     if (property === 'lassoClearEvent') return lassoClearEvent;
+    if (property === 'lassoOnCircleClick') return lassoOnCircleClick;
+    if (property === 'keyMap') return { ...keyMap };
+    if (property === 'mouseMode') return mouseMode;
     if (property === 'opacity') return opacity;
     if (property === 'pointColor')
       return pointColors.length === 1 ? pointColors[0] : pointColors;
@@ -1416,6 +1502,18 @@ const createScatterplot = (initialProperties = {}) => {
 
     if (properties.lassoClearEvent !== undefined) {
       setLassoClearEvent(properties.lassoClearEvent);
+    }
+
+    if (properties.lassoOnCircleClick !== undefined) {
+      setLassoOnCircleClick(properties.lassoOnCircleClick);
+    }
+
+    if (properties.keyMap !== undefined) {
+      setKeyMap(properties.keyMap);
+    }
+
+    if (properties.mouseMode !== undefined) {
+      setMouseMode(properties.mouseMode);
     }
 
     if (properties.showRecticle !== undefined) {

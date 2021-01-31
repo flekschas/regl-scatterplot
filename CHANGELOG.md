@@ -1,5 +1,10 @@
 ## Next
 
+## v0.15.0
+
+- Add `mouseMode` for switching betweem mouse modes programmatically. Currently supported modes are `panZoom`, `lasso`, and `rotate`.
+- Add `keyMap` for remapping modifier key-induced actions. Available modifier keys are `alt`, `shift`, `ctrl`, `cmd`, and `meta`. Available actions are `lasso` and `rotate`.
+
 ## v0.14.0
 
 - Add `lassoStart`, `lassoExtend`, and `lassoEnd` events
