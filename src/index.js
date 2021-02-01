@@ -1745,7 +1745,12 @@ const createScatterplot = (initialProperties = {}) => {
     pointSizeTex = createPointSizeTexture();
 
     // Set dimensions
-    set({ backgroundImage: initialBackgroundImage, width, height });
+    set({
+      backgroundImage: initialBackgroundImage,
+      width,
+      height,
+      keyMap,
+    });
     updateLassoInitiatorStyle();
 
     // Setup event handler

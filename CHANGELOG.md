@@ -1,5 +1,9 @@
 ## Next
 
+## v0.15.1
+
+- Make sure the `keyMap` is properly initiated.
+
 ## v0.15.0
 
 - Add `mouseMode` for switching betweem mouse modes programmatically. Currently supported modes are `panZoom`, `lasso`, and `rotate`.
