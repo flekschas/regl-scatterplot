@@ -24,7 +24,14 @@
 - **Select a dot**: Click on a dot with your mouse.
 - **Select multiple dots**:
   - While pressing <kbd>SHIFT</kbd>, click and drag your mouse. All items within the lasso will be selected.
-  - Upon activating `lassoInitiator` you can click somewhere into the void, which will show a circle. Click inside this circle and drag your mouse to start lassoing.
+  - Upon activating the lasso initiator (i.e., `lassoInitiator: true`) you can click into the background and a circle will appear under your mouse cursor. Click inside this circle and drag your mouse to start lassoing.
+    <details><summary>Click here to see how it works</summary>
+    <p>
+
+    ![Lasso Initiator](https://user-images.githubusercontent.com/932103/106489598-f42c4480-6482-11eb-8286-92a9956e1d20.gif)
+
+    </p>
+    </details>
 - **Deselect**: Double-click onto an empty region.
 
 Note, you can remap `rotate` and `lasso` to other modifier keys via the `keyMap` option!
