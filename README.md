@@ -355,7 +355,7 @@ can be read and written via [`scatterplot.get()`](#scatterplot.get) and [`scatte
 | lassoClearEvent             | string          | `'lassoEnd'`                        | `'lassoEnd'` or `'deselect'`                                    | `true`   | `false`     |
 | lassoInitiator              | boolean         | `false`                             |                                                                 | `true`   | `false`     |
 | lassoInitiatorElement       | object          | the lasso dom element               |                                                                 | `false`  | `false`     |
-| lassoInitiatorParentElement | string          | `'lassoEnd'`                        | `'lassoEnd'` or `'deselect'`                                    | `true`   | `false`     |
+| lassoInitiatorParentElement | object          | `document.body`                     |                                                                 | `true`   | `false`     |
 | showRecticle                | boolean         | `false`                             | `true` or `false`                                               | `true`   | `false`     |
 | recticleColor               | quadruple       | rgba(1, 1, 1, .5)                   | hex, rgb, rgba                                                  | `true`   | `false`     |
 | xScale                      | function        | `null`                              | must follow the D3 scale API                                    | `true`   | `true`      |

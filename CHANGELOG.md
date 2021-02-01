@@ -4,6 +4,7 @@
 
 - Make sure the `keyMap` is properly initiated.
 - Fix a memory leak by properly destroying the camera on `scatterplot.destroy()`.
+- Add test for rotation, key mapping, and the lasso initiator
 
 ## v0.15.0
 
