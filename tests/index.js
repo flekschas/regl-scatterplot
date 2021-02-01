@@ -26,6 +26,7 @@ import {
   DEFAULT_LASSO_CLEAR_EVENT,
   KEY_ACTION_LASSO,
   KEY_ACTION_ROTATE,
+  SINGLE_CLICK_DELAY,
 } from '../src/constants';
 
 import {
@@ -1027,6 +1028,118 @@ test('tests involving mouse events', async (t2) => {
     scatterplot.destroy();
   });
 
+  await t2.test('test lasso selection via the initiator', async (t) => {
+    const dim = 200;
+    const hdim = dim / 2;
+    const canvas = createCanvas(dim, dim);
+    const scatterplot = createScatterplot({
+      canvas,
+      width: dim,
+      height: dim,
+      lassoInitiator: false,
+    });
+
+    await scatterplot.draw([
+      [0, 0],
+      [1, 1],
+      [1, -1],
+      [-1, -1],
+      [-1, 1],
+    ]);
+
+    let selectedPoints = [];
+    scatterplot.subscribe('select', ({ points: newSelectedPoints }) => {
+      selectedPoints = [...newSelectedPoints];
+    });
+
+    const lassoIniatorElement = scatterplot.get('lassoInitiatorElement');
+
+    t.ok(
+      scatterplot.get('lassoInitiator') === false,
+      'lasso initiator should be inactive'
+    );
+    t.ok(
+      lassoIniatorElement.id.startsWith('lasso-initiator'),
+      'lasso initiator element should exist'
+    );
+    t.equal(
+      scatterplot.get('lassoInitiatorParentElement'),
+      document.body,
+      'lasso initiator parent element should be the document body'
+    );
+
+    canvas.dispatchEvent(createMouseEvent('mousedown', dim * 1.125, hdim));
+    await wait(0);
+    canvas.dispatchEvent(createMouseEvent('click', dim * 1.125, hdim));
+
+    // We need to wait for the click delay and some extra milliseconds for
+    // the circle to appear
+    await wait(SINGLE_CLICK_DELAY + 50);
+
+    lassoIniatorElement.dispatchEvent(
+      createMouseEvent('mousedown', dim * 1.125, hdim)
+    );
+    await wait(0);
+
+    const mousePositions = [
+      [dim * 1.125, hdim],
+      [hdim, -dim * 0.125],
+      [-dim * 0.125, -dim * 0.125],
+      [-dim * 0.125, dim * 0.125],
+      [0, dim * 0.9],
+      [dim * 0.1, dim * 0.9],
+      [dim * 0.1, dim * 1.125],
+      [dim * 1.125, dim * 1.125],
+    ];
+
+    await asyncForEach(mousePositions, async (mousePosition) => {
+      window.dispatchEvent(createMouseEvent('mousemove', ...mousePosition));
+      await wait(DEFAULT_LASSO_MIN_DELAY + 5);
+    });
+
+    window.dispatchEvent(createMouseEvent('mouseup'));
+
+    await wait(0);
+
+    t.deepEqual(selectedPoints, [], 'should have not selected anything');
+
+    scatterplot.set({ lassoInitiator: true });
+
+    await wait(0);
+
+    t.ok(scatterplot.get('lassoInitiator'), 'lasso initiator should be active');
+
+    canvas.dispatchEvent(createMouseEvent('mousedown', dim * 1.125, hdim));
+    await wait(0);
+    canvas.dispatchEvent(createMouseEvent('click', dim * 1.125, hdim));
+
+    // We need to wait for the click delay and some extra milliseconds for
+    // the circle to appear
+    await wait(SINGLE_CLICK_DELAY + 50);
+
+    lassoIniatorElement.dispatchEvent(
+      createMouseEvent('mousedown', dim * 1.125, hdim)
+    );
+    await wait(0);
+
+    await asyncForEach(mousePositions, async (mousePosition) => {
+      window.dispatchEvent(createMouseEvent('mousemove', ...mousePosition));
+      await wait(DEFAULT_LASSO_MIN_DELAY + 5);
+    });
+
+    window.dispatchEvent(createMouseEvent('mouseup'));
+
+    await wait(0);
+
+    t.deepEqual(
+      selectedPoints,
+      [0, 2, 4],
+      'should have selected the first, third, and fifth point'
+    );
+
+    scatterplot.destroy();
+  });
+
   await t2.test('test rotation', async (t) => {
     const dim = 200;
     const hdim = dim / 2;
@@ -1043,9 +1156,7 @@ test('tests involving mouse events', async (t2) => {
     t.equal(initialRotation, 0, 'view should not be rotated on init');
 
     let rotation;
-    let viewFired = 0;
     const viewHandler = ({ camera }) => {
-      viewFired++;
       rotation = camera.rotation;
     };
     scatterplot.subscribe('view', viewHandler);
