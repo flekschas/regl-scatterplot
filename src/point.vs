@@ -5,7 +5,6 @@ uniform sampler2D colorTex;
 uniform float colorTexRes;
 uniform sampler2D stateTex;
 uniform float stateTexRes;
-uniform float devicePixelRatio;
 uniform sampler2D pointSizeTex;
 uniform float pointSizeTexRes;
 uniform float pointSizeExtra;
@@ -18,7 +17,7 @@ uniform float isSizedByValue;
 uniform float maxColorTexIdx;
 uniform float numColorStates;
 uniform float maxPointSizeTexIdx;
-uniform float scaling;
+uniform float pointScale;
 uniform mat4 projection;
 uniform mat4 model;
 uniform mat4 view;
@@ -63,10 +62,6 @@ void main() {
 
   color = texture2D(colorTex, colorTexIndex);
 
-  // The final scaling consists of linear scaling in [0, 1] and log scaling
-  // in [1, [
-  float finalScaling = min(1.0, scaling) + log2(max(1.0, scaling));
-
   // Determine point size
   float pointSizeIndexCat = state.z * isSizedByCategory;
   float pointSizeIndexVal = floor(state.w * maxPointSizeTexIdx) * isSizedByValue;
@@ -80,7 +75,7 @@ void main() {
   );
   float pointSize = texture2D(pointSizeTex, pointSizeTexIndex).x;
 
-  gl_PointSize = pointSize * finalScaling + pointSizeExtra * devicePixelRatio;
+  gl_PointSize = pointSize * pointScale + pointSizeExtra;
 }
 `;
 

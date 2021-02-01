@@ -306,32 +306,32 @@ const createScatterplot = (initialProperties = {}) => {
 
   const raycast = () => {
     const [xGl, yGl] = getMouseGlPos();
-    const [x, y] = getScatterGlPos(xGl, yGl);
+    const [xNdc, yNdc] = getScatterGlPos(xGl, yGl);
 
-    const scaling = camera.scaling;
-    const scaledPointSize =
-      2 *
-      pointSize *
-      (min(1.0, scaling) + Math.log2(max(1.0, scaling))) *
-      window.devicePixelRatio;
+    // eslint-disable-next-line no-use-before-define
+    const pointScale = getPointScale();
 
-    const xNormalizedScaledPointSize = scaledPointSize / width;
-    const yNormalizedScaledPointSize = scaledPointSize / height;
+    // The height of the view in normalized device coordinates
+    const heightNdc = getScatterGlPos(1, 1)[1] - getScatterGlPos(-1, -1)[1];
+    // The size of a pixel in the current view in normalized device coordinates
+    const pxNdc = heightNdc / height;
+    // The scaled point size in normalized device coordinates
+    const pointSizeNdc = pointSize * pointScale * pxNdc * 0.66;
 
     // Get all points within a close range
     const pointsInBBox = searchIndex.range(
-      x - xNormalizedScaledPointSize,
-      y - yNormalizedScaledPointSize,
-      x + xNormalizedScaledPointSize,
-      y + yNormalizedScaledPointSize
+      xNdc - pointSizeNdc,
+      yNdc - pointSizeNdc,
+      xNdc + pointSizeNdc,
+      yNdc + pointSizeNdc
     );
 
     // Find the closest point
-    let minDist = scaledPointSize;
+    let minDist = pointSizeNdc;
     let clostestPoint;
     pointsInBBox.forEach((idx) => {
       const [ptX, ptY] = searchIndex.points[idx];
-      const d = dist(ptX, ptY, x, y);
+      const d = dist(ptX, ptY, xNdc, yNdc);
       if (d < minDist) {
         minDist = d;
         clostestPoint = idx;
@@ -341,33 +341,6 @@ const createScatterplot = (initialProperties = {}) => {
     if (minDist < (pointSize / width) * 2) return clostestPoint;
     return -1;
   };
-
-  // const lassoExtend = () => {
-  //   const currMousePos = getMousePos();
-  //   const [xGl, yGl] = getMouseGlPos();
-
-  //   if (!lassoPrevMousePos) {
-  //     const point = getScatterGlPos(xGl, yGl);
-  //     lassoPos = [...point];
-  //     lassoPoints = [point];
-  //     lassoPrevMousePos = currMousePos;
-  //   } else {
-  //     const d = dist(...currMousePos, ...lassoPrevMousePos);
-
-  //     if (d > lassoMinDist) {
-  //       const point = getScatterGlPos(xGl, yGl);
-  //       lassoPos.push(...point);
-  //       lassoPoints.push(point);
-  //       lassoPrevMousePos = currMousePos;
-  //       if (lassoPos.length > 2) {
-  //         lasso.setPoints(lassoPos);
-  //       }
-  //     }
-  //   }
-
-  //   pubSub.publish('lassoExtend', { coordinates: lassoPoints });
-  // };
-  // let lassoExtendDb = withThrottle(lassoExtend, lassoMinDelay);
 
   const lassoExtend = (lassoPoints, lassoPointsFlat) => {
     lassoPointsCurr = lassoPoints;
@@ -818,7 +791,6 @@ const createScatterplot = (initialProperties = {}) => {
   const getBackgroundImage = () => backgroundImage;
   const getColorTex = () => colorTex;
   const getColorTexRes = () => colorTexRes;
-  const getDevicePixelRatio = () => window.devicePixelRatio;
   const getNormalPointsIndexBuffer = () => normalPointsIndexBuffer;
   const getSelectedPointsIndexBuffer = () => selectedPointsIndexBuffer;
   const getPointSizeTex = () => pointSizeTex;
@@ -829,7 +801,9 @@ const createScatterplot = (initialProperties = {}) => {
   const getProjection = () => projection;
   const getView = () => camera.view;
   const getModel = () => model;
-  const getScaling = () => camera.scaling;
+  const getPointScale = () =>
+    min(1.0, camera.scaling) +
+    Math.log2(max(1.0, camera.scaling)) * window.devicePixelRatio;
   const getNormalNumPoints = () => numPoints;
   const getIsColoredByCategory = () => (colorBy === 'category') * 1;
   const getIsColoredByValue = () => (colorBy === 'value') * 1;
@@ -890,8 +864,7 @@ const createScatterplot = (initialProperties = {}) => {
         projection: getProjection,
         model: getModel,
         view: getView,
-        devicePixelRatio: getDevicePixelRatio,
-        scaling: getScaling,
+        pointScale: getPointScale,
         pointSizeTex: getPointSizeTex,
         pointSizeTexRes: getPointSizeTexRes,
         pointSizeExtra: getPointSizeExtra,
