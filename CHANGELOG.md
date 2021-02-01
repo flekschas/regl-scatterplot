@@ -5,6 +5,7 @@
 - Add `mouseMode` for switching betweem mouse modes programmatically. Currently supported modes are `panZoom`, `lasso`, and `rotate`.
 - Add `keyMap` for remapping modifier key-induced actions. Available modifier keys are `alt`, `shift`, `ctrl`, `cmd`, and `meta`. Available actions are `lasso` and `rotate`.
 - Add `lassoInitiator` (boolean) for enabling a way to lasso points without having to use a modifier key. When activated, you can click into the void and a circle will appear. You can then start lassoing by mousing down + holding onto the circle and dragging. Since clicking into the void can be challenging when working with many points you can also long clicking anywhere and the circle for initiating the lasso will appear anywhere.
+- Improve point selection
 
 ## v0.14.0
 
