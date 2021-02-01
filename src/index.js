@@ -1487,7 +1487,8 @@ const createScatterplot = (initialProperties = {}) => {
     if (property === 'lassoMinDelay') return lassoMinDelay;
     if (property === 'lassoMinDist') return lassoMinDist;
     if (property === 'lassoClearEvent') return lassoClearEvent;
-    if (property === 'lassoInitiator') return lassoManager.initiator;
+    if (property === 'lassoInitiator') return lassoInitiator;
+    if (property === 'lassoInitiatorElement') return lassoManager.initiator;
     if (property === 'lassoInitiatorParentElement')
       return lassoInitiatorParentElement;
     if (property === 'keyMap') return { ...keyMap };
