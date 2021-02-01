@@ -16,14 +16,18 @@
 
 **Live playground:** https://observablehq.com/@flekschas/regl-scatterplot
 
-**Interactions:**
+**Default Interactions:**
 
 - **Pan**: Click and drag your mouse.
 - **Zoom**: Scroll vertically.
 - **Rotate**: While pressing <kbd>ALT</kbd>, click and drag your mouse.
-- **Select a single dot**: Click on a dot with your mouse.
-- **Select multiple dots**: While pressing <kbd>SHIFT</kbd>, click and drag your mouse. All items within the lasso will be selected.
+- **Select a dot**: Click on a dot with your mouse.
+- **Select multiple dots**:
+  - While pressing <kbd>SHIFT</kbd>, click and drag your mouse. All items within the lasso will be selected.
+  - Upon activating `lassoInitiator` you can click somewhere into the void, which will show a circle. Click inside this circle and drag your mouse to start lassoing.
 - **Deselect**: Double-click onto an empty region.
+
+Note, you can remap `rotate` and `lasso` to other modifier keys via the `keyMap` option!
 
 **Supported Visual Encodings:**
 
@@ -234,41 +238,46 @@ Clears previously drawn points.
 
 **Properties:**
 
-| Name               | Type            | Default                             | Constraints                                                     | Settable | Nullifiable |
-| ------------------ | --------------- | ----------------------------------- | --------------------------------------------------------------- | -------- | ----------- |
-| canvas             | object          | `document.createElement('canvas')`  |                                                                 | `false`  | `false`     |
-| regl               | object          | `createRegl(canvas)`                |                                                                 | `false`  | `false`     |
-| syncEvents         | boolean         | `false`                             |                                                                 | `false`  | `false`     |
-| version            | string          |                                     |                                                                 | `false`  | `false`     |
-| width              | integer         | `300`                               | > 0                                                             | `true`   | `false`     |
-| height             | integer         | `200`                               | > 0                                                             | `true`   | `false`     |
-| aspectRatio        | float           | `1.0`                               | > 0                                                             | `true`   | `false`     |
-| backgroundColor    | string or array | rgba(0, 0, 0, 1)                    | hex, rgb, rgba                                                  | `true`   | `false`     |
-| backgroundImage    | function        | `null`                              | Regl texture                                                    | `true`   | `true`      |
-| camera             | object          |                                     | See [dom-2d-camera](https://github.com/flekschas/dom-2d-camera) | `false`  | `false`     |
-| cameraTarget       | tuple           | `[0, 0]`                            |                                                                 | `true`   | `false`     |
-| cameraDistance     | float           | `1`                                 | > 0                                                             | `true`   | `false`     |
-| cameraRotation     | float           | `0`                                 |                                                                 | `true`   | `false`     |
-| cameraView         | Float32Array    | `[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1`] |                                                                 | `true`   | `false`     |
-| colorBy            | string          | `null`                              | `category` or `value`                                           | `true`   | `true`      |
-| sizeBy             | string          | `null`                              | `category` or `value`                                           | `true`   | `true`      |
-| deselectOnDblClick | boolean         | `true`                              |                                                                 | `true`   | `false`     |
-| deselectOnEscape   | boolean         | `true`                              |                                                                 | `true`   | `false`     |
-| opacity            | float           | `1`                                 | > 0                                                             | `true`   | `false`     |
-| pointColor         | quadruple       | `[0.66, 0.66, 0.66, 1]`             | single value or list of hex, rgb, rgba                          | `true`   | `false`     |
-| pointColorActive   | quadruple       | `[0, 0.55, 1, 1]`                   | single value or list of hex, rgb, rgba                          | `true`   | `false`     |
-| pointColorHover    | quadruple       | `[1, 1, 1, 1]`                      | single value or list of hex, rgb, rgba                          | `true`   | `false`     |
-| pointOutlineWidth  | integer         | `2`                                 | >= 0                                                            | `true`   | `false`     |
-| pointSize          | integer         | `6`                                 | > 0                                                             | `true`   | `false`     |
-| pointSizeSelected  | integer         | `2`                                 | >= 0                                                            | `true`   | `false`     |
-| lassoColor         | quadruple       | rgba(0, 0.667, 1, 1)                | hex, rgb, rgba                                                  | `true`   | `false`     |
-| lassoMinDelay      | integer         | 15                                  | >= 0                                                            | `true`   | `false`     |
-| lassoMinDist       | integer         | 4                                   | >= 0                                                            | `true`   | `false`     |
-| lassoClearEvent    | string          | `'lassoEnd'`                        | `'lassoEnd'` or `'deselect'`                                    | `true`   | `false`     |
-| showRecticle       | boolean         | `false`                             | `true` or `false`                                               | `true`   | `false`     |
-| recticleColor      | quadruple       | rgba(1, 1, 1, .5)                   | hex, rgb, rgba                                                  | `true`   | `false`     |
-| xScale             | function        | `null`                              | must follow the D3 scale API                                    | `true`   | `true`      |
-| yScale             | function        | `null`                              | must follow the D3 scale API                                    | `true`   | `true`      |
+| Name                        | Type            | Default                             | Constraints                                                     | Settable | Nullifiable |
+| --------------------------- | --------------- | ----------------------------------- | --------------------------------------------------------------- | -------- | ----------- |
+| canvas                      | object          | `document.createElement('canvas')`  |                                                                 | `false`  | `false`     |
+| regl                        | object          | `createRegl(canvas)`                |                                                                 | `false`  | `false`     |
+| syncEvents                  | boolean         | `false`                             |                                                                 | `false`  | `false`     |
+| version                     | string          |                                     |                                                                 | `false`  | `false`     |
+| width                       | integer         | `300`                               | > 0                                                             | `true`   | `false`     |
+| height                      | integer         | `200`                               | > 0                                                             | `true`   | `false`     |
+| aspectRatio                 | float           | `1.0`                               | > 0                                                             | `true`   | `false`     |
+| backgroundColor             | string or array | rgba(0, 0, 0, 1)                    | hex, rgb, rgba                                                  | `true`   | `false`     |
+| backgroundImage             | function        | `null`                              | Regl texture                                                    | `true`   | `true`      |
+| camera                      | object          |                                     | See [dom-2d-camera](https://github.com/flekschas/dom-2d-camera) | `false`  | `false`     |
+| cameraTarget                | tuple           | `[0, 0]`                            |                                                                 | `true`   | `false`     |
+| cameraDistance              | float           | `1`                                 | > 0                                                             | `true`   | `false`     |
+| cameraRotation              | float           | `0`                                 |                                                                 | `true`   | `false`     |
+| cameraView                  | Float32Array    | `[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1`] |                                                                 | `true`   | `false`     |
+| colorBy                     | string          | `null`                              | `category` or `value`                                           | `true`   | `true`      |
+| sizeBy                      | string          | `null`                              | `category` or `value`                                           | `true`   | `true`      |
+| deselectOnDblClick          | boolean         | `true`                              |                                                                 | `true`   | `false`     |
+| deselectOnEscape            | boolean         | `true`                              |                                                                 | `true`   | `false`     |
+| opacity                     | float           | `1`                                 | > 0                                                             | `true`   | `false`     |
+| pointColor                  | quadruple       | `[0.66, 0.66, 0.66, 1]`             | single value or list of hex, rgb, rgba                          | `true`   | `false`     |
+| pointColorActive            | quadruple       | `[0, 0.55, 1, 1]`                   | single value or list of hex, rgb, rgba                          | `true`   | `false`     |
+| pointColorHover             | quadruple       | `[1, 1, 1, 1]`                      | single value or list of hex, rgb, rgba                          | `true`   | `false`     |
+| pointOutlineWidth           | integer         | `2`                                 | >= 0                                                            | `true`   | `false`     |
+| pointSize                   | integer         | `6`                                 | > 0                                                             | `true`   | `false`     |
+| pointSizeSelected           | integer         | `2`                                 | >= 0                                                            | `true`   | `false`     |
+| lassoColor                  | quadruple       | rgba(0, 0.667, 1, 1)                | hex, rgb, rgba                                                  | `true`   | `false`     |
+| lassoMinDelay               | integer         | 15                                  | >= 0                                                            | `true`   | `false`     |
+| lassoMinDist                | integer         | 4                                   | >= 0                                                            | `true`   | `false`     |
+| lassoClearEvent             | string          | `'lassoEnd'`                        | `'lassoEnd'` or `'deselect'`                                    | `true`   | `false`     |
+| lassoInitiator              | boolean         | `false`                             |                                                                 | `true`   | `false`     |
+| lassoInitiatorElement       | object          | the lasso dom element               |                                                                 | `false`  | `false`     |
+| lassoInitiatorParentElement | string          | `'lassoEnd'`                        | `'lassoEnd'` or `'deselect'`                                    | `true`   | `false`     |
+| showRecticle                | boolean         | `false`                             | `true` or `false`                                               | `true`   | `false`     |
+| recticleColor               | quadruple       | rgba(1, 1, 1, .5)                   | hex, rgb, rgba                                                  | `true`   | `false`     |
+| xScale                      | function        | `null`                              | must follow the D3 scale API                                    | `true`   | `true`      |
+| yScale                      | function        | `null`                              | must follow the D3 scale API                                    | `true`   | `true`      |
+| keyMap                      | object          | `{}`                                | See the notes below                                             | `true`   | `false`     |
+| mouseMode                   | string          | `'panZoom'`                         | `'panZoom'`, `'lasso'`, or `'rotate'`                           | `true`   | `false`     |
 
 **Notes:**
 
@@ -300,6 +309,15 @@ Clears previously drawn points.
   synchronous event broadcasting at your own risk via
   `createScatterplot({ syncEvents: true })`. This property can't be changed
   after initialization!
+
+- You don't like the look of the lasso initiator? No problem. Simple get the dom
+  element via `scatterplot.get('lassoInitiatorElement')` and adjust the style
+  via JavaScript. E.g.: `scatterplot.get('lassoInitiatorElement').style.background = 'green'`.
+
+- The `keyMap` property is an object defining what action should be enabled by
+  holding down which modifier key. E.g.: `{ shift: 'lasso' }`. Accaptable
+  modifier keys are `alt`, `cmd`, `ctrl`, `meta`, `shift`. Accaptable actions
+  are `lasso` and `rotate`.
 
 **Examples:**
 
