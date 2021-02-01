@@ -1,4 +1,3 @@
-import '@babel/polyfill';
 import {
   assign,
   identity,
@@ -155,67 +154,69 @@ const createLasso = (
     return { opacity, scale, rotate };
   };
 
-  const showInitiator = async (event) => {
+  const showInitiator = (event) => {
     if (!enableInitiator) return;
 
-    await wait(0);
+    wait(0).then(() => {
+      const x = event.clientX;
+      const y = event.clientY;
 
-    const x = event.clientX;
-    const y = event.clientY;
+      if (isMouseDown) return;
 
-    if (isMouseDown) return;
+      let opacity = 0.5;
+      let scale = 0;
+      let rotate = 0;
 
-    let opacity = 0.5;
-    let scale = 0;
-    let rotate = 0;
+      const style = getCurrentinitiatorAnimationStyle();
+      opacity = style.opacity;
+      scale = style.scale;
+      rotate = style.rotate;
+      initiator.style.opacity = opacity;
+      initiator.style.transform = `translate(-50%,-50%) scale(${scale}) rotate(${rotate}deg)`;
 
-    const style = getCurrentinitiatorAnimationStyle();
-    opacity = style.opacity;
-    scale = style.scale;
-    rotate = style.rotate;
-    initiator.style.opacity = opacity;
-    initiator.style.transform = `translate(-50%,-50%) scale(${scale}) rotate(${rotate}deg)`;
+      initiator.style.animation = 'none';
 
-    initiator.style.animation = 'none';
+      // See https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Animations/Tips
+      // why we need to wait for two animation frames
+      nextAnimationFrame(2).then(() => {
+        initiator.style.top = `${y}px`;
+        initiator.style.left = `${x}px`;
 
-    // See https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Animations/Tips
-    // why we need to wait for two animation frames
-    await nextAnimationFrame(2);
+        if (inAnimationRuleIndex !== null) removeRule(inAnimationRuleIndex);
 
-    initiator.style.top = `${y}px`;
-    initiator.style.left = `${x}px`;
+        inAnimationRuleIndex = addRule(
+          createInAnimationRule(opacity, scale, rotate)
+        );
 
-    if (inAnimationRuleIndex !== null) removeRule(inAnimationRuleIndex);
+        initiator.style.animation = inAnimation;
 
-    inAnimationRuleIndex = addRule(
-      createInAnimationRule(opacity, scale, rotate)
-    );
-
-    initiator.style.animation = inAnimation;
-
-    await nextAnimationFrame();
-    resetinitiatorStyle();
+        nextAnimationFrame().then(() => {
+          resetinitiatorStyle();
+        });
+      });
+    });
   };
 
-  const hideinitiator = async () => {
+  const hideinitiator = () => {
     const { opacity, scale, rotate } = getCurrentinitiatorAnimationStyle();
     initiator.style.opacity = opacity;
     initiator.style.transform = `translate(-50%,-50%) scale(${scale}) rotate(${rotate}deg)`;
 
     initiator.style.animation = 'none';
 
-    await nextAnimationFrame(2);
+    nextAnimationFrame(2).then(() => {
+      if (outAnimationRuleIndex !== null) removeRule(outAnimationRuleIndex);
 
-    if (outAnimationRuleIndex !== null) removeRule(outAnimationRuleIndex);
+      outAnimationRuleIndex = addRule(
+        createOutAnimationRule(opacity, scale, rotate)
+      );
 
-    outAnimationRuleIndex = addRule(
-      createOutAnimationRule(opacity, scale, rotate)
-    );
+      initiator.style.animation = outAnimation;
 
-    initiator.style.animation = outAnimation;
-
-    await nextAnimationFrame();
-    resetinitiatorStyle();
+      nextAnimationFrame().then(() => {
+        resetinitiatorStyle();
+      });
+    });
   };
 
   const draw = () => {
