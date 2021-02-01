@@ -39,19 +39,19 @@ const removeRule = (index) => {
 
 const inAnimation = `${LASSO_SHOW_START_INDICATOR_TIME}ms ease scaleInFadeOut 0s 1 normal backwards`;
 
-const createInAnimationRule = (currentOpacity, currentScale) => `
+const createInAnimationRule = (opacity, scale, rotate) => `
 @keyframes scaleInFadeOut {
   0% {
-    opacity: ${currentOpacity};
-    transform: translate(-50%,-50%) scale(${currentScale});
+    opacity: ${opacity};
+    transform: translate(-50%,-50%) scale(${scale}) rotate(${rotate}deg);
   }
   10% {
     opacity: 1;
-    transform: translate(-50%,-50%) scale(1);
+    transform: translate(-50%,-50%) scale(1) rotate(${rotate + 20}deg);
   }
   100% {
     opacity: 0;
-    transform: translate(-50%,-50%) scale(0.9);
+    transform: translate(-50%,-50%) scale(0.9) rotate(${rotate + 60}deg);
   }
 }
 `;
@@ -59,15 +59,15 @@ let inAnimationRuleIndex = null;
 
 const outAnimation = `${LASSO_HIDE_START_INDICATOR_TIME}ms ease fadeScaleOut 0s 1 normal backwards`;
 
-const createOutAnimationRule = (currentOpacity, currentScale) => `
+const createOutAnimationRule = (opacity, scale, rotate) => `
 @keyframes fadeScaleOut {
   0% {
-    opacity: ${currentOpacity};
-    transform: translate(-50%,-50%) scale(${currentScale});
+    opacity: ${opacity};
+    transform: translate(-50%,-50%) scale(${scale}) rotate(${rotate}deg);
   }
   100% {
     opacity: 0;
-    transform: translate(-50%,-50%) scale(0);
+    transform: translate(-50%,-50%) scale(0) rotate(${rotate}deg);
   }
 }
 `;
@@ -111,18 +111,8 @@ const createLasso = (
   startIndicator.style.width = '4rem';
   startIndicator.style.height = '4rem';
   startIndicator.style.borderRadius = '4rem';
-  startIndicator.style.fontSize = '8px';
-  startIndicator.style.color = 'white';
-  startIndicator.style.textTransform = 'uppercase';
   startIndicator.style.opacity = 0.5;
-  startIndicator.style.transform = 'translate(-50%,-50%) scale(0)';
-
-  const startIndicatorText = document.createElement('span');
-  startIndicatorText.innerHTML = 'Drag<br/>To Lasso';
-  startIndicatorText.style.userSelect = 'none';
-  startIndicatorText.style.textAlign = 'center';
-  startIndicatorText.style.pointerEvents = 'none';
-  startIndicator.appendChild(startIndicatorText);
+  startIndicator.style.transform = 'translate(-50%,-50%) scale(0) rotate(0deg)';
 
   let isMouseDown = false;
   let isLasso = false;
@@ -147,7 +137,8 @@ const createLasso = (
 
   const resetStartIndicatorStyle = () => {
     startIndicator.style.opacity = 0.5;
-    startIndicator.style.transform = 'translate(-50%,-50%) scale(0)';
+    startIndicator.style.transform =
+      'translate(-50%,-50%) scale(0) rotate(0deg)';
   };
 
   const getCurrentStartIndicatorAnimationStyle = () => {
@@ -156,9 +147,14 @@ const createLasso = (
     // The css rule `transform: translate(-1, -1) scale(0.5);` is represented as
     // `matrix(0.5, 0, 0, 0.5, -1, -1)`
     const m = computedStyle.transform.match(/([0-9.-]+)+/g);
-    const scale = m ? +m[0] : 1;
 
-    return { opacity, scale };
+    const a = +m[0];
+    const b = +m[1];
+
+    const scale = Math.sqrt(a * a + b * b);
+    const rotate = Math.atan2(b, a) * (180 / Math.PI);
+
+    return { opacity, scale, rotate };
   };
 
   const showStartIndicator = async (event) => {
@@ -173,12 +169,14 @@ const createLasso = (
 
     let opacity = 0.5;
     let scale = 0;
+    let rotate = 0;
 
     const style = getCurrentStartIndicatorAnimationStyle();
     opacity = style.opacity;
     scale = style.scale;
+    rotate = style.rotate;
     startIndicator.style.opacity = opacity;
-    startIndicator.style.transform = `translate(-50%,-50%) scale(${scale})`;
+    startIndicator.style.transform = `translate(-50%,-50%) scale(${scale}) rotate(${rotate}deg)`;
 
     startIndicator.style.animation = 'none';
 
@@ -191,7 +189,9 @@ const createLasso = (
 
     if (inAnimationRuleIndex !== null) removeRule(inAnimationRuleIndex);
 
-    inAnimationRuleIndex = addRule(createInAnimationRule(opacity, scale));
+    inAnimationRuleIndex = addRule(
+      createInAnimationRule(opacity, scale, rotate)
+    );
 
     startIndicator.style.animation = inAnimation;
 
@@ -200,9 +200,9 @@ const createLasso = (
   };
 
   const hideStartIndicator = async () => {
-    const { opacity, scale } = getCurrentStartIndicatorAnimationStyle();
+    const { opacity, scale, rotate } = getCurrentStartIndicatorAnimationStyle();
     startIndicator.style.opacity = opacity;
-    startIndicator.style.transform = `translate(-50%,-50%) scale(${scale})`;
+    startIndicator.style.transform = `translate(-50%,-50%) scale(${scale}) rotate(${rotate}deg)`;
 
     startIndicator.style.animation = 'none';
 
@@ -210,7 +210,9 @@ const createLasso = (
 
     if (outAnimationRuleIndex !== null) removeRule(outAnimationRuleIndex);
 
-    outAnimationRuleIndex = addRule(createOutAnimationRule(opacity, scale));
+    outAnimationRuleIndex = addRule(
+      createOutAnimationRule(opacity, scale, rotate)
+    );
 
     startIndicator.style.animation = outAnimation;
 
