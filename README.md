@@ -23,6 +23,7 @@
 - **Rotate**: While pressing <kbd>ALT</kbd>, click and drag your mouse.
 - **Select a dot**: Click on a dot with your mouse.
 - **Select multiple dots**:
+
   - While pressing <kbd>SHIFT</kbd>, click and drag your mouse. All items within the lasso will be selected.
   - Upon activating the lasso initiator (i.e., `lassoInitiator: true`) you can click into the background and a circle will appear under your mouse cursor. Click inside this circle and drag your mouse to start lassoing.
     <details><summary>Click here to see how it works</summary>
@@ -32,6 +33,7 @@
 
     </p>
     </details>
+
 - **Deselect**: Double-click onto an empty region.
 
 Note, you can remap `rotate` and `lasso` to other modifier keys via the `keyMap` option!
@@ -235,15 +237,90 @@ Clears previously drawn points.
 
 <a name="scatterplot.get" href="#scatterplot.set">#</a> scatterplot.<b>get</b>(<i>property</i>)
 
-**Returns:** one of the properties documented in [`set()`](#scatterplotset)
+**Arguments:**
+
+- `property` is a string referencing a [property](#properties).
+
+**Returns:** the property value.
 
 <a name="scatterplot.set" href="#scatterplot.set">#</a> scatterplot.<b>set</b>(<i>properties = {}</i>)
 
 **Arguments:**
 
-- `properties` is an object of key-value pairs. The list of all understood properties is given below.
+- `properties` is an object of key-value pairs. [See below for a list of all properties.](#properties)
 
-**Properties:**
+<a name="scatterplot.select" href="#scatterplot.select">#</a> scatterplot.<b>select</b>(<i>points</i>, <i>options = {}</i>)
+
+Select some points, such that they get visually highlighted. This will trigger a `select` event unless `options.preventEvent === true`.
+
+**Arguments:**
+
+- `points` is an array of point indices.
+- `options` [optional] is an object with the following properties:
+  - `preventEvent`: if `true` the `select` will not be published.
+
+**Examples:**
+
+```javascript
+// Let's say we have three points
+scatterplot.draw([
+  [0.1, 0.1],
+  [0.2, 0.2],
+  [0.3, 0.3],
+]);
+
+// To select the first and second point we have to do
+scatterplot.select([0, 1]);
+```
+
+<a name="scatterplot.deselect" href="#scatterplot.deselect">#</a> scatterplot.<b>deselect</b>(<i>options = {}</i>)
+
+Deselect all selected points. This will trigger a `deselect` event unless `options.preventEvent === true`.
+
+**Arguments:**
+
+- `options` [optional] is an object with the following properties:
+  - `preventEvent`: if `true` the `deselect` will not be published.
+
+<a name="scatterplot.destroy" href="#scatterplot.destroy">#</a> scatterplot.<b>destroy</b>()
+
+Destroys the scatterplot instance by disposing all event listeners, the pubSub
+instance, regl, and the camera.
+
+<a name="scatterplot.refresh" href="#scatterplot.refresh">#</a> scatterplot.<b>refresh</b>()
+
+Refreshes the viewport of the scatterplot's regl instance.
+
+<a name="scatterplot.reset" href="#scatterplot.reset">#</a> scatterplot.<b>reset</b>()
+
+Sets the view back to the initially defined view.
+
+<a name="scatterplot.subscribe" href="#scatterplot.subscribe">#</a> scatterplot.<b>subscribe</b>(<i>eventName</i>, <i>eventHandler</i>)
+
+Subscribe to an event.
+
+**Arguments:**
+
+- `eventName` needs to be [a valid event name](#events).
+- `eventHandler` needs to be a callback function that can receive the payload.
+
+**Returns:** an unsubscriber object that can be passed into [`unsubscribe()`](#scatterplot.unsubscribe).
+
+<a name="scatterplot.unsubscribe" href="#scatterplot.unsubscribe">#</a> scatterplot.<b>unsubscribe</b>(<i>eventName</i>, <i>eventHandler</i>)
+
+Unsubscribe from an event. See [`scatterplot.subscribe()`](#scatterplot.subscribe) for a list of all
+events.
+
+<a name="scatterplot.createTextureFromUrl" href="#scatterplot.createTextureFromUrl">#</a> scatterplot.<b>createTextureFromUrl</b>(<i>url</i>)
+
+**Returns:** a Promise that resolves to a [Regl texture](https://github.com/regl-project/regl/blob/gh-pages/API.md#textures) that can be used, for example, as the [background image](#).
+
+**url:** the URL to an image.
+
+### Properties
+
+You can customize the scatter plot according to the following properties that
+can be read and written via [`scatterplot.get()`](#scatterplot.get) and [`scatterplot.set()`](#scatterplot.set).
 
 | Name                        | Type            | Default                             | Constraints                                                     | Settable | Nullifiable |
 | --------------------------- | --------------- | ----------------------------------- | --------------------------------------------------------------- | -------- | ----------- |
@@ -283,10 +360,10 @@ Clears previously drawn points.
 | recticleColor               | quadruple       | rgba(1, 1, 1, .5)                   | hex, rgb, rgba                                                  | `true`   | `false`     |
 | xScale                      | function        | `null`                              | must follow the D3 scale API                                    | `true`   | `true`      |
 | yScale                      | function        | `null`                              | must follow the D3 scale API                                    | `true`   | `true`      |
-| keyMap                      | object          | `{}`                                | See the notes below                                             | `true`   | `false`     |
+| keyMap                      | object          | `{ alt: 'rotate', shift: 'lasso' }` | See the notes below                                             | `true`   | `false`     |
 | mouseMode                   | string          | `'panZoom'`                         | `'panZoom'`, `'lasso'`, or `'rotate'`                           | `true`   | `false`     |
 
-**Notes:**
+<a name="property-notes" href="#property-notes">#</a> <b>Notes:</b>
 
 - An attribute is considered _nullifiable_ if it can be unset. Attributes that
   are **not nullifiable** will be ignored if you try to set them to a falsy
@@ -317,16 +394,31 @@ Clears previously drawn points.
   `createScatterplot({ syncEvents: true })`. This property can't be changed
   after initialization!
 
-- You don't like the look of the lasso initiator? No problem. Simple get the dom
-  element via `scatterplot.get('lassoInitiatorElement')` and adjust the style
-  via JavaScript. E.g.: `scatterplot.get('lassoInitiatorElement').style.background = 'green'`.
+<a name="property-lassoInitiator" href="#property-lassoInitiator">#</a> <b>lassoInitiator:</b>
 
-- The `keyMap` property is an object defining what action should be enabled by
-  holding down which modifier key. E.g.: `{ shift: 'lasso' }`. Accaptable
-  modifier keys are `alt`, `cmd`, `ctrl`, `meta`, `shift`. Accaptable actions
-  are `lasso` and `rotate`.
+When setting `lassoInitiator` to `true` you can initiate the lasso selection
+without the need to hold down a modifier key. Simply click somewhere into the
+background and a circle will appear under your mouse cursor. Now click into the
+circle and drag you mouse to start lassoing. You can additionally invoke the
+lasso initiator circle by a long click on a dot.
 
-**Examples:**
+![Lasso Initiator](https://user-images.githubusercontent.com/932103/106489598-f42c4480-6482-11eb-8286-92a9956e1d20.gif)
+
+You don't like the look of the lasso initiator? No problem. Simple get the DOM
+element via `scatterplot.get('lassoInitiatorElement')` and adjust the style
+via JavaScript. E.g.: `scatterplot.get('lassoInitiatorElement').style.background = 'green'`.
+
+<a name="property-keymap" href="#property-keymap">#</a> <b>KeyMap:</b>
+
+The `keyMap` property is an object defining which actions are enabled when
+holding down which modifier key. E.g.: `{ shift: 'lasso' }`. Acceptable
+modifier keys are `alt`, `cmd`, `ctrl`, `meta`, `shift`. Acceptable actions
+are `lasso` and `rotate`.
+
+You can also use the `keyMap` option to disable the lasso selection and rotation
+by setting `keyMap` to an empty object.
+
+<a name="property-examples" href="#property-examples">#</a> <b>Examples:</b>
 
 ```javascript
 // Set width and height
@@ -402,74 +494,6 @@ scatterplot.set({
 // Activate recticle and set recticle color to red
 scatterplot.set({ showRecticle: true, recticleColor: [1, 0, 0, 0.66] });
 ```
-
-<a name="scatterplot.select" href="#scatterplot.select">#</a> scatterplot.<b>select</b>(<i>points</i>, <i>options = {}</i>)
-
-Select some points, such that they get visually highlighted. This will trigger a `select` event unless `options.preventEvent === true`.
-
-**Arguments:**
-
-- `points` is an array of point indices.
-- `options` [optional] is an object with the following properties:
-  - `preventEvent`: if `true` the `select` will not be published.
-
-**Examples:**
-
-```javascript
-// Let's say we have three points
-scatterplot.draw([
-  [0.1, 0.1],
-  [0.2, 0.2],
-  [0.3, 0.3],
-]);
-
-// To select the first and second point we have to do
-scatterplot.select([0, 1]);
-```
-
-<a name="scatterplot.deselect" href="#scatterplot.deselect">#</a> scatterplot.<b>deselect</b>(<i>options = {}</i>)
-
-Deselect all selected points. This will trigger a `deselect` event unless `options.preventEvent === true`.
-
-**Arguments:**
-
-- `options` [optional] is an object with the following properties:
-  - `preventEvent`: if `true` the `deselect` will not be published.
-
-<a name="scatterplot.destroy" href="#scatterplot.destroy">#</a> scatterplot.<b>destroy</b>()
-
-Destroys the scatterplot instance by disposing all event listeners, the pubSub
-instance, regl, and the camera.
-
-<a name="scatterplot.refresh" href="#scatterplot.refresh">#</a> scatterplot.<b>refresh</b>()
-
-Refreshes the viewport of the scatterplot's regl instance.
-
-<a name="scatterplot.reset" href="#scatterplot.reset">#</a> scatterplot.<b>reset</b>()
-
-Sets the view back to the initially defined view.
-
-<a name="scatterplot.subscribe" href="#scatterplot.subscribe">#</a> scatterplot.<b>subscribe</b>(<i>eventName</i>, <i>eventHandler</i>)
-
-Subscribe to an event.
-
-**Arguments:**
-
-- `eventName` needs to be [a valid event name](#events).
-- `eventHandler` needs to be a callback function that can receive the payload.
-
-**Returns:** an unsubscriber object that can be passed into [`unsubscribe()`](#scatterplot.unsubscribe).
-
-<a name="scatterplot.unsubscribe" href="#scatterplot.unsubscribe">#</a> scatterplot.<b>unsubscribe</b>(<i>eventName</i>, <i>eventHandler</i>)
-
-Unsubscribe from an event. See [`scatterplot.subscribe()`](#scatterplot.subscribe) for a list of all
-events.
-
-<a name="scatterplot.createTextureFromUrl" href="#scatterplot.createTextureFromUrl">#</a> scatterplot.<b>createTextureFromUrl</b>(<i>url</i>)
-
-**Returns:** a Promise that resolves to a [Regl texture](https://github.com/regl-project/regl/blob/gh-pages/API.md#textures) that can be used, for example, as the [background image](#).
-
-**url:** the URL to an image.
 
 ### Events
 
