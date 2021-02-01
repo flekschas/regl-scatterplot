@@ -74,3 +74,4 @@ export const DEFAULT_SHOW_RECTICLE = false;
 export const DEFAULT_RECTICLE_COLOR = [1, 1, 1, 0.5];
 export const DEFAULT_DESELECT_ON_DBL_CLICK = true;
 export const DEFAULT_DESELECT_ON_ESCAPE = true;
+export const DEFAULT_MOUSE_SELECTION_MODE = false;

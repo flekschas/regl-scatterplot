@@ -651,6 +651,22 @@ test('set({ lassoColor, lassoMinDist, lassoMinDelay, lassoClearEvent })', async 
   scatterplot.destroy();
 });
 
+test('set({ mouseSelectionMode })', (t) => {
+  const canvas = createCanvas(400, 200);
+  const scatterplot = createScatterplot({ canvas, width: 400, height: 200 });
+
+  const mouseSelectionMode = true;
+  scatterplot.set({ mouseSelectionMode });
+
+  t.equal(
+    scatterplot.get('mouseSelectionMode'),
+    mouseSelectionMode,
+    `mouseSelectionMode should be set to ${mouseSelectionMode}`
+  );
+
+  scatterplot.destroy();
+});
+
 test('set({ pointOutlineWidth })', async (t) => {
   const scatterplot = createScatterplot({ canvas: createCanvas() });
 

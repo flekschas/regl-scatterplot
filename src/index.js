@@ -35,6 +35,7 @@ import {
   DEFAULT_LASSO_MIN_DELAY,
   DEFAULT_LASSO_MIN_DIST,
   DEFAULT_LASSO_CLEAR_EVENT,
+  DEFAULT_MOUSE_SELECTION_MODE,
   DEFAULT_SHOW_RECTICLE,
   DEFAULT_RECTICLE_COLOR,
   DEFAULT_POINT_OUTLINE_WIDTH,
@@ -116,6 +117,7 @@ const createScatterplot = (initialProperties = {}) => {
     lassoMinDelay: initialLassoMinDelay = DEFAULT_LASSO_MIN_DELAY,
     lassoMinDist: initialLassoMinDist = DEFAULT_LASSO_MIN_DIST,
     lassoClearEvent: initialLassoClearEvent = DEFAULT_LASSO_CLEAR_EVENT,
+    mouseSelectionMode: initialMouseSelectionMode = DEFAULT_MOUSE_SELECTION_MODE,
     showRecticle: initialShowRecticle = DEFAULT_SHOW_RECTICLE,
     recticleColor: initialRecticleColor = DEFAULT_RECTICLE_COLOR,
     pointColor: initialPointColor = DEFAULT_COLOR_NORMAL,
@@ -162,6 +164,7 @@ const createScatterplot = (initialProperties = {}) => {
   let lassoMinDelay = +initialLassoMinDelay;
   let lassoMinDist = +initialLassoMinDist;
   let lassoClearEvent = initialLassoClearEvent;
+  let mouseSelectionMode = initialMouseSelectionMode;
   let lassoPos = [];
   let lassoPoints = [];
   let lassoPrevMousePos;
@@ -417,7 +420,7 @@ const createScatterplot = (initialProperties = {}) => {
     mouseDown = true;
 
     mouseDownPosition = getRelativeMousePosition(event);
-    mouseDownShift = event.shiftKey;
+    mouseDownShift = event.shiftKey || mouseSelectionMode;
 
     if (mouseDownShift) lassoStart();
   };
@@ -702,6 +705,10 @@ const createScatterplot = (initialProperties = {}) => {
       default:
         sizeBy = DEFAULT_SIZE_BY;
     }
+  };
+
+  const setMouseSelectionMode = (mode) => {
+    mouseSelectionMode = mode;
   };
 
   const getBackgroundImage = () => backgroundImage;
@@ -1314,6 +1321,7 @@ const createScatterplot = (initialProperties = {}) => {
     if (property === 'lassoColor') return lassoColor;
     if (property === 'lassoMinDelay') return lassoMinDelay;
     if (property === 'lassoMinDist') return lassoMinDist;
+    if (property === 'mouseSelectionMode') return mouseSelectionMode;
     if (property === 'lassoClearEvent') return lassoClearEvent;
     if (property === 'opacity') return opacity;
     if (property === 'pointColor')
@@ -1416,6 +1424,10 @@ const createScatterplot = (initialProperties = {}) => {
 
     if (properties.lassoClearEvent !== undefined) {
       setLassoClearEvent(properties.lassoClearEvent);
+    }
+
+    if (properties.mouseSelectionMode !== undefined) {
+      setMouseSelectionMode(properties.mouseSelectionMode);
     }
 
     if (properties.showRecticle !== undefined) {

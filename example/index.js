@@ -23,6 +23,7 @@ let pointSize = 2;
 let opacity = 0.33;
 let selection = [];
 
+const mouseSelectionMode = false;
 const lassoMinDelay = 10;
 const lassoMinDist = 2;
 const showRecticle = true;
@@ -65,6 +66,7 @@ const scatterplot = createScatterplot({
   pointSize,
   showRecticle,
   recticleColor,
+  mouseSelectionMode,
 });
 
 console.log(`Scatterplot v${scatterplot.get('version')}`);
