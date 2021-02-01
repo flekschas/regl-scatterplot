@@ -1776,6 +1776,7 @@ const createScatterplot = (initialProperties = {}) => {
     canvas.removeEventListener('click', mouseClickHandler, false);
     canvas.removeEventListener('dblclick', mouseDblClickHandler, false);
     canvas = undefined;
+    camera.dispose();
     camera = undefined;
     regl = undefined;
     lasso.destroy();

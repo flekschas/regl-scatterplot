@@ -3,6 +3,7 @@
 ## v0.15.1
 
 - Make sure the `keyMap` is properly initiated.
+- Fix a memory leak by properly destroying the camera on `scatterplot.destroy()`.
 
 ## v0.15.0
 
