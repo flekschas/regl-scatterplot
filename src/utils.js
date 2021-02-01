@@ -328,3 +328,6 @@ export const flipObj = (obj) =>
     out[value] = key;
     return out;
   }, {});
+
+export const rgbBrightness = (rgb) =>
+  0.21 * rgb[0] + 0.72 * rgb[1] + 0.07 * rgb[2];

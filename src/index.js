@@ -87,6 +87,7 @@ import {
   max,
   min,
   flipObj,
+  rgbBrightness,
 } from './utils';
 
 import { version } from '../package.json';
@@ -163,6 +164,7 @@ const createScatterplot = (initialProperties = {}) => {
     initialBackgroundColor || initialBackground || DEFAULT_COLOR_BG,
     true
   );
+  let backgroundColorBrightness = rgbBrightness(backgroundColor);
   let backgroundImage = null;
   let canvas = initialCanvas;
   let width = initialWidth;
@@ -455,9 +457,6 @@ const createScatterplot = (initialProperties = {}) => {
     initiatorParentElement: lassoInitiatorParentElement,
     pointNorm: ([x, y]) => getScatterGlPos(getNdcX(x), getNdcY(y)),
   });
-
-  lassoManager.initiator.style.border = '1px dashed rgba(255, 255, 255, 0.33)';
-  lassoManager.initiator.style.background = 'rgba(255, 255, 255, 0.1)';
 
   const checkLassoMode = () => mouseMode === MOUSE_MODE_LASSO;
 
@@ -1290,10 +1289,18 @@ const createScatterplot = (initialProperties = {}) => {
     return out;
   };
 
+  const updateLassoInitiatorStyle = () => {
+    const v = Math.round(backgroundColorBrightness) > 0 ? 0 : 255;
+    lassoManager.initiator.style.border = `1px dashed rgba(${v}, ${v}, ${v}, 0.33)`;
+    lassoManager.initiator.style.background = `rgba(${v}, ${v}, ${v}, 0.1)`;
+  };
+
   const setBackgroundColor = (newBackgroundColor) => {
     if (!newBackgroundColor) return;
 
     backgroundColor = toRgba(newBackgroundColor, true);
+    backgroundColorBrightness = rgbBrightness(backgroundColor);
+    updateLassoInitiatorStyle();
   };
 
   const setBackgroundImage = (newBackgroundImage) => {
@@ -1765,6 +1772,7 @@ const createScatterplot = (initialProperties = {}) => {
 
     // Set dimensions
     set({ backgroundImage: initialBackgroundImage, width, height });
+    updateLassoInitiatorStyle();
 
     // Setup event handler
     window.addEventListener('keyup', keyUpHandler, false);
