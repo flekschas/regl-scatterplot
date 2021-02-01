@@ -24,14 +24,18 @@ import {
   DEFAULT_LASSO_MIN_DELAY,
   DEFAULT_LASSO_MIN_DIST,
   DEFAULT_LASSO_CLEAR_EVENT,
+  KEY_ACTION_LASSO,
+  KEY_ACTION_ROTATE,
 } from '../src/constants';
 
 import {
   asyncForEach,
   createCanvas,
   createMouseEvent,
+  createKeyboardEvent,
   flatArrayEqual,
   wait,
+  capitalize,
 } from './utils';
 
 const EPS = 1e-7;
@@ -898,9 +902,15 @@ test('tests involving mouse events', async (t2) => {
         lassoEndCoordinates = coordinates;
       });
 
+      const [lassoKey] = Object.entries(scatterplot.get('keyMap')).find(
+        (mapping) => mapping[1] === KEY_ACTION_LASSO
+      );
+
       // Test multi selections via mousedown + mousemove
       canvas.dispatchEvent(
-        createMouseEvent('mousedown', dim * 1.125, hdim, { shiftKey: true })
+        createMouseEvent('mousedown', dim * 1.125, hdim, {
+          [`${lassoKey}Key`]: true,
+        })
       );
 
       // Needed to first digest the mousedown event
@@ -949,6 +959,251 @@ test('tests involving mouse events', async (t2) => {
       scatterplot.destroy();
     }
   );
+
+  await t2.test('disable lasso selection', async (t) => {
+    const dim = 200;
+    const hdim = dim / 2;
+    const canvas = createCanvas(dim, dim);
+    const scatterplot = createScatterplot({
+      canvas,
+      width: dim,
+      height: dim,
+      keyMap: {},
+    });
+
+    await scatterplot.draw([[0, 0]]);
+
+    let selectedPoints = [];
+    scatterplot.subscribe('select', ({ points: newSelectedPoints }) => {
+      selectedPoints = [...newSelectedPoints];
+    });
+
+    let lassoStartCount = 0;
+    scatterplot.subscribe('lassoStart', () => ++lassoStartCount);
+
+    t.equal(
+      0,
+      Object.entries(scatterplot.get('keyMap')).length,
+      'KeyMap should be unset'
+    );
+
+    // Test multi selections via mousedown + mousemove
+    canvas.dispatchEvent(
+      createMouseEvent('mousedown', dim * 1.125, hdim, {
+        altKey: true,
+        ctrlKey: true,
+        metaKey: true,
+        shiftKey: true,
+      })
+    );
+
+    // Needed to first digest the mousedown event
+    await wait(0);
+
+    const mousePositions = [
+      [dim * 1.125, hdim],
+      [hdim, -dim * 0.125],
+      [-dim * 0.125, -dim * 0.125],
+      [-dim * 0.125, dim * 0.125],
+      [0, dim * 0.9],
+      [dim * 0.1, dim * 0.9],
+      [dim * 0.1, dim * 1.125],
+      [dim * 1.125, dim * 1.125],
+    ];
+
+    await asyncForEach(mousePositions, async (mousePosition) => {
+      window.dispatchEvent(createMouseEvent('mousemove', ...mousePosition));
+      await wait(DEFAULT_LASSO_MIN_DELAY + 5);
+    });
+
+    window.dispatchEvent(createMouseEvent('mouseup'));
+
+    await wait(0);
+
+    t.equal(lassoStartCount, 0, 'should have not triggered lassoStart at all');
+
+    t.equal(selectedPoints.length, 0, 'should have not selected any points');
+
+    scatterplot.destroy();
+  });
+
+  await t2.test('test rotation', async (t) => {
+    const dim = 200;
+    const hdim = dim / 2;
+    const canvas = createCanvas(dim, dim);
+    const scatterplot = createScatterplot({
+      canvas,
+      width: dim,
+      height: dim,
+    });
+
+    await scatterplot.draw([[0, 0]]);
+
+    const initialRotation = scatterplot.get('cameraRotation');
+    t.equal(initialRotation, 0, 'view should not be rotated on init');
+
+    let rotation;
+    let viewFired = 0;
+    const viewHandler = ({ camera }) => {
+      viewFired++;
+      rotation = camera.rotation;
+    };
+    scatterplot.subscribe('view', viewHandler);
+
+    let [rotateKey] = Object.entries(scatterplot.get('keyMap')).find(
+      (mapping) => mapping[1] === KEY_ACTION_ROTATE
+    );
+
+    // Test multi selections via mousedown + mousemove
+    window.dispatchEvent(
+      createKeyboardEvent('keydown', capitalize(rotateKey), {
+        [`${rotateKey}Key`]: true,
+      })
+    );
+    window.dispatchEvent(createMouseEvent('mousemove', dim * 0.75, hdim));
+
+    await wait(0);
+
+    canvas.dispatchEvent(
+      createMouseEvent('mousedown', dim * 0.75, hdim, {
+        [`${rotateKey}Key`]: true,
+        buttons: 1,
+      })
+    );
+
+    await wait(0);
+
+    const mousePositions = [
+      [dim * 0.75, hdim],
+      [dim * 0.75, hdim * 0.5],
+    ];
+
+    let whenDrawn = new Promise((resolve) =>
+      scatterplot.subscribe('draw', resolve, 1)
+    );
+
+    await asyncForEach(mousePositions, async (mousePosition) => {
+      window.dispatchEvent(createMouseEvent('mousemove', ...mousePosition));
+      await wait(DEFAULT_LASSO_MIN_DELAY + 5);
+    });
+
+    window.dispatchEvent(createMouseEvent('mouseup'));
+    window.dispatchEvent(
+      createKeyboardEvent('keyup', capitalize(rotateKey), {
+        [`${rotateKey}Key`]: true,
+      })
+    );
+
+    await whenDrawn;
+    await wait(0);
+
+    t.ok(
+      initialRotation !== rotation && !Number.isNaN(+rotation),
+      'view should be have been rotated'
+    );
+
+    const lastRotation = rotation;
+    const oldRotateKey = rotateKey;
+
+    rotateKey = 'shift';
+    scatterplot.set({ keyMap: { [rotateKey]: 'rotate' } });
+
+    // Needed to first digest the keyMap change
+    await wait(0);
+
+    // Test multi selections via mousedown + mousemove
+    window.dispatchEvent(
+      createKeyboardEvent('keydown', capitalize(oldRotateKey), {
+        [`${oldRotateKey}Key`]: true,
+      })
+    );
+    window.dispatchEvent(createMouseEvent('mousemove', dim * 0.75, hdim));
+
+    await wait(0);
+
+    canvas.dispatchEvent(
+      createMouseEvent('mousedown', dim * 0.75, hdim, {
+        [`${oldRotateKey}Key`]: true,
+        buttons: 1,
+      })
+    );
+
+    // Needed to first digest the mousedown event
+    await wait(0);
+
+    whenDrawn = new Promise((resolve) =>
+      scatterplot.subscribe('draw', resolve, 1)
+    );
+
+    await asyncForEach(mousePositions, async (mousePosition) => {
+      window.dispatchEvent(createMouseEvent('mousemove', ...mousePosition));
+      await wait(DEFAULT_LASSO_MIN_DELAY + 5);
+    });
+
+    window.dispatchEvent(createMouseEvent('mouseup'));
+    window.dispatchEvent(
+      createKeyboardEvent('keyup', capitalize(oldRotateKey), {
+        [`${oldRotateKey}Key`]: true,
+      })
+    );
+
+    await whenDrawn;
+    await wait(0);
+
+    t.equal(
+      lastRotation,
+      rotation,
+      'view should have not been rotated via the old modifier key'
+    );
+
+    await wait(2);
+
+    // Test multi selections via mousedown + mousemove
+    window.dispatchEvent(
+      createKeyboardEvent('keydown', capitalize(rotateKey), {
+        [`${rotateKey}Key`]: true,
+      })
+    );
+    window.dispatchEvent(createMouseEvent('mousemove', dim * 0.75, hdim));
+
+    await wait(0);
+
+    canvas.dispatchEvent(
+      createMouseEvent('mousedown', dim * 0.75, hdim, {
+        [`${rotateKey}Key`]: true,
+        buttons: 1,
+      })
+    );
+
+    // Needed to first digest the mousedown event
+    await wait(0);
+
+    whenDrawn = new Promise((resolve) =>
+      scatterplot.subscribe('draw', resolve, 1)
+    );
+
+    await asyncForEach(mousePositions, async (mousePosition) => {
+      window.dispatchEvent(createMouseEvent('mousemove', ...mousePosition));
+      await wait(DEFAULT_LASSO_MIN_DELAY + 5);
+    });
+
+    window.dispatchEvent(createMouseEvent('mouseup'));
+    window.dispatchEvent(
+      createKeyboardEvent('keyup', capitalize(rotateKey), {
+        [`${rotateKey}Key`]: true,
+      })
+    );
+
+    await whenDrawn;
+    await wait(0);
+
+    t.ok(
+      lastRotation !== rotation,
+      'view should be have been rotated via the new modifier key'
+    );
+
+    scatterplot.destroy();
+  });
 
   await t2.test(
     'point hover with publish("pointover") and publish("pointout")',

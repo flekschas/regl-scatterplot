@@ -37,6 +37,15 @@ export const createMouseEvent = (type, x, y, args = {}) =>
     ...args,
   });
 
+export const createKeyboardEvent = (type, key, args = {}) =>
+  new KeyboardEvent(type, {
+    view: window,
+    bubbles: true,
+    cancelable: true,
+    key,
+    ...args,
+  });
+
 export const flatArrayEqual = (a, b, comparator = (x, y) => x === y) =>
   a.length === b.length && a.every((x, i) => comparator(x, b[i]));
 
@@ -46,3 +55,5 @@ export const wait = (milliSeconds) =>
       resolve();
     }, milliSeconds);
   });
+
+export const capitalize = (s) => `${s[0].toUpperCase}${s.slice(1)}`;
