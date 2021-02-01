@@ -12,12 +12,11 @@ import {
 } from '@flekschas/utils';
 
 import {
-  DEFAULT_LASSO_START_INDICATOR_SHOW,
-  DEFAULT_LASSO_START_INDICATOR_COLOR,
+  DEFAULT_LASSO_START_INITIATOR_SHOW,
   DEFAULT_LASSO_MIN_DELAY,
   DEFAULT_LASSO_MIN_DIST,
-  LASSO_SHOW_START_INDICATOR_TIME,
-  LASSO_HIDE_START_INDICATOR_TIME,
+  LASSO_SHOW_START_INITIATOR_TIME,
+  LASSO_HIDE_START_INITIATOR_TIME,
 } from './constants';
 
 const ifNotNull = (v, alternative = null) => (v === null ? alternative : v);
@@ -37,7 +36,7 @@ const removeRule = (index) => {
   lassoStylesheets.deleteRule(index);
 };
 
-const inAnimation = `${LASSO_SHOW_START_INDICATOR_TIME}ms ease scaleInFadeOut 0s 1 normal backwards`;
+const inAnimation = `${LASSO_SHOW_START_INITIATOR_TIME}ms ease scaleInFadeOut 0s 1 normal backwards`;
 
 const createInAnimationRule = (opacity, scale, rotate) => `
 @keyframes scaleInFadeOut {
@@ -57,7 +56,7 @@ const createInAnimationRule = (opacity, scale, rotate) => `
 `;
 let inAnimationRuleIndex = null;
 
-const outAnimation = `${LASSO_HIDE_START_INDICATOR_TIME}ms ease fadeScaleOut 0s 1 normal backwards`;
+const outAnimation = `${LASSO_HIDE_START_INITIATOR_TIME}ms ease fadeScaleOut 0s 1 normal backwards`;
 
 const createOutAnimationRule = (opacity, scale, rotate) => `
 @keyframes fadeScaleOut {
@@ -79,15 +78,15 @@ const createLasso = (
     onDraw: initialOnDraw = identity,
     onStart: initialOnStart = identity,
     onEnd: initialOnEnd = identity,
-    startIndicatorShow: initialStartIndicatorShow = DEFAULT_LASSO_START_INDICATOR_SHOW,
-    startIndicatorColor: initialStartIndicatorColor = DEFAULT_LASSO_START_INDICATOR_COLOR,
+    enableInitiator: initialenableInitiator = DEFAULT_LASSO_START_INITIATOR_SHOW,
+    initiatorParentElement: initialinitiatorParentElement = document.body,
     minDelay: initialMinDelay = DEFAULT_LASSO_MIN_DELAY,
     minDist: initialMinDist = DEFAULT_LASSO_MIN_DIST,
     pointNorm: initialPointNorm = identity,
   } = {}
 ) => {
-  let startIndicatorShow = initialStartIndicatorShow;
-  let startIndicatorColor = initialStartIndicatorColor;
+  let enableInitiator = initialenableInitiator;
+  let initiatorParentElement = initialinitiatorParentElement;
 
   let onDraw = initialOnDraw;
   let onStart = initialOnStart;
@@ -98,21 +97,21 @@ const createLasso = (
 
   let pointNorm = initialPointNorm;
 
-  const startIndicator = document.createElement('div');
+  const initiator = document.createElement('div');
   const id =
     Math.random().toString(36).substring(2, 5) +
     Math.random().toString(36).substring(2, 5);
-  startIndicator.id = `lasso-start-indicator-${id}`;
-  startIndicator.style.position = 'absolute';
-  startIndicator.style.display = 'flex';
-  startIndicator.style.justifyContent = 'center';
-  startIndicator.style.alignItems = 'center';
-  startIndicator.style.zIndex = 99;
-  startIndicator.style.width = '4rem';
-  startIndicator.style.height = '4rem';
-  startIndicator.style.borderRadius = '4rem';
-  startIndicator.style.opacity = 0.5;
-  startIndicator.style.transform = 'translate(-50%,-50%) scale(0) rotate(0deg)';
+  initiator.id = `lasso-initiator-${id}`;
+  initiator.style.position = 'absolute';
+  initiator.style.display = 'flex';
+  initiator.style.justifyContent = 'center';
+  initiator.style.alignItems = 'center';
+  initiator.style.zIndex = 99;
+  initiator.style.width = '4rem';
+  initiator.style.height = '4rem';
+  initiator.style.borderRadius = '4rem';
+  initiator.style.opacity = 0.5;
+  initiator.style.transform = 'translate(-50%,-50%) scale(0) rotate(0deg)';
 
   let isMouseDown = false;
   let isLasso = false;
@@ -135,14 +134,13 @@ const createLasso = (
 
   window.addEventListener('mouseup', mouseUpHandler);
 
-  const resetStartIndicatorStyle = () => {
-    startIndicator.style.opacity = 0.5;
-    startIndicator.style.transform =
-      'translate(-50%,-50%) scale(0) rotate(0deg)';
+  const resetinitiatorStyle = () => {
+    initiator.style.opacity = 0.5;
+    initiator.style.transform = 'translate(-50%,-50%) scale(0) rotate(0deg)';
   };
 
-  const getCurrentStartIndicatorAnimationStyle = () => {
-    const computedStyle = getComputedStyle(startIndicator);
+  const getCurrentinitiatorAnimationStyle = () => {
+    const computedStyle = getComputedStyle(initiator);
     const opacity = +computedStyle.opacity;
     // The css rule `transform: translate(-1, -1) scale(0.5);` is represented as
     // `matrix(0.5, 0, 0, 0.5, -1, -1)`
@@ -157,8 +155,8 @@ const createLasso = (
     return { opacity, scale, rotate };
   };
 
-  const showStartIndicator = async (event) => {
-    if (!startIndicatorShow) return;
+  const showInitiator = async (event) => {
+    if (!enableInitiator) return;
 
     await wait(0);
 
@@ -171,21 +169,21 @@ const createLasso = (
     let scale = 0;
     let rotate = 0;
 
-    const style = getCurrentStartIndicatorAnimationStyle();
+    const style = getCurrentinitiatorAnimationStyle();
     opacity = style.opacity;
     scale = style.scale;
     rotate = style.rotate;
-    startIndicator.style.opacity = opacity;
-    startIndicator.style.transform = `translate(-50%,-50%) scale(${scale}) rotate(${rotate}deg)`;
+    initiator.style.opacity = opacity;
+    initiator.style.transform = `translate(-50%,-50%) scale(${scale}) rotate(${rotate}deg)`;
 
-    startIndicator.style.animation = 'none';
+    initiator.style.animation = 'none';
 
     // See https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Animations/Tips
     // why we need to wait for two animation frames
     await nextAnimationFrame(2);
 
-    startIndicator.style.top = `${y}px`;
-    startIndicator.style.left = `${x}px`;
+    initiator.style.top = `${y}px`;
+    initiator.style.left = `${x}px`;
 
     if (inAnimationRuleIndex !== null) removeRule(inAnimationRuleIndex);
 
@@ -193,18 +191,18 @@ const createLasso = (
       createInAnimationRule(opacity, scale, rotate)
     );
 
-    startIndicator.style.animation = inAnimation;
+    initiator.style.animation = inAnimation;
 
     await nextAnimationFrame();
-    resetStartIndicatorStyle();
+    resetinitiatorStyle();
   };
 
-  const hideStartIndicator = async () => {
-    const { opacity, scale, rotate } = getCurrentStartIndicatorAnimationStyle();
-    startIndicator.style.opacity = opacity;
-    startIndicator.style.transform = `translate(-50%,-50%) scale(${scale}) rotate(${rotate}deg)`;
+  const hideinitiator = async () => {
+    const { opacity, scale, rotate } = getCurrentinitiatorAnimationStyle();
+    initiator.style.opacity = opacity;
+    initiator.style.transform = `translate(-50%,-50%) scale(${scale}) rotate(${rotate}deg)`;
 
-    startIndicator.style.animation = 'none';
+    initiator.style.animation = 'none';
 
     await nextAnimationFrame(2);
 
@@ -214,10 +212,10 @@ const createLasso = (
       createOutAnimationRule(opacity, scale, rotate)
     );
 
-    startIndicator.style.animation = outAnimation;
+    initiator.style.animation = outAnimation;
 
     await nextAnimationFrame();
-    resetStartIndicatorStyle();
+    resetinitiatorStyle();
   };
 
   const draw = () => {
@@ -273,19 +271,19 @@ const createLasso = (
     draw();
   };
 
-  const indicatorClickHandler = (event) => {
-    showStartIndicator(event);
+  const initiatorClickHandler = (event) => {
+    showInitiator(event);
   };
 
-  const indicatorMouseDownHandler = () => {
+  const initiatorMouseDownHandler = () => {
     isMouseDown = true;
     isLasso = true;
     clear();
     onStart();
   };
 
-  const indicatorMouseLeaveHandler = () => {
-    hideStartIndicator();
+  const initiatorMouseLeaveHandler = () => {
+    hideinitiator();
   };
 
   const end = () => {
@@ -307,8 +305,8 @@ const createLasso = (
     onDraw: newOnDraw = null,
     onStart: newOnStart = null,
     onEnd: newOnEnd = null,
-    startIndicator: sowStartIndicatorShow = null,
-    startIndicatorColor: newStartIndicatorColor = null,
+    enableInitiator: newEnableInitiator = null,
+    initiatorParentElement: newInitiatorParentElement = null,
     minDelay: newMinDelay = null,
     minDist: newMinDist = null,
     pointNorm: newPointNorm = null,
@@ -316,42 +314,36 @@ const createLasso = (
     onDraw = ifNotNull(newOnDraw, onDraw);
     onStart = ifNotNull(newOnStart, onStart);
     onEnd = ifNotNull(newOnEnd, onEnd);
-    startIndicatorShow = ifNotNull(sowStartIndicatorShow, startIndicatorShow);
-    startIndicatorColor = ifNotNull(
-      newStartIndicatorColor,
-      startIndicatorColor
-    );
+    enableInitiator = ifNotNull(newEnableInitiator, enableInitiator);
     minDelay = ifNotNull(newMinDelay, minDelay);
     minDist = ifNotNull(newMinDist, minDist);
     pointNorm = ifNotNull(newPointNorm, pointNorm);
 
-    startIndicator.style.background = startIndicatorColor;
+    if (
+      newInitiatorParentElement !== null &&
+      newInitiatorParentElement !== initiatorParentElement
+    ) {
+      initiatorParentElement.removeChild(initiator);
+      newInitiatorParentElement.appendChild(initiator);
+      initiatorParentElement = newInitiatorParentElement;
+    }
 
-    if (startIndicatorShow) {
-      startIndicator.addEventListener('click', indicatorClickHandler);
-      startIndicator.addEventListener('mousedown', indicatorMouseDownHandler);
-      startIndicator.addEventListener('mouseleave', indicatorMouseLeaveHandler);
+    if (enableInitiator) {
+      initiator.addEventListener('click', initiatorClickHandler);
+      initiator.addEventListener('mousedown', initiatorMouseDownHandler);
+      initiator.addEventListener('mouseleave', initiatorMouseLeaveHandler);
     } else {
-      startIndicator.removeEventListener(
-        'mousedown',
-        indicatorMouseDownHandler
-      );
-      startIndicator.removeEventListener(
-        'mouseleave',
-        indicatorMouseLeaveHandler
-      );
+      initiator.removeEventListener('mousedown', initiatorMouseDownHandler);
+      initiator.removeEventListener('mouseleave', initiatorMouseLeaveHandler);
     }
   };
 
   const destroy = () => {
-    document.body.removeChild(startIndicator);
+    initiatorParentElement.removeChild(initiator);
     window.removeEventListener('mouseup', mouseUpHandler);
-    startIndicator.removeEventListener('click', indicatorClickHandler);
-    startIndicator.removeEventListener('mousedown', indicatorMouseDownHandler);
-    startIndicator.removeEventListener(
-      'mouseleave',
-      indicatorMouseLeaveHandler
-    );
+    initiator.removeEventListener('click', initiatorClickHandler);
+    initiator.removeEventListener('mousedown', initiatorMouseDownHandler);
+    initiator.removeEventListener('mouseleave', initiatorMouseLeaveHandler);
   };
 
   const withPublicMethods = () => (self) =>
@@ -361,21 +353,21 @@ const createLasso = (
       end,
       extend: extendPublic,
       set,
-      showStartIndicator,
+      showInitiator,
     });
+
+  initiatorParentElement.appendChild(initiator);
 
   set({
     onDraw,
     onStart,
     onEnd,
-    startIndicatorShow,
-    startIndicatorColor,
+    enableInitiator,
+    initiatorParentElement,
   });
 
-  document.body.appendChild(startIndicator);
-
   return pipe(
-    withStaticProperty('startIndicator', startIndicator),
+    withStaticProperty('initiator', initiator),
     withPublicMethods(),
     withConstructor(createLasso)
   )({});

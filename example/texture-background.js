@@ -114,7 +114,7 @@ opacityEl.addEventListener('input', opacityInputHandler);
 
 const clickLassoInitiatorChangeHandler = (event) => {
   scatterplot.set({
-    lassoInitiatorOnClick: event.target.checked,
+    lassoInitiator: event.target.checked,
   });
 };
 
