@@ -109,29 +109,20 @@ For a complete example see [example/index.js](example/index.js).
 
 Similar to [coloring by value or category](#color-by-value-or-category), you can encode the value or category as the point size.
 
+To size points by the category, set `pointSize` to an array of sizes. For performance reasons, regl-scatterplot assumes that the category `0` refers to the first size, `1` refers to the second size, etc.
+
 ```javascript
-scatterplot.draw([
-  // x, y, category, value
-  [0.2, -0.1, 0, 0.1337],
-  [0.3, 0.1, 1, 0.3371],
-  [-0.9, 0.8, 2, 0.3713],
-]);
+scatterplot.set({ sizeBy: 'category', pointSize: [2, 4, 6] });
 ```
 
-To color points by category, set `pointSize` to an array of sizes. For performance reasons, regl-scatterplot assumes that the category `0` refers to the first size, `1` refers to the second size, etc.
+To apply _"continuous"_ point sizes use `sizeBy: 'value'` and set `pointSize` to a precomputed array of point sizes. For performance reasons, regl-scatterplot assumes that the point values are in `[0,1]`. Any values below 0 and 1 wil be clipped.
 
 ```javascript
-const pointSize = [2, 4, 6];
-scatterplot.set({ sizeBy: 'category', pointSize: colorsCat });
-```
-
-To apply _"continuous"_ point sizes use `sizeBy: 'value'` and set `pointSize` to a precomputed array of point sizes. For performance reasons, regl-scatterplot assumes that the values are in `[0,1]` .
-
-```javascript
-const pointSize = Array(100)
-  .fill()
-  .map((v, i) => i + 1);
-scatterplot.set({ sizeBy: 'value', pointSize });
+scatterplot.set({
+  sizeBy: 'value',
+  // E.g.: this maps values [0,1] to sizes [1,3] in log scale
+  pointSize: Array(100).fill().map((v, i) => Math.log(i + 1) + 1)
+});
 ```
 
 For a complete example see [example/size-encoding.js](example/size-encoding.js).
