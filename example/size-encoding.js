@@ -24,7 +24,7 @@ let { width, height } = canvas.getBoundingClientRect();
 let points = [];
 let numPoints = 100000;
 let pointSize = 2;
-let opacity = 0.33;
+let opacity = 1.0;
 let selection = [];
 
 const lassoMinDelay = 10;
@@ -59,8 +59,6 @@ const scatterplot = createScatterplot({
   recticleColor,
 });
 
-console.log('showRecticle', showRecticle);
-
 console.log(`Scatterplot v${scatterplot.get('version')}`);
 
 scatterplot.subscribe('select', selectHandler);
@@ -73,9 +71,7 @@ const resizeHandler = () => {
 
 window.addEventListener('resize', resizeHandler);
 
-const rndA = randomExponential(2);
-const rndB = randomExponential(4);
-const rndC = randomExponential(6);
+const rnd = randomExponential(2);
 
 const generatePoints = (num) => {
   const newPoints = [
@@ -83,19 +79,19 @@ const generatePoints = (num) => {
       -1 + (Math.random() * 2 * 1) / 3, // x
       -1 + Math.random() * 2, // y
       0, // category
-      rndA(), // value
+      rnd(), // value
     ]),
     ...new Array(Math.round((num * 4) / 12)).fill().map(() => [
       -1 + 2 / 3 + (Math.random() * 2 * 1) / 3, // x
       -1 + Math.random() * 2, // y
       1, // category
-      rndB(), // value
+      rnd(), // value
     ]),
     ...new Array(Math.round((num * 6) / 12)).fill().map(() => [
       -1 + 4 / 3 + (Math.random() * 2 * 1) / 3, // x
       -1 + Math.random() * 2, // y
       2, // category
-      rndC(), // value
+      rnd(), // value
     ]),
   ];
 
@@ -155,11 +151,16 @@ const pointSizeInputHandler = (event) => setPointSize(+event.target.value);
 
 pointSizeEl.addEventListener('input', pointSizeInputHandler);
 
+const getOpacityRange = (baseOpacity) =>
+  Array(10)
+    .fill()
+    .map((x, i) => ((i + 1) / 10) * baseOpacity);
+
 const setOpacity = (newOpacity) => {
   opacity = newOpacity;
   opacityEl.value = opacity;
   opacityValEl.innerHTML = opacity;
-  scatterplot.set({ opacity });
+  scatterplot.set({ opacity: getOpacityRange(opacity) });
 };
 
 const opacityInputHandler = (event) => setOpacity(+event.target.value);
@@ -186,7 +187,8 @@ resetEl.addEventListener('click', resetClickHandler);
 scatterplot.set({
   colorBy: 'category',
   pointColor: ['#ff80cb', '#57c7ff', '#eee462'],
-  sizeBy: 'value',
+  sizeBy: 'w',
+  opacityBy: 'w',
 });
 
 setPointSize(pointSize);

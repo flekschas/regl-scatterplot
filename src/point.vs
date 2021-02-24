@@ -5,18 +5,21 @@ uniform sampler2D colorTex;
 uniform float colorTexRes;
 uniform sampler2D stateTex;
 uniform float stateTexRes;
-uniform sampler2D pointSizeTex;
-uniform float pointSizeTexRes;
+uniform sampler2D encodingTex;
+uniform float encodingTexRes;
 uniform float pointSizeExtra;
 uniform float numPoints;
 uniform float globalState;
-uniform float isColoredByCategory;
-uniform float isColoredByValue;
-uniform float isSizedByCategory;
-uniform float isSizedByValue;
-uniform float maxColorTexIdx;
+uniform float isColoredByZ;
+uniform float isColoredByW;
+uniform float isOpacityByZ;
+uniform float isOpacityByW;
+uniform float isSizedByZ;
+uniform float isSizedByW;
+uniform float colorMultiplicator;
+uniform float opacityMultiplicator;
+uniform float sizeMultiplicator;
 uniform float numColorStates;
-uniform float maxPointSizeTexIdx;
 uniform float pointScale;
 uniform mat4 projection;
 uniform mat4 model;
@@ -41,9 +44,9 @@ void main() {
   gl_Position = projection * view * model * vec4(state.x, state.y, 0.0, 1.0);
 
   // Determine color index
-  float colorIndexCat = state.z * isColoredByCategory;
-  float colorIndexVal = floor(state.w * maxColorTexIdx) * isColoredByValue;
-  float colorIndex = colorIndexCat + colorIndexVal;
+  float colorIndexZ =  isColoredByZ * floor(state.z * colorMultiplicator);
+  float colorIndexW =  isColoredByW * floor(state.w * colorMultiplicator);
+  float colorIndex = colorIndexZ + colorIndexW;
   // Multiply by the number of color states per color
   // I.e., normal, active, hover, background, etc.
   colorIndex *= numColorStates;
@@ -62,18 +65,31 @@ void main() {
 
   color = texture2D(colorTex, colorTexIndex);
 
-  // Determine point size
-  float pointSizeIndexCat = state.z * isSizedByCategory;
-  float pointSizeIndexVal = floor(state.w * maxPointSizeTexIdx) * isSizedByValue;
-  float pointSizeIndex = pointSizeIndexCat + pointSizeIndexVal;
+  // Retrieve point size
+  float pointSizeIndexZ = isSizedByZ * floor(state.z * sizeMultiplicator);
+  float pointSizeIndexW = isSizedByW * floor(state.w * sizeMultiplicator);
+  float pointSizeIndex = pointSizeIndexZ + pointSizeIndexW;
 
-  eps = 0.5 / pointSizeTexRes;
-  float pointSizeRowIndex = floor((pointSizeIndex + eps) / pointSizeTexRes);
+  eps = 0.5 / encodingTexRes;
+  float pointSizeRowIndex = floor((pointSizeIndex + eps) / encodingTexRes);
   vec2 pointSizeTexIndex = vec2(
-    (pointSizeIndex / pointSizeTexRes) - pointSizeRowIndex + eps,
-    pointSizeRowIndex / pointSizeTexRes + eps
+    (pointSizeIndex / encodingTexRes) - pointSizeRowIndex + eps,
+    pointSizeRowIndex / encodingTexRes + eps
   );
-  float pointSize = texture2D(pointSizeTex, pointSizeTexIndex).x;
+  float pointSize = texture2D(encodingTex, pointSizeTexIndex).x;
+
+  // Retrieve opacity
+  float opacityIndexZ = isOpacityByZ * floor(state.z * opacityMultiplicator);
+  float opacityIndexW = isOpacityByW * floor(state.w * opacityMultiplicator);
+  float opacityIndex = opacityIndexZ + opacityIndexW;
+
+  eps = 0.5 / encodingTexRes;
+  float opacityRowIndex = floor((opacityIndex + eps) / encodingTexRes);
+  vec2 opacityTexIndex = vec2(
+    (opacityIndex / encodingTexRes) - opacityRowIndex + eps,
+    opacityRowIndex / encodingTexRes + eps
+  );
+  color.a = texture2D(encodingTex, opacityTexIndex).y;
 
   gl_PointSize = pointSize * pointScale + pointSizeExtra;
 }

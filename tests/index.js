@@ -27,6 +27,7 @@ import {
   KEY_ACTION_LASSO,
   KEY_ACTION_ROTATE,
   SINGLE_CLICK_DELAY,
+  DEFAULT_OPACITY,
 } from '../src/constants';
 
 import {
@@ -42,6 +43,11 @@ import {
 const EPS = 1e-7;
 
 const floatEqual = (a, b) => Math.abs(a - b) <= EPS;
+
+const valueVariants = {
+  valueZ: ['category', 'value1', 'valueA', 'valueZ', 'z'],
+  valueW: ['value', 'value2', 'valueB', 'valueW', 'w'],
+};
 
 /* ------------------------------ constructors ------------------------------ */
 
@@ -97,6 +103,11 @@ test('createScatterplot()', (t) => {
     scatterplot.get('pointOutlineWidth'),
     DEFAULT_POINT_OUTLINE_WIDTH,
     'scatterplot should have default point outline width'
+  );
+  t.equal(
+    scatterplot.get('opacity'),
+    DEFAULT_OPACITY,
+    'scatterplot should have default point opacity'
   );
   t.equal(
     scatterplot.get('width'),
@@ -387,15 +398,17 @@ test('set({ cameraTarget, cameraDistance, cameraRotation, cameraView })', (t) =>
 test('set({ colorBy })', (t) => {
   const scatterplot = createScatterplot({ canvas: createCanvas() });
 
-  const colorBy = 'category';
+  Object.entries(valueVariants).forEach(([value, variants]) => {
+    variants.forEach((variant) => {
+      scatterplot.set({ colorBy: variant });
 
-  scatterplot.set({ colorBy });
-
-  t.equal(
-    scatterplot.get('colorBy'),
-    colorBy,
-    `colorBy should be set to ${colorBy}`
-  );
+      t.equal(
+        scatterplot.get('colorBy'),
+        value,
+        `colorBy should be set to ${value}`
+      );
+    });
+  });
 
   scatterplot.set({ colorBy: null });
 
@@ -404,18 +417,46 @@ test('set({ colorBy })', (t) => {
   scatterplot.destroy();
 });
 
+test('set({ opacityBy })', (t) => {
+  const scatterplot = createScatterplot({ canvas: createCanvas() });
+
+  Object.entries(valueVariants).forEach(([value, variants]) => {
+    variants.forEach((variant) => {
+      scatterplot.set({ opacityBy: variant });
+
+      t.equal(
+        scatterplot.get('opacityBy'),
+        value,
+        `opacityBy should be set to ${value}`
+      );
+    });
+  });
+
+  scatterplot.set({ opacityBy: null });
+
+  t.equal(
+    scatterplot.get('opacityBy'),
+    null,
+    'opacityBy should be nullifyable'
+  );
+
+  scatterplot.destroy();
+});
+
 test('set({ sizeBy })', (t) => {
   const scatterplot = createScatterplot({ canvas: createCanvas() });
 
-  const sizeBy = 'category';
+  Object.entries(valueVariants).forEach(([value, variants]) => {
+    variants.forEach((variant) => {
+      scatterplot.set({ sizeBy: variant });
 
-  scatterplot.set({ sizeBy });
-
-  t.equal(
-    scatterplot.get('sizeBy'),
-    sizeBy,
-    `sizeBy should be set to ${sizeBy}`
-  );
+      t.equal(
+        scatterplot.get('sizeBy'),
+        value,
+        `sizeBy should be set to ${value}`
+      );
+    });
+  });
 
   scatterplot.set({ sizeBy: null });
 
@@ -551,22 +592,32 @@ test('set({ pointColor, pointColorActive, pointColorHover }) multiple colors', (
 test('set({ opacity })', async (t) => {
   const scatterplot = createScatterplot({ canvas: createCanvas() });
 
-  const opacity = 0.5;
+  let opacity = 0.5;
 
   scatterplot.set({ opacity });
 
   t.equal(
     scatterplot.get('opacity'),
-    opacity,
-    `opacity should be set to ${opacity}`
+    [opacity],
+    `opacity should be set to [${opacity}]`
   );
 
   scatterplot.set({ opacity: 0 });
 
   t.equal(
     scatterplot.get('opacity'),
-    opacity,
+    [opacity],
     'opacity should not be nullifyable'
+  );
+
+  opacity = [0.5, 0.75, 1];
+
+  scatterplot.set({ opacity });
+
+  t.equal(
+    scatterplot.get('opacity'),
+    opacity,
+    'should accept multiple opacities'
   );
 
   scatterplot.destroy();

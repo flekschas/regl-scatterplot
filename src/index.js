@@ -69,6 +69,8 @@ import {
   DEFAULT_MOUSE_MODE,
   SINGLE_CLICK_DELAY,
   LONG_CLICK_TIME,
+  DEFAULT_OPACITY,
+  DEFAULT_OPACITY_BY,
 } from './constants';
 
 import {
@@ -149,6 +151,8 @@ const createScatterplot = (initialProperties = {}) => {
     pointSize: initialPointSize = DEFAULT_POINT_SIZE,
     pointSizeSelected: initialPointSizeSelected = DEFAULT_POINT_SIZE_SELECTED,
     pointOutlineWidth: initialPointOutlineWidth = DEFAULT_POINT_OUTLINE_WIDTH,
+    opacity: initialOpacity = DEFAULT_OPACITY,
+    opacityBy: initialOpacityBy = DEFAULT_OPACITY_BY,
     sizeBy: initialSizeBy = DEFAULT_SIZE_BY,
     width: initialWidth = DEFAULT_WIDTH,
     height: initialHeight = DEFAULT_HEIGHT,
@@ -169,6 +173,11 @@ const createScatterplot = (initialProperties = {}) => {
   let canvas = initialCanvas;
   let width = initialWidth;
   let height = initialHeight;
+  let opacity = isConditionalArray(initialOpacity, isPositiveNumber, {
+    minLength: 1,
+  })
+    ? [...initialOpacity]
+    : [initialOpacity];
   let pointSize = isConditionalArray(initialPointSize, isPositiveNumber, {
     minLength: 1,
   })
@@ -240,15 +249,17 @@ const createScatterplot = (initialProperties = {}) => {
 
   let colorTex; // Stores the point color texture
   let colorTexRes = 0; // Width and height of the texture
-  let pointSizeTex; // Stores the point sizes
-  let pointSizeTexRes = 0; // Width and height of the texture
+  let encodingTex; // Stores the point sizes and opacity values
+  let encodingTexRes = 0; // Width and height of the texture
 
   let colorBy = initialColorBy;
+  let opacityBy = initialOpacityBy;
   let sizeBy = initialSizeBy;
   let isViewChanged = false;
   let isInit = false;
 
-  let opacity = 1;
+  let maxValueZ = 0;
+  let maxValueW = 0;
 
   let hoveredPoint;
   let isMouseInCanvas = false;
@@ -559,17 +570,20 @@ const createScatterplot = (initialProperties = {}) => {
     drawRaf(); // eslint-disable-line no-use-before-define
   };
 
-  const createPointSizeTexture = () => {
-    const numPointSizes = pointSize.length;
-    pointSizeTexRes = Math.max(2, Math.ceil(Math.sqrt(numPointSizes)));
-    const rgba = new Float32Array(pointSizeTexRes ** 2 * 4);
-    pointSize.forEach((size, i) => {
-      rgba[i * 4] = size;
-    });
+  const createEncodingTexture = () => {
+    const maxEncoding = Math.max(pointSize.length, opacity.length);
+
+    encodingTexRes = Math.max(2, Math.ceil(Math.sqrt(maxEncoding)));
+    const rgba = new Float32Array(encodingTexRes ** 2 * 4);
+
+    for (let i = 0; i < maxEncoding; i++) {
+      rgba[i * 4] = pointSize[i] || 0;
+      rgba[i * 4 + 1] = opacity[i] || 0;
+    }
 
     return regl.texture({
       data: rgba,
-      shape: [pointSizeTexRes, pointSizeTexRes, 4],
+      shape: [encodingTexRes, encodingTexRes, 4],
       type: 'float',
     });
   };
@@ -615,10 +629,7 @@ const createScatterplot = (initialProperties = {}) => {
       rgba[i * 4] = color[0]; // r
       rgba[i * 4 + 1] = color[1]; // g
       rgba[i * 4 + 2] = color[2]; // b
-      // For all normal state colors check if the global opacity is not 1 and
-      // if so use that instead.
-      rgba[i * 4 + 3] =
-        i % COLOR_NUM_STATES > 0 || opacity === 1 ? color[3] : opacity; // a
+      rgba[i * 4 + 3] = color[3]; // a
     });
 
     return regl.texture({
@@ -726,7 +737,7 @@ const createScatterplot = (initialProperties = {}) => {
 
     if (isPositiveNumber(+newPointSize)) pointSize = [+newPointSize];
 
-    pointSizeTex = createPointSizeTexture();
+    encodingTex = createEncodingTexture();
   };
 
   const setPointSizeSelected = (newPointSizeSelected) => {
@@ -749,43 +760,46 @@ const createScatterplot = (initialProperties = {}) => {
     }
   };
 
-  const setColorBy = (type) => {
+  const setOpacity = (newOpacity) => {
+    if (isConditionalArray(newOpacity, isPositiveNumber, { minLength: 1 }))
+      opacity = [...newOpacity];
+
+    if (isPositiveNumber(+newOpacity)) opacity = [+newOpacity];
+
+    encodingTex = createEncodingTexture();
+  };
+
+  const getEncodingType = (type, defaultValue) => {
     switch (type) {
       case 'category':
-        colorBy = 'category';
-        break;
+      case 'value1':
+      case 'valueA':
+      case 'valueZ':
+      case 'z':
+        return 'valueZ'; // Z refers to the 3rd component of the RGBA value
 
       case 'value':
-        colorBy = 'value';
-        break;
+      case 'value2':
+      case 'valueB':
+      case 'valueW':
+      case 'w':
+        return 'valueW'; // W refers to the 4th component of the RGBA value
 
       default:
-        colorBy = DEFAULT_COLOR_BY;
+        return defaultValue;
     }
   };
 
-  const setOpacity = (newOpacity) => {
-    if (!+newOpacity || +newOpacity <= 0) return;
+  const setColorBy = (type) => {
+    colorBy = getEncodingType(type, DEFAULT_COLOR_BY);
+  };
 
-    opacity = +newOpacity;
-
-    if (colorTex) colorTex.destroy();
-    colorTex = createColorTexture();
+  const setOpacityBy = (type) => {
+    opacityBy = getEncodingType(type, DEFAULT_OPACITY_BY);
   };
 
   const setSizeBy = (type) => {
-    switch (type) {
-      case 'category':
-        sizeBy = 'category';
-        break;
-
-      case 'value':
-        sizeBy = 'value';
-        break;
-
-      default:
-        sizeBy = DEFAULT_SIZE_BY;
-    }
+    sizeBy = getEncodingType(type, DEFAULT_SIZE_BY);
   };
 
   const getBackgroundImage = () => backgroundImage;
@@ -793,8 +807,8 @@ const createScatterplot = (initialProperties = {}) => {
   const getColorTexRes = () => colorTexRes;
   const getNormalPointsIndexBuffer = () => normalPointsIndexBuffer;
   const getSelectedPointsIndexBuffer = () => selectedPointsIndexBuffer;
-  const getPointSizeTex = () => pointSizeTex;
-  const getPointSizeTexRes = () => pointSizeTexRes;
+  const getEncodingTex = () => encodingTex;
+  const getEncodingTexRes = () => encodingTexRes;
   const getNormalPointSizeExtra = () => 0;
   const getStateTex = () => tmpStateTex || stateTex;
   const getStateTexRes = () => stateTexRes;
@@ -805,12 +819,25 @@ const createScatterplot = (initialProperties = {}) => {
     min(1.0, camera.scaling) +
     Math.log2(max(1.0, camera.scaling)) * window.devicePixelRatio;
   const getNormalNumPoints = () => numPoints;
-  const getIsColoredByCategory = () => (colorBy === 'category') * 1;
-  const getIsColoredByValue = () => (colorBy === 'value') * 1;
-  const getIsSizedByCategory = () => (sizeBy === 'category') * 1;
-  const getIsSizedByValue = () => (sizeBy === 'value') * 1;
-  const getMaxColorTexIdx = () => pointColors.length - 1;
-  const getMaxPointSizeTexIdx = () => pointSize.length;
+  const getIsColoredByZ = () => +(colorBy === 'valueZ');
+  const getIsColoredByW = () => +(colorBy === 'valueW');
+  const getIsOpacityByZ = () => +(opacityBy === 'valueZ');
+  const getIsOpacityByW = () => +(opacityBy === 'valueW');
+  const getIsSizedByZ = () => +(sizeBy === 'valueZ');
+  const getIsSizedByW = () => +(sizeBy === 'valueW');
+  const getColorMultiplicator = () => {
+    if (colorBy === 'valueZ')
+      return maxValueZ <= 1 ? pointColors.length - 1 : 1;
+    return maxValueW <= 1 ? pointColors.length - 1 : 1;
+  };
+  const getOpacityMultiplicator = () => {
+    if (opacityBy === 'valueZ') return maxValueZ <= 1 ? opacity.length - 1 : 1;
+    return maxValueW <= 1 ? opacity.length - 1 : 1;
+  };
+  const getSizeMultiplicator = () => {
+    if (sizeBy === 'valueZ') return maxValueZ <= 1 ? pointSize.length - 1 : 1;
+    return maxValueW <= 1 ? pointSize.length - 1 : 1;
+  };
 
   const updatePoints = regl({
     framebuffer: () => tmpStateBuffer,
@@ -865,21 +892,24 @@ const createScatterplot = (initialProperties = {}) => {
         model: getModel,
         view: getView,
         pointScale: getPointScale,
-        pointSizeTex: getPointSizeTex,
-        pointSizeTexRes: getPointSizeTexRes,
+        encodingTex: getEncodingTex,
+        encodingTexRes: getEncodingTexRes,
         pointSizeExtra: getPointSizeExtra,
         globalState,
         colorTex: getColorTex,
         colorTexRes: getColorTexRes,
         stateTex: getStateTex,
         stateTexRes: getStateTexRes,
-        isColoredByCategory: getIsColoredByCategory,
-        isColoredByValue: getIsColoredByValue,
-        isSizedByCategory: getIsSizedByCategory,
-        isSizedByValue: getIsSizedByValue,
-        maxColorTexIdx: getMaxColorTexIdx,
+        isColoredByZ: getIsColoredByZ,
+        isColoredByW: getIsColoredByW,
+        isOpacityByZ: getIsOpacityByZ,
+        isOpacityByW: getIsOpacityByW,
+        isSizedByZ: getIsSizedByZ,
+        isSizedByW: getIsSizedByW,
+        colorMultiplicator: getColorMultiplicator,
+        opacityMultiplicator: getOpacityMultiplicator,
+        sizeMultiplicator: getSizeMultiplicator,
         numColorStates: COLOR_NUM_STATES,
-        maxPointSizeTexIdx: getMaxPointSizeTexIdx,
       },
 
       count: getNumPoints,
@@ -1053,11 +1083,17 @@ const createScatterplot = (initialProperties = {}) => {
     stateTexRes = Math.max(2, Math.ceil(Math.sqrt(numNewPoints)));
     const data = new Float32Array(stateTexRes ** 2 * 4);
 
+    maxValueZ = 0;
+    maxValueW = 0;
+
     for (let i = 0; i < numNewPoints; ++i) {
       data[i * 4] = newPoints[i][0]; // x
       data[i * 4 + 1] = newPoints[i][1]; // y
-      data[i * 4 + 2] = newPoints[i][2] || 0; // category
-      data[i * 4 + 3] = newPoints[i][3] || 0; // value
+      data[i * 4 + 2] = newPoints[i][2] || 0; // z: value 1
+      data[i * 4 + 3] = newPoints[i][3] || 0; // w: value 2
+
+      maxValueZ = Math.max(maxValueZ, data[i * 4 + 2]);
+      maxValueW = Math.max(maxValueW, data[i * 4 + 3]);
     }
 
     return regl.texture({
@@ -1467,6 +1503,7 @@ const createScatterplot = (initialProperties = {}) => {
     if (property === 'keyMap') return { ...keyMap };
     if (property === 'mouseMode') return mouseMode;
     if (property === 'opacity') return opacity;
+    if (property === 'opacityBy') return opacityBy;
     if (property === 'pointColor')
       return pointColors.length === 1 ? pointColors[0] : pointColors;
     if (property === 'pointColorActive')
@@ -1551,6 +1588,10 @@ const createScatterplot = (initialProperties = {}) => {
 
     if (properties.opacity !== undefined) {
       setOpacity(properties.opacity);
+    }
+
+    if (properties.opacityBy !== undefined) {
+      setOpacityBy(properties.opacityBy);
     }
 
     if (properties.lassoColor !== undefined) {
@@ -1742,7 +1783,7 @@ const createScatterplot = (initialProperties = {}) => {
     });
 
     colorTex = createColorTexture();
-    pointSizeTex = createPointSizeTexture();
+    encodingTex = createEncodingTexture();
 
     // Set dimensions
     set({
