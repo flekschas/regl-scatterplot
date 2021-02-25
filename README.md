@@ -87,7 +87,7 @@ scatterplot.draw([
 ]);
 ```
 
-These two values can be visually encoded as the color, opacity, or the size. Values that range between [0,1] are treated as continuous values. When the value range is in [0, >1] the data is treated as categorical data. In the example above, the first point value would be treated as categorical data and the second would be treated as continuous data.
+These two values can be visually encoded as the color, opacity, or the size. Values that range between [0, 1] are treated as continuous values. When the value range is in [0, >1] the data is treated as categorical data. In the example above, the first point value would be treated as categorical data and the second would be treated as continuous data.
 
 To encode the two point values use the `colorBy`, `opacityBy`, and `sizeBy` property as follows:
 
