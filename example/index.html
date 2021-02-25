@@ -165,6 +165,9 @@
       .flex-jc-sb {
         justify-content: space-between;
       }
+      .flex-jc-c {
+        justify-content: center;
+      }
       .flex-a-c {
         align-items: center;
       }
@@ -323,19 +326,24 @@
         height: 100%;
       }
 
-      #test {
+      #modal {
         position: absolute;
+        display: none;
+        z-index: 99;
         top: 0;
+        left: 0;
+        bottom: 0;
         right: 0;
-        width: 20%;
-        height: 20%;
-        background: rgba(255, 255, 255, 0.1);
-        overflow: hidden;
+        background: rgba(33, 33, 33, 0.9);
+        color: white;
       }
     </style>
   </head>
 
   <body>
+    <div id="modal" class="flex-c flex-jc-c flex-a-c">
+      <span class="no-select"></span>
+    </div>
     <header id="topbar" tabindex="0">
       <div id="title-wrapper" class="flex-c flex-jc-sb">
         <h1 id="title">Regl Scatterplot</h1>

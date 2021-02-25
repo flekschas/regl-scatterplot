@@ -1,7 +1,11 @@
 /* eslint no-console: 0 */
+import { createWorker } from '@flekschas/utils';
 
 import createScatterplot from '../src';
+import pointWorkerFn from './performance-mode-point-worker';
 
+const modal = document.querySelector('#modal');
+const modalText = document.querySelector('#modal span');
 const canvas = document.querySelector('#canvas');
 const numPointsEl = document.querySelector('#num-points');
 const numPointsValEl = document.querySelector('#num-points-value');
@@ -9,7 +13,7 @@ const pointSizeEl = document.querySelector('#point-size');
 const pointSizeValEl = document.querySelector('#point-size-value');
 const opacityEl = document.querySelector('#opacity');
 const opacityValEl = document.querySelector('#opacity-value');
-const lassoEl = document.querySelector('#lasso');
+const clickLassoInitiatorEl = document.querySelector('#click-lasso-initiator');
 const resetEl = document.querySelector('#reset');
 const exampleEl = document.querySelector('#example-performance-mode');
 
@@ -27,10 +31,25 @@ let selection = [];
 const lassoMinDelay = 10;
 const lassoMinDist = 2;
 
-const pointoutHandler = (pointId) => {
-  console.log('Out point:', pointId);
-  const [x, y, category, value] = points[pointId];
-  console.log(`X: ${x}\nY: ${y}\nCategory: ${category}\nValue: ${value}`);
+const pointWorker = createWorker(pointWorkerFn);
+
+const generatePoints = (num) =>
+  new Promise((resolve, reject) => {
+    pointWorker.onmessage = (e) => {
+      if (e.data.error) reject(e.data.error);
+      else resolve(e.data.points);
+    };
+    pointWorker.postMessage(num);
+  });
+
+const showModal = (text) => {
+  modal.style.display = 'flex';
+  modalText.textContent = text;
+};
+
+const closeModal = () => {
+  modal.style.display = 'none';
+  modalText.textContent = '';
 };
 
 const selectHandler = ({ points: selectedPoints }) => {
@@ -56,13 +75,12 @@ const scatterplot = createScatterplot({
   lassoMinDelay,
   lassoMinDist,
   pointSize,
+  showRecticle: true,
   performanceMode: true,
 });
 
 console.log(`Scatterplot v${scatterplot.get('version')}`);
 
-// scatterplot.subscribe('pointover', pointoverHandler);
-scatterplot.subscribe('pointout', pointoutHandler);
 scatterplot.subscribe('select', selectHandler);
 scatterplot.subscribe('deselect', deselectHandler);
 
@@ -73,23 +91,21 @@ const resizeHandler = () => {
 
 window.addEventListener('resize', resizeHandler);
 
-const generatePoints = (num) =>
-  new Array(num)
-    .fill()
-    .map(() => [
-      -1 + Math.random() * 2, // x
-      -1 + Math.random() * 2, // y
-      Math.round(Math.random()), // category
-      Math.random(), // value
-    ])
-    .sort((a, b) => (a[0] > b[0] ? 1 : -1));
-
 const setNumPoint = (newNumPoints) => {
+  showModal(
+    `Hang tight. Generating ${(numPoints / 1000000).toFixed(
+      1
+    )} million points...`
+  );
   numPoints = newNumPoints;
   numPointsEl.value = numPoints;
   numPointsValEl.innerHTML = numPoints;
-  points = generatePoints(numPoints);
-  scatterplot.draw(points);
+
+  generatePoints(numPoints).then((newPoints) => {
+    points = newPoints;
+    scatterplot.draw(points);
+    closeModal();
+  });
 };
 
 const numPointsInputHandler = (event) => {
@@ -125,14 +141,16 @@ const opacityInputHandler = (event) => setOpacity(+event.target.value);
 
 opacityEl.addEventListener('input', opacityInputHandler);
 
-const lassoChangeHandler = (event) => {
-  console.log(event.target.checked);
+const clickLassoInitiatorChangeHandler = (event) => {
   scatterplot.set({
-    interactionMode: event.target.checked ? 'lasso' : 'panZoom',
+    lassoInitiator: event.target.checked,
   });
 };
 
-lassoEl.addEventListener('change', lassoChangeHandler);
+clickLassoInitiatorEl.addEventListener(
+  'change',
+  clickLassoInitiatorChangeHandler
+);
 
 const resetClickHandler = () => {
   scatterplot.reset();
