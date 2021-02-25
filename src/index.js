@@ -1819,7 +1819,6 @@ const createScatterplot = (initialProperties = {}) => {
     if (property === 'xScale') return xScale;
     if (property === 'yScale') return yScale;
     if (property === 'performanceMode') return performanceMode;
-    if (property === 'interactionMode') return interactionMode;
 
     return undefined;
   };
