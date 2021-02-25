@@ -76,58 +76,49 @@ const points = new Array(10000)
 scatterplot.draw(points);
 ```
 
-#### Color by value or category
+#### Color, Opacity, and Size Encoding
 
-Regl-scatterplot supports two color modes: coloring by value or coloring by category. To support those, each point can be associated to a categorical and continuous value. To specify those values simply append two additional values to a point quadruples: e.g., `[x, y, category, value]`.
+In regl-scatterplot, points can be associated with two data values. These two values are defined as the third and forth component of the point quadruples (`[x, y, value, value]`). For instance:
 
 ```javascript
 scatterplot.draw([
-  // x, y, category, value
   [0.2, -0.1, 0, 0.1337],
-  [0.3, 0.1, 0, 0.3371],
-  [-0.9, 0.8, 1, 0.3713],
+  [0.3, 0.1, 1, 0.3371],
+  [-0.9, 0.8, 2, 0.3713],
 ]);
 ```
 
-To color points by category, set `pointColor` to an array of colors. For performance reasons, regl-scatterplot assumes that the category `0` refers to the first color, `1` refers to the second color, etc. Mathematically, regl-scatterplot maps categories to colors as follows: `category => category % colors.length`.
+These two values can be visually encoded as the color, opacity, or the size. Values that range between [0,1] are treated as continuous values. When the value range is in [0, >1] the data is treated as categorical data. In the example above, the first point value would be treated as categorical data and the second would be treated as continuous data.
 
-```javascript
-const colorsCat = ['#3a78aa', '#aa3a99'];
-scatterplot.set({ colorBy: 'category', pointColor: colorsCat });
-```
-
-To apply a continuous colormap use `colorBy: 'value'` and set `pointColor` to a list of colors representing the colormap. For performance reasons, regl-scatterplot assumes that the values are in `[0,1]` . Mathematically, the maping functions is as follows: `value => Math.min(1, Math.max(0, value))`.
-
-```javascript
-const blackToWhite = ['#000000', ..., '#ffffff'];
-scatterplot.set({ colorBy: 'value', pointColor: blackToWhite });
-```
-
-For a complete example see [example/index.js](example/index.js).
-
-#### Size by value or category
-
-Similar to [coloring by value or category](#color-by-value-or-category), you can encode the value or category as the point size.
-
-To size points by the category, set `pointSize` to an array of sizes. For performance reasons, regl-scatterplot assumes that the category `0` refers to the first size, `1` refers to the second size, etc.
-
-```javascript
-scatterplot.set({ sizeBy: 'category', pointSize: [2, 4, 6] });
-```
-
-To apply _"continuous"_ point sizes use `sizeBy: 'value'` and set `pointSize` to a precomputed array of point sizes. For performance reasons, regl-scatterplot assumes that the point values are in `[0,1]`. Any values below 0 and 1 wil be clipped.
+To encode the two point values use the `colorBy`, `opacityBy`, and `sizeBy` property as follows:
 
 ```javascript
 scatterplot.set({
-  sizeBy: 'value',
-  // E.g.: this maps values [0,1] to sizes [1,3] in log scale
-  pointSize: Array(100)
-    .fill()
-    .map((v, i) => Math.log(i + 1) + 1),
+  opacityBy: 'valueA',
+  sizeBy: 'valueA',
+  colorBy: 'valueB',
 });
 ```
 
-For a complete example see [example/size-encoding.js](example/size-encoding.js).
+In this example we would encode the first categorical point values (`[0, 1, 2]`) as the point opacity and size. The second continuous point values (`[0.1337, 0.3317, 0.3713]`) would be encoded as the point color.
+
+The last thing we need to tell regl-scatterplot is what those point values should be translated to. We do this by specifying a color, opacity, and size map as an array of colors, opacities, and sizes as follows:
+
+```javascript
+scatterplot.set({
+  pointColor: ['#000000', '#111111', ..., '#eeeeee', '#ffffff'],
+  pointSize: [2, 4, 8],
+  opacity: [0.5, 0.75, 1],
+});
+```
+
+You can encode a point data value in multiple ways. For instance, as you can see in the example above, the categorical fist data value is encoded via the point size _and_ opacity.
+
+**What if I have more than two values associated to a point?** Unfortunately, this isn't supported currently. In case you're wondering, this limitation is due to how we store the point data. The whole point state is encoded as an RGBA texture where the x and y coordinate are stored as the red and green color components and the first and second data value are stored in the blue and alpha component of the color. However, this limitation might be addressed in future versions so make sure to check back or, even better, start a pull request!
+
+**Why can't I specify a range function instead of a map?** Until we have implemented enough scale functions in the shader it's easier to let _you_ pre-compute the map. For instance, if you wanted to encode a continuous values on a log scale of point size, you can simply do `pointSize: Array(100).fill().map((v, i) => Math.log(i + 1) + 1)`.
+
+For a complete example see [example/index.js](example/index.js) and [example/size-encoding.js](example/size-encoding.js).
 
 #### Synchronize D3 x and y scales with the scatterplot view
 
