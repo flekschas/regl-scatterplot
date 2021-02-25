@@ -1361,7 +1361,7 @@ test('tests involving mouse events', async (t2) => {
 
     t.ok(
       lastRotation !== rotation,
-      'view should be have been rotated via the new modifier key'
+      'view should have been rotated via the new modifier key'
     );
 
     scatterplot.destroy();
