@@ -8,20 +8,23 @@ uniform sampler2D stateTex;
 uniform float stateTexRes;
 uniform float stateTexEps;
 uniform float devicePixelRatio;
-uniform sampler2D pointSizeTex;
-uniform float pointSizeTexRes;
-uniform float pointSizeTexEps;
+uniform sampler2D encodingTex;
+uniform float encodingTexRes;
+uniform float encodingTexEps;
 uniform float pointSizeExtra;
 uniform float numPoints;
 uniform float globalState;
-uniform float isColoredByCategory;
-uniform float isColoredByValue;
-uniform float isSizedByCategory;
-uniform float isSizedByValue;
-uniform float maxColorTexIdx;
+uniform float isColoredByZ;
+uniform float isColoredByW;
+uniform float isOpacityByZ;
+uniform float isOpacityByW;
+uniform float isSizedByZ;
+uniform float isSizedByW;
+uniform float colorMultiplicator;
+uniform float opacityMultiplicator;
+uniform float sizeMultiplicator;
 uniform float numColorStates;
-uniform float maxPointSizeTexIdx;
-uniform float scaling;
+uniform float pointScale;
 uniform mat4 projectionViewModel;
 
 attribute float stateIndex;
@@ -43,13 +46,16 @@ void main() {
   gl_Position = projectionViewModel * vec4(state.x, state.y, 0.0, 1.0);
 
   // Determine color index
-  float colorIndexCat = state.z * isColoredByCategory;
-  float colorIndexVal = floor(state.w * maxColorTexIdx) * isColoredByValue;
+  float colorIndexZ =  isColoredByZ * floor(state.z * colorMultiplicator);
+  float colorIndexW =  isColoredByW * floor(state.w * colorMultiplicator);
+
   // Multiply by the number of color states per color
   // I.e., normal, active, hover, background, etc.
-  float colorIndex = (colorIndexCat + colorIndexVal) * numColorStates;
+  float colorIndex = (colorIndexZ + colorIndexW) * numColorStates;
+
   // Half a "pixel" or "texel" in texture coordinates
   float colorLinearIndex = colorIndex + globalState;
+
   // Need to add cEps here to avoid floating point issue that can lead to
   // dramatic changes in which color is loaded as floor(3/2.9999) = 1 but
   // floor(3/3.0001) = 0!
@@ -62,19 +68,31 @@ void main() {
 
   color = texture2D(colorTex, colorTexIndex);
 
-  // Determine point size
-  float pointSizeIndexCat = state.z * isSizedByCategory;
-  float pointSizeIndexVal = floor(state.w * maxPointSizeTexIdx) * isSizedByValue;
-  float pointSizeIndex = pointSizeIndexCat + pointSizeIndexVal;
+  // Retrieve point size
+  float pointSizeIndexZ = isSizedByZ * floor(state.z * sizeMultiplicator);
+  float pointSizeIndexW = isSizedByW * floor(state.w * sizeMultiplicator);
+  float pointSizeIndex = pointSizeIndexZ + pointSizeIndexW;
 
-  float pointSizeRowIndex = floor((pointSizeIndex + pointSizeTexEps) / pointSizeTexRes);
+  float pointSizeRowIndex = floor((pointSizeIndex + encodingTexEps) / encodingTexRes);
   vec2 pointSizeTexIndex = vec2(
-    (pointSizeIndex / pointSizeTexRes) - pointSizeRowIndex + pointSizeTexEps,
-    pointSizeRowIndex / pointSizeTexRes + pointSizeTexEps
+    (pointSizeIndex / encodingTexRes) - pointSizeRowIndex + encodingTexEps,
+    pointSizeRowIndex / encodingTexRes + encodingTexEps
   );
-  float pointSize = texture2D(pointSizeTex, pointSizeTexIndex).x;
+  float pointSize = texture2D(encodingTex, pointSizeTexIndex).x;
 
-  finalPointSize = (pointSize * scaling + pointSizeExtra) * devicePixelRatio;
+  // Retrieve opacity
+  float opacityIndexZ = isOpacityByZ * floor(state.z * opacityMultiplicator);
+  float opacityIndexW = isOpacityByW * floor(state.w * opacityMultiplicator);
+  float opacityIndex = opacityIndexZ + opacityIndexW;
+
+  float opacityRowIndex = floor((opacityIndex + encodingTexEps) / encodingTexRes);
+  vec2 opacityTexIndex = vec2(
+    (opacityIndex / encodingTexRes) - opacityRowIndex + encodingTexEps,
+    opacityRowIndex / encodingTexRes + encodingTexEps
+  );
+  color.a = min(1.0, texture2D(encodingTex, opacityTexIndex).y + globalState);
+
+  finalPointSize = (pointSize * pointScale + pointSizeExtra) * devicePixelRatio;
   gl_PointSize = finalPointSize;
 }
 `;

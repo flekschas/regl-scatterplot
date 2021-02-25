@@ -1,6 +1,6 @@
 {
   "name": "regl-scatterplot",
-  "version": "0.14.0",
+  "version": "0.15.1",
   "description": "WebGL-based 2D Scatterplot in Regl",
   "author": "Fritz Lekschas",
   "keywords": [
@@ -32,7 +32,7 @@
   "dependencies": {
     "@flekschas/utils": "^0.27.0",
     "camera-2d-simple": "~2.2.1",
-    "dom-2d-camera": "~1.0.2",
+    "dom-2d-camera": "~1.2.1",
     "gl-matrix": "~3.3.0",
     "kdbush": "~3.0.0",
     "lodash-es": "~4.17.15",
@@ -90,7 +90,7 @@
     "webpack-cli": "^3.3.11",
     "webpack-dev-server": "^3.11.0",
     "webpack-tape-run": "0.0.7",
-    "zora": "^3.1.9"
+    "zora": "^4.0.2"
   },
   "homepage": "https://github.com/flekschas/regl-scatterplot",
   "repository": {

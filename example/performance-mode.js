@@ -74,12 +74,15 @@ const resizeHandler = () => {
 window.addEventListener('resize', resizeHandler);
 
 const generatePoints = (num) =>
-  new Array(num).fill().map(() => [
-    -1 + Math.random() * 2, // x
-    -1 + Math.random() * 2, // y
-    Math.round(Math.random()), // category
-    Math.random(), // value
-  ]);
+  new Array(num)
+    .fill()
+    .map(() => [
+      -1 + Math.random() * 2, // x
+      -1 + Math.random() * 2, // y
+      Math.round(Math.random()), // category
+      Math.random(), // value
+    ])
+    .sort((a, b) => (a[0] > b[0] ? 1 : -1));
 
 const setNumPoint = (newNumPoints) => {
   numPoints = newNumPoints;

@@ -317,3 +317,21 @@ export const toRgba = (color, isNormalize) => {
   );
   return isNormalize ? [1, 1, 1, 1] : [255, 255, 255, 255];
 };
+
+/**
+ * Flip the key-value pairs of an object
+ * @param {object} obj - Object to be flipped
+ * @return {object} Flipped object
+ */
+export const flipObj = (obj) =>
+  Object.entries(obj).reduce((out, [key, value]) => {
+    if (out[value]) {
+      out[value] = [...out[value], key];
+    } else {
+      out[value] = key;
+    }
+    return out;
+  }, {});
+
+export const rgbBrightness = (rgb) =>
+  0.21 * rgb[0] + 0.72 * rgb[1] + 0.07 * rgb[2];

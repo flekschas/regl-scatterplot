@@ -9,7 +9,7 @@ const pointSizeEl = document.querySelector('#point-size');
 const pointSizeValEl = document.querySelector('#point-size-value');
 const opacityEl = document.querySelector('#opacity');
 const opacityValEl = document.querySelector('#opacity-value');
-const lassoEl = document.querySelector('#lasso');
+const clickLassoInitiatorEl = document.querySelector('#click-lasso-initiator');
 const resetEl = document.querySelector('#reset');
 const exampleEl = document.querySelector('#example-basic');
 
@@ -30,23 +30,28 @@ const showRecticle = true;
 const recticleColor = [1, 1, 0.878431373, 0.33];
 
 const pointoverHandler = (pointId) => {
-  console.log('Over point:', pointId);
   const [x, y, category, value] = points[pointId];
-  console.log(`X: ${x}\nY: ${y}\nCategory: ${category}\nValue: ${value}`);
+  console.log(
+    `Out point: ${pointId}`,
+    `X: ${x}\nY: ${y}\nCategory: ${category}\nValue: ${value}`
+  );
 };
 
 const pointoutHandler = (pointId) => {
   console.log('Out point:', pointId);
   const [x, y, category, value] = points[pointId];
-  console.log(`X: ${x}\nY: ${y}\nCategory: ${category}\nValue: ${value}`);
+  console.log(
+    `Out point: ${pointId}`,
+    `X: ${x}\nY: ${y}\nCategory: ${category}\nValue: ${value}`
+  );
 };
 
 const selectHandler = ({ points: selectedPoints }) => {
-  console.log('Selected:', selectedPoints);
   selection = selectedPoints;
   if (selection.length === 1) {
     const point = points[selection[0]];
     console.log(
+      `Selected: ${selectedPoints}`,
       `X: ${point[0]}\nY: ${point[1]}\nCategory: ${point[2]}\nValue: ${point[3]}`
     );
   }
@@ -70,8 +75,8 @@ const scatterplot = createScatterplot({
 
 console.log(`Scatterplot v${scatterplot.get('version')}`);
 
-// scatterplot.subscribe('pointover', pointoverHandler);
-// scatterplot.subscribe('pointout', pointoutHandler);
+scatterplot.subscribe('pointover', pointoverHandler);
+scatterplot.subscribe('pointout', pointoutHandler);
 scatterplot.subscribe('select', selectHandler);
 scatterplot.subscribe('deselect', deselectHandler);
 
@@ -131,14 +136,16 @@ const opacityInputHandler = (event) => setOpacity(+event.target.value);
 
 opacityEl.addEventListener('input', opacityInputHandler);
 
-const lassoChangeHandler = (event) => {
-  console.log(event.target.checked);
+const clickLassoInitiatorChangeHandler = (event) => {
   scatterplot.set({
-    interactionMode: event.target.checked ? 'lasso' : 'panZoom',
+    lassoInitiator: event.target.checked,
   });
 };
 
-lassoEl.addEventListener('change', lassoChangeHandler);
+clickLassoInitiatorEl.addEventListener(
+  'change',
+  clickLassoInitiatorChangeHandler
+);
 
 const resetClickHandler = () => {
   scatterplot.reset();

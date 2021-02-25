@@ -24,19 +24,30 @@ import {
   DEFAULT_LASSO_MIN_DELAY,
   DEFAULT_LASSO_MIN_DIST,
   DEFAULT_LASSO_CLEAR_EVENT,
+  KEY_ACTION_LASSO,
+  KEY_ACTION_ROTATE,
+  SINGLE_CLICK_DELAY,
+  DEFAULT_OPACITY,
 } from '../src/constants';
 
 import {
   asyncForEach,
   createCanvas,
   createMouseEvent,
+  createKeyboardEvent,
   flatArrayEqual,
   wait,
+  capitalize,
 } from './utils';
 
 const EPS = 1e-7;
 
 const floatEqual = (a, b) => Math.abs(a - b) <= EPS;
+
+const valueVariants = {
+  valueZ: ['category', 'value1', 'valueA', 'valueZ', 'z'],
+  valueW: ['value', 'value2', 'valueB', 'valueW', 'w'],
+};
 
 /* ------------------------------ constructors ------------------------------ */
 
@@ -92,6 +103,11 @@ test('createScatterplot()', (t) => {
     scatterplot.get('pointOutlineWidth'),
     DEFAULT_POINT_OUTLINE_WIDTH,
     'scatterplot should have default point outline width'
+  );
+  t.equal(
+    scatterplot.get('opacity'),
+    DEFAULT_OPACITY,
+    'scatterplot should have default point opacity'
   );
   t.equal(
     scatterplot.get('width'),
@@ -382,15 +398,17 @@ test('set({ cameraTarget, cameraDistance, cameraRotation, cameraView })', (t) =>
 test('set({ colorBy })', (t) => {
   const scatterplot = createScatterplot({ canvas: createCanvas() });
 
-  const colorBy = 'category';
+  Object.entries(valueVariants).forEach(([value, variants]) => {
+    variants.forEach((variant) => {
+      scatterplot.set({ colorBy: variant });
 
-  scatterplot.set({ colorBy });
-
-  t.equal(
-    scatterplot.get('colorBy'),
-    colorBy,
-    `colorBy should be set to ${colorBy}`
-  );
+      t.equal(
+        scatterplot.get('colorBy'),
+        value,
+        `colorBy should be set to ${value}`
+      );
+    });
+  });
 
   scatterplot.set({ colorBy: null });
 
@@ -399,18 +417,46 @@ test('set({ colorBy })', (t) => {
   scatterplot.destroy();
 });
 
+test('set({ opacityBy })', (t) => {
+  const scatterplot = createScatterplot({ canvas: createCanvas() });
+
+  Object.entries(valueVariants).forEach(([value, variants]) => {
+    variants.forEach((variant) => {
+      scatterplot.set({ opacityBy: variant });
+
+      t.equal(
+        scatterplot.get('opacityBy'),
+        value,
+        `opacityBy should be set to ${value}`
+      );
+    });
+  });
+
+  scatterplot.set({ opacityBy: null });
+
+  t.equal(
+    scatterplot.get('opacityBy'),
+    null,
+    'opacityBy should be nullifyable'
+  );
+
+  scatterplot.destroy();
+});
+
 test('set({ sizeBy })', (t) => {
   const scatterplot = createScatterplot({ canvas: createCanvas() });
 
-  const sizeBy = 'category';
+  Object.entries(valueVariants).forEach(([value, variants]) => {
+    variants.forEach((variant) => {
+      scatterplot.set({ sizeBy: variant });
 
-  scatterplot.set({ sizeBy });
-
-  t.equal(
-    scatterplot.get('sizeBy'),
-    sizeBy,
-    `sizeBy should be set to ${sizeBy}`
-  );
+      t.equal(
+        scatterplot.get('sizeBy'),
+        value,
+        `sizeBy should be set to ${value}`
+      );
+    });
+  });
 
   scatterplot.set({ sizeBy: null });
 
@@ -546,22 +592,32 @@ test('set({ pointColor, pointColorActive, pointColorHover }) multiple colors', (
 test('set({ opacity })', async (t) => {
   const scatterplot = createScatterplot({ canvas: createCanvas() });
 
-  const opacity = 0.5;
+  let opacity = 0.5;
 
   scatterplot.set({ opacity });
 
   t.equal(
     scatterplot.get('opacity'),
-    opacity,
-    `opacity should be set to ${opacity}`
+    [opacity],
+    `opacity should be set to [${opacity}]`
   );
 
   scatterplot.set({ opacity: 0 });
 
   t.equal(
     scatterplot.get('opacity'),
-    opacity,
+    [opacity],
     'opacity should not be nullifyable'
+  );
+
+  opacity = [0.5, 0.75, 1];
+
+  scatterplot.set({ opacity });
+
+  t.equal(
+    scatterplot.get('opacity'),
+    opacity,
+    'should accept multiple opacities'
   );
 
   scatterplot.destroy();
@@ -898,9 +954,15 @@ test('tests involving mouse events', async (t2) => {
         lassoEndCoordinates = coordinates;
       });
 
+      const [lassoKey] = Object.entries(scatterplot.get('keyMap')).find(
+        (mapping) => mapping[1] === KEY_ACTION_LASSO
+      );
+
       // Test multi selections via mousedown + mousemove
       canvas.dispatchEvent(
-        createMouseEvent('mousedown', dim * 1.125, hdim, { shiftKey: true })
+        createMouseEvent('mousedown', dim * 1.125, hdim, {
+          [`${lassoKey}Key`]: true,
+        })
       );
 
       // Needed to first digest the mousedown event
@@ -949,6 +1011,361 @@ test('tests involving mouse events', async (t2) => {
       scatterplot.destroy();
     }
   );
+
+  await t2.test('disable lasso selection', async (t) => {
+    const dim = 200;
+    const hdim = dim / 2;
+    const canvas = createCanvas(dim, dim);
+    const scatterplot = createScatterplot({
+      canvas,
+      width: dim,
+      height: dim,
+      keyMap: {},
+    });
+
+    await scatterplot.draw([[0, 0]]);
+
+    let selectedPoints = [];
+    scatterplot.subscribe('select', ({ points: newSelectedPoints }) => {
+      selectedPoints = [...newSelectedPoints];
+    });
+
+    let lassoStartCount = 0;
+    scatterplot.subscribe('lassoStart', () => ++lassoStartCount);
+
+    t.equal(
+      0,
+      Object.entries(scatterplot.get('keyMap')).length,
+      'KeyMap should be unset'
+    );
+
+    // Test multi selections via mousedown + mousemove
+    canvas.dispatchEvent(
+      createMouseEvent('mousedown', dim * 1.125, hdim, {
+        altKey: true,
+        ctrlKey: true,
+        metaKey: true,
+        shiftKey: true,
+      })
+    );
+
+    // Needed to first digest the mousedown event
+    await wait(0);
+
+    const mousePositions = [
+      [dim * 1.125, hdim],
+      [hdim, -dim * 0.125],
+      [-dim * 0.125, -dim * 0.125],
+      [-dim * 0.125, dim * 0.125],
+      [0, dim * 0.9],
+      [dim * 0.1, dim * 0.9],
+      [dim * 0.1, dim * 1.125],
+      [dim * 1.125, dim * 1.125],
+    ];
+
+    await asyncForEach(mousePositions, async (mousePosition) => {
+      window.dispatchEvent(createMouseEvent('mousemove', ...mousePosition));
+      await wait(DEFAULT_LASSO_MIN_DELAY + 5);
+    });
+
+    window.dispatchEvent(createMouseEvent('mouseup'));
+
+    await wait(0);
+
+    t.equal(lassoStartCount, 0, 'should have not triggered lassoStart at all');
+
+    t.equal(selectedPoints.length, 0, 'should have not selected any points');
+
+    scatterplot.destroy();
+  });
+
+  await t2.test('test lasso selection via the initiator', async (t) => {
+    const dim = 200;
+    const hdim = dim / 2;
+    const canvas = createCanvas(dim, dim);
+    const scatterplot = createScatterplot({
+      canvas,
+      width: dim,
+      height: dim,
+      lassoInitiator: false,
+    });
+
+    await scatterplot.draw([
+      [0, 0],
+      [1, 1],
+      [1, -1],
+      [-1, -1],
+      [-1, 1],
+    ]);
+
+    let selectedPoints = [];
+    scatterplot.subscribe('select', ({ points: newSelectedPoints }) => {
+      selectedPoints = [...newSelectedPoints];
+    });
+
+    const lassoIniatorElement = scatterplot.get('lassoInitiatorElement');
+
+    t.ok(
+      scatterplot.get('lassoInitiator') === false,
+      'lasso initiator should be inactive'
+    );
+    t.ok(
+      lassoIniatorElement.id.startsWith('lasso-initiator'),
+      'lasso initiator element should exist'
+    );
+    t.equal(
+      scatterplot.get('lassoInitiatorParentElement'),
+      document.body,
+      'lasso initiator parent element should be the document body'
+    );
+
+    canvas.dispatchEvent(createMouseEvent('mousedown', dim * 1.125, hdim));
+    await wait(0);
+    canvas.dispatchEvent(createMouseEvent('click', dim * 1.125, hdim));
+
+    // We need to wait for the click delay and some extra milliseconds for
+    // the circle to appear
+    await wait(SINGLE_CLICK_DELAY + 50);
+
+    lassoIniatorElement.dispatchEvent(
+      createMouseEvent('mousedown', dim * 1.125, hdim)
+    );
+    await wait(0);
+
+    const mousePositions = [
+      [dim * 1.125, hdim],
+      [hdim, -dim * 0.125],
+      [-dim * 0.125, -dim * 0.125],
+      [-dim * 0.125, dim * 0.125],
+      [0, dim * 0.9],
+      [dim * 0.1, dim * 0.9],
+      [dim * 0.1, dim * 1.125],
+      [dim * 1.125, dim * 1.125],
+    ];
+
+    await asyncForEach(mousePositions, async (mousePosition) => {
+      window.dispatchEvent(createMouseEvent('mousemove', ...mousePosition));
+      await wait(DEFAULT_LASSO_MIN_DELAY + 5);
+    });
+
+    window.dispatchEvent(createMouseEvent('mouseup'));
+
+    await wait(0);
+
+    t.deepEqual(selectedPoints, [], 'should have not selected anything');
+
+    scatterplot.set({ lassoInitiator: true });
+
+    await wait(0);
+
+    t.ok(scatterplot.get('lassoInitiator'), 'lasso initiator should be active');
+
+    canvas.dispatchEvent(createMouseEvent('mousedown', dim * 1.125, hdim));
+    await wait(0);
+    canvas.dispatchEvent(createMouseEvent('click', dim * 1.125, hdim));
+
+    // We need to wait for the click delay and some extra milliseconds for
+    // the circle to appear
+    await wait(SINGLE_CLICK_DELAY + 50);
+
+    lassoIniatorElement.dispatchEvent(
+      createMouseEvent('mousedown', dim * 1.125, hdim)
+    );
+    await wait(0);
+
+    await asyncForEach(mousePositions, async (mousePosition) => {
+      window.dispatchEvent(createMouseEvent('mousemove', ...mousePosition));
+      await wait(DEFAULT_LASSO_MIN_DELAY + 5);
+    });
+
+    window.dispatchEvent(createMouseEvent('mouseup'));
+
+    await wait(0);
+
+    t.deepEqual(
+      selectedPoints,
+      [0, 2, 4],
+      'should have selected the first, third, and fifth point'
+    );
+
+    scatterplot.destroy();
+  });
+
+  await t2.test('test rotation', async (t) => {
+    const dim = 200;
+    const hdim = dim / 2;
+    const canvas = createCanvas(dim, dim);
+    const scatterplot = createScatterplot({
+      canvas,
+      width: dim,
+      height: dim,
+    });
+
+    await scatterplot.draw([[0, 0]]);
+
+    const initialRotation = scatterplot.get('cameraRotation');
+    t.equal(initialRotation, 0, 'view should not be rotated on init');
+
+    let rotation;
+    const viewHandler = ({ camera }) => {
+      rotation = camera.rotation;
+    };
+    scatterplot.subscribe('view', viewHandler);
+
+    let [rotateKey] = Object.entries(scatterplot.get('keyMap')).find(
+      (mapping) => mapping[1] === KEY_ACTION_ROTATE
+    );
+
+    // Test multi selections via mousedown + mousemove
+    window.dispatchEvent(
+      createKeyboardEvent('keydown', capitalize(rotateKey), {
+        [`${rotateKey}Key`]: true,
+      })
+    );
+    window.dispatchEvent(createMouseEvent('mousemove', dim * 0.75, hdim));
+
+    await wait(0);
+
+    canvas.dispatchEvent(
+      createMouseEvent('mousedown', dim * 0.75, hdim, {
+        [`${rotateKey}Key`]: true,
+        buttons: 1,
+      })
+    );
+
+    await wait(0);
+
+    const mousePositions = [
+      [dim * 0.75, hdim],
+      [dim * 0.75, hdim * 0.5],
+    ];
+
+    let whenDrawn = new Promise((resolve) =>
+      scatterplot.subscribe('draw', resolve, 1)
+    );
+
+    await asyncForEach(mousePositions, async (mousePosition) => {
+      window.dispatchEvent(createMouseEvent('mousemove', ...mousePosition));
+      await wait(DEFAULT_LASSO_MIN_DELAY + 5);
+    });
+
+    window.dispatchEvent(createMouseEvent('mouseup'));
+    window.dispatchEvent(
+      createKeyboardEvent('keyup', capitalize(rotateKey), {
+        [`${rotateKey}Key`]: true,
+      })
+    );
+
+    await whenDrawn;
+    await wait(0);
+
+    t.ok(
+      initialRotation !== rotation && !Number.isNaN(+rotation),
+      'view should be have been rotated'
+    );
+
+    const lastRotation = rotation;
+    const oldRotateKey = rotateKey;
+
+    rotateKey = 'shift';
+    scatterplot.set({ keyMap: { [rotateKey]: 'rotate' } });
+
+    // Needed to first digest the keyMap change
+    await wait(0);
+
+    // Test multi selections via mousedown + mousemove
+    window.dispatchEvent(
+      createKeyboardEvent('keydown', capitalize(oldRotateKey), {
+        [`${oldRotateKey}Key`]: true,
+      })
+    );
+    window.dispatchEvent(createMouseEvent('mousemove', dim * 0.75, hdim));
+
+    await wait(0);
+
+    canvas.dispatchEvent(
+      createMouseEvent('mousedown', dim * 0.75, hdim, {
+        [`${oldRotateKey}Key`]: true,
+        buttons: 1,
+      })
+    );
+
+    // Needed to first digest the mousedown event
+    await wait(0);
+
+    whenDrawn = new Promise((resolve) =>
+      scatterplot.subscribe('draw', resolve, 1)
+    );
+
+    await asyncForEach(mousePositions, async (mousePosition) => {
+      window.dispatchEvent(createMouseEvent('mousemove', ...mousePosition));
+      await wait(DEFAULT_LASSO_MIN_DELAY + 5);
+    });
+
+    window.dispatchEvent(createMouseEvent('mouseup'));
+    window.dispatchEvent(
+      createKeyboardEvent('keyup', capitalize(oldRotateKey), {
+        [`${oldRotateKey}Key`]: true,
+      })
+    );
+
+    await whenDrawn;
+    await wait(0);
+
+    t.equal(
+      lastRotation,
+      rotation,
+      'view should have not been rotated via the old modifier key'
+    );
+
+    await wait(2);
+
+    // Test multi selections via mousedown + mousemove
+    window.dispatchEvent(
+      createKeyboardEvent('keydown', capitalize(rotateKey), {
+        [`${rotateKey}Key`]: true,
+      })
+    );
+    window.dispatchEvent(createMouseEvent('mousemove', dim * 0.75, hdim));
+
+    await wait(0);
+
+    canvas.dispatchEvent(
+      createMouseEvent('mousedown', dim * 0.75, hdim, {
+        [`${rotateKey}Key`]: true,
+        buttons: 1,
+      })
+    );
+
+    // Needed to first digest the mousedown event
+    await wait(10);
+
+    whenDrawn = new Promise((resolve) =>
+      scatterplot.subscribe('draw', resolve, 1)
+    );
+
+    await asyncForEach(mousePositions, async (mousePosition) => {
+      window.dispatchEvent(createMouseEvent('mousemove', ...mousePosition));
+      await wait(DEFAULT_LASSO_MIN_DELAY + 5);
+    });
+
+    window.dispatchEvent(createMouseEvent('mouseup'));
+    window.dispatchEvent(
+      createKeyboardEvent('keyup', capitalize(rotateKey), {
+        [`${rotateKey}Key`]: true,
+      })
+    );
+
+    await whenDrawn;
+    await wait(10);
+
+    t.ok(
+      lastRotation !== rotation,
+      'view should have been rotated via the new modifier key'
+    );
+
+    scatterplot.destroy();
+  });
 
   await t2.test(
     'point hover with publish("pointover") and publish("pointout")',

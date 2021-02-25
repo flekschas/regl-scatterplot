@@ -22,6 +22,7 @@
         text-rendering: optimizeLegibility;
         color: #888;
         background: black;
+        overflow: hidden;
       }
 
       abbr {
@@ -133,6 +134,29 @@
 
       input[type='range']:hover::-ms-thumb {
         background: #fff;
+      }
+
+      button {
+        font-size: 0.9em;
+        line-height: 1.5em;
+        text-transform: uppercase;
+        border-radius: 0.2rem;
+        border: 0;
+        background: #ccc;
+        box-shadow: 0 0 0 0 black, 0 0 0 0 #6fb2e4;
+        transition: background 0.15s cubic-bezier(0.25, 0.1, 0.25, 1),
+          box-shadow 0.15s cubic-bezier(0.25, 0.1, 0.25, 1);
+      }
+
+      button:hover {
+        background: #fff;
+      }
+
+      button:focus {
+        background: #fff;
+        border: 0;
+        outline: 0;
+        box-shadow: 0 0 0 1px black, 0 0 0 3px #6fb2e4;
       }
 
       .flex-c {
@@ -298,6 +322,16 @@
         width: 100%;
         height: 100%;
       }
+
+      #test {
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 20%;
+        height: 20%;
+        background: rgba(255, 255, 255, 0.1);
+        overflow: hidden;
+      }
     </style>
   </head>
 
@@ -352,15 +386,9 @@
             value="1"
           />
         </label>
-        <label class="flex-c">
-          <div class="flex-a-c no-select">
-            <span class="label">Activate Lasso</span>
-          </div>
-          <input
-            id="lasso"
-            type="checkbox"
-            value="true"
-          />
+        <label class="flex-c flex-a-c">
+          <input id="click-lasso-initiator" type="checkbox" />
+          <span class="no-select">Click to Lasso Initiator</span>
         </label>
         <button id="reset">Reset</button>
         <hr />
@@ -371,7 +399,7 @@
           </li>
           <li>
             <a id="example-size-encoding" href="size-encoding.html"
-              >Size Encoding</a
+              >Size &amp; Opacity Encoding</a
             >
           </li>
           <li>

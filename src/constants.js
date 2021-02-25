@@ -8,10 +8,10 @@ import {
   quadOut,
 } from '@flekschas/utils';
 
-export const COLOR_ACTIVE_IDX = 1;
-export const COLOR_BG_IDX = 3;
-export const COLOR_HOVER_IDX = 2;
 export const COLOR_NORMAL_IDX = 0;
+export const COLOR_ACTIVE_IDX = 1;
+export const COLOR_HOVER_IDX = 2;
+export const COLOR_BG_IDX = 3;
 export const COLOR_NUM_STATES = 4;
 export const FLOAT_BYTES = Float32Array.BYTES_PER_ELEMENT;
 export const GL_EXTENSIONS = [
@@ -19,6 +19,16 @@ export const GL_EXTENSIONS = [
   'OES_texture_float',
   'OES_element_index_uint',
 ];
+
+export const MOUSE_MODE_PANZOOM = 'panZoom';
+export const MOUSE_MODE_LASSO = 'lasso';
+export const MOUSE_MODE_ROTATE = 'rotate';
+export const MOUSE_MODES = [
+  MOUSE_MODE_PANZOOM,
+  MOUSE_MODE_LASSO,
+  MOUSE_MODE_ROTATE,
+];
+export const DEFAULT_MOUSE_MODE = MOUSE_MODE_PANZOOM;
 
 // Easing
 export const EASING_FNS = {
@@ -32,19 +42,36 @@ export const EASING_FNS = {
 };
 export const DEFAULT_EASING = cubicInOut;
 
-// Interaction modes
-export const PAN_ZOOM_MODE = 'panZoom';
-export const LASSO_MODE = 'lasso';
-export const INTERACTION_MODES = [PAN_ZOOM_MODE, LASSO_MODE];
-export const DEFAULT_INTERACTION_MODE = PAN_ZOOM_MODE;
-
 // Default lasso
 export const LASSO_CLEAR_ON_DESELECT = 'deselect';
 export const LASSO_CLEAR_ON_END = 'lassoEnd';
 export const LASSO_CLEAR_EVENTS = [LASSO_CLEAR_ON_DESELECT, LASSO_CLEAR_ON_END];
+export const DEFAULT_LASSO_INITIATOR = false;
+export const DEFAULT_LASSO_INITIATOR_BACKGROUND = 'rgba(255, 255, 255, 0.1)';
 export const DEFAULT_LASSO_MIN_DELAY = 10;
 export const DEFAULT_LASSO_MIN_DIST = 3;
 export const DEFAULT_LASSO_CLEAR_EVENT = LASSO_CLEAR_ON_END;
+
+// Key mapping
+export const KEY_ACTION_LASSO = 'lasso';
+export const KEY_ACTION_ROTATE = 'rotate';
+export const KEY_ACTION_MERGE = 'merge';
+export const KEY_ACTIONS = [
+  KEY_ACTION_LASSO,
+  KEY_ACTION_ROTATE,
+  KEY_ACTION_MERGE,
+];
+export const KEY_ALT = 'alt';
+export const KEY_CMD = 'cmd';
+export const KEY_CTRL = 'ctrl';
+export const KEY_META = 'meta';
+export const KEY_SHIFT = 'shift';
+export const KEYS = [KEY_ALT, KEY_CMD, KEY_CTRL, KEY_META, KEY_SHIFT];
+export const DEFAULT_KEY_MAP = {
+  [KEY_ALT]: KEY_ACTION_ROTATE,
+  [KEY_SHIFT]: KEY_ACTION_LASSO,
+  [KEY_CMD]: KEY_ACTION_MERGE,
+};
 
 // Default attribute
 export const DEFAULT_DATA_ASPECT_RATIO = 1;
@@ -59,6 +86,8 @@ export const DEFAULT_SIZE_BY = null;
 export const DEFAULT_POINT_CONNECTION_SIZE = 2;
 export const DEFAULT_POINT_CONNECTION_SIZE_SELECTED = 2;
 export const DEFAULT_POINT_CONNECTION_SIZE_BY = null;
+export const DEFAULT_OPACITY = [1];
+export const DEFAULT_OPACITY_BY = null;
 
 // Default colors
 export const DEFAULT_COLORMAP = [];
@@ -96,3 +125,5 @@ export const DEFAULT_POINT_CONNECTION_MAX_INT_POINTS_PER_SEGMENT = 100;
 export const DEFAULT_POINT_CONNECTION_INT_POINTS_TOLERANCE = 1 / 500;
 export const DEFAULT_POINT_SIZE_MOUSE_DETECTION = 'auto';
 export const DEFAULT_PERFORMANCE_MODE = false;
+export const SINGLE_CLICK_DELAY = 200;
+export const LONG_CLICK_TIME = 500;

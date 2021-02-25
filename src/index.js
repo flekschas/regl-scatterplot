@@ -1,11 +1,12 @@
 import createDom2dCamera from 'dom-2d-camera';
 import KDBush from 'kdbush';
 import createPubSub from 'pub-sub-es';
-import withThrottle from 'lodash-es/throttle';
 import withRaf from 'with-raf';
 import { mat4, vec4 } from 'gl-matrix';
 import createLine from 'regl-line';
 import { unionIntegers } from '@flekschas/utils';
+
+import createLassoManager from './lasso-manager';
 
 import BG_FS from './bg.fs';
 import BG_VS from './bg.vs';
@@ -66,10 +67,27 @@ import {
   LASSO_CLEAR_EVENTS,
   LASSO_CLEAR_ON_DESELECT,
   LASSO_CLEAR_ON_END,
-  PAN_ZOOM_MODE,
-  LASSO_MODE,
-  INTERACTION_MODES,
-  DEFAULT_INTERACTION_MODE,
+  DEFAULT_LASSO_INITIATOR,
+  KEY_ACTION_LASSO,
+  KEY_ACTION_ROTATE,
+  KEY_ACTION_MERGE,
+  KEY_ACTIONS,
+  KEY_ALT,
+  KEY_CMD,
+  KEY_CTRL,
+  KEY_META,
+  KEY_SHIFT,
+  KEYS,
+  DEFAULT_KEY_MAP,
+  MOUSE_MODE_PANZOOM,
+  MOUSE_MODE_LASSO,
+  MOUSE_MODE_ROTATE,
+  MOUSE_MODES,
+  DEFAULT_MOUSE_MODE,
+  SINGLE_CLICK_DELAY,
+  LONG_CLICK_TIME,
+  DEFAULT_OPACITY,
+  DEFAULT_OPACITY_BY,
 } from './constants';
 
 import {
@@ -87,17 +105,13 @@ import {
   toRgba,
   max,
   min,
+  flipObj,
+  rgbBrightness,
 } from './utils';
 
 import { version } from '../package.json';
 
-const deprecations = {
-  background: 'backgroundColor',
-  target: 'cameraTarget',
-  distance: 'cameraDistance',
-  rotation: 'cameraRotation',
-  view: 'cameraView',
-};
+const deprecations = {};
 
 const checkDeprecations = (properties) => {
   Object.keys(properties)
@@ -132,11 +146,16 @@ const createScatterplot = (initialProperties = {}) => {
     lassoMinDelay = DEFAULT_LASSO_MIN_DELAY,
     lassoMinDist = DEFAULT_LASSO_MIN_DIST,
     lassoClearEvent = DEFAULT_LASSO_CLEAR_EVENT,
+    lassoInitiator = DEFAULT_LASSO_INITIATOR,
+    lassoInitiatorParentElement = document.body,
+    keyMap = DEFAULT_KEY_MAP,
+    mouseMode = DEFAULT_MOUSE_MODE,
     showRecticle = DEFAULT_SHOW_RECTICLE,
     recticleColor = DEFAULT_RECTICLE_COLOR,
     pointColor = DEFAULT_COLOR_NORMAL,
     pointColorActive = DEFAULT_COLOR_ACTIVE,
     pointColorHover = DEFAULT_COLOR_HOVER,
+    showPointConnections = DEFAULT_SHOW_POINT_CONNECTIONS,
     pointConnectionColor = DEFAULT_POINT_CONNECTION_COLOR_NORMAL,
     pointConnectionColorActive = DEFAULT_POINT_CONNECTION_COLOR_ACTIVE,
     pointConnectionColorHover = DEFAULT_POINT_CONNECTION_COLOR_HOVER,
@@ -146,15 +165,15 @@ const createScatterplot = (initialProperties = {}) => {
     pointConnectionSizeBy = DEFAULT_POINT_CONNECTION_SIZE_BY,
     pointConnectionMaxIntPointsPerSegment = DEFAULT_POINT_CONNECTION_MAX_INT_POINTS_PER_SEGMENT,
     pointConnectionTolerance = DEFAULT_POINT_CONNECTION_INT_POINTS_TOLERANCE,
-    showPointConnections = DEFAULT_SHOW_POINT_CONNECTIONS,
     pointSize = DEFAULT_POINT_SIZE,
     pointSizeSelected = DEFAULT_POINT_SIZE_SELECTED,
     pointSizeMouseDetection = DEFAULT_POINT_SIZE_MOUSE_DETECTION,
     pointOutlineWidth = DEFAULT_POINT_OUTLINE_WIDTH,
+    opacity = DEFAULT_OPACITY,
+    opacityBy = DEFAULT_OPACITY_BY,
     sizeBy = DEFAULT_SIZE_BY,
     width = DEFAULT_WIDTH,
     height = DEFAULT_HEIGHT,
-    interactionMode = DEFAULT_INTERACTION_MODE,
   } = initialProperties;
 
   // The following properties cannod be changed after the initialization
@@ -162,15 +181,51 @@ const createScatterplot = (initialProperties = {}) => {
 
   checkReglExtensions(regl);
 
+  regl ||= createRegl(canvas);
+
   backgroundColor = toRgba(backgroundColor, true);
+  lassoColor = toRgba(lassoColor, true);
+  recticleColor = toRgba(recticleColor, true);
+
   pointSize = isConditionalArray(pointSize, isPositiveNumber, {
     minLength: 1,
   })
     ? [...pointSize]
     : [pointSize];
-  regl ||= createRegl(canvas);
-  lassoColor = toRgba(lassoColor, true);
-  recticleColor = toRgba(recticleColor, true);
+
+  const fboRes = [
+    Math.floor(width * window.devicePixelRatio),
+    Math.floor(height * window.devicePixelRatio),
+  ];
+  const fbo = regl.framebuffer({
+    width: fboRes[0],
+    height: fboRes[1],
+    colorType: 'float',
+  });
+  let backgroundColorBrightness = rgbBrightness(backgroundColor);
+  let camera;
+  let lasso;
+  let mouseDown = false;
+  let selection = [];
+  const selectionSet = new Set();
+  let mouseDownTime = null;
+  let mouseDownPosition = [0, 0];
+  let numPoints = 0;
+  let lassoActive = false;
+  let lassoPointsCurr = [];
+  let searchIndex;
+  let viewAspectRatio;
+  let dataAspectRatio = DEFAULT_DATA_ASPECT_RATIO;
+  let projection;
+  let model;
+  let pointConnections;
+  let pointConnectionMap;
+  let computingPointConnectionCurves;
+  let recticleHLine;
+  let recticleVLine;
+  let computedPointSizeMouseDetection;
+  let keyActionMap = flipObj(keyMap);
+  let lassoInitiatorTimeout;
 
   pointColor = isMultipleColors(pointColor) ? [...pointColor] : [pointColor];
   pointColorActive = isMultipleColors(pointColorActive)
@@ -188,39 +243,6 @@ const createScatterplot = (initialProperties = {}) => {
   pointConnectionColorActive = toRgba(pointConnectionColorActive, true);
   pointConnectionColorHover = toRgba(pointConnectionColorHover, true);
 
-  const fboRes = [
-    Math.floor(width * window.devicePixelRatio),
-    Math.floor(height * window.devicePixelRatio),
-  ];
-  const fbo = regl.framebuffer({
-    width: fboRes[0],
-    height: fboRes[1],
-    colorType: 'float',
-  });
-  let camera;
-  let lasso;
-  let mouseDown = false;
-  let isLassoEnabled = false;
-  let isLassoing = false;
-  let mouseDownPosition = [0, 0];
-  let numPoints = 0;
-  let selection = [];
-  const selectionSet = new Set();
-  let lassoPos = [];
-  let lassoPoints = [];
-  let lassoPrevMousePos;
-  let searchIndex;
-  let viewAspectRatio;
-  let dataAspectRatio = DEFAULT_DATA_ASPECT_RATIO;
-  let projection;
-  let model;
-  let pointConnections;
-  let pointConnectionMap;
-  let computingPointConnectionCurves;
-  let recticleHLine;
-  let recticleVLine;
-  let computedPointSizeMouseDetection;
-
   let stateTex; // Stores the point texture holding x, y, category, and value
   let prevStateTex; // Stores the previous point texture. Used for transitions
   let tmpStateTex; // Stores a temporary point texture. Used for transitions
@@ -237,13 +259,14 @@ const createScatterplot = (initialProperties = {}) => {
 
   let colorTex; // Stores the point color texture
   let colorTexRes = 0; // Width and height of the texture
-  let pointSizeTex; // Stores the point sizes
-  let pointSizeTexRes = 0; // Width and height of the texture
+  let encodingTex; // Stores the point sizes and opacity values
+  let encodingTexRes = 0; // Width and height of the texture
 
   let isViewChanged = false;
   let isInit = false;
 
-  let opacity = 1;
+  let maxValueZ = 0;
+  let maxValueW = 0;
 
   let hoveredPoint;
   let isMouseInCanvas = false;
@@ -265,11 +288,7 @@ const createScatterplot = (initialProperties = {}) => {
     yScale.range([height, 0]);
   }
 
-  // Get a copy of the current mouse position
-  const getMousePos = () => mousePosition.slice();
-
   const getNdcX = (x) => -1 + (x / width) * 2;
-
   const getNdcY = (y) => 1 + (y / height) * -2;
 
   // Get relative WebGL position
@@ -301,32 +320,33 @@ const createScatterplot = (initialProperties = {}) => {
 
   const raycast = () => {
     const [xGl, yGl] = getMouseGlPos();
-    const [x, y] = getScatterGlPos(xGl, yGl);
+    const [xNdc, yNdc] = getScatterGlPos(xGl, yGl);
 
-    const scaling = camera.scaling;
-    const scaledPointSize =
-      2 *
-      computedPointSizeMouseDetection *
-      (min(1.0, scaling) + Math.log2(max(1.0, scaling))) *
-      window.devicePixelRatio;
+    // eslint-disable-next-line no-use-before-define
+    const pointScale = getPointScale();
 
-    const xNormalizedScaledPointSize = scaledPointSize / width;
-    const yNormalizedScaledPointSize = scaledPointSize / height;
+    // The height of the view in normalized device coordinates
+    const heightNdc = getScatterGlPos(1, 1)[1] - getScatterGlPos(-1, -1)[1];
+    // The size of a pixel in the current view in normalized device coordinates
+    const pxNdc = heightNdc / height;
+    // The scaled point size in normalized device coordinates
+    const pointSizeNdc =
+      computedPointSizeMouseDetection * pointScale * pxNdc * 0.66;
 
     // Get all points within a close range
     const pointsInBBox = searchIndex.range(
-      x - xNormalizedScaledPointSize,
-      y - yNormalizedScaledPointSize,
-      x + xNormalizedScaledPointSize,
-      y + yNormalizedScaledPointSize
+      xNdc - pointSizeNdc,
+      yNdc - pointSizeNdc,
+      xNdc + pointSizeNdc,
+      yNdc + pointSizeNdc
     );
 
     // Find the closest point
-    let minDist = scaledPointSize;
+    let minDist = pointSizeNdc;
     let clostestPoint;
     pointsInBBox.forEach((idx) => {
       const [ptX, ptY] = searchIndex.points[idx];
-      const d = dist(ptX, ptY, x, y);
+      const d = dist(ptX, ptY, xNdc, yNdc);
       if (d < minDist) {
         minDist = d;
         clostestPoint = idx;
@@ -338,33 +358,11 @@ const createScatterplot = (initialProperties = {}) => {
     return -1;
   };
 
-  const lassoExtend = () => {
-    const currMousePos = getMousePos();
-    const [xGl, yGl] = getMouseGlPos();
-
-    if (!lassoPrevMousePos) {
-      const point = getScatterGlPos(xGl, yGl);
-      lassoPos = [...point];
-      lassoPoints = [point];
-      lassoPrevMousePos = currMousePos;
-      isLassoing = true;
-    } else {
-      const d = dist(...currMousePos, ...lassoPrevMousePos);
-
-      if (d > lassoMinDist) {
-        const point = getScatterGlPos(xGl, yGl);
-        lassoPos.push(...point);
-        lassoPoints.push(point);
-        lassoPrevMousePos = currMousePos;
-        if (lassoPos.length > 2) {
-          lasso.setPoints(lassoPos);
-        }
-      }
-    }
-
+  const lassoExtend = (lassoPoints, lassoPointsFlat) => {
+    lassoPointsCurr = lassoPoints;
+    lasso.setPoints(lassoPointsFlat);
     pubSub.publish('lassoExtend', { coordinates: lassoPoints });
   };
-  let lassoExtendDb = withThrottle(lassoExtend, lassoMinDelay);
 
   const findPointsInLasso = (lassoPolygon) => {
     // get the bounding box of the lasso selection...
@@ -382,8 +380,7 @@ const createScatterplot = (initialProperties = {}) => {
   };
 
   const lassoClear = () => {
-    lassoPos = [];
-    lassoPoints = [];
+    lassoPointsCurr = [];
     if (lasso) lasso.clear();
   };
 
@@ -481,45 +478,78 @@ const createScatterplot = (initialProperties = {}) => {
   const lassoStart = () => {
     // Fix camera for the lasso selection
     camera.config({ isFixed: true });
-    // Make sure we start a new lasso selection
-    lassoPrevMousePos = undefined;
+    mouseDown = true;
+    lassoActive = true;
     lassoClear();
     pubSub.publish('lassoStart');
   };
 
-  const lassoEnd = ({ mergeSelections = false } = {}) => {
-    isLassoing = false;
-    if (interactionMode === PAN_ZOOM_MODE) camera.config({ isFixed: false });
+  const lassoEnd = (lassoPoints, lassoPointsFlat, { merge = false } = {}) => {
+    if (mouseMode === MOUSE_MODE_PANZOOM) camera.config({ isFixed: false });
+    lassoPointsCurr = [...lassoPoints];
     // const t0 = performance.now();
-    const pointsInLasso = findPointsInLasso(lassoPos);
+    const pointsInLasso = findPointsInLasso(lassoPointsFlat);
     // console.log(`found ${pointsInLasso.length} in ${performance.now() - t0} msec`);
-    select(pointsInLasso, { merge: mergeSelections });
-    lassoPrevMousePos = undefined;
+    select(pointsInLasso, { merge });
     pubSub.publish('lassoEnd', {
-      coordinates: lassoPoints,
+      coordinates: lassoPointsCurr,
     });
     if (lassoClearEvent === LASSO_CLEAR_ON_END) lassoClear();
+  };
+
+  const lassoManager = createLassoManager(canvas, {
+    onStart: lassoStart,
+    onDraw: lassoExtend,
+    onEnd: lassoEnd,
+    enableInitiator: lassoInitiator,
+    initiatorParentElement: lassoInitiatorParentElement,
+    pointNorm: ([x, y]) => getScatterGlPos(getNdcX(x), getNdcY(y)),
+  });
+
+  const checkLassoMode = () => mouseMode === MOUSE_MODE_LASSO;
+
+  const checkModKey = (event, action) => {
+    switch (keyActionMap[action]) {
+      case KEY_ALT:
+        return event.altKey;
+
+      case KEY_CMD:
+        return event.metaKey;
+
+      case KEY_CTRL:
+        return event.ctrlKey;
+
+      case KEY_META:
+        return event.metaKey;
+
+      case KEY_SHIFT:
+        return event.shiftKey;
+
+      default:
+        return false;
+    }
   };
 
   const mouseDownHandler = (event) => {
     if (!isInit) return;
 
     mouseDown = true;
+    mouseDownTime = performance.now();
 
     mouseDownPosition = getRelativeMousePosition(event);
-    isLassoEnabled = interactionMode === LASSO_MODE || event.shiftKey;
-
-    if (isLassoEnabled) lassoStart();
+    lassoActive = checkLassoMode() || checkModKey(event, KEY_ACTION_LASSO);
   };
 
   const mouseUpHandler = (event) => {
     if (!isInit) return;
 
     mouseDown = false;
-    isLassoEnabled = false;
 
-    if (isLassoing) {
-      lassoEnd({ mergeSelections: event.metaKey });
+    if (lassoActive) {
+      lassoActive = false;
+      lassoManager.end({
+        merge: checkModKey(event, KEY_ACTION_MERGE),
+      });
     }
   };
 
@@ -531,11 +561,39 @@ const createScatterplot = (initialProperties = {}) => {
     if (dist(...currentMousePosition, ...mouseDownPosition) >= lassoMinDist)
       return;
 
-    const clostestPoint = raycast();
-    if (clostestPoint >= 0) select([clostestPoint], { merge: event.metaKey });
+    const clickTime = performance.now() - mouseDownTime;
+
+    if (lassoInitiator && clickTime > LONG_CLICK_TIME) {
+      // Show lasso initiator on long click immideately
+      lassoManager.showInitiator(event);
+    } else {
+      // If the user clicked normally (i.e., fast) we'll only show the lasso
+      // initiator if the use click into the void
+      const clostestPoint = raycast();
+      if (clostestPoint >= 0) {
+        if (selection.length && lassoClearEvent === LASSO_CLEAR_ON_DESELECT) {
+          // Special case where we silently "deselect" the previous points by
+          // overriding the selection. Hence, we need to clear the lasso.
+          lassoClear();
+        }
+        select([clostestPoint], {
+          merge: checkModKey(event, KEY_ACTION_MERGE),
+        });
+      } else if (!lassoInitiatorTimeout) {
+        // We'll also wait to make sure the user didn't double click
+        lassoInitiatorTimeout = setTimeout(() => {
+          lassoInitiatorTimeout = null;
+          lassoManager.showInitiator(event);
+        }, SINGLE_CLICK_DELAY);
+      }
+    }
   };
 
   const mouseDblClickHandler = () => {
+    if (lassoInitiatorTimeout) {
+      clearTimeout(lassoInitiatorTimeout);
+      lassoInitiatorTimeout = null;
+    }
     if (deselectOnDblClick) deselect();
   };
 
@@ -545,12 +603,12 @@ const createScatterplot = (initialProperties = {}) => {
     getRelativeMousePosition(event);
 
     // Only ray cast if the mouse cursor is inside
-    if (isMouseInCanvas && !isLassoEnabled) {
+    if (isMouseInCanvas && !lassoActive) {
       const clostestPoint = raycast();
       hover(clostestPoint); // eslint-disable-line no-use-before-define
     }
 
-    if (isLassoEnabled) lassoExtendDb();
+    if (lassoActive) lassoManager.extend(event, true);
 
     // Always redraw when mousedown as the user might have panned or lassoed
     if (mouseDown) drawRaf(); // eslint-disable-line no-use-before-define
@@ -567,17 +625,20 @@ const createScatterplot = (initialProperties = {}) => {
     drawRaf(); // eslint-disable-line no-use-before-define
   };
 
-  const createPointSizeTexture = () => {
-    const numPointSizes = pointSize.length;
-    pointSizeTexRes = Math.max(2, Math.ceil(Math.sqrt(numPointSizes)));
-    const rgba = new Float32Array(pointSizeTexRes ** 2 * 4);
-    pointSize.forEach((size, i) => {
-      rgba[i * 4] = size;
-    });
+  const createEncodingTexture = () => {
+    const maxEncoding = Math.max(pointSize.length, opacity.length);
+
+    encodingTexRes = Math.max(2, Math.ceil(Math.sqrt(maxEncoding)));
+    const rgba = new Float32Array(encodingTexRes ** 2 * 4);
+
+    for (let i = 0; i < maxEncoding; i++) {
+      rgba[i * 4] = pointSize[i] || 0;
+      rgba[i * 4 + 1] = opacity[i] || 0;
+    }
 
     return regl.texture({
       data: rgba,
-      shape: [pointSizeTexRes, pointSizeTexRes, 4],
+      shape: [encodingTexRes, encodingTexRes, 4],
       type: 'float',
     });
   };
@@ -627,10 +688,7 @@ const createScatterplot = (initialProperties = {}) => {
       rgba[i * 4] = color[0]; // r
       rgba[i * 4 + 1] = color[1]; // g
       rgba[i * 4 + 2] = color[2]; // b
-      // For all normal state colors check if the global opacity is not 1 and
-      // if so use that instead.
-      rgba[i * 4 + 3] =
-        i % COLOR_NUM_STATES > 0 || opacity === 1 ? color[3] : opacity; // a
+      rgba[i * 4 + 3] = color[3]; // a
     });
 
     return regl.texture({
@@ -755,7 +813,7 @@ const createScatterplot = (initialProperties = {}) => {
 
     if (isPositiveNumber(+newPointSize)) pointSize = [+newPointSize];
 
-    pointSizeTex = createPointSizeTexture();
+    encodingTex = createEncodingTexture();
     computePointSizeMouseDetection();
   };
 
@@ -779,43 +837,46 @@ const createScatterplot = (initialProperties = {}) => {
     }
   };
 
-  const setColorBy = (type) => {
+  const setOpacity = (newOpacity) => {
+    if (isConditionalArray(newOpacity, isPositiveNumber, { minLength: 1 }))
+      opacity = [...newOpacity];
+
+    if (isPositiveNumber(+newOpacity)) opacity = [+newOpacity];
+
+    encodingTex = createEncodingTexture();
+  };
+
+  const getEncodingType = (type, defaultValue) => {
     switch (type) {
       case 'category':
-        colorBy = 'category';
-        break;
+      case 'value1':
+      case 'valueA':
+      case 'valueZ':
+      case 'z':
+        return 'valueZ'; // Z refers to the 3rd component of the RGBA value
 
       case 'value':
-        colorBy = 'value';
-        break;
+      case 'value2':
+      case 'valueB':
+      case 'valueW':
+      case 'w':
+        return 'valueW'; // W refers to the 4th component of the RGBA value
 
       default:
-        colorBy = DEFAULT_COLOR_BY;
+        return defaultValue;
     }
   };
 
-  const setOpacity = (newOpacity) => {
-    if (!+newOpacity || +newOpacity <= 0) return;
+  const setColorBy = (type) => {
+    colorBy = getEncodingType(type, DEFAULT_COLOR_BY);
+  };
 
-    opacity = +newOpacity;
-
-    if (colorTex) colorTex.destroy();
-    colorTex = createColorTexture();
+  const setOpacityBy = (type) => {
+    opacityBy = getEncodingType(type, DEFAULT_OPACITY_BY);
   };
 
   const setSizeBy = (type) => {
-    switch (type) {
-      case 'category':
-        sizeBy = 'category';
-        break;
-
-      case 'value':
-        sizeBy = 'value';
-        break;
-
-      default:
-        sizeBy = DEFAULT_SIZE_BY;
-    }
+    sizeBy = getEncodingType(type, DEFAULT_SIZE_BY);
   };
 
   const getBackgroundImage = () => backgroundImage;
@@ -825,9 +886,9 @@ const createScatterplot = (initialProperties = {}) => {
   const getDevicePixelRatio = () => window.devicePixelRatio;
   const getNormalPointsIndexBuffer = () => normalPointsIndexBuffer;
   const getSelectedPointsIndexBuffer = () => selectedPointsIndexBuffer;
-  const getPointSizeTex = () => pointSizeTex;
-  const getPointSizeTexRes = () => pointSizeTexRes;
-  const getPointSizeTexEps = () => 0.5 / pointSizeTexRes;
+  const getEncodingTex = () => encodingTex;
+  const getEncodingTexRes = () => encodingTexRes;
+  const getEncodingTexEps = () => 0.5 / encodingTexRes;
   const getNormalPointSizeExtra = () => 0;
   const getStateTex = () => tmpStateTex || stateTex;
   const getStateTexRes = () => stateTexRes;
@@ -837,15 +898,28 @@ const createScatterplot = (initialProperties = {}) => {
   const getModel = () => model;
   const getProjectionViewModel = () =>
     mat4.multiply(pvm, projection, mat4.multiply(pvm, camera.view, model));
-  const getScaling = () =>
-    min(1.0, camera.scaling) + Math.log2(max(1.0, camera.scaling));
+  const getPointScale = () =>
+    min(1.0, camera.scaling) +
+    Math.log2(max(1.0, camera.scaling)) * window.devicePixelRatio;
   const getNormalNumPoints = () => numPoints;
-  const getIsColoredByCategory = () => (colorBy === 'category') * 1;
-  const getIsColoredByValue = () => (colorBy === 'value') * 1;
-  const getIsSizedByCategory = () => (sizeBy === 'category') * 1;
-  const getIsSizedByValue = () => (sizeBy === 'value') * 1;
-  const getMaxColorTexIdx = () => pointColor.length - 1;
-  const getMaxPointSizeTexIdx = () => pointSize.length;
+  const getIsColoredByZ = () => +(colorBy === 'valueZ');
+  const getIsColoredByW = () => +(colorBy === 'valueW');
+  const getIsOpacityByZ = () => +(opacityBy === 'valueZ');
+  const getIsOpacityByW = () => +(opacityBy === 'valueW');
+  const getIsSizedByZ = () => +(sizeBy === 'valueZ');
+  const getIsSizedByW = () => +(sizeBy === 'valueW');
+  const getColorMultiplicator = () => {
+    if (colorBy === 'valueZ') return maxValueZ <= 1 ? pointColor.length - 1 : 1;
+    return maxValueW <= 1 ? pointColor.length - 1 : 1;
+  };
+  const getOpacityMultiplicator = () => {
+    if (opacityBy === 'valueZ') return maxValueZ <= 1 ? opacity.length - 1 : 1;
+    return maxValueW <= 1 ? opacity.length - 1 : 1;
+  };
+  const getSizeMultiplicator = () => {
+    if (sizeBy === 'valueZ') return maxValueZ <= 1 ? pointSize.length - 1 : 1;
+    return maxValueW <= 1 ? pointSize.length - 1 : 1;
+  };
 
   const updatePoints = regl({
     framebuffer: () => tmpStateBuffer,
@@ -924,10 +998,10 @@ const createScatterplot = (initialProperties = {}) => {
       uniforms: {
         projectionViewModel: getProjectionViewModel,
         devicePixelRatio: getDevicePixelRatio,
-        scaling: getScaling,
-        pointSizeTex: getPointSizeTex,
-        pointSizeTexRes: getPointSizeTexRes,
-        pointSizeTexEps: getPointSizeTexEps,
+        pointScale: getPointScale,
+        encodingTex: getEncodingTex,
+        encodingTexRes: getEncodingTexRes,
+        encodingTexEps: getEncodingTexEps,
         pointSizeExtra: getPointSizeExtra,
         globalState,
         colorTex: getColorTex,
@@ -936,13 +1010,16 @@ const createScatterplot = (initialProperties = {}) => {
         stateTex: getStateTex,
         stateTexRes: getStateTexRes,
         stateTexEps: getStateTexEps,
-        isColoredByCategory: getIsColoredByCategory,
-        isColoredByValue: getIsColoredByValue,
-        isSizedByCategory: getIsSizedByCategory,
-        isSizedByValue: getIsSizedByValue,
-        maxColorTexIdx: getMaxColorTexIdx,
+        isColoredByZ: getIsColoredByZ,
+        isColoredByW: getIsColoredByW,
+        isOpacityByZ: getIsOpacityByZ,
+        isOpacityByW: getIsOpacityByW,
+        isSizedByZ: getIsSizedByZ,
+        isSizedByW: getIsSizedByW,
+        colorMultiplicator: getColorMultiplicator,
+        opacityMultiplicator: getOpacityMultiplicator,
+        sizeMultiplicator: getSizeMultiplicator,
         numColorStates: COLOR_NUM_STATES,
-        maxPointSizeTexIdx: getMaxPointSizeTexIdx,
       },
 
       count: getNumPoints,
@@ -1037,7 +1114,7 @@ const createScatterplot = (initialProperties = {}) => {
     },
 
     attributes: {
-      position: () => lassoPoints,
+      position: () => lassoPointsCurr,
     },
 
     uniforms: {
@@ -1046,7 +1123,7 @@ const createScatterplot = (initialProperties = {}) => {
     },
 
     elements: () =>
-      Array(lassoPoints.length - 2)
+      Array(lassoPointsCurr.length - 2)
         .fill()
         .map((_, i) => [0, i + 1, i + 2]),
   });
@@ -1110,11 +1187,17 @@ const createScatterplot = (initialProperties = {}) => {
     stateTexRes = Math.max(2, Math.ceil(Math.sqrt(numNewPoints)));
     const data = new Float32Array(stateTexRes ** 2 * 4);
 
+    maxValueZ = 0;
+    maxValueW = 0;
+
     for (let i = 0; i < numNewPoints; ++i) {
       data[i * 4] = newPoints[i][0]; // x
       data[i * 4 + 1] = newPoints[i][1]; // y
-      data[i * 4 + 2] = newPoints[i][2] || 0; // category
-      data[i * 4 + 3] = newPoints[i][3] || 0; // value
+      data[i * 4 + 2] = newPoints[i][2] || 0; // z: value 1
+      data[i * 4 + 3] = newPoints[i][3] || 0; // w: value 2
+
+      maxValueZ = Math.max(maxValueZ, data[i * 4 + 2]);
+      maxValueW = Math.max(maxValueW, data[i * 4 + 3]);
     }
 
     return regl.texture({
@@ -1255,6 +1338,8 @@ const createScatterplot = (initialProperties = {}) => {
         drawBackgroundImage();
       }
 
+      if (lassoPointsCurr.length > 2) drawPolygon2d();
+
       // The draw order of the following calls is important!
       if (!isTransitioning)
         pointConnections.draw({
@@ -1266,8 +1351,6 @@ const createScatterplot = (initialProperties = {}) => {
       if (!mouseDown && (showRecticle || showRecticleOnce)) drawRecticle();
       if (hoveredPoint >= 0) drawHoveredPoint();
       if (selection.length) drawSelectedPoint();
-
-      if (lassoPoints.length > 2) drawPolygon2d();
 
       lasso.draw({
         projection: getProjection(),
@@ -1416,10 +1499,18 @@ const createScatterplot = (initialProperties = {}) => {
     });
   };
 
+  const updateLassoInitiatorStyle = () => {
+    const v = Math.round(backgroundColorBrightness) > 0 ? 0 : 255;
+    lassoManager.initiator.style.border = `1px dashed rgba(${v}, ${v}, ${v}, 0.33)`;
+    lassoManager.initiator.style.background = `rgba(${v}, ${v}, ${v}, 0.1)`;
+  };
+
   const setBackgroundColor = (newBackgroundColor) => {
     if (!newBackgroundColor) return;
 
     backgroundColor = toRgba(newBackgroundColor, true);
+    backgroundColorBrightness = rgbBrightness(backgroundColor);
+    updateLassoInitiatorStyle();
   };
 
   const setBackgroundImage = (newBackgroundImage) => {
@@ -1468,13 +1559,20 @@ const createScatterplot = (initialProperties = {}) => {
     if (!+newLassoMinDelay) return;
 
     lassoMinDelay = +newLassoMinDelay;
-    lassoExtendDb = withThrottle(lassoExtend, lassoMinDelay);
+
+    lassoManager.set({
+      minDelay: lassoMinDelay,
+    });
   };
 
   const setLassoMinDist = (newLassoMinDist) => {
     if (!+newLassoMinDist) return;
 
     lassoMinDist = +newLassoMinDist;
+
+    lassoManager.set({
+      minDist: lassoMinDist,
+    });
   };
 
   const setLassoClearEvent = (newLassoClearEvent) => {
@@ -1482,6 +1580,52 @@ const createScatterplot = (initialProperties = {}) => {
       LASSO_CLEAR_EVENTS,
       lassoClearEvent
     )(newLassoClearEvent);
+  };
+
+  const setLassoInitiator = (newLassoInitiator) => {
+    lassoInitiator = Boolean(newLassoInitiator);
+
+    lassoManager.set({
+      enableInitiator: lassoInitiator,
+    });
+  };
+
+  const setLassoInitiatorParentElement = (newLassoInitiatorParentElement) => {
+    lassoInitiatorParentElement = newLassoInitiatorParentElement;
+
+    lassoManager.set({
+      startInitiatorParentElement: lassoInitiatorParentElement,
+    });
+  };
+
+  const setKeyMap = (newKeyMap) => {
+    keyMap = Object.entries(newKeyMap).reduce((map, [key, value]) => {
+      if (KEYS.includes(key) && KEY_ACTIONS.includes(value)) {
+        map[key] = value;
+      }
+      return map;
+    }, {});
+    keyActionMap = flipObj(keyMap);
+
+    if (keyActionMap[KEY_ACTION_ROTATE]) {
+      camera.config({
+        isRotate: true,
+        mouseDownMoveModKey: keyActionMap[KEY_ACTION_ROTATE],
+      });
+    } else {
+      camera.config({
+        isRotate: false,
+      });
+    }
+  };
+
+  const setMouseMode = (newMouseMode) => {
+    mouseMode = limit(MOUSE_MODES, MOUSE_MODE_PANZOOM)(newMouseMode);
+
+    camera.config({
+      defaultMouseDownMoveAction:
+        mouseMode === MOUSE_MODE_ROTATE ? 'rotate' : 'pan',
+    });
   };
 
   const setShowRecticle = (newShowRecticle) => {
@@ -1597,24 +1741,6 @@ const createScatterplot = (initialProperties = {}) => {
     computePointSizeMouseDetection();
   };
 
-  const setInteractionMode = (newMode) => {
-    interactionMode = limit(
-      INTERACTION_MODES,
-      DEFAULT_INTERACTION_MODE
-    )(newMode);
-
-    switch (interactionMode) {
-      case LASSO_MODE:
-        camera.config({ isFixed: true });
-        break;
-
-      case PAN_ZOOM_MODE:
-      default:
-        camera.config({ isFixed: false });
-        break;
-    }
-  };
-
   /**
    * Update Regl's viewport, drawingBufferWidth, and drawingBufferHeight
    *
@@ -1648,7 +1774,14 @@ const createScatterplot = (initialProperties = {}) => {
     if (property === 'lassoMinDelay') return lassoMinDelay;
     if (property === 'lassoMinDist') return lassoMinDist;
     if (property === 'lassoClearEvent') return lassoClearEvent;
+    if (property === 'lassoInitiator') return lassoInitiator;
+    if (property === 'lassoInitiatorElement') return lassoManager.initiator;
+    if (property === 'lassoInitiatorParentElement')
+      return lassoInitiatorParentElement;
+    if (property === 'keyMap') return { ...keyMap };
+    if (property === 'mouseMode') return mouseMode;
     if (property === 'opacity') return opacity;
+    if (property === 'opacityBy') return opacityBy;
     if (property === 'pointColor')
       return pointColor.length === 1 ? pointColor[0] : pointColor;
     if (property === 'pointColorActive')
@@ -1799,6 +1932,10 @@ const createScatterplot = (initialProperties = {}) => {
       setPointConnectionTolerance(properties.pointConnectionTolerance);
     }
 
+    if (properties.opacityBy !== undefined) {
+      setOpacityBy(properties.opacityBy);
+    }
+
     if (properties.lassoColor !== undefined) {
       setLassoColor(properties.lassoColor);
     }
@@ -1813,6 +1950,22 @@ const createScatterplot = (initialProperties = {}) => {
 
     if (properties.lassoClearEvent !== undefined) {
       setLassoClearEvent(properties.lassoClearEvent);
+    }
+
+    if (properties.lassoInitiator !== undefined) {
+      setLassoInitiator(properties.lassoInitiator);
+    }
+
+    if (properties.lassoInitiatorParentElement !== undefined) {
+      setLassoInitiatorParentElement(properties.lassoInitiatorParentElement);
+    }
+
+    if (properties.keyMap !== undefined) {
+      setKeyMap(properties.keyMap);
+    }
+
+    if (properties.mouseMode !== undefined) {
+      setMouseMode(properties.mouseMode);
     }
 
     if (properties.showRecticle !== undefined) {
@@ -1853,10 +2006,6 @@ const createScatterplot = (initialProperties = {}) => {
 
     if (properties.deselectOnEscape !== undefined) {
       setDeselectOnEscape(properties.deselectOnEscape);
-    }
-
-    if (properties.interactionMode !== undefined) {
-      setInteractionMode(properties.interactionMode);
     }
 
     updateViewAspectRatio();
@@ -1995,10 +2144,16 @@ const createScatterplot = (initialProperties = {}) => {
     });
 
     colorTex = createColorTexture();
-    pointSizeTex = createPointSizeTexture();
+    encodingTex = createEncodingTexture();
 
     // Set dimensions
-    set({ backgroundImage, width, height });
+    set({
+      backgroundImage,
+      width,
+      height,
+      keyMap,
+    });
+    updateLassoInitiatorStyle();
 
     // Setup event handler
     window.addEventListener('keyup', keyUpHandler, false);
@@ -2023,6 +2178,7 @@ const createScatterplot = (initialProperties = {}) => {
     canvas.removeEventListener('click', mouseClickHandler, false);
     canvas.removeEventListener('dblclick', mouseDblClickHandler, false);
     canvas = undefined;
+    camera.dispose();
     camera = undefined;
     regl = undefined;
     lasso.destroy();

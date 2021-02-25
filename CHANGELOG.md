@@ -1,11 +1,14 @@
 ## Next
 
-## v0.15.0
+## v0.16.0
 
-- Add the ability to connect points visually
+- Allow the point-associated data values to be either categorical or continuous instead of enforcing one to be categorical and the other one to be continuous. For continuous data, assign [0,1]-normalized data as the third or forth component of a point. For categorical data, assign an integer-based data. For instance, if a point looks `[1, 2, 3, 4]` we assume that the first (`3`) and second (`4`) data value is categorical. If you would instead have points like `[1, 2, 0.33, 0.44]` where the third and forth component are within [0,1] then we would assume that those components represent continuous data. For backward compatibility, `colorBy: 'category'` refers to coloring by the third component and `colorBy 'value'` refers to the forth component. Additionall, you can now reference the third components via `value1`, `valueA`, `valueZ`, or `z` and the forth component via`value2`, `valueB`, `valueW`, or `w`.
+
+- Add the ability to connect points visually via `???`
 - Add support for multi-selections by holding down <kbd>CMD</kbd> during click- or lasso-selections
-- Add `interactionMode` to allow manually switching between _panning and zooming_ and _lassoing_
 - Add `performanceMode` to allow drawing up to 20 million points
+- Add `opacityBy` to allow encoding one of the two data properties as the point opacity.
+
 - Fix an issue with the point size between devices with different pixel ratios
 - Fix an issue with detecting points when using variable point sizes
 - Fix an issue that drew the background image before it was loaded
@@ -18,6 +21,19 @@
   - `rotation` (use `cameraRotation` instead)
   - `target` (use `cameraTarget` instead)
   - `view` (use `cameraView` instead)
+
+## v0.15.1
+
+- Make sure the `keyMap` is properly initiated.
+- Fix a memory leak by properly destroying the camera on `scatterplot.destroy()`.
+- Add test for rotation, key mapping, and the lasso initiator
+
+## v0.15.0
+
+- Add `mouseMode` for switching betweem mouse modes programmatically. Currently supported modes are `panZoom`, `lasso`, and `rotate`.
+- Add `keyMap` for remapping modifier key-induced actions. Available modifier keys are `alt`, `shift`, `ctrl`, `cmd`, and `meta`. Available actions are `lasso` and `rotate`.
+- Add `lassoInitiator` (boolean) for enabling a way to lasso points without having to use a modifier key. When activated, you can click into the void and a circle will appear. You can then start lassoing by mousing down + holding onto the circle and dragging. Since clicking into the void can be challenging when working with many points you can also long clicking anywhere and the circle for initiating the lasso will appear anywhere.
+- Improve point selection
 
 ## v0.14.0
 
