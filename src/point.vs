@@ -27,21 +27,14 @@ uniform float numColorStates;
 uniform float pointScale;
 uniform mat4 projectionViewModel;
 
-attribute float stateIndex;
+attribute vec2 stateIndex;
 
 // variables to send to the fragment shader
 varying vec4 color;
 varying float finalPointSize;
 
 void main() {
-  // First get the state
-  float stateRowIndex = floor((stateIndex + stateTexEps) / stateTexRes);
-  vec2 stateTexIndex = vec2(
-    (stateIndex / stateTexRes) - stateRowIndex + stateTexEps,
-    stateRowIndex / stateTexRes + stateTexEps
-  );
-
-  vec4 state = texture2D(stateTex, stateTexIndex);
+  vec4 state = texture2D(stateTex, stateIndex);
 
   gl_Position = projectionViewModel * vec4(state.x, state.y, 0.0, 1.0);
 

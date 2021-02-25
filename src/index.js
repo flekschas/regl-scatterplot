@@ -248,6 +248,7 @@ const createScatterplot = (initialProperties = {}) => {
   let tmpStateTex; // Stores a temporary point texture. Used for transitions
   let tmpStateBuffer; // Temporary frame buffer
   let stateTexRes = 0; // Width and height of the texture
+  let stateTexEps = 0; // Half a texel
   let normalPointsIndexBuffer; // Buffer holding the indices pointing to the correct texel
   let selectedPointsIndexBuffer; // Used for pointing to the selected texels
   let hoveredPointIndexBuffer; // Used for pointing to the hovered texels
@@ -427,6 +428,11 @@ const createScatterplot = (initialProperties = {}) => {
       .colorIndices.subdata(pointConnections.getData().colorIndices, 0);
   };
 
+  const indexToStateTexCoord = (index) => [
+    (index % stateTexRes) / stateTexRes + stateTexEps,
+    Math.floor(index / stateTexRes) / stateTexRes + stateTexEps,
+  ];
+
   const deselect = ({ preventEvent = false } = {}) => {
     if (lassoClearEvent === LASSO_CLEAR_ON_DESELECT) lassoClear();
     if (selection.length) {
@@ -448,15 +454,20 @@ const createScatterplot = (initialProperties = {}) => {
       selection = pointIdxs;
     }
 
+    const selectionBuffer = new Float32Array(selection.length * 2);
+
     selectionSet.clear();
-    pointIdxs.forEach((pointIdx) => {
+    selection.forEach((pointIdx, i) => {
       selectionSet.add(pointIdx);
+      const texCoords = indexToStateTexCoord(pointIdx);
+      selectionBuffer[i * 2] = texCoords[0];
+      selectionBuffer[i * 2 + 1] = texCoords[1];
     });
 
     selectedPointsIndexBuffer({
       usage: 'dynamic',
       type: 'float',
-      data: new Float32Array(selection),
+      data: selectionBuffer,
     });
 
     setPointConnectionColorState(selection, 1);
@@ -991,7 +1002,7 @@ const createScatterplot = (initialProperties = {}) => {
       attributes: {
         stateIndex: {
           buffer: getStateIndexBuffer,
-          size: 1,
+          size: 2,
         },
       },
 
@@ -1173,10 +1184,14 @@ const createScatterplot = (initialProperties = {}) => {
   };
 
   const createPointIndex = (numNewPoints) => {
-    const index = new Float32Array(numNewPoints);
+    const index = new Float32Array(numNewPoints * 2);
 
+    let j = 0;
     for (let i = 0; i < numNewPoints; ++i) {
-      index[i] = i;
+      const texCoord = indexToStateTexCoord(i);
+      index[j] = texCoord[0]; // x
+      index[j + 1] = texCoord[1]; // y
+      j += 2;
     }
 
     return index;
@@ -1185,6 +1200,7 @@ const createScatterplot = (initialProperties = {}) => {
   const createStateTexture = (newPoints) => {
     const numNewPoints = newPoints.length;
     stateTexRes = Math.max(2, Math.ceil(Math.sqrt(numNewPoints)));
+    stateTexEps = 0.5 / stateTexRes;
     const data = new Float32Array(stateTexRes ** 2 * 4);
 
     maxValueZ = 0;
@@ -2028,7 +2044,7 @@ const createScatterplot = (initialProperties = {}) => {
         setPointConnectionColorState([oldHoveredPoint], 0);
       }
       hoveredPoint = point;
-      hoveredPointIndexBuffer.subdata([point]);
+      hoveredPointIndexBuffer.subdata(indexToStateTexCoord(point));
       if (!selectionSet.has(point)) setPointConnectionColorState([point], 2);
       if (newHoveredPoint) pubSub.publish('pointover', hoveredPoint);
     } else {
@@ -2139,7 +2155,7 @@ const createScatterplot = (initialProperties = {}) => {
     hoveredPointIndexBuffer = regl.buffer({
       usage: 'dynamic',
       type: 'float',
-      length: FLOAT_BYTES, // This buffer is fixed to exactly 1 point
+      length: FLOAT_BYTES * 2, // This buffer is fixed to exactly 1 point consisting of 2 coordinates
     });
 
     colorTex = createColorTexture();
