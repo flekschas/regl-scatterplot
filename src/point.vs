@@ -85,7 +85,7 @@ void main() {
   );
   color.a = min(1.0, texture2D(encodingTex, opacityTexIndex).y + globalState);
 
-  finalPointSize = (pointSize * pointScale + pointSizeExtra) * devicePixelRatio;
+  finalPointSize = (pointSize * pointScale) + pointSizeExtra;
   gl_PointSize = finalPointSize;
 }
 `;
