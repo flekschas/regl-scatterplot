@@ -1338,7 +1338,7 @@ test('tests involving mouse events', async (t2) => {
     );
 
     // Needed to first digest the mousedown event
-    await wait(0);
+    await wait(10);
 
     whenDrawn = new Promise((resolve) =>
       scatterplot.subscribe('draw', resolve, 1)
@@ -1357,7 +1357,7 @@ test('tests involving mouse events', async (t2) => {
     );
 
     await whenDrawn;
-    await wait(0);
+    await wait(10);
 
     t.ok(
       lastRotation !== rotation,
