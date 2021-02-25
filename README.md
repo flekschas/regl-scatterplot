@@ -415,7 +415,7 @@ via JavaScript. E.g.: `scatterplot.get('lassoInitiatorElement').style.background
 The `keyMap` property is an object defining which actions are enabled when
 holding down which modifier key. E.g.: `{ shift: 'lasso' }`. Acceptable
 modifier keys are `alt`, `cmd`, `ctrl`, `meta`, `shift`. Acceptable actions
-are `lasso` and `rotate`.
+are `lasso`, `rotate`, and `merge` (for selecting multiple items by merging a series of lasso or click selections).
 
 You can also use the `keyMap` option to disable the lasso selection and rotation
 by setting `keyMap` to an empty object.
