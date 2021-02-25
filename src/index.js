@@ -1685,6 +1685,12 @@ const createScatterplot = (initialProperties = {}) => {
 
   const setShowPointConnections = (newShowPointConnections) => {
     showPointConnections = !!newShowPointConnections;
+    if (hasPointConnections(searchIndex.points[0])) {
+      setPointConnections(searchIndex.points).then(() => {
+        pubSub.publish('pointConnectionsDraw');
+        drawRaf();
+      });
+    }
   };
 
   const setPointConnectionColors = (setter) => (newColors) => {
