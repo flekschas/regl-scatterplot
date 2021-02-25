@@ -82,6 +82,7 @@ const scatterplot = createScatterplot({
   pointSize,
   xScale,
   yScale,
+  showRecticle: true,
 });
 
 console.log(`Scatterplot v${scatterplot.get('version')}`);

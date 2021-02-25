@@ -45,6 +45,7 @@ const scatterplot = createScatterplot({
   width,
   height,
   pointSize,
+  showRecticle: true,
   backgroundImage: `https://picsum.photos/${Math.min(640, width)}/${Math.min(
     640,
     height
