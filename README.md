@@ -349,9 +349,9 @@ can be read and written via [`scatterplot.get()`](#scatterplot.get) and [`scatte
 | cameraDistance                        | float           | `1`                                 | > 0                                                             | `true`   | `false`     |
 | cameraRotation                        | float           | `0`                                 |                                                                 | `true`   | `false`     |
 | cameraView                            | Float32Array    | `[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1`] |                                                                 | `true`   | `false`     |
-| colorBy                               | string          | `null`                              | See [data encoding](#color-opacity-and-size-encoding)           | `true`   | `true`      |
-| sizeBy                                | string          | `null`                              | See [data encoding](#color-opacity-and-size-encoding)           | `true`   | `true`      |
-| opacityBy                             | string          | `null`                              | See [data encoding](#color-opacity-and-size-encoding)           | `true`   | `true`      |
+| colorBy                               | string          | `null`                              | See [data encoding](#property-by)                               | `true`   | `true`      |
+| sizeBy                                | string          | `null`                              | See [data encoding](#property-by)                               | `true`   | `true`      |
+| opacityBy                             | string          | `null`                              | See [data encoding](#property-by)                               | `true`   | `true`      |
 | deselectOnDblClick                    | boolean         | `true`                              |                                                                 | `true`   | `false`     |
 | deselectOnEscape                      | boolean         | `true`                              |                                                                 | `true`   | `false`     |
 | opacity                               | float           | `1`                                 | > 0                                                             | `true`   | `false`     |
@@ -365,10 +365,12 @@ can be read and written via [`scatterplot.get()`](#scatterplot.get) and [`scatte
 | pointConnectionColor                  | quadruple       | `[0.66, 0.66, 0.66, 0.2]`           |                                                                 | `true`   | `false`     |
 | pointConnectionColorActive            | quadruple       | `[0, 0.55, 1, 1]`                   |                                                                 | `true`   | `false`     |
 | pointConnectionColorHover             | quadruple       | `[1, 1, 1, 1]`                      |                                                                 | `true`   | `false`     |
-| pointConnectionColorBy                | string          | `null`                              | See [data encoding](#color-opacity-and-size-encoding)           | `true`   | `false`     |
+| pointConnectionColorBy                | string          | `null`                              | See [data encoding](#property-point-conntection-by)             | `true`   | `false`     |
+| pointConnectionOpacity                | float           | `0.1`                               |                                                                 | `true`   | `false`     |
+| pointConnectionOpacityBy              | string          | `null`                              | See [data encoding](#property-point-conntection-by)             | `true`   | `false`     |
 | pointConnectionSize                   | float           | `2`                                 |                                                                 | `true`   | `false`     |
 | pointConnectionSizeSelected           | float           | `2`                                 |                                                                 | `true`   | `false`     |
-| pointConnectionSizeBy                 | string          | `null`                              | See [data encoding](#color-opacity-and-size-encoding)           | `true`   | `false`     |
+| pointConnectionSizeBy                 | string          | `null`                              | See [data encoding](#property-point-conntection-by)             | `true`   | `false`     |
 | pointConnectionMaxIntPointsPerSegment | integer         | `100`                               |                                                                 | `true`   | `false`     |
 | pointConnectionTolerance              | float           | `0.002`                             |                                                                 | `true`   | `false`     |
 | lassoColor                            | quadruple       | rgba(0, 0.667, 1, 1)                | hex, rgb, rgba                                                  | `true`   | `false`     |
@@ -433,6 +435,13 @@ points. To reference the third component you can use `category` (only for
 backwards compatibility), `value1`, `valueA`, `valueZ`, or `z`. To reference
 the forth component use `value` (only for backwards compatibility), `value2`,
 `valueB`, `valueW`, or `w`.
+
+<a name="property-point-conntection-by" href="#property-point-conntection-by">#</a> <b>pointConnectionColorBy, pointConnectionOpacityBy, and pointConnectionSizeBy:</b>
+
+In addition to the properties understood by [`colorBy`, etc.](#property-by),
+`pointConnectionColorBy`, `pointConnectionOpacityBy`, and `pointConnectionSizeBy`
+also understand `"inherit"`. When set to `"inherit"` the value will be inherited
+from its point-specific counterpart.
 
 <a name="property-lassoInitiator" href="#property-lassoInitiator">#</a> <b>lassoInitiator:</b>
 
