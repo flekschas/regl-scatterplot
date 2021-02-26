@@ -1350,6 +1350,7 @@ test('tests involving mouse events', async (t2) => {
     });
 
     window.dispatchEvent(createMouseEvent('mouseup'));
+    await wait(10);
     window.dispatchEvent(
       createKeyboardEvent('keyup', capitalize(rotateKey), {
         [`${rotateKey}Key`]: true,
