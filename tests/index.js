@@ -1346,7 +1346,7 @@ test('tests involving mouse events', async (t2) => {
 
     await asyncForEach(mousePositions, async (mousePosition) => {
       window.dispatchEvent(createMouseEvent('mousemove', ...mousePosition));
-      await wait(DEFAULT_LASSO_MIN_DELAY + 5);
+      await wait(DEFAULT_LASSO_MIN_DELAY + 10);
     });
 
     window.dispatchEvent(createMouseEvent('mouseup'));
