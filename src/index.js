@@ -1318,7 +1318,7 @@ const createScatterplot = (initialProperties = {}) => {
   const setPointConnections = (newPoints) =>
     new Promise((resolve) => {
       pointConnections.setPoints([]);
-      if (!newPoints.length) {
+      if (!newPoints || !newPoints.length) {
         resolve();
       } else {
         computingPointConnectionCurves = true;
@@ -1685,11 +1685,15 @@ const createScatterplot = (initialProperties = {}) => {
 
   const setShowPointConnections = (newShowPointConnections) => {
     showPointConnections = !!newShowPointConnections;
-    if (hasPointConnections(searchIndex.points[0])) {
-      setPointConnections(searchIndex.points).then(() => {
-        pubSub.publish('pointConnectionsDraw');
-        drawRaf();
-      });
+    if (showPointConnections) {
+      if (hasPointConnections(searchIndex.points[0])) {
+        setPointConnections(searchIndex.points).then(() => {
+          pubSub.publish('pointConnectionsDraw');
+          drawRaf();
+        });
+      }
+    } else {
+      setPointConnections();
     }
   };
 
