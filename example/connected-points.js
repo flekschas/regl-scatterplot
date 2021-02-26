@@ -163,13 +163,13 @@ const resetClickHandler = () => {
 resetEl.addEventListener('click', resetClickHandler);
 
 scatterplot.set({
-  colorBy: 'category',
+  colorBy: 'valueZ',
   pointColor: [
     [255, 128, 203, 128],
     [87, 199, 255, 128],
     [238, 228, 98, 128],
   ],
-  pointConnectionColorBy: 'category',
+  pointConnectionColorBy: 'valueZ',
   pointConnectionColor: [
     [255, 128, 203, 6],
     [87, 199, 255, 6],
@@ -185,7 +185,11 @@ scatterplot.set({
     [87, 199, 255, 99],
     [238, 228, 98, 99],
   ],
-  sizeBy: 'value',
+  sizeBy: 'valueW',
+  pointConnectionSizeBy: 'valueW',
+  pointConnectionSize: Array(12)
+    .fill()
+    .map((v, i) => (i + 1) / 2),
 });
 
 setPointSize(pointSize);
