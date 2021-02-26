@@ -5,6 +5,7 @@
       "asyncGenerators": true,
       "generators": true,
       "async": true
-    }]
+    }],
+    "@babel/plugin-proposal-logical-assignment-operators"
   ]
 }

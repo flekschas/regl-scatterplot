@@ -1,4 +1,4 @@
-const SHADER = `precision mediump float;
+const SHADER = `precision highp float;
 
 attribute vec2 position;
 varying vec2 particleTextureIndex;

@@ -76,56 +76,76 @@ const points = new Array(10000)
 scatterplot.draw(points);
 ```
 
-#### Color by value or category
+#### Color, Opacity, and Size Encoding
 
-Regl-scatterplot supports two color modes: coloring by value or coloring by category. To support those, each point can be associated to a categorical and continuous value. To specify those values simply append two additional values to a point quadruples: e.g., `[x, y, category, value]`.
+In regl-scatterplot, points can be associated with two data values. These two values are defined as the third and forth component of the point quadruples (`[x, y, value, value]`). For instance:
 
 ```javascript
 scatterplot.draw([
-  // x, y, category, value
   [0.2, -0.1, 0, 0.1337],
-  [0.3, 0.1, 0, 0.3371],
-  [-0.9, 0.8, 1, 0.3713],
+  [0.3, 0.1, 1, 0.3371],
+  [-0.9, 0.8, 2, 0.3713],
 ]);
 ```
 
-To color points by category, set `pointColor` to an array of colors. For performance reasons, regl-scatterplot assumes that the category `0` refers to the first color, `1` refers to the second color, etc. Mathematically, regl-scatterplot maps categories to colors as follows: `category => category % colors.length`.
+These two values can be visually encoded as the color, opacity, or the size. Values that range between [0, 1] are treated as continuous values. When the value range is in [0, >1] the data is treated as categorical data. In the example above, the first point value would be treated as categorical data and the second would be treated as continuous data.
 
-```javascript
-const colorsCat = ['#3a78aa', '#aa3a99'];
-scatterplot.set({ colorBy: 'category', pointColor: colorsCat });
-```
-
-To apply a continuous colormap use `colorBy: 'value'` and set `pointColor` to a list of colors representing the colormap. For performance reasons, regl-scatterplot assumes that the values are in `[0,1]` . Mathematically, the maping functions is as follows: `value => Math.min(1, Math.max(0, value))`.
-
-```javascript
-const blackToWhite = ['#000000', ..., '#ffffff'];
-scatterplot.set({ colorBy: 'value', pointColor: blackToWhite });
-```
-
-For a complete example see [example/index.js](example/index.js).
-
-#### Size by value or category
-
-Similar to [coloring by value or category](#color-by-value-or-category), you can encode the value or category as the point size.
-
-To size points by the category, set `pointSize` to an array of sizes. For performance reasons, regl-scatterplot assumes that the category `0` refers to the first size, `1` refers to the second size, etc.
-
-```javascript
-scatterplot.set({ sizeBy: 'category', pointSize: [2, 4, 6] });
-```
-
-To apply _"continuous"_ point sizes use `sizeBy: 'value'` and set `pointSize` to a precomputed array of point sizes. For performance reasons, regl-scatterplot assumes that the point values are in `[0,1]`. Any values below 0 and 1 wil be clipped.
+To encode the two point values use the `colorBy`, `opacityBy`, and `sizeBy` property as follows:
 
 ```javascript
 scatterplot.set({
-  sizeBy: 'value',
-  // E.g.: this maps values [0,1] to sizes [1,3] in log scale
-  pointSize: Array(100).fill().map((v, i) => Math.log(i + 1) + 1)
+  opacityBy: 'valueA',
+  sizeBy: 'valueA',
+  colorBy: 'valueB',
 });
 ```
 
-For a complete example see [example/size-encoding.js](example/size-encoding.js).
+In this example we would encode the first categorical point values (`[0, 1, 2]`) as the point opacity and size. The second continuous point values (`[0.1337, 0.3317, 0.3713]`) would be encoded as the point color.
+
+The last thing we need to tell regl-scatterplot is what those point values should be translated to. We do this by specifying a color, opacity, and size map as an array of colors, opacities, and sizes as follows:
+
+```javascript
+scatterplot.set({
+  pointColor: ['#000000', '#111111', ..., '#eeeeee', '#ffffff'],
+  pointSize: [2, 4, 8],
+  opacity: [0.5, 0.75, 1],
+});
+```
+
+You can encode a point data value in multiple ways. For instance, as you can see in the example above, the categorical fist data value is encoded via the point size _and_ opacity.
+
+**What if I have more than two values associated to a point?** Unfortunately, this isn't supported currently. In case you're wondering, this limitation is due to how we store the point data. The whole point state is encoded as an RGBA texture where the x and y coordinate are stored as the red and green color components and the first and second data value are stored in the blue and alpha component of the color. However, this limitation might be addressed in future versions so make sure to check back or, even better, start a pull request!
+
+**Why can't I specify a range function instead of a map?** Until we have implemented enough scale functions in the shader it's easier to let _you_ pre-compute the map. For instance, if you wanted to encode a continuous values on a log scale of point size, you can simply do `pointSize: Array(100).fill().map((v, i) => Math.log(i + 1) + 1)`.
+
+For a complete example see [example/index.js](example/index.js) and [example/size-encoding.js](example/size-encoding.js).
+
+#### Connecting points
+
+You can connect points visually using spline curves by adding a 5th component to your point data and setting `connectPoints: true` when calling `draw()`.
+
+The 5th component is needed to identify which points should be connected. The order of points are connected is defined by the order in which the points appear in your data.
+
+```javascript
+const points = [
+  [1, 1, 0, 0, 0],
+  [2, 2, 0, 0, 0],
+  [3, 3, 0, 0, 1],
+  [4, 4, 0, 0, 1],
+  [5, 5, 0, 0, 0],
+];
+```
+
+In the example above, the points would be connected in as following:
+
+```
+1 -> 2 -> 5
+3 -> 4
+```
+
+Finally, to visualize the point connection call `scatterplot.set({ showPointConnection: true })`.
+
+For an example see [example/connected-points.js](example/connected-points.js).
 
 #### Synchronize D3 x and y scales with the scatterplot view
 
@@ -313,46 +333,61 @@ events.
 You can customize the scatter plot according to the following properties that
 can be read and written via [`scatterplot.get()`](#scatterplot.get) and [`scatterplot.set()`](#scatterplot.set).
 
-| Name                        | Type            | Default                             | Constraints                                                     | Settable | Nullifiable |
-| --------------------------- | --------------- | ----------------------------------- | --------------------------------------------------------------- | -------- | ----------- |
-| canvas                      | object          | `document.createElement('canvas')`  |                                                                 | `false`  | `false`     |
-| regl                        | object          | `createRegl(canvas)`                |                                                                 | `false`  | `false`     |
-| syncEvents                  | boolean         | `false`                             |                                                                 | `false`  | `false`     |
-| version                     | string          |                                     |                                                                 | `false`  | `false`     |
-| width                       | integer         | `300`                               | > 0                                                             | `true`   | `false`     |
-| height                      | integer         | `200`                               | > 0                                                             | `true`   | `false`     |
-| aspectRatio                 | float           | `1.0`                               | > 0                                                             | `true`   | `false`     |
-| backgroundColor             | string or array | rgba(0, 0, 0, 1)                    | hex, rgb, rgba                                                  | `true`   | `false`     |
-| backgroundImage             | function        | `null`                              | Regl texture                                                    | `true`   | `true`      |
-| camera                      | object          |                                     | See [dom-2d-camera](https://github.com/flekschas/dom-2d-camera) | `false`  | `false`     |
-| cameraTarget                | tuple           | `[0, 0]`                            |                                                                 | `true`   | `false`     |
-| cameraDistance              | float           | `1`                                 | > 0                                                             | `true`   | `false`     |
-| cameraRotation              | float           | `0`                                 |                                                                 | `true`   | `false`     |
-| cameraView                  | Float32Array    | `[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1`] |                                                                 | `true`   | `false`     |
-| colorBy                     | string          | `null`                              | `category` or `value`                                           | `true`   | `true`      |
-| sizeBy                      | string          | `null`                              | `category` or `value`                                           | `true`   | `true`      |
-| deselectOnDblClick          | boolean         | `true`                              |                                                                 | `true`   | `false`     |
-| deselectOnEscape            | boolean         | `true`                              |                                                                 | `true`   | `false`     |
-| opacity                     | float           | `1`                                 | > 0                                                             | `true`   | `false`     |
-| pointColor                  | quadruple       | `[0.66, 0.66, 0.66, 1]`             | single value or list of hex, rgb, rgba                          | `true`   | `false`     |
-| pointColorActive            | quadruple       | `[0, 0.55, 1, 1]`                   | single value or list of hex, rgb, rgba                          | `true`   | `false`     |
-| pointColorHover             | quadruple       | `[1, 1, 1, 1]`                      | single value or list of hex, rgb, rgba                          | `true`   | `false`     |
-| pointOutlineWidth           | integer         | `2`                                 | >= 0                                                            | `true`   | `false`     |
-| pointSize                   | integer         | `6`                                 | > 0                                                             | `true`   | `false`     |
-| pointSizeSelected           | integer         | `2`                                 | >= 0                                                            | `true`   | `false`     |
-| lassoColor                  | quadruple       | rgba(0, 0.667, 1, 1)                | hex, rgb, rgba                                                  | `true`   | `false`     |
-| lassoMinDelay               | integer         | 15                                  | >= 0                                                            | `true`   | `false`     |
-| lassoMinDist                | integer         | 4                                   | >= 0                                                            | `true`   | `false`     |
-| lassoClearEvent             | string          | `'lassoEnd'`                        | `'lassoEnd'` or `'deselect'`                                    | `true`   | `false`     |
-| lassoInitiator              | boolean         | `false`                             |                                                                 | `true`   | `false`     |
-| lassoInitiatorElement       | object          | the lasso dom element               |                                                                 | `false`  | `false`     |
-| lassoInitiatorParentElement | object          | `document.body`                     |                                                                 | `true`   | `false`     |
-| showRecticle                | boolean         | `false`                             | `true` or `false`                                               | `true`   | `false`     |
-| recticleColor               | quadruple       | rgba(1, 1, 1, .5)                   | hex, rgb, rgba                                                  | `true`   | `false`     |
-| xScale                      | function        | `null`                              | must follow the D3 scale API                                    | `true`   | `true`      |
-| yScale                      | function        | `null`                              | must follow the D3 scale API                                    | `true`   | `true`      |
-| keyMap                      | object          | `{ alt: 'rotate', shift: 'lasso' }` | See the notes below                                             | `true`   | `false`     |
-| mouseMode                   | string          | `'panZoom'`                         | `'panZoom'`, `'lasso'`, or `'rotate'`                           | `true`   | `false`     |
+| Name                                  | Type            | Default                             | Constraints                                                     | Settable | Nullifiable |
+| ------------------------------------- | --------------- | ----------------------------------- | --------------------------------------------------------------- | -------- | ----------- |
+| canvas                                | object          | `document.createElement('canvas')`  |                                                                 | `false`  | `false`     |
+| regl                                  | object          | `createRegl(canvas)`                |                                                                 | `false`  | `false`     |
+| syncEvents                            | boolean         | `false`                             |                                                                 | `false`  | `false`     |
+| version                               | string          |                                     |                                                                 | `false`  | `false`     |
+| width                                 | integer         | `300`                               | > 0                                                             | `true`   | `false`     |
+| height                                | integer         | `200`                               | > 0                                                             | `true`   | `false`     |
+| aspectRatio                           | float           | `1.0`                               | > 0                                                             | `true`   | `false`     |
+| backgroundColor                       | string or array | rgba(0, 0, 0, 1)                    | hex, rgb, rgba                                                  | `true`   | `false`     |
+| backgroundImage                       | function        | `null`                              | Regl texture                                                    | `true`   | `true`      |
+| camera                                | object          |                                     | See [dom-2d-camera](https://github.com/flekschas/dom-2d-camera) | `false`  | `false`     |
+| cameraTarget                          | tuple           | `[0, 0]`                            |                                                                 | `true`   | `false`     |
+| cameraDistance                        | float           | `1`                                 | > 0                                                             | `true`   | `false`     |
+| cameraRotation                        | float           | `0`                                 |                                                                 | `true`   | `false`     |
+| cameraView                            | Float32Array    | `[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1`] |                                                                 | `true`   | `false`     |
+| colorBy                               | string          | `null`                              | See [data encoding](#property-by)                               | `true`   | `true`      |
+| sizeBy                                | string          | `null`                              | See [data encoding](#property-by)                               | `true`   | `true`      |
+| opacityBy                             | string          | `null`                              | See [data encoding](#property-by)                               | `true`   | `true`      |
+| deselectOnDblClick                    | boolean         | `true`                              |                                                                 | `true`   | `false`     |
+| deselectOnEscape                      | boolean         | `true`                              |                                                                 | `true`   | `false`     |
+| opacity                               | float           | `1`                                 | > 0                                                             | `true`   | `false`     |
+| pointColor                            | quadruple       | `[0.66, 0.66, 0.66, 1]`             | single value or list of hex, rgb, rgba                          | `true`   | `false`     |
+| pointColorActive                      | quadruple       | `[0, 0.55, 1, 1]`                   | single value or list of hex, rgb, rgba                          | `true`   | `false`     |
+| pointColorHover                       | quadruple       | `[1, 1, 1, 1]`                      | single value or list of hex, rgb, rgba                          | `true`   | `false`     |
+| pointOutlineWidth                     | integer         | `2`                                 | >= 0                                                            | `true`   | `false`     |
+| pointSize                             | integer         | `6`                                 | > 0                                                             | `true`   | `false`     |
+| pointSizeSelected                     | integer         | `2`                                 | >= 0                                                            | `true`   | `false`     |
+| showPointConnection                   | boolean         | `false`                             |                                                                 | `true`   | `false`     |
+| pointConnectionColor                  | quadruple       | `[0.66, 0.66, 0.66, 0.2]`           |                                                                 | `true`   | `false`     |
+| pointConnectionColorActive            | quadruple       | `[0, 0.55, 1, 1]`                   |                                                                 | `true`   | `false`     |
+| pointConnectionColorHover             | quadruple       | `[1, 1, 1, 1]`                      |                                                                 | `true`   | `false`     |
+| pointConnectionColorBy                | string          | `null`                              | See [data encoding](#property-point-conntection-by)             | `true`   | `false`     |
+| pointConnectionOpacity                | float           | `0.1`                               |                                                                 | `true`   | `false`     |
+| pointConnectionOpacityBy              | string          | `null`                              | See [data encoding](#property-point-conntection-by)             | `true`   | `false`     |
+| pointConnectionOpacitySelection       | float           | `0.66`                              |                                                                 | `true`   | `false`     |
+| pointConnectionSize                   | float           | `2`                                 |                                                                 | `true`   | `false`     |
+| pointConnectionSizeSelected           | float           | `2`                                 |                                                                 | `true`   | `false`     |
+| pointConnectionSizeBy                 | string          | `null`                              | See [data encoding](#property-point-conntection-by)             | `true`   | `false`     |
+| pointConnectionMaxIntPointsPerSegment | integer         | `100`                               |                                                                 | `true`   | `false`     |
+| pointConnectionTolerance              | float           | `0.002`                             |                                                                 | `true`   | `false`     |
+| lassoColor                            | quadruple       | rgba(0, 0.667, 1, 1)                | hex, rgb, rgba                                                  | `true`   | `false`     |
+| lassoMinDelay                         | integer         | 15                                  | >= 0                                                            | `true`   | `false`     |
+| lassoMinDist                          | integer         | 4                                   | >= 0                                                            | `true`   | `false`     |
+| lassoClearEvent                       | string          | `'lassoEnd'`                        | `'lassoEnd'` or `'deselect'`                                    | `true`   | `false`     |
+| lassoInitiator                        | boolean         | `false`                             |                                                                 | `true`   | `false`     |
+| lassoInitiatorElement                 | object          | the lasso dom element               |                                                                 | `false`  | `false`     |
+| lassoInitiatorParentElement           | object          | `document.body`                     |                                                                 | `true`   | `false`     |
+| showRecticle                          | boolean         | `false`                             | `true` or `false`                                               | `true`   | `false`     |
+| recticleColor                         | quadruple       | rgba(1, 1, 1, .5)                   | hex, rgb, rgba                                                  | `true`   | `false`     |
+| xScale                                | function        | `null`                              | must follow the D3 scale API                                    | `true`   | `true`      |
+| yScale                                | function        | `null`                              | must follow the D3 scale API                                    | `true`   | `true`      |
+| keyMap                                | object          | `{ alt: 'rotate', shift: 'lasso' }` | See the notes below                                             | `true`   | `false`     |
+| mouseMode                             | string          | `'panZoom'`                         | `'panZoom'`, `'lasso'`, or `'rotate'`                           | `true`   | `false`     |
+| performanceMode                       | boolean         | `false`                             | can only be set during initialization!                          | `true`   | `false`     |
 
 <a name="property-notes" href="#property-notes">#</a> <b>Notes:</b>
 
@@ -385,6 +420,30 @@ can be read and written via [`scatterplot.get()`](#scatterplot.get) and [`scatte
   `createScatterplot({ syncEvents: true })`. This property can't be changed
   after initialization!
 
+- If you need to draw more than 2 million points, you might want to set
+  `performanceMode` to `true` during the initialization to boost the
+  performance. In performance mode, points will be drawn as simple squares and
+  color blending is disabled. This should allow you to draw up to 20 million
+  points (or more depending on your hardware). Make sure to reduce the
+  `pointSize` as you render more and more points (e.g., `0.25` for 20 million
+  works for me) to ensure good performance.
+
+<a name="property-by" href="#property-by">#</a> <b>colorBy, opacityBy, sizeBy:</b>
+
+To visual encode one of the two point values set `colorBy`, `opacityBy`, or `sizeBy`
+to one of the following values referencing the third or forth component of your
+points. To reference the third component you can use `category` (only for
+backwards compatibility), `value1`, `valueA`, `valueZ`, or `z`. To reference
+the forth component use `value` (only for backwards compatibility), `value2`,
+`valueB`, `valueW`, or `w`.
+
+<a name="property-point-conntection-by" href="#property-point-conntection-by">#</a> <b>pointConnectionColorBy, pointConnectionOpacityBy, and pointConnectionSizeBy:</b>
+
+In addition to the properties understood by [`colorBy`, etc.](#property-by),
+`pointConnectionColorBy`, `pointConnectionOpacityBy`, and `pointConnectionSizeBy`
+also understand `"inherit"`. When set to `"inherit"` the value will be inherited
+from its point-specific counterpart.
+
 <a name="property-lassoInitiator" href="#property-lassoInitiator">#</a> <b>lassoInitiator:</b>
 
 When setting `lassoInitiator` to `true` you can initiate the lasso selection
@@ -404,7 +463,7 @@ via JavaScript. E.g.: `scatterplot.get('lassoInitiatorElement').style.background
 The `keyMap` property is an object defining which actions are enabled when
 holding down which modifier key. E.g.: `{ shift: 'lasso' }`. Acceptable
 modifier keys are `alt`, `cmd`, `ctrl`, `meta`, `shift`. Acceptable actions
-are `lasso` and `rotate`.
+are `lasso`, `rotate`, and `merge` (for selecting multiple items by merging a series of lasso or click selections).
 
 You can also use the `keyMap` option to disable the lasso selection and rotation
 by setting `keyMap` to an empty object.
@@ -502,6 +561,7 @@ scatterplot.set({ showRecticle: true, recticleColor: [1, 0, 0, 0.66] });
 | lassoEnd             | when the lasso selection has ended         | `{ coordinates }`                  |
 | transitionStart      | when points started to transition          | `undefined`                        |
 | transitionEnd        | when points ended to transition            | `createRegl(canvas)`               |
+| pointConnectionsDraw | when point connections were drawn          | `undefined`                        |
 
 ## Trouble Shooting
 

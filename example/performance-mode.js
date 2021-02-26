@@ -1,7 +1,11 @@
 /* eslint no-console: 0 */
+import { createWorker } from '@flekschas/utils';
 
 import createScatterplot from '../src';
+import pointWorkerFn from './performance-mode-point-worker';
 
+const modal = document.querySelector('#modal');
+const modalText = document.querySelector('#modal span');
 const canvas = document.querySelector('#canvas');
 const numPointsEl = document.querySelector('#num-points');
 const numPointsValEl = document.querySelector('#num-points-value');
@@ -11,7 +15,7 @@ const opacityEl = document.querySelector('#opacity');
 const opacityValEl = document.querySelector('#opacity-value');
 const clickLassoInitiatorEl = document.querySelector('#click-lasso-initiator');
 const resetEl = document.querySelector('#reset');
-const exampleEl = document.querySelector('#example-background');
+const exampleEl = document.querySelector('#example-performance-mode');
 
 exampleEl.setAttribute('class', 'active');
 exampleEl.removeAttribute('href');
@@ -19,10 +23,34 @@ exampleEl.removeAttribute('href');
 let { width, height } = canvas.getBoundingClientRect();
 
 let points = [];
-let numPoints = 100000;
-let pointSize = 2;
+let numPoints = 20000000;
+let pointSize = 0.25;
 let opacity = 0.33;
 let selection = [];
+
+const lassoMinDelay = 10;
+const lassoMinDist = 2;
+
+const pointWorker = createWorker(pointWorkerFn);
+
+const generatePoints = (num) =>
+  new Promise((resolve, reject) => {
+    pointWorker.onmessage = (e) => {
+      if (e.data.error) reject(e.data.error);
+      else resolve(e.data.points);
+    };
+    pointWorker.postMessage(num);
+  });
+
+const showModal = (text) => {
+  modal.style.display = 'flex';
+  modalText.textContent = text;
+};
+
+const closeModal = () => {
+  modal.style.display = 'none';
+  modalText.textContent = '';
+};
 
 const selectHandler = ({ points: selectedPoints }) => {
   console.log('Selected:', selectedPoints);
@@ -44,12 +72,11 @@ const scatterplot = createScatterplot({
   canvas,
   width,
   height,
+  lassoMinDelay,
+  lassoMinDist,
   pointSize,
   showRecticle: true,
-  backgroundImage: `https://picsum.photos/${Math.min(640, width)}/${Math.min(
-    640,
-    height
-  )}/?random`,
+  performanceMode: true,
 });
 
 console.log(`Scatterplot v${scatterplot.get('version')}`);
@@ -64,20 +91,21 @@ const resizeHandler = () => {
 
 window.addEventListener('resize', resizeHandler);
 
-const generatePoints = (num) =>
-  new Array(num).fill().map(() => [
-    -1 + Math.random() * 2, // x
-    -1 + Math.random() * 2, // y
-    Math.round(Math.random()), // category
-    Math.random(), // value
-  ]);
-
 const setNumPoint = (newNumPoints) => {
+  showModal(
+    `Hang tight. Generating ${(numPoints / 1000000).toFixed(
+      1
+    )} million points...`
+  );
   numPoints = newNumPoints;
   numPointsEl.value = numPoints;
   numPointsValEl.innerHTML = numPoints;
-  points = generatePoints(numPoints);
-  scatterplot.draw(points);
+
+  generatePoints(numPoints).then((newPoints) => {
+    points = newPoints;
+    scatterplot.draw(points);
+    closeModal();
+  });
 };
 
 const numPointsInputHandler = (event) => {
@@ -130,7 +158,29 @@ const resetClickHandler = () => {
 
 resetEl.addEventListener('click', resetClickHandler);
 
-scatterplot.set({ colorBy: 'category', pointColor: ['#3a78aa', '#aa3a99'] });
+const colorsScale = [
+  '#002072', // dark blue
+  '#162b79',
+  '#233680',
+  '#2e4186',
+  '#394d8d',
+  '#425894',
+  '#4b649a',
+  '#5570a1',
+  '#5e7ca7',
+  '#6789ae',
+  '#7195b4',
+  '#7ba2ba',
+  '#85aec0',
+  '#90bbc6',
+  '#9cc7cc',
+  '#a9d4d2',
+  '#b8e0d7',
+  '#c8ecdc',
+  '#ddf7df',
+  '#ffffe0', // bright yellow
+];
+scatterplot.set({ colorBy: 'value', pointColor: colorsScale });
 
 setPointSize(pointSize);
 setOpacity(opacity);

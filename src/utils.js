@@ -325,7 +325,11 @@ export const toRgba = (color, isNormalize) => {
  */
 export const flipObj = (obj) =>
   Object.entries(obj).reduce((out, [key, value]) => {
-    out[value] = key;
+    if (out[value]) {
+      out[value] = [...out[value], key];
+    } else {
+      out[value] = key;
+    }
     return out;
   }, {});
 

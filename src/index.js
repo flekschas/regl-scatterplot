@@ -4,15 +4,19 @@ import createPubSub from 'pub-sub-es';
 import withRaf from 'with-raf';
 import { mat4, vec4 } from 'gl-matrix';
 import createLine from 'regl-line';
+import { identity, unionIntegers } from '@flekschas/utils';
 
 import createLassoManager from './lasso-manager';
 
 import BG_FS from './bg.fs';
 import BG_VS from './bg.vs';
 import POINT_FS from './point.fs';
+import POINT_SIMPLE_FS from './point-simple.fs';
 import POINT_VS from './point.vs';
 import POINT_UPDATE_FS from './point-update.fs';
 import POINT_UPDATE_VS from './point-update.vs';
+
+import createSplineCurve from './spline-curve';
 
 import {
   COLOR_ACTIVE_IDX,
@@ -38,14 +42,29 @@ import {
   DEFAULT_LASSO_CLEAR_EVENT,
   DEFAULT_SHOW_RECTICLE,
   DEFAULT_RECTICLE_COLOR,
+  DEFAULT_POINT_CONNECTION_COLOR_NORMAL,
+  DEFAULT_POINT_CONNECTION_COLOR_ACTIVE,
+  DEFAULT_POINT_CONNECTION_COLOR_HOVER,
+  DEFAULT_POINT_CONNECTION_COLOR_BY,
+  DEFAULT_POINT_CONNECTION_OPACITY,
+  DEFAULT_POINT_CONNECTION_OPACITY_BY,
+  DEFAULT_POINT_CONNECTION_OPACITY_SELECTION,
+  DEFAULT_POINT_CONNECTION_SIZE,
+  DEFAULT_POINT_CONNECTION_SIZE_SELECTED,
+  DEFAULT_POINT_CONNECTION_SIZE_BY,
+  DEFAULT_POINT_CONNECTION_MAX_INT_POINTS_PER_SEGMENT,
+  DEFAULT_POINT_CONNECTION_INT_POINTS_TOLERANCE,
+  DEFAULT_SHOW_POINT_CONNECTIONS,
   DEFAULT_POINT_OUTLINE_WIDTH,
   DEFAULT_POINT_SIZE,
   DEFAULT_POINT_SIZE_SELECTED,
+  DEFAULT_POINT_SIZE_MOUSE_DETECTION,
   DEFAULT_SIZE_BY,
   DEFAULT_ROTATION,
   DEFAULT_TARGET,
   DEFAULT_VIEW,
   DEFAULT_WIDTH,
+  DEFAULT_PERFORMANCE_MODE,
   EASING_FNS,
   FLOAT_BYTES,
   LASSO_CLEAR_EVENTS,
@@ -54,6 +73,7 @@ import {
   DEFAULT_LASSO_INITIATOR,
   KEY_ACTION_LASSO,
   KEY_ACTION_ROTATE,
+  KEY_ACTION_MERGE,
   KEY_ACTIONS,
   KEY_ALT,
   KEY_CMD,
@@ -69,6 +89,8 @@ import {
   DEFAULT_MOUSE_MODE,
   SINGLE_CLICK_DELAY,
   LONG_CLICK_TIME,
+  DEFAULT_OPACITY,
+  DEFAULT_OPACITY_BY,
 } from './constants';
 
 import {
@@ -92,13 +114,7 @@ import {
 
 import { version } from '../package.json';
 
-const deprecations = {
-  background: 'backgroundColor',
-  target: 'cameraTarget',
-  distance: 'cameraDistance',
-  rotation: 'cameraRotation',
-  view: 'cameraView',
-};
+const deprecations = {};
 
 const checkDeprecations = (properties) => {
   Object.keys(properties)
@@ -116,119 +132,129 @@ const createScatterplot = (initialProperties = {}) => {
     caseInsensitive: true,
   });
   const scratch = new Float32Array(16);
+  const pvm = new Float32Array(16);
   const mousePosition = [0, 0];
 
   checkDeprecations(initialProperties);
 
-  const {
-    regl: initialRegl,
-    background: initialBackground,
-    backgroundColor: initialBackgroundColor,
-    backgroundImage: initialBackgroundImage = DEFAULT_BACKGROUND_IMAGE,
-    cameraTarget: initialCameraTarget,
-    cameraDistance: initialCameraDistance,
-    cameraRotation: initialCameraRotation,
-    cameraView: initialCameraView,
-    canvas: initialCanvas = document.createElement('canvas'),
-    colorBy: initialColorBy = DEFAULT_COLOR_BY,
-    deselectOnDblClick: initialDeselectOnDblClick = DEFAULT_DESELECT_ON_DBL_CLICK,
-    deselectOnEscape: initialDeselectOnEscape = DEFAULT_DESELECT_ON_ESCAPE,
-    lassoColor: initialLassoColor = DEFAULT_LASSO_COLOR,
-    lassoMinDelay: initialLassoMinDelay = DEFAULT_LASSO_MIN_DELAY,
-    lassoMinDist: initialLassoMinDist = DEFAULT_LASSO_MIN_DIST,
-    lassoClearEvent: initialLassoClearEvent = DEFAULT_LASSO_CLEAR_EVENT,
-    lassoInitiator: initialLassoInitiator = DEFAULT_LASSO_INITIATOR,
-    lassoInitiatorParentElement: initialLassoInitiatorParentElement = document.body,
-    keyMap: initialKeyMap = DEFAULT_KEY_MAP,
-    mouseMode: initialMouseMode = DEFAULT_MOUSE_MODE,
-    showRecticle: initialShowRecticle = DEFAULT_SHOW_RECTICLE,
-    recticleColor: initialRecticleColor = DEFAULT_RECTICLE_COLOR,
-    pointColor: initialPointColor = DEFAULT_COLOR_NORMAL,
-    pointColorActive: initialPointColorActive = DEFAULT_COLOR_ACTIVE,
-    pointColorHover: initialPointColorHover = DEFAULT_COLOR_HOVER,
-    pointSize: initialPointSize = DEFAULT_POINT_SIZE,
-    pointSizeSelected: initialPointSizeSelected = DEFAULT_POINT_SIZE_SELECTED,
-    pointOutlineWidth: initialPointOutlineWidth = DEFAULT_POINT_OUTLINE_WIDTH,
-    sizeBy: initialSizeBy = DEFAULT_SIZE_BY,
-    width: initialWidth = DEFAULT_WIDTH,
-    height: initialHeight = DEFAULT_HEIGHT,
-    target: initialTarget,
-    distance: initialDistance,
-    rotation: initialRotation,
-    view: initialView,
+  let {
+    regl,
+    backgroundColor = DEFAULT_COLOR_BG,
+    backgroundImage = DEFAULT_BACKGROUND_IMAGE,
+    canvas = document.createElement('canvas'),
+    colorBy = DEFAULT_COLOR_BY,
+    deselectOnDblClick = DEFAULT_DESELECT_ON_DBL_CLICK,
+    deselectOnEscape = DEFAULT_DESELECT_ON_ESCAPE,
+    lassoColor = DEFAULT_LASSO_COLOR,
+    lassoMinDelay = DEFAULT_LASSO_MIN_DELAY,
+    lassoMinDist = DEFAULT_LASSO_MIN_DIST,
+    lassoClearEvent = DEFAULT_LASSO_CLEAR_EVENT,
+    lassoInitiator = DEFAULT_LASSO_INITIATOR,
+    lassoInitiatorParentElement = document.body,
+    keyMap = DEFAULT_KEY_MAP,
+    mouseMode = DEFAULT_MOUSE_MODE,
+    showRecticle = DEFAULT_SHOW_RECTICLE,
+    recticleColor = DEFAULT_RECTICLE_COLOR,
+    pointColor = DEFAULT_COLOR_NORMAL,
+    pointColorActive = DEFAULT_COLOR_ACTIVE,
+    pointColorHover = DEFAULT_COLOR_HOVER,
+    showPointConnections = DEFAULT_SHOW_POINT_CONNECTIONS,
+    pointConnectionColor = DEFAULT_POINT_CONNECTION_COLOR_NORMAL,
+    pointConnectionColorActive = DEFAULT_POINT_CONNECTION_COLOR_ACTIVE,
+    pointConnectionColorHover = DEFAULT_POINT_CONNECTION_COLOR_HOVER,
+    pointConnectionColorBy = DEFAULT_POINT_CONNECTION_COLOR_BY,
+    pointConnectionOpacity = DEFAULT_POINT_CONNECTION_OPACITY,
+    pointConnectionOpacityBy = DEFAULT_POINT_CONNECTION_OPACITY_BY,
+    pointConnectionOpacitySelection = DEFAULT_POINT_CONNECTION_OPACITY_SELECTION,
+    pointConnectionSize = DEFAULT_POINT_CONNECTION_SIZE,
+    pointConnectionSizeSelected = DEFAULT_POINT_CONNECTION_SIZE_SELECTED,
+    pointConnectionSizeBy = DEFAULT_POINT_CONNECTION_SIZE_BY,
+    pointConnectionMaxIntPointsPerSegment = DEFAULT_POINT_CONNECTION_MAX_INT_POINTS_PER_SEGMENT,
+    pointConnectionTolerance = DEFAULT_POINT_CONNECTION_INT_POINTS_TOLERANCE,
+    pointSize = DEFAULT_POINT_SIZE,
+    pointSizeSelected = DEFAULT_POINT_SIZE_SELECTED,
+    pointSizeMouseDetection = DEFAULT_POINT_SIZE_MOUSE_DETECTION,
+    pointOutlineWidth = DEFAULT_POINT_OUTLINE_WIDTH,
+    opacity = DEFAULT_OPACITY,
+    opacityBy = DEFAULT_OPACITY_BY,
+    sizeBy = DEFAULT_SIZE_BY,
+    width = DEFAULT_WIDTH,
+    height = DEFAULT_HEIGHT,
   } = initialProperties;
 
-  checkReglExtensions(initialRegl);
+  // The following properties cannod be changed after the initialization
+  const { performanceMode = DEFAULT_PERFORMANCE_MODE } = initialProperties;
 
-  let backgroundColor = toRgba(
-    initialBackgroundColor || initialBackground || DEFAULT_COLOR_BG,
-    true
-  );
-  let backgroundColorBrightness = rgbBrightness(backgroundColor);
-  let backgroundImage = null;
-  let canvas = initialCanvas;
-  let width = initialWidth;
-  let height = initialHeight;
-  let pointSize = isConditionalArray(initialPointSize, isPositiveNumber, {
+  checkReglExtensions(regl);
+
+  regl ||= createRegl(canvas);
+
+  backgroundColor = toRgba(backgroundColor, true);
+  lassoColor = toRgba(lassoColor, true);
+  recticleColor = toRgba(recticleColor, true);
+
+  pointSize = isConditionalArray(pointSize, isPositiveNumber, {
     minLength: 1,
   })
-    ? [...initialPointSize]
-    : [initialPointSize];
-  let pointSizeSelected = initialPointSizeSelected;
-  let pointOutlineWidth = initialPointOutlineWidth;
-  let regl = initialRegl || createRegl(initialCanvas);
+    ? [...pointSize]
+    : [pointSize];
+
+  const fboRes = [
+    Math.floor(width * window.devicePixelRatio),
+    Math.floor(height * window.devicePixelRatio),
+  ];
+  const fbo = regl.framebuffer({
+    width: fboRes[0],
+    height: fboRes[1],
+    colorType: 'float',
+  });
+  let backgroundColorBrightness = rgbBrightness(backgroundColor);
   let camera;
   let lasso;
   let mouseDown = false;
+  let selection = [];
+  const selectionSet = new Set();
   let mouseDownTime = null;
   let mouseDownPosition = [0, 0];
   let numPoints = 0;
-  let selection = [];
   let lassoActive = false;
-  let lassoColor = toRgba(initialLassoColor, true);
-  let lassoMinDelay = +initialLassoMinDelay;
-  let lassoMinDist = +initialLassoMinDist;
-  let lassoClearEvent = initialLassoClearEvent;
-  let lassoInitiator = initialLassoInitiator;
-  let lassoInitiatorParentElement = initialLassoInitiatorParentElement;
   let lassoPointsCurr = [];
-  let mouseMode = initialMouseMode;
   let searchIndex;
   let viewAspectRatio;
   let dataAspectRatio = DEFAULT_DATA_ASPECT_RATIO;
   let projection;
   let model;
-  let showRecticle = initialShowRecticle;
+  let pointConnections;
+  let pointConnectionMap;
+  let computingPointConnectionCurves;
   let recticleHLine;
   let recticleVLine;
-  let recticleColor = toRgba(initialRecticleColor, true);
-  let deselectOnDblClick = initialDeselectOnDblClick;
-  let deselectOnEscape = initialDeselectOnEscape;
-
-  let keyMap = initialKeyMap;
+  let computedPointSizeMouseDetection;
   let keyActionMap = flipObj(keyMap);
-
   let lassoInitiatorTimeout;
 
-  let pointColors = isMultipleColors(initialPointColor)
-    ? [...initialPointColor]
-    : [initialPointColor];
-  let pointColorsActive = isMultipleColors(initialPointColorActive)
-    ? [...initialPointColorActive]
-    : [initialPointColorActive];
-  let pointColorsHover = isMultipleColors(initialPointColorHover)
-    ? [...initialPointColorHover]
-    : [initialPointColorHover];
+  pointColor = isMultipleColors(pointColor) ? [...pointColor] : [pointColor];
+  pointColorActive = isMultipleColors(pointColorActive)
+    ? [...pointColorActive]
+    : [pointColorActive];
+  pointColorHover = isMultipleColors(pointColorHover)
+    ? [...pointColorHover]
+    : [pointColorHover];
 
-  pointColors = pointColors.map((color) => toRgba(color, true));
-  pointColorsActive = pointColorsActive.map((color) => toRgba(color, true));
-  pointColorsHover = pointColorsHover.map((color) => toRgba(color, true));
+  pointColor = pointColor.map((color) => toRgba(color, true));
+  pointColorActive = pointColorActive.map((color) => toRgba(color, true));
+  pointColorHover = pointColorHover.map((color) => toRgba(color, true));
+
+  pointConnectionColor = toRgba(pointConnectionColor, true);
+  pointConnectionColorActive = toRgba(pointConnectionColorActive, true);
+  pointConnectionColorHover = toRgba(pointConnectionColorHover, true);
 
   let stateTex; // Stores the point texture holding x, y, category, and value
   let prevStateTex; // Stores the previous point texture. Used for transitions
   let tmpStateTex; // Stores a temporary point texture. Used for transitions
   let tmpStateBuffer; // Temporary frame buffer
   let stateTexRes = 0; // Width and height of the texture
+  let stateTexEps = 0; // Half a texel
   let normalPointsIndexBuffer; // Buffer holding the indices pointing to the correct texel
   let selectedPointsIndexBuffer; // Used for pointing to the selected texels
   let hoveredPointIndexBuffer; // Used for pointing to the hovered texels
@@ -240,15 +266,14 @@ const createScatterplot = (initialProperties = {}) => {
 
   let colorTex; // Stores the point color texture
   let colorTexRes = 0; // Width and height of the texture
-  let pointSizeTex; // Stores the point sizes
-  let pointSizeTexRes = 0; // Width and height of the texture
+  let encodingTex; // Stores the point sizes and opacity values
+  let encodingTexRes = 0; // Width and height of the texture
 
-  let colorBy = initialColorBy;
-  let sizeBy = initialSizeBy;
   let isViewChanged = false;
   let isInit = false;
 
-  let opacity = 1;
+  let maxValueZ = 0;
+  let maxValueW = 0;
 
   let hoveredPoint;
   let isMouseInCanvas = false;
@@ -270,11 +295,7 @@ const createScatterplot = (initialProperties = {}) => {
     yScale.range([height, 0]);
   }
 
-  // Get a copy of the current mouse position
-  // const getMousePos = () => mousePosition.slice();
-
   const getNdcX = (x) => -1 + (x / width) * 2;
-
   const getNdcY = (y) => 1 + (y / height) * -2;
 
   // Get relative WebGL position
@@ -316,7 +337,8 @@ const createScatterplot = (initialProperties = {}) => {
     // The size of a pixel in the current view in normalized device coordinates
     const pxNdc = heightNdc / height;
     // The scaled point size in normalized device coordinates
-    const pointSizeNdc = pointSize * pointScale * pxNdc * 0.66;
+    const pointSizeNdc =
+      computedPointSizeMouseDetection * pointScale * pxNdc * 0.66;
 
     // Get all points within a close range
     const pointsInBBox = searchIndex.range(
@@ -338,7 +360,8 @@ const createScatterplot = (initialProperties = {}) => {
       }
     });
 
-    if (minDist < (pointSize / width) * 2) return clostestPoint;
+    if (minDist < (computedPointSizeMouseDetection / width) * 2)
+      return clostestPoint;
     return -1;
   };
 
@@ -368,23 +391,104 @@ const createScatterplot = (initialProperties = {}) => {
     if (lasso) lasso.clear();
   };
 
+  const hasPointConnections = (point) => point && point.length > 4;
+
+  const setPointConnectionColorState = (pointIdxs, stateIndex) => {
+    if (
+      computingPointConnectionCurves ||
+      !showPointConnections ||
+      !hasPointConnections(searchIndex.points[pointIdxs[0]])
+    )
+      return;
+
+    const isNormal = stateIndex === 0;
+
+    // Get line IDs
+    const lineIds = Object.keys(
+      pointIdxs.reduce((ids, pointIdx) => {
+        const point = searchIndex.points[pointIdx];
+        const isStruct = Array.isArray(point[4]);
+        const lineId = isStruct ? point[4][0] : point[4];
+
+        ids[lineId] = true;
+
+        return ids;
+      }, {})
+    );
+
+    lineIds.forEach((lineId) => {
+      const index = pointConnectionMap[lineId][0];
+      const numPointPerLine = pointConnectionMap[lineId][2];
+      const pointOffset = pointConnectionMap[lineId][3];
+
+      const bufferStart = index * 4 + pointOffset * 2;
+      const bufferEnd = bufferStart + numPointPerLine * 2 + 4;
+
+      const buffer = pointConnections.getData().opacities;
+
+      // eslint-disable-next-line no-underscore-dangle
+      if (buffer.__original__ === undefined) {
+        // eslint-disable-next-line no-underscore-dangle
+        buffer.__original__ = buffer.slice();
+      }
+
+      for (let i = bufferStart; i < bufferEnd; i++) {
+        // buffer[i] = Math.floor(buffer[i] / 4) * 4 + stateIndex;
+        buffer[i] = isNormal
+          ? // eslint-disable-next-line no-underscore-dangle
+            buffer.__original__[i]
+          : pointConnectionOpacitySelection;
+      }
+    });
+
+    pointConnections
+      .getBuffer()
+      .opacities.subdata(pointConnections.getData().opacities, 0);
+  };
+
+  const indexToStateTexCoord = (index) => [
+    (index % stateTexRes) / stateTexRes + stateTexEps,
+    Math.floor(index / stateTexRes) / stateTexRes + stateTexEps,
+  ];
+
   const deselect = ({ preventEvent = false } = {}) => {
     if (lassoClearEvent === LASSO_CLEAR_ON_DESELECT) lassoClear();
     if (selection.length) {
       if (!preventEvent) pubSub.publish('deselect');
+      setPointConnectionColorState(selection, 0);
       selection = [];
+      selectionSet.clear();
       drawRaf(); // eslint-disable-line no-use-before-define
     }
   };
 
-  const select = (points, { preventEvent = false } = {}) => {
-    selection = points;
+  const select = (pointIdxs, { merge = false, preventEvent = false } = {}) => {
+    if (merge) {
+      selection = unionIntegers(selection, pointIdxs);
+    } else {
+      // Unset previously highlight point connections
+      if (selection && selection.length)
+        setPointConnectionColorState(selection, 0);
+      selection = pointIdxs;
+    }
+
+    const selectionBuffer = new Float32Array(selection.length * 2);
+
+    selectionSet.clear();
+    selection.forEach((pointIdx, i) => {
+      selectionSet.add(pointIdx);
+      const texCoords = indexToStateTexCoord(pointIdx);
+      selectionBuffer[i * 2] = texCoords[0];
+      selectionBuffer[i * 2 + 1] = texCoords[1];
+    });
 
     selectedPointsIndexBuffer({
       usage: 'dynamic',
       type: 'float',
-      data: new Float32Array(selection),
+      data: selectionBuffer,
     });
+
+    setPointConnectionColorState(selection, 1);
 
     if (!preventEvent) pubSub.publish('select', { points: selection });
 
@@ -409,13 +513,13 @@ const createScatterplot = (initialProperties = {}) => {
     pubSub.publish('lassoStart');
   };
 
-  const lassoEnd = (lassoPoints, lassoPointsFlat) => {
-    camera.config({ isFixed: false });
+  const lassoEnd = (lassoPoints, lassoPointsFlat, { merge = false } = {}) => {
+    if (mouseMode === MOUSE_MODE_PANZOOM) camera.config({ isFixed: false });
     lassoPointsCurr = [...lassoPoints];
     // const t0 = performance.now();
     const pointsInLasso = findPointsInLasso(lassoPointsFlat);
     // console.log(`found ${pointsInLasso.length} in ${performance.now() - t0} msec`);
-    select(pointsInLasso);
+    select(pointsInLasso, { merge });
     pubSub.publish('lassoEnd', {
       coordinates: lassoPointsCurr,
     });
@@ -433,8 +537,8 @@ const createScatterplot = (initialProperties = {}) => {
 
   const checkLassoMode = () => mouseMode === MOUSE_MODE_LASSO;
 
-  const checkLassoKey = (event) => {
-    switch (keyActionMap[KEY_ACTION_LASSO]) {
+  const checkModKey = (event, action) => {
+    switch (keyActionMap[action]) {
       case KEY_ALT:
         return event.altKey;
 
@@ -462,17 +566,19 @@ const createScatterplot = (initialProperties = {}) => {
     mouseDownTime = performance.now();
 
     mouseDownPosition = getRelativeMousePosition(event);
-    lassoActive = checkLassoMode() || checkLassoKey(event);
+    lassoActive = checkLassoMode() || checkModKey(event, KEY_ACTION_LASSO);
   };
 
-  const mouseUpHandler = () => {
+  const mouseUpHandler = (event) => {
     if (!isInit) return;
 
     mouseDown = false;
 
     if (lassoActive) {
       lassoActive = false;
-      lassoManager.end();
+      lassoManager.end({
+        merge: checkModKey(event, KEY_ACTION_MERGE),
+      });
     }
   };
 
@@ -480,9 +586,9 @@ const createScatterplot = (initialProperties = {}) => {
     if (!isInit) return;
 
     const currentMousePosition = getRelativeMousePosition(event);
-    const clickDist = dist(...currentMousePosition, ...mouseDownPosition);
 
-    if (clickDist >= lassoMinDist) return;
+    if (dist(...currentMousePosition, ...mouseDownPosition) >= lassoMinDist)
+      return;
 
     const clickTime = performance.now() - mouseDownTime;
 
@@ -499,7 +605,9 @@ const createScatterplot = (initialProperties = {}) => {
           // overriding the selection. Hence, we need to clear the lasso.
           lassoClear();
         }
-        select([clostestPoint]);
+        select([clostestPoint], {
+          merge: checkModKey(event, KEY_ACTION_MERGE),
+        });
       } else if (!lassoInitiatorTimeout) {
         // We'll also wait to make sure the user didn't double click
         lassoInitiatorTimeout = setTimeout(() => {
@@ -507,21 +615,6 @@ const createScatterplot = (initialProperties = {}) => {
           lassoManager.showInitiator(event);
         }, SINGLE_CLICK_DELAY);
       }
-    }
-
-    const clostestPoint = raycast();
-    if (clickTime < LONG_CLICK_TIME && clostestPoint >= 0) {
-      if (selection.length && lassoClearEvent === LASSO_CLEAR_ON_DESELECT) {
-        // Special case where we silently "deselect" the previous points by
-        // overriding the selection. Hence, we need to clear the lasso.
-        lassoClear();
-      }
-      select([clostestPoint]);
-    } else if (!lassoInitiatorTimeout) {
-      lassoInitiatorTimeout = setTimeout(() => {
-        lassoInitiatorTimeout = null;
-        lassoManager.showInitiator(event);
-      }, SINGLE_CLICK_DELAY);
     }
   };
 
@@ -553,54 +646,63 @@ const createScatterplot = (initialProperties = {}) => {
   const blurHandler = () => {
     if (!isInit) return;
 
+    if (+hoveredPoint >= 0 && !selectionSet.has(hoveredPoint))
+      setPointConnectionColorState([hoveredPoint], 0);
     hoveredPoint = undefined;
     isMouseInCanvas = false;
     mouseUpHandler();
     drawRaf(); // eslint-disable-line no-use-before-define
   };
 
-  const createPointSizeTexture = () => {
-    const numPointSizes = pointSize.length;
-    pointSizeTexRes = Math.max(2, Math.ceil(Math.sqrt(numPointSizes)));
-    const rgba = new Float32Array(pointSizeTexRes ** 2 * 4);
-    pointSize.forEach((size, i) => {
-      rgba[i * 4] = size;
-    });
+  const createEncodingTexture = () => {
+    const maxEncoding = Math.max(pointSize.length, opacity.length);
+
+    encodingTexRes = Math.max(2, Math.ceil(Math.sqrt(maxEncoding)));
+    const rgba = new Float32Array(encodingTexRes ** 2 * 4);
+
+    for (let i = 0; i < maxEncoding; i++) {
+      rgba[i * 4] = pointSize[i] || 0;
+      rgba[i * 4 + 1] = opacity[i] || 0;
+    }
 
     return regl.texture({
       data: rgba,
-      shape: [pointSizeTexRes, pointSizeTexRes, 4],
+      shape: [encodingTexRes, encodingTexRes, 4],
       type: 'float',
     });
   };
 
-  const getColors = () => {
-    const n = pointColors.length;
-    const n2 = pointColorsActive.length;
-    const n3 = pointColorsHover.length;
+  const getColors = (
+    baseColor = pointColor,
+    activeColor = pointColorActive,
+    hoverColor = pointColorHover
+  ) => {
+    const n = baseColor.length;
+    const n2 = activeColor.length;
+    const n3 = hoverColor.length;
     const colors = [];
     if (n === n2 && n2 === n3) {
       for (let i = 0; i < n; i++) {
         colors.push(
-          pointColors[i],
-          pointColorsActive[i],
-          pointColorsHover[i],
+          baseColor[i],
+          activeColor[i],
+          hoverColor[i],
           backgroundColor
         );
       }
     } else {
       for (let i = 0; i < n; i++) {
         const rgbaOpaque = [
-          pointColors[i][0],
-          pointColors[i][1],
-          pointColors[i][2],
+          baseColor[i][0],
+          baseColor[i][1],
+          baseColor[i][2],
           1,
         ];
         const colorActive =
-          colorBy === DEFAULT_COLOR_BY ? pointColorsActive[0] : rgbaOpaque;
+          colorBy === DEFAULT_COLOR_BY ? activeColor[0] : rgbaOpaque;
         const colorHover =
-          colorBy === DEFAULT_COLOR_BY ? pointColorsHover[0] : rgbaOpaque;
-        colors.push(pointColors[i], colorActive, colorHover, backgroundColor);
+          colorBy === DEFAULT_COLOR_BY ? hoverColor[0] : rgbaOpaque;
+        colors.push(baseColor[i], colorActive, colorHover, backgroundColor);
       }
     }
     return colors;
@@ -615,10 +717,7 @@ const createScatterplot = (initialProperties = {}) => {
       rgba[i * 4] = color[0]; // r
       rgba[i * 4 + 1] = color[1]; // g
       rgba[i * 4 + 2] = color[2]; // b
-      // For all normal state colors check if the global opacity is not 1 and
-      // if so use that instead.
-      rgba[i * 4 + 3] =
-        i % COLOR_NUM_STATES > 0 || opacity === 1 ? color[3] : opacity; // a
+      rgba[i * 4 + 3] = color[3]; // a
     });
 
     return regl.texture({
@@ -628,10 +727,17 @@ const createScatterplot = (initialProperties = {}) => {
     });
   };
 
+  const updateFbo = () => {
+    fboRes[0] = Math.floor(width * window.devicePixelRatio);
+    fboRes[1] = Math.floor(height * window.devicePixelRatio);
+    fbo.resize(...fboRes);
+  };
+
   const updateViewAspectRatio = () => {
     viewAspectRatio = width / height;
     projection = mat4.fromScaling([], [1 / viewAspectRatio, 1, 1]);
     model = mat4.fromScaling([], [dataAspectRatio, 1, 1]);
+    updateFbo();
   };
 
   const setDataAspectRatio = (newDataAspectRatio) => {
@@ -661,22 +767,22 @@ const createScatterplot = (initialProperties = {}) => {
     }
   };
 
-  const setPointColors = setColors(
-    () => pointColors,
+  const setPointColor = setColors(
+    () => pointColor,
     (colors) => {
-      pointColors = colors;
+      pointColor = colors;
     }
   );
-  const setPointColorsActive = setColors(
-    () => pointColorsActive,
+  const setPointColorActive = setColors(
+    () => pointColorActive,
     (colors) => {
-      pointColorsActive = colors;
+      pointColorActive = colors;
     }
   );
-  const setPointColorsHover = setColors(
-    () => pointColorsHover,
+  const setPointColorHover = setColors(
+    () => pointColorHover,
     (colors) => {
-      pointColorsHover = colors;
+      pointColorHover = colors;
     }
   );
 
@@ -720,13 +826,24 @@ const createScatterplot = (initialProperties = {}) => {
     }
   };
 
+  const computePointSizeMouseDetection = () => {
+    computedPointSizeMouseDetection = pointSizeMouseDetection;
+
+    if (pointSizeMouseDetection === 'auto') {
+      computedPointSizeMouseDetection = Array.isArray(pointSize)
+        ? pointSize[Math.floor(pointSize.length / 2)]
+        : pointSize;
+    }
+  };
+
   const setPointSize = (newPointSize) => {
     if (isConditionalArray(newPointSize, isPositiveNumber, { minLength: 1 }))
       pointSize = [...newPointSize];
 
     if (isPositiveNumber(+newPointSize)) pointSize = [+newPointSize];
 
-    pointSizeTex = createPointSizeTexture();
+    encodingTex = createEncodingTexture();
+    computePointSizeMouseDetection();
   };
 
   const setPointSizeSelected = (newPointSizeSelected) => {
@@ -749,68 +866,142 @@ const createScatterplot = (initialProperties = {}) => {
     }
   };
 
-  const setColorBy = (type) => {
-    switch (type) {
-      case 'category':
-        colorBy = 'category';
-        break;
-
-      case 'value':
-        colorBy = 'value';
-        break;
-
-      default:
-        colorBy = DEFAULT_COLOR_BY;
-    }
-  };
-
   const setOpacity = (newOpacity) => {
-    if (!+newOpacity || +newOpacity <= 0) return;
+    if (isConditionalArray(newOpacity, isPositiveNumber, { minLength: 1 }))
+      opacity = [...newOpacity];
 
-    opacity = +newOpacity;
+    if (isPositiveNumber(+newOpacity)) opacity = [+newOpacity];
 
-    if (colorTex) colorTex.destroy();
-    colorTex = createColorTexture();
+    encodingTex = createEncodingTexture();
   };
 
-  const setSizeBy = (type) => {
+  const getEncodingType = (type, defaultValue) => {
     switch (type) {
       case 'category':
-        sizeBy = 'category';
-        break;
+      case 'value1':
+      case 'valueA':
+      case 'valueZ':
+      case 'z':
+        return 'valueZ'; // Z refers to the 3rd component of the RGBA value
 
       case 'value':
-        sizeBy = 'value';
-        break;
+      case 'value2':
+      case 'valueB':
+      case 'valueW':
+      case 'w':
+        return 'valueW'; // W refers to the 4th component of the RGBA value
 
       default:
-        sizeBy = DEFAULT_SIZE_BY;
+        return defaultValue;
     }
+  };
+
+  const getEncodingIdx = (type) => {
+    switch (type) {
+      case 'valueZ':
+        return 2;
+
+      case 'valueW':
+        return 3;
+
+      default:
+        return null;
+    }
+  };
+
+  const getEncodingDataType = (type) => {
+    switch (type) {
+      case 'valueZ':
+        return maxValueZ > 1 ? 'categorical' : 'continuous';
+
+      case 'valueW':
+        return maxValueW > 1 ? 'categorical' : 'continuous';
+
+      default:
+        return null;
+    }
+  };
+
+  const getEncodingValueToIdx = (type, rangeMap) => {
+    switch (type) {
+      default:
+      case 'categorical':
+        return identity;
+
+      case 'continuous':
+        return (value) => Math.round(value * (rangeMap.length - 1));
+    }
+  };
+
+  const setColorBy = (type) => {
+    colorBy = getEncodingType(type, DEFAULT_COLOR_BY);
+  };
+  const setOpacityBy = (type) => {
+    opacityBy = getEncodingType(type, DEFAULT_OPACITY_BY);
+  };
+  const setSizeBy = (type) => {
+    sizeBy = getEncodingType(type, DEFAULT_SIZE_BY);
+  };
+  const setPointConnectionColorBy = (type) => {
+    pointConnectionColorBy = getEncodingType(
+      type,
+      DEFAULT_POINT_CONNECTION_COLOR_BY
+    );
+  };
+  const setPointConnectionOpacityBy = (type) => {
+    pointConnectionOpacityBy = getEncodingType(
+      type,
+      DEFAULT_POINT_CONNECTION_OPACITY_BY
+    );
+  };
+  const setPointConnectionSizeBy = (type) => {
+    pointConnectionSizeBy = getEncodingType(
+      type,
+      DEFAULT_POINT_CONNECTION_SIZE_BY
+    );
   };
 
   const getBackgroundImage = () => backgroundImage;
   const getColorTex = () => colorTex;
   const getColorTexRes = () => colorTexRes;
+  const getColorTexEps = () => 0.5 / colorTexRes;
+  const getDevicePixelRatio = () => window.devicePixelRatio;
   const getNormalPointsIndexBuffer = () => normalPointsIndexBuffer;
   const getSelectedPointsIndexBuffer = () => selectedPointsIndexBuffer;
-  const getPointSizeTex = () => pointSizeTex;
-  const getPointSizeTexRes = () => pointSizeTexRes;
+  const getEncodingTex = () => encodingTex;
+  const getEncodingTexRes = () => encodingTexRes;
+  const getEncodingTexEps = () => 0.5 / encodingTexRes;
   const getNormalPointSizeExtra = () => 0;
   const getStateTex = () => tmpStateTex || stateTex;
   const getStateTexRes = () => stateTexRes;
+  const getStateTexEps = () => 0.5 / stateTexRes;
   const getProjection = () => projection;
   const getView = () => camera.view;
   const getModel = () => model;
+  const getProjectionViewModel = () =>
+    mat4.multiply(pvm, projection, mat4.multiply(pvm, camera.view, model));
   const getPointScale = () =>
     min(1.0, camera.scaling) +
     Math.log2(max(1.0, camera.scaling)) * window.devicePixelRatio;
   const getNormalNumPoints = () => numPoints;
-  const getIsColoredByCategory = () => (colorBy === 'category') * 1;
-  const getIsColoredByValue = () => (colorBy === 'value') * 1;
-  const getIsSizedByCategory = () => (sizeBy === 'category') * 1;
-  const getIsSizedByValue = () => (sizeBy === 'value') * 1;
-  const getMaxColorTexIdx = () => pointColors.length - 1;
-  const getMaxPointSizeTexIdx = () => pointSize.length;
+  const getIsColoredByZ = () => +(colorBy === 'valueZ');
+  const getIsColoredByW = () => +(colorBy === 'valueW');
+  const getIsOpacityByZ = () => +(opacityBy === 'valueZ');
+  const getIsOpacityByW = () => +(opacityBy === 'valueW');
+  const getIsSizedByZ = () => +(sizeBy === 'valueZ');
+  const getIsSizedByW = () => +(sizeBy === 'valueW');
+  const getColorMultiplicator = () => {
+    if (colorBy === 'valueZ') return maxValueZ <= 1 ? pointColor.length - 1 : 1;
+    return maxValueW <= 1 ? pointColor.length - 1 : 1;
+  };
+  const getOpacityMultiplicator = () => {
+    if (opacityBy === 'valueZ') return maxValueZ <= 1 ? opacity.length - 1 : 1;
+    return maxValueW <= 1 ? opacity.length - 1 : 1;
+  };
+  const getSizeMultiplicator = () => {
+    if (sizeBy === 'valueZ') return maxValueZ <= 1 ? pointSize.length - 1 : 1;
+    return maxValueW <= 1 ? pointSize.length - 1 : 1;
+  };
 
   const updatePoints = regl({
     framebuffer: () => tmpStateBuffer,
@@ -831,6 +1022,32 @@ const createScatterplot = (initialProperties = {}) => {
     count: 3,
   });
 
+  const copyToScreen = regl({
+    vert: `
+      precision highp float;
+      attribute vec2 xy;
+      void main () {
+        gl_Position = vec4(xy, 0, 1);
+      }`,
+    frag: `
+      precision highp float;
+      uniform vec2 srcRes;
+      uniform sampler2D src;
+
+      void main () {
+        gl_FragColor = texture2D(src, gl_FragCoord.xy / srcRes);
+      }`,
+    attributes: {
+      xy: [-4, -4, 4, -4, 0, 4],
+    },
+    uniforms: {
+      src: () => fbo,
+      srcRes: () => fboRes,
+    },
+    count: 3,
+    depth: { enable: false },
+  });
+
   const drawPoints = (
     getPointSizeExtra,
     getNumPoints,
@@ -838,11 +1055,11 @@ const createScatterplot = (initialProperties = {}) => {
     globalState = COLOR_NORMAL_IDX
   ) =>
     regl({
-      frag: POINT_FS,
+      frag: performanceMode ? POINT_SIMPLE_FS : POINT_FS,
       vert: POINT_VS,
 
       blend: {
-        enable: true,
+        enable: !performanceMode,
         func: {
           srcRGB: 'src alpha',
           srcAlpha: 'one',
@@ -856,30 +1073,35 @@ const createScatterplot = (initialProperties = {}) => {
       attributes: {
         stateIndex: {
           buffer: getStateIndexBuffer,
-          size: 1,
+          size: 2,
         },
       },
 
       uniforms: {
-        projection: getProjection,
-        model: getModel,
-        view: getView,
+        projectionViewModel: getProjectionViewModel,
+        devicePixelRatio: getDevicePixelRatio,
         pointScale: getPointScale,
-        pointSizeTex: getPointSizeTex,
-        pointSizeTexRes: getPointSizeTexRes,
+        encodingTex: getEncodingTex,
+        encodingTexRes: getEncodingTexRes,
+        encodingTexEps: getEncodingTexEps,
         pointSizeExtra: getPointSizeExtra,
         globalState,
         colorTex: getColorTex,
         colorTexRes: getColorTexRes,
+        colorTexEps: getColorTexEps,
         stateTex: getStateTex,
         stateTexRes: getStateTexRes,
-        isColoredByCategory: getIsColoredByCategory,
-        isColoredByValue: getIsColoredByValue,
-        isSizedByCategory: getIsSizedByCategory,
-        isSizedByValue: getIsSizedByValue,
-        maxColorTexIdx: getMaxColorTexIdx,
+        stateTexEps: getStateTexEps,
+        isColoredByZ: getIsColoredByZ,
+        isColoredByW: getIsColoredByW,
+        isOpacityByZ: getIsOpacityByZ,
+        isOpacityByW: getIsOpacityByW,
+        isSizedByZ: getIsSizedByZ,
+        isSizedByW: getIsSizedByW,
+        colorMultiplicator: getColorMultiplicator,
+        opacityMultiplicator: getOpacityMultiplicator,
+        sizeMultiplicator: getSizeMultiplicator,
         numColorStates: COLOR_NUM_STATES,
-        maxPointSizeTexIdx: getMaxPointSizeTexIdx,
       },
 
       count: getNumPoints,
@@ -938,9 +1160,7 @@ const createScatterplot = (initialProperties = {}) => {
     },
 
     uniforms: {
-      projection: getProjection,
-      model: getModel,
-      view: getView,
+      projectionViewModel: getProjectionViewModel,
       texture: getBackgroundImage,
     },
 
@@ -950,12 +1170,10 @@ const createScatterplot = (initialProperties = {}) => {
   const drawPolygon2d = regl({
     vert: `
       precision mediump float;
-      uniform mat4 projection;
-      uniform mat4 model;
-      uniform mat4 view;
+      uniform mat4 projectionViewModel;
       attribute vec2 position;
       void main () {
-        gl_Position = projection * view * model * vec4(position, 0, 1);
+        gl_Position = projectionViewModel * vec4(position, 0, 1);
       }`,
 
     frag: `
@@ -982,9 +1200,7 @@ const createScatterplot = (initialProperties = {}) => {
     },
 
     uniforms: {
-      projection: getProjection,
-      model: getModel,
-      view: getView,
+      projectionViewModel: getProjectionViewModel,
       color: () => lassoColor,
     },
 
@@ -1039,10 +1255,14 @@ const createScatterplot = (initialProperties = {}) => {
   };
 
   const createPointIndex = (numNewPoints) => {
-    const index = new Float32Array(numNewPoints);
+    const index = new Float32Array(numNewPoints * 2);
 
+    let j = 0;
     for (let i = 0; i < numNewPoints; ++i) {
-      index[i] = i;
+      const texCoord = indexToStateTexCoord(i);
+      index[j] = texCoord[0]; // x
+      index[j + 1] = texCoord[1]; // y
+      j += 2;
     }
 
     return index;
@@ -1051,13 +1271,20 @@ const createScatterplot = (initialProperties = {}) => {
   const createStateTexture = (newPoints) => {
     const numNewPoints = newPoints.length;
     stateTexRes = Math.max(2, Math.ceil(Math.sqrt(numNewPoints)));
+    stateTexEps = 0.5 / stateTexRes;
     const data = new Float32Array(stateTexRes ** 2 * 4);
+
+    maxValueZ = 0;
+    maxValueW = 0;
 
     for (let i = 0; i < numNewPoints; ++i) {
       data[i * 4] = newPoints[i][0]; // x
       data[i * 4 + 1] = newPoints[i][1]; // y
-      data[i * 4 + 2] = newPoints[i][2] || 0; // category
-      data[i * 4 + 3] = newPoints[i][3] || 0; // value
+      data[i * 4 + 2] = newPoints[i][2] || 0; // z: value 1
+      data[i * 4 + 3] = newPoints[i][3] || 0; // w: value 2
+
+      maxValueZ = Math.max(maxValueZ, data[i * 4 + 2]);
+      maxValueW = Math.max(maxValueW, data[i * 4 + 3]);
     }
 
     return regl.texture({
@@ -1125,35 +1352,157 @@ const createScatterplot = (initialProperties = {}) => {
     isInit = true;
   };
 
+  const getPointConnectionColorIndices = () => {
+    const colorEncoding =
+      pointConnectionColorBy === 'inherit' ? colorBy : pointConnectionColorBy;
+
+    if (colorEncoding) {
+      const encodingIdx = getEncodingIdx(colorEncoding);
+      const encodingValueToIdx = getEncodingValueToIdx(
+        getEncodingDataType(colorEncoding),
+        pointConnectionColorBy === 'inherit' ? pointColor : pointConnectionColor
+      );
+      return pointConnectionMap.reduce(
+        (colorIndices, [index, referencePoint]) => {
+          // The `4` comes from the fact that we have 4 color states:
+          // normal, active, hover, and background
+          colorIndices[index] =
+            encodingValueToIdx(referencePoint[encodingIdx]) * 4;
+          return colorIndices;
+        },
+        []
+      );
+    }
+
+    return Array(pointConnectionMap.length).fill(0);
+  };
+
+  const getPointConnectionOpacities = () => {
+    const opacityEncoding =
+      pointConnectionOpacityBy === 'inherit'
+        ? opacityBy
+        : pointConnectionOpacityBy;
+
+    if (opacityEncoding) {
+      const encodingIdx = getEncodingIdx(opacityEncoding);
+      const encodingRangeMap =
+        pointConnectionOpacityBy === 'inherit'
+          ? opacity
+          : pointConnectionOpacity;
+      const encodingValueToIdx = getEncodingValueToIdx(
+        getEncodingDataType(opacityEncoding),
+        encodingRangeMap
+      );
+      return pointConnectionMap.reduce((opacities, [index, referencePoint]) => {
+        opacities[index] =
+          encodingRangeMap[encodingValueToIdx(referencePoint[encodingIdx])];
+        return opacities;
+      }, []);
+    }
+
+    return undefined;
+  };
+
+  const getPointConnectionWidths = () => {
+    const sizeEncoding =
+      pointConnectionSizeBy === 'inherit' ? sizeBy : pointConnectionSizeBy;
+
+    if (sizeEncoding) {
+      const encodingIdx = getEncodingIdx(sizeEncoding);
+      const encodingRangeMap =
+        pointConnectionSizeBy === 'inherit' ? pointSize : pointConnectionSize;
+      const encodingValueToIdx = getEncodingValueToIdx(
+        getEncodingDataType(sizeEncoding),
+        encodingRangeMap
+      );
+      return pointConnectionMap.reduce((widths, [index, referencePoint]) => {
+        widths[index] =
+          encodingRangeMap[encodingValueToIdx(referencePoint[encodingIdx])];
+        return widths;
+      }, []);
+    }
+
+    return undefined;
+  };
+
+  const setPointConnectionMap = (curvePoints) => {
+    pointConnectionMap = [];
+
+    let cumLinePoints = 0;
+    Object.keys(curvePoints).forEach((id, index) => {
+      pointConnectionMap[id] = [
+        index,
+        curvePoints[id].reference,
+        curvePoints[id].length / 2,
+        cumLinePoints,
+      ];
+      cumLinePoints += curvePoints[id].length / 2;
+    });
+  };
+
+  const setPointConnections = (newPoints) =>
+    new Promise((resolve) => {
+      pointConnections.setPoints([]);
+      if (!newPoints || !newPoints.length) {
+        resolve();
+      } else {
+        computingPointConnectionCurves = true;
+        createSplineCurve(newPoints, {
+          maxIntPointsPerSegment: pointConnectionMaxIntPointsPerSegment,
+          tolerance: pointConnectionTolerance,
+        }).then((curvePoints) => {
+          setPointConnectionMap(curvePoints);
+          pointConnections.setPoints(Object.values(curvePoints), {
+            colorIndices: getPointConnectionColorIndices(),
+            opacities: getPointConnectionOpacities(),
+            widths: getPointConnectionWidths(),
+          });
+          computingPointConnectionCurves = false;
+          resolve();
+        });
+      }
+    });
+
   const draw = (showRecticleOnce) => {
     if (!isInit || !regl) return;
 
-    regl.clear({
-      // background color (transparent)
-      color: [0, 0, 0, 0],
-      depth: 1,
+    fbo.use(() => {
+      regl.clear({
+        // background color (transparent)
+        color: [0, 0, 0, 0],
+        depth: 1,
+      });
+
+      // Update camera
+      isViewChanged = camera.tick();
+
+      // eslint-disable-next-line no-underscore-dangle
+      if (backgroundImage && backgroundImage._reglType) {
+        drawBackgroundImage();
+      }
+
+      if (lassoPointsCurr.length > 2) drawPolygon2d();
+
+      // The draw order of the following calls is important!
+      if (!isTransitioning)
+        pointConnections.draw({
+          projection: getProjection(),
+          model: getModel(),
+          view: getView(),
+        });
+      drawPointBodies();
+      if (!mouseDown && (showRecticle || showRecticleOnce)) drawRecticle();
+      if (hoveredPoint >= 0) drawHoveredPoint();
+      if (selection.length) drawSelectedPoint();
+
+      lasso.draw({
+        projection: getProjection(),
+        model: getModel(),
+        view: getView(),
+      });
     });
 
-    // Update camera
-    isViewChanged = camera.tick();
-
-    if (backgroundImage) {
-      drawBackgroundImage();
-    }
-
-    // The draw order of the following calls is important!
-    drawPointBodies();
-    if (!mouseDown && (showRecticle || showRecticleOnce)) drawRecticle();
-    if (hoveredPoint >= 0) drawHoveredPoint();
-    if (selection.length) drawSelectedPoint();
-
-    if (lassoPointsCurr.length > 2) drawPolygon2d();
-
-    lasso.draw({
-      projection: getProjection(),
-      model: getModel(),
-      view: getView(),
-    });
+    copyToScreen();
 
     // Publish camera change
     if (isViewChanged) {
@@ -1239,10 +1588,30 @@ const createScatterplot = (initialProperties = {}) => {
           }
         }
         setPoints(newPoints);
+        if (
+          showPointConnections ||
+          (options.showPointConnectionsOnce &&
+            hasPointConnections(newPoints[0]))
+        ) {
+          setPointConnections(newPoints).then(() => {
+            pubSub.publish('pointConnectionsDraw');
+            drawRaf(options.showRecticleOnce);
+          });
+        }
       }
 
       if (transition && pointsCached) {
-        pubSub.subscribe('transitionEnd', resolve, 1);
+        pubSub.subscribe(
+          'transitionEnd',
+          () => {
+            // Point connects cannot be transitioned yet so we hide them during
+            // the transition. Hence, we need to make sure we call `draw()` once
+            // the transition has ended.
+            drawRaf(options.showRecticleOnce);
+            resolve();
+          },
+          1
+        );
         startTransition(
           {
             duration: options.transitionDuration,
@@ -1260,6 +1629,21 @@ const createScatterplot = (initialProperties = {}) => {
     const out = f(...args);
     drawRaf();
     return out;
+  };
+
+  const updatePointConnectionsStyle = () => {
+    pointConnections.setStyle({
+      color: getColors(
+        pointConnectionColor,
+        pointConnectionColorActive,
+        pointConnectionColorHover
+      ),
+      opacity:
+        pointConnectionOpacity === null
+          ? pointConnectionOpacity
+          : pointConnectionOpacity[0],
+      width: pointConnectionSize[0],
+    });
   };
 
   const updateLassoInitiatorStyle = () => {
@@ -1285,8 +1669,11 @@ const createScatterplot = (initialProperties = {}) => {
         drawRaf();
         pubSub.publish('backgroundImageReady');
       });
-    } else {
+      // eslint-disable-next-line no-underscore-dangle
+    } else if (newBackgroundImage._reglType === 'texture2d') {
       backgroundImage = newBackgroundImage;
+    } else {
+      backgroundImage = null;
     }
   };
 
@@ -1427,6 +1814,94 @@ const createScatterplot = (initialProperties = {}) => {
     deselectOnEscape = !!newDeselectOnEscape;
   };
 
+  const setShowPointConnections = (newShowPointConnections) => {
+    showPointConnections = !!newShowPointConnections;
+    if (showPointConnections) {
+      if (hasPointConnections(searchIndex.points[0])) {
+        setPointConnections(searchIndex.points).then(() => {
+          pubSub.publish('pointConnectionsDraw');
+          drawRaf();
+        });
+      }
+    } else {
+      setPointConnections();
+    }
+  };
+
+  const setPointConnectionColors = (setter) => (newColors) => {
+    const tmpColors = isMultipleColors(newColors) ? newColors : [newColors];
+    setter(tmpColors.map((color) => toRgba(color, true)));
+    updatePointConnectionsStyle();
+  };
+
+  const setPointConnectionColor = setPointConnectionColors((newColors) => {
+    pointConnectionColor = newColors;
+  });
+
+  const setPointConnectionColorActive = setPointConnectionColors(
+    (newColors) => {
+      pointConnectionColorActive = newColors;
+    }
+  );
+
+  const setPointConnectionColorHover = setPointConnectionColors((newColors) => {
+    pointConnectionColorHover = newColors;
+  });
+
+  const setPointConnectionOpacity = (newOpacity) => {
+    if (isConditionalArray(newOpacity, isPositiveNumber, { minLength: 1 }))
+      pointConnectionOpacity = [...newOpacity];
+
+    if (isPositiveNumber(+newOpacity)) pointConnectionOpacity = [+newOpacity];
+
+    pointConnectionColor = pointConnectionColor.map((color) => {
+      color[3] = pointConnectionOpacity[0];
+      return color;
+    });
+
+    updatePointConnectionsStyle();
+  };
+
+  const setPointConnectionOpacitySelection = (newOpacity) => {
+    pointConnectionOpacitySelection = +newOpacity;
+  };
+
+  const setPointConnectionSize = (newPointConnectionSize) => {
+    if (
+      isConditionalArray(newPointConnectionSize, isPositiveNumber, {
+        minLength: 1,
+      })
+    )
+      pointConnectionSize = [...newPointConnectionSize];
+
+    if (isPositiveNumber(+newPointConnectionSize))
+      pointConnectionSize = [+newPointConnectionSize];
+
+    updatePointConnectionsStyle();
+  };
+
+  const setPointConnectionSizeSelected = (newPointConnectionSizeSelected) => {
+    pointConnectionSizeSelected = Math.max(0, newPointConnectionSizeSelected);
+  };
+
+  const setPointConnectionMaxIntPointsPerSegment = (
+    newPointConnectionMaxIntPointsPerSegment
+  ) => {
+    pointConnectionMaxIntPointsPerSegment = Math.max(
+      0,
+      newPointConnectionMaxIntPointsPerSegment
+    );
+  };
+
+  const setPointConnectionTolerance = (newPointConnectionTolerance) => {
+    pointConnectionTolerance = Math.max(0, newPointConnectionTolerance);
+  };
+
+  const setPointSizeMouseDetection = (newPointSizeMouseDetection) => {
+    pointSizeMouseDetection = newPointSizeMouseDetection;
+    computePointSizeMouseDetection();
+  };
+
   /**
    * Update Regl's viewport, drawingBufferWidth, and drawingBufferHeight
    *
@@ -1467,19 +1942,41 @@ const createScatterplot = (initialProperties = {}) => {
     if (property === 'keyMap') return { ...keyMap };
     if (property === 'mouseMode') return mouseMode;
     if (property === 'opacity') return opacity;
+    if (property === 'opacityBy') return opacityBy;
     if (property === 'pointColor')
-      return pointColors.length === 1 ? pointColors[0] : pointColors;
+      return pointColor.length === 1 ? pointColor[0] : pointColor;
     if (property === 'pointColorActive')
-      return pointColorsActive.length === 1
-        ? pointColorsActive[0]
-        : pointColorsActive;
+      return pointColorActive.length === 1
+        ? pointColorActive[0]
+        : pointColorActive;
     if (property === 'pointColorHover')
-      return pointColorsHover.length === 1
-        ? pointColorsHover[0]
-        : pointColorsHover;
+      return pointColorHover.length === 1
+        ? pointColorHover[0]
+        : pointColorHover;
     if (property === 'pointOutlineWidth') return pointOutlineWidth;
     if (property === 'pointSize') return pointSize;
     if (property === 'pointSizeSelected') return pointSizeSelected;
+    if (property === 'pointSizeMouseDetection') return pointSizeMouseDetection;
+    if (property === 'showPointConnections') return showPointConnections;
+    if (property === 'pointConnectionColor') return pointConnectionColor;
+    if (property === 'pointConnectionColorActive')
+      return pointConnectionColorActive;
+    if (property === 'pointConnectionColorHover')
+      return pointConnectionColorHover;
+    if (property === 'pointConnectionColorBy') return pointConnectionColorBy;
+    if (property === 'pointConnectionOpacity') return pointConnectionOpacity;
+    if (property === 'pointConnectionOpacityBy')
+      return pointConnectionOpacityBy;
+    if (property === 'pointConnectionOpacitySelection')
+      return pointConnectionOpacitySelection;
+    if (property === 'pointConnectionSize') return pointConnectionSize;
+    if (property === 'pointConnectionSizeSelected')
+      return pointConnectionSizeSelected;
+    if (property === 'pointConnectionSizeBy') return pointConnectionSizeBy;
+    if (property === 'pointConnectionMaxIntPointsPerSegment')
+      return pointConnectionMaxIntPointsPerSegment;
+    if (property === 'pointConnectionTolerance')
+      return pointConnectionTolerance;
     if (property === 'recticleColor') return recticleColor;
     if (property === 'regl') return regl;
     if (property === 'showRecticle') return showRecticle;
@@ -1487,6 +1984,7 @@ const createScatterplot = (initialProperties = {}) => {
     if (property === 'width') return width;
     if (property === 'xScale') return xScale;
     if (property === 'yScale') return yScale;
+    if (property === 'performanceMode') return performanceMode;
 
     return undefined;
   };
@@ -1526,15 +2024,15 @@ const createScatterplot = (initialProperties = {}) => {
     }
 
     if (properties.pointColor !== undefined) {
-      setPointColors(properties.pointColor);
+      setPointColor(properties.pointColor);
     }
 
     if (properties.pointColorActive !== undefined) {
-      setPointColorsActive(properties.pointColorActive);
+      setPointColorActive(properties.pointColorActive);
     }
 
     if (properties.pointColorHover !== undefined) {
-      setPointColorsHover(properties.pointColorHover);
+      setPointColorHover(properties.pointColorHover);
     }
 
     if (properties.pointSize !== undefined) {
@@ -1545,12 +2043,76 @@ const createScatterplot = (initialProperties = {}) => {
       setPointSizeSelected(properties.pointSizeSelected);
     }
 
+    if (properties.pointSizeMouseDetection !== undefined) {
+      setPointSizeMouseDetection(properties.pointSizeMouseDetection);
+    }
+
     if (properties.sizeBy !== undefined) {
       setSizeBy(properties.sizeBy);
     }
 
     if (properties.opacity !== undefined) {
       setOpacity(properties.opacity);
+    }
+
+    if (properties.showPointConnections !== undefined) {
+      setShowPointConnections(properties.showPointConnections);
+    }
+
+    if (properties.pointConnectionColor !== undefined) {
+      setPointConnectionColor(properties.pointConnectionColor);
+    }
+
+    if (properties.pointConnectionColorActive !== undefined) {
+      setPointConnectionColorActive(properties.pointConnectionColorActive);
+    }
+
+    if (properties.pointConnectionColorHover !== undefined) {
+      setPointConnectionColorHover(properties.pointConnectionColorHover);
+    }
+
+    if (properties.pointConnectionColorBy !== undefined) {
+      setPointConnectionColorBy(properties.pointConnectionColorBy);
+    }
+
+    if (properties.pointConnectionOpacityBy !== undefined) {
+      setPointConnectionOpacityBy(properties.pointConnectionOpacityBy);
+    }
+
+    if (properties.pointConnectionOpacity !== undefined) {
+      setPointConnectionOpacity(properties.pointConnectionOpacity);
+    }
+
+    if (properties.pointConnectionOpacitySelection !== undefined) {
+      setPointConnectionOpacitySelection(
+        properties.pointConnectionOpacitySelection
+      );
+    }
+
+    if (properties.pointConnectionSize !== undefined) {
+      setPointConnectionSize(properties.pointConnectionSize);
+    }
+
+    if (properties.pointConnectionSizeSelected !== undefined) {
+      setPointConnectionSizeSelected(properties.pointConnectionSizeSelected);
+    }
+
+    if (properties.pointConnectionSizeBy !== undefined) {
+      setPointConnectionSizeBy(properties.pointConnectionSizeBy);
+    }
+
+    if (properties.pointConnectionMaxIntPointsPerSegment !== undefined) {
+      setPointConnectionMaxIntPointsPerSegment(
+        properties.pointConnectionMaxIntPointsPerSegment
+      );
+    }
+
+    if (properties.pointConnectionTolerance !== undefined) {
+      setPointConnectionTolerance(properties.pointConnectionTolerance);
+    }
+
+    if (properties.opacityBy !== undefined) {
+      setOpacityBy(properties.opacityBy);
     }
 
     if (properties.lassoColor !== undefined) {
@@ -1636,14 +2198,26 @@ const createScatterplot = (initialProperties = {}) => {
 
     if (point >= 0) {
       needsRedraw = true;
+      const oldHoveredPoint = hoveredPoint;
       const newHoveredPoint = point !== hoveredPoint;
+      if (
+        +oldHoveredPoint >= 0 &&
+        newHoveredPoint &&
+        !selectionSet.has(oldHoveredPoint)
+      ) {
+        setPointConnectionColorState([oldHoveredPoint], 0);
+      }
       hoveredPoint = point;
-      hoveredPointIndexBuffer.subdata([point]);
+      hoveredPointIndexBuffer.subdata(indexToStateTexCoord(point));
+      if (!selectionSet.has(point)) setPointConnectionColorState([point], 2);
       if (newHoveredPoint) pubSub.publish('pointover', hoveredPoint);
     } else {
       needsRedraw = hoveredPoint;
       hoveredPoint = undefined;
-      if (+needsRedraw >= 0) pubSub.publish('pointout', needsRedraw);
+      if (+needsRedraw >= 0) {
+        setPointConnectionColorState([needsRedraw], 0);
+        pubSub.publish('pointout', needsRedraw);
+      }
     }
 
     if (needsRedraw) drawRaf(null, showRecticleOnce);
@@ -1652,20 +2226,17 @@ const createScatterplot = (initialProperties = {}) => {
   const initCamera = () => {
     if (!camera) camera = createDom2dCamera(canvas);
 
-    if (initialCameraView || initialView) {
-      camera.setView(mat4.clone(initialCameraView || initialView));
+    if (initialProperties.cameraView) {
+      camera.setView(mat4.clone(initialProperties.cameraView));
     } else if (
-      initialCameraTarget ||
-      initialTarget ||
-      initialCameraDistance ||
-      initialDistance ||
-      initialCameraRotation ||
-      initialRotation
+      initialProperties.cameraTarget ||
+      initialProperties.cameraDistance ||
+      initialProperties.cameraRotation
     ) {
       camera.lookAt(
-        [...(initialCameraTarget || initialTarget || DEFAULT_TARGET)],
-        initialCameraDistance || initialDistance || DEFAULT_DISTANCE,
-        initialCameraRotation || initialRotation || DEFAULT_ROTATION
+        [...(initialProperties.cameraTarget || DEFAULT_TARGET)],
+        initialProperties.cameraDistance || DEFAULT_DISTANCE,
+        initialProperties.cameraRotation || DEFAULT_ROTATION
       );
     } else {
       camera.setView(mat4.clone(DEFAULT_VIEW));
@@ -1710,6 +2281,7 @@ const createScatterplot = (initialProperties = {}) => {
 
   const clear = () => {
     setPoints([]);
+    pointConnections.clear();
   };
 
   const init = () => {
@@ -1718,6 +2290,14 @@ const createScatterplot = (initialProperties = {}) => {
     updateScales();
 
     lasso = createLine(regl, { color: lassoColor, width: 3, is2d: true });
+    pointConnections = createLine(regl, {
+      color: pointConnectionColor,
+      colorHover: pointConnectionColorHover,
+      colorActive: pointConnectionColorActive,
+      width: pointConnectionSize[0],
+      widthActive: pointConnectionSizeSelected,
+      is2d: true,
+    });
     recticleHLine = createLine(regl, {
       color: recticleColor,
       width: 1,
@@ -1728,6 +2308,7 @@ const createScatterplot = (initialProperties = {}) => {
       width: 1,
       is2d: true,
     });
+    computePointSizeMouseDetection();
 
     // Event listeners
     canvas.addEventListener('wheel', wheelHandler);
@@ -1738,15 +2319,15 @@ const createScatterplot = (initialProperties = {}) => {
     hoveredPointIndexBuffer = regl.buffer({
       usage: 'dynamic',
       type: 'float',
-      length: FLOAT_BYTES, // This buffer is fixed to exactly 1 point
+      length: FLOAT_BYTES * 2, // This buffer is fixed to exactly 1 point consisting of 2 coordinates
     });
 
     colorTex = createColorTexture();
-    pointSizeTex = createPointSizeTexture();
+    encodingTex = createEncodingTexture();
 
     // Set dimensions
     set({
-      backgroundImage: initialBackgroundImage,
+      backgroundImage,
       width,
       height,
       keyMap,
@@ -1780,6 +2361,9 @@ const createScatterplot = (initialProperties = {}) => {
     camera = undefined;
     regl = undefined;
     lasso.destroy();
+    pointConnections.destroy();
+    recticleHLine.destroy();
+    recticleVLine.destroy();
     pubSub.clear();
   };
 

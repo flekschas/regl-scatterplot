@@ -287,7 +287,7 @@ const createLasso = (
     hideinitiator();
   };
 
-  const end = () => {
+  const end = ({ merge = false } = {}) => {
     isLasso = false;
 
     const currLassoPos = [...lassoPos];
@@ -297,7 +297,7 @@ const createLasso = (
 
     clear();
 
-    onEnd(currLassoPos, currLassoPosFlat);
+    onEnd(currLassoPos, currLassoPosFlat, { merge });
 
     return currLassoPos;
   };

@@ -1,5 +1,48 @@
 ## Next
 
+## v0.16.0
+
+- Allow the point-associated data values to be either categorical or continuous instead of enforcing one to be categorical and the other one to be continuous. For continuous data, assign [0,1]-normalized data as the third or forth component of a point. For categorical data, assign an integer-based data. For instance, if a point looks `[1, 2, 3, 4]` we assume that the first (`3`) and second (`4`) data value is categorical. If you would instead have points like `[1, 2, 0.33, 0.44]` where the third and forth component are within [0,1] then we would assume that those components represent continuous data. For backward compatibility, `colorBy: 'category'` refers to coloring by the third component and `colorBy 'value'` refers to the forth component. Additionall, you can now reference the third components via `value1`, `valueA`, `valueZ`, or `z` and the forth component via`value2`, `valueB`, `valueW`, or `w`.
+
+- Add the ability to connect points visually via `draw(points, { connectPoints: true })`. This assumes that your points have a 5th component that identifies the point connection. Currently the order of points as they appear in `points` defines the order of how they would be connected. So assuming you have:
+
+  ```javascript
+  // prettier-ignore
+  scatterplot.draw([
+    1, 1, 0, 0, 0,
+    2, 2, 0, 0, 0,
+    3, 3, 0, 0, 1,
+    4, 4, 0, 0, 1,
+    5, 5, 0, 0, 0,
+  ], { connectPoints: true });
+  ```
+
+  Then we would connext the points as follows:
+
+  ```
+  1 -> 2 -> 5
+  3 -> 4
+  ```
+
+  For an example see [example/connected-points.js](example/connected-points.js).
+
+- Add support for multi-selections by holding down <kbd>CMD</kbd> (by default) during click- or lasso-selections. The modifier key for multi-selections can be adjusted via `scatterplot.set({ keyMap: { merge: 'ctrl' } })`
+- Add `performanceMode` to allow drawing up to 20 million points
+- Add `opacityBy` to allow encoding one of the two data properties as the point opacity.
+
+- Fix an issue with the point size between devices with different pixel ratios
+- Fix an issue with detecting points when using variable point sizes
+- Fix an issue that drew the background image before it was loaded
+
+**Breaking changes:**
+
+- Removed the following deplicated properties:
+  - `background` (use `backgroundColor` instead)
+  - `distance` (use `cameraDistance` instead)
+  - `rotation` (use `cameraRotation` instead)
+  - `target` (use `cameraTarget` instead)
+  - `view` (use `cameraView` instead)
+
 ## v0.15.1
 
 - Make sure the `keyMap` is properly initiated.
