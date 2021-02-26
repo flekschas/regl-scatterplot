@@ -48,6 +48,7 @@ import {
   DEFAULT_POINT_CONNECTION_COLOR_BY,
   DEFAULT_POINT_CONNECTION_OPACITY,
   DEFAULT_POINT_CONNECTION_OPACITY_BY,
+  DEFAULT_POINT_CONNECTION_OPACITY_SELECTION,
   DEFAULT_POINT_CONNECTION_SIZE,
   DEFAULT_POINT_CONNECTION_SIZE_SELECTED,
   DEFAULT_POINT_CONNECTION_SIZE_BY,
@@ -164,6 +165,7 @@ const createScatterplot = (initialProperties = {}) => {
     pointConnectionColorBy = DEFAULT_POINT_CONNECTION_COLOR_BY,
     pointConnectionOpacity = DEFAULT_POINT_CONNECTION_OPACITY,
     pointConnectionOpacityBy = DEFAULT_POINT_CONNECTION_OPACITY_BY,
+    pointConnectionOpacitySelection = DEFAULT_POINT_CONNECTION_OPACITY_SELECTION,
     pointConnectionSize = DEFAULT_POINT_CONNECTION_SIZE,
     pointConnectionSizeSelected = DEFAULT_POINT_CONNECTION_SIZE_SELECTED,
     pointConnectionSizeBy = DEFAULT_POINT_CONNECTION_SIZE_BY,
@@ -399,6 +401,8 @@ const createScatterplot = (initialProperties = {}) => {
     )
       return;
 
+    const isNormal = stateIndex === 0;
+
     // Get line IDs
     const lineIds = Object.keys(
       pointIdxs.reduce((ids, pointIdx) => {
@@ -420,16 +424,26 @@ const createScatterplot = (initialProperties = {}) => {
       const bufferStart = index * 4 + pointOffset * 2;
       const bufferEnd = bufferStart + numPointPerLine * 2 + 4;
 
-      const buffer = pointConnections.getData().colorIndices;
+      const buffer = pointConnections.getData().opacities;
+
+      // eslint-disable-next-line no-underscore-dangle
+      if (buffer.__original__ === undefined) {
+        // eslint-disable-next-line no-underscore-dangle
+        buffer.__original__ = buffer.slice();
+      }
 
       for (let i = bufferStart; i < bufferEnd; i++) {
-        buffer[i] = Math.floor(buffer[i] / 4) * 4 + stateIndex;
+        // buffer[i] = Math.floor(buffer[i] / 4) * 4 + stateIndex;
+        buffer[i] = isNormal
+          ? // eslint-disable-next-line no-underscore-dangle
+            buffer.__original__[i]
+          : pointConnectionOpacitySelection;
       }
     });
 
     pointConnections
       .getBuffer()
-      .colorIndices.subdata(pointConnections.getData().colorIndices, 0);
+      .opacities.subdata(pointConnections.getData().opacities, 0);
   };
 
   const indexToStateTexCoord = (index) => [
@@ -1624,6 +1638,10 @@ const createScatterplot = (initialProperties = {}) => {
         pointConnectionColorActive,
         pointConnectionColorHover
       ),
+      opacity:
+        pointConnectionOpacity === null
+          ? pointConnectionOpacity
+          : pointConnectionOpacity[0],
       width: pointConnectionSize[0],
     });
   };
@@ -1844,6 +1862,10 @@ const createScatterplot = (initialProperties = {}) => {
     updatePointConnectionsStyle();
   };
 
+  const setPointConnectionOpacitySelection = (newOpacity) => {
+    pointConnectionOpacitySelection = +newOpacity;
+  };
+
   const setPointConnectionSize = (newPointConnectionSize) => {
     if (
       isConditionalArray(newPointConnectionSize, isPositiveNumber, {
@@ -1945,6 +1967,8 @@ const createScatterplot = (initialProperties = {}) => {
     if (property === 'pointConnectionOpacity') return pointConnectionOpacity;
     if (property === 'pointConnectionOpacityBy')
       return pointConnectionOpacityBy;
+    if (property === 'pointConnectionOpacitySelection')
+      return pointConnectionOpacitySelection;
     if (property === 'pointConnectionSize') return pointConnectionSize;
     if (property === 'pointConnectionSizeSelected')
       return pointConnectionSizeSelected;
@@ -2057,6 +2081,12 @@ const createScatterplot = (initialProperties = {}) => {
 
     if (properties.pointConnectionOpacity !== undefined) {
       setPointConnectionOpacity(properties.pointConnectionOpacity);
+    }
+
+    if (properties.pointConnectionOpacitySelection !== undefined) {
+      setPointConnectionOpacitySelection(
+        properties.pointConnectionOpacitySelection
+      );
     }
 
     if (properties.pointConnectionSize !== undefined) {

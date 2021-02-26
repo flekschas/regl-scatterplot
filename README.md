@@ -368,6 +368,7 @@ can be read and written via [`scatterplot.get()`](#scatterplot.get) and [`scatte
 | pointConnectionColorBy                | string          | `null`                              | See [data encoding](#property-point-conntection-by)             | `true`   | `false`     |
 | pointConnectionOpacity                | float           | `0.1`                               |                                                                 | `true`   | `false`     |
 | pointConnectionOpacityBy              | string          | `null`                              | See [data encoding](#property-point-conntection-by)             | `true`   | `false`     |
+| pointConnectionOpacitySelection       | float           | `0.66`                              |                                                                 | `true`   | `false`     |
 | pointConnectionSize                   | float           | `2`                                 |                                                                 | `true`   | `false`     |
 | pointConnectionSizeSelected           | float           | `2`                                 |                                                                 | `true`   | `false`     |
 | pointConnectionSizeBy                 | string          | `null`                              | See [data encoding](#property-point-conntection-by)             | `true`   | `false`     |

@@ -185,6 +185,10 @@ scatterplot.set({
     [87, 199, 255, 99],
     [238, 228, 98, 99],
   ],
+  pointConnectionOpacityBy: 'valueW',
+  pointConnectionOpacity: Array(10)
+    .fill()
+    .map((v, i) => (i + 1) / 100),
   sizeBy: 'valueW',
   pointConnectionSizeBy: 'valueW',
   pointConnectionSize: Array(12)
