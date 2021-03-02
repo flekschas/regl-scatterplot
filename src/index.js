@@ -126,6 +126,40 @@ const checkDeprecations = (properties) => {
     });
 };
 
+const getEncodingType = (type, defaultValue) => {
+  switch (type) {
+    case 'category':
+    case 'value1':
+    case 'valueA':
+    case 'valueZ':
+    case 'z':
+      return 'valueZ'; // Z refers to the 3rd component of the RGBA value
+
+    case 'value':
+    case 'value2':
+    case 'valueB':
+    case 'valueW':
+    case 'w':
+      return 'valueW'; // W refers to the 4th component of the RGBA value
+
+    default:
+      return defaultValue;
+  }
+};
+
+const getEncodingIdx = (type) => {
+  switch (type) {
+    case 'valueZ':
+      return 2;
+
+    case 'valueW':
+      return 3;
+
+    default:
+      return null;
+  }
+};
+
 const createScatterplot = (initialProperties = {}) => {
   const pubSub = createPubSub({
     async: !initialProperties.syncEvents,
@@ -255,6 +289,10 @@ const createScatterplot = (initialProperties = {}) => {
   })
     ? [...opacity]
     : [opacity];
+
+  colorBy = getEncodingType(colorBy);
+  opacityBy = getEncodingType(opacityBy);
+  sizeBy = getEncodingType(sizeBy);
 
   let stateTex; // Stores the point texture holding x, y, category, and value
   let prevStateTex; // Stores the previous point texture. Used for transitions
@@ -880,40 +918,6 @@ const createScatterplot = (initialProperties = {}) => {
     if (isPositiveNumber(+newOpacity)) opacity = [+newOpacity];
 
     encodingTex = createEncodingTexture();
-  };
-
-  const getEncodingType = (type, defaultValue) => {
-    switch (type) {
-      case 'category':
-      case 'value1':
-      case 'valueA':
-      case 'valueZ':
-      case 'z':
-        return 'valueZ'; // Z refers to the 3rd component of the RGBA value
-
-      case 'value':
-      case 'value2':
-      case 'valueB':
-      case 'valueW':
-      case 'w':
-        return 'valueW'; // W refers to the 4th component of the RGBA value
-
-      default:
-        return defaultValue;
-    }
-  };
-
-  const getEncodingIdx = (type) => {
-    switch (type) {
-      case 'valueZ':
-        return 2;
-
-      case 'valueW':
-        return 3;
-
-      default:
-        return null;
-    }
   };
 
   const getEncodingDataType = (type) => {

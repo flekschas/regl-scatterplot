@@ -3,6 +3,7 @@
 ## v0.16.1
 
 - Fix incorrectly initialized `opacity`
+- Fix incorrectly initialized `colorBy`, `opacityBy`, and `sizeBy`
 
 ## v0.16.0
 
