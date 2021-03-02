@@ -249,6 +249,13 @@ const createScatterplot = (initialProperties = {}) => {
   pointConnectionColorActive = toRgba(pointConnectionColorActive, true);
   pointConnectionColorHover = toRgba(pointConnectionColorHover, true);
 
+  opacity = Number.isNaN(+opacity) ? pointColor[0][3] : opacity;
+  opacity = isConditionalArray(opacity, isPositiveNumber, {
+    minLength: 1,
+  })
+    ? [...opacity]
+    : [opacity];
+
   let stateTex; // Stores the point texture holding x, y, category, and value
   let prevStateTex; // Stores the previous point texture. Used for transitions
   let tmpStateTex; // Stores a temporary point texture. Used for transitions
