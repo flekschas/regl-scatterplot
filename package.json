@@ -17,7 +17,8 @@
     "dist/*"
   ],
   "scripts": {
-    "build": "rm -rf dist/*; rollup -c; webpack --config ./webpack.config.js --mode production",
+    "build": "npm run build-library; npm run build-demo",
+    "build-library": "rm -rf dist/*; rollup -c; ",
     "build-demo": "webpack --config ./webpack.config.js --mode production",
     "deploy": "npm run build-demo; touch docs/.nojekyll; gh-pages -d docs -t --git git",
     "lint": "eslint src tests rollup.config.js webpack.config.js",
