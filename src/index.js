@@ -283,7 +283,10 @@ const createScatterplot = (initialProperties = {}) => {
   pointConnectionColorActive = toRgba(pointConnectionColorActive, true);
   pointConnectionColorHover = toRgba(pointConnectionColorHover, true);
 
-  opacity = Number.isNaN(+opacity) ? pointColor[0][3] : opacity;
+  opacity =
+    !Array.isArray(opacity) && Number.isNaN(+opacity)
+      ? pointColor[0][3]
+      : opacity;
   opacity = isConditionalArray(opacity, isPositiveNumber, {
     minLength: 1,
   })
