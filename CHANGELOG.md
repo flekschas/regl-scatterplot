@@ -1,5 +1,9 @@
 ## Next
 
+## v0.16.2
+
+- Stop calling `camera.refresh()` as that is unnecessary since `v1.2.2`
+
 ## v0.16.1
 
 - Allow inheriting `pointConnectionColor` from `pointColor` by setting `pointConnectionColor: 'inherit'`. Same for `pointConnectionColorActive` and `pointConnectionColorHover`.

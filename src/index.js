@@ -1992,7 +1992,6 @@ const createScatterplot = (initialProperties = {}) => {
    */
   const refresh = () => {
     regl.poll();
-    camera.refresh();
   };
 
   const get = (property) => {
