@@ -367,10 +367,10 @@ can be read and written via [`scatterplot.get()`](#scatterplot.get) and [`scatte
 | pointConnectionColorHover             | quadruple       | `[1, 1, 1, 1]`                      |                                                                 | `true`   | `false`     |
 | pointConnectionColorBy                | string          | `null`                              | See [data encoding](#property-point-conntection-by)             | `true`   | `false`     |
 | pointConnectionOpacity                | float           | `0.1`                               |                                                                 | `true`   | `false`     |
+| pointConnectionOpacityActive          | float           | `0.66`                              |                                                                 | `true`   | `false`     |
 | pointConnectionOpacityBy              | string          | `null`                              | See [data encoding](#property-point-conntection-by)             | `true`   | `false`     |
-| pointConnectionOpacitySelection       | float           | `0.66`                              |                                                                 | `true`   | `false`     |
 | pointConnectionSize                   | float           | `2`                                 |                                                                 | `true`   | `false`     |
-| pointConnectionSizeSelected           | float           | `2`                                 |                                                                 | `true`   | `false`     |
+| pointConnectionSizeActive             | float           | `2`                                 |                                                                 | `true`   | `false`     |
 | pointConnectionSizeBy                 | string          | `null`                              | See [data encoding](#property-point-conntection-by)             | `true`   | `false`     |
 | pointConnectionMaxIntPointsPerSegment | integer         | `100`                               |                                                                 | `true`   | `false`     |
 | pointConnectionTolerance              | float           | `0.002`                             |                                                                 | `true`   | `false`     |

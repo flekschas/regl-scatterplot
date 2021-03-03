@@ -48,9 +48,9 @@ import {
   DEFAULT_POINT_CONNECTION_COLOR_BY,
   DEFAULT_POINT_CONNECTION_OPACITY,
   DEFAULT_POINT_CONNECTION_OPACITY_BY,
-  DEFAULT_POINT_CONNECTION_OPACITY_SELECTION,
+  DEFAULT_POINT_CONNECTION_OPACITY_ACTIVE,
   DEFAULT_POINT_CONNECTION_SIZE,
-  DEFAULT_POINT_CONNECTION_SIZE_SELECTED,
+  DEFAULT_POINT_CONNECTION_SIZE_ACTIVE,
   DEFAULT_POINT_CONNECTION_SIZE_BY,
   DEFAULT_POINT_CONNECTION_MAX_INT_POINTS_PER_SEGMENT,
   DEFAULT_POINT_CONNECTION_INT_POINTS_TOLERANCE,
@@ -199,9 +199,9 @@ const createScatterplot = (initialProperties = {}) => {
     pointConnectionColorBy = DEFAULT_POINT_CONNECTION_COLOR_BY,
     pointConnectionOpacity = DEFAULT_POINT_CONNECTION_OPACITY,
     pointConnectionOpacityBy = DEFAULT_POINT_CONNECTION_OPACITY_BY,
-    pointConnectionOpacitySelection = DEFAULT_POINT_CONNECTION_OPACITY_SELECTION,
+    pointConnectionOpacityActive = DEFAULT_POINT_CONNECTION_OPACITY_ACTIVE,
     pointConnectionSize = DEFAULT_POINT_CONNECTION_SIZE,
-    pointConnectionSizeSelected = DEFAULT_POINT_CONNECTION_SIZE_SELECTED,
+    pointConnectionSizeActive = DEFAULT_POINT_CONNECTION_SIZE_ACTIVE,
     pointConnectionSizeBy = DEFAULT_POINT_CONNECTION_SIZE_BY,
     pointConnectionMaxIntPointsPerSegment = DEFAULT_POINT_CONNECTION_MAX_INT_POINTS_PER_SEGMENT,
     pointConnectionTolerance = DEFAULT_POINT_CONNECTION_INT_POINTS_TOLERANCE,
@@ -226,12 +226,6 @@ const createScatterplot = (initialProperties = {}) => {
   backgroundColor = toRgba(backgroundColor, true);
   lassoColor = toRgba(lassoColor, true);
   recticleColor = toRgba(recticleColor, true);
-
-  pointSize = isConditionalArray(pointSize, isPositiveNumber, {
-    minLength: 1,
-  })
-    ? [...pointSize]
-    : [pointSize];
 
   const fboRes = [
     Math.floor(width * window.devicePixelRatio),
@@ -279,10 +273,6 @@ const createScatterplot = (initialProperties = {}) => {
   pointColorActive = pointColorActive.map((color) => toRgba(color, true));
   pointColorHover = pointColorHover.map((color) => toRgba(color, true));
 
-  pointConnectionColor = toRgba(pointConnectionColor, true);
-  pointConnectionColorActive = toRgba(pointConnectionColorActive, true);
-  pointConnectionColorHover = toRgba(pointConnectionColorHover, true);
-
   opacity =
     !Array.isArray(opacity) && Number.isNaN(+opacity)
       ? pointColor[0][3]
@@ -292,6 +282,77 @@ const createScatterplot = (initialProperties = {}) => {
   })
     ? [...opacity]
     : [opacity];
+
+  pointSize = isConditionalArray(pointSize, isPositiveNumber, {
+    minLength: 1,
+  })
+    ? [...pointSize]
+    : [pointSize];
+
+  if (pointConnectionColor === 'inherit') {
+    pointConnectionColor = [...pointColor];
+  } else {
+    pointConnectionColor =
+      pointConnectionColor === isMultipleColors(pointConnectionColor)
+        ? [...pointConnectionColor]
+        : [pointConnectionColor];
+    pointConnectionColor = pointConnectionColor.map((color) =>
+      toRgba(color, true)
+    );
+  }
+
+  if (pointConnectionColorActive === 'inherit') {
+    pointConnectionColorActive = [...pointColorActive];
+  } else {
+    pointConnectionColorActive =
+      pointConnectionColorActive ===
+      isMultipleColors(pointConnectionColorActive)
+        ? [...pointConnectionColorActive]
+        : [pointConnectionColorActive];
+    pointConnectionColorActive = pointConnectionColorActive.map((color) =>
+      toRgba(color, true)
+    );
+  }
+
+  if (pointConnectionColorHover === 'inherit') {
+    pointConnectionColorHover = [...pointColorHover];
+  } else {
+    pointConnectionColorHover =
+      pointConnectionColorHover === isMultipleColors(pointConnectionColorHover)
+        ? [...pointConnectionColorHover]
+        : [pointConnectionColorHover];
+    pointConnectionColorHover = pointConnectionColorHover.map((color) =>
+      toRgba(color, true)
+    );
+  }
+
+  if (pointConnectionOpacity === 'inherit') {
+    pointConnectionOpacity = [...opacity];
+  } else {
+    pointConnectionOpacity = isConditionalArray(
+      pointConnectionOpacity,
+      isPositiveNumber,
+      {
+        minLength: 1,
+      }
+    )
+      ? [...pointConnectionOpacity]
+      : [pointConnectionOpacity];
+  }
+
+  if (pointConnectionSize === 'inherit') {
+    pointConnectionSize = [...pointSize];
+  } else {
+    pointConnectionSize = isConditionalArray(
+      pointConnectionSize,
+      isPositiveNumber,
+      {
+        minLength: 1,
+      }
+    )
+      ? [...pointConnectionSize]
+      : [pointConnectionSize];
+  }
 
   colorBy = getEncodingType(colorBy);
   opacityBy = getEncodingType(opacityBy);
@@ -464,6 +525,8 @@ const createScatterplot = (initialProperties = {}) => {
       }, {})
     );
 
+    const buffer = pointConnections.getData().opacities;
+
     lineIds.forEach((lineId) => {
       const index = pointConnectionMap[lineId][0];
       const numPointPerLine = pointConnectionMap[lineId][2];
@@ -471,8 +534,6 @@ const createScatterplot = (initialProperties = {}) => {
 
       const bufferStart = index * 4 + pointOffset * 2;
       const bufferEnd = bufferStart + numPointPerLine * 2 + 4;
-
-      const buffer = pointConnections.getData().opacities;
 
       // eslint-disable-next-line no-underscore-dangle
       if (buffer.__original__ === undefined) {
@@ -485,13 +546,11 @@ const createScatterplot = (initialProperties = {}) => {
         buffer[i] = isNormal
           ? // eslint-disable-next-line no-underscore-dangle
             buffer.__original__[i]
-          : pointConnectionOpacitySelection;
+          : pointConnectionOpacityActive;
       }
     });
 
-    pointConnections
-      .getBuffer()
-      .opacities.subdata(pointConnections.getData().opacities, 0);
+    pointConnections.getBuffer().opacities.subdata(buffer, 0);
   };
 
   const indexToStateTexCoord = (index) => [
@@ -1653,9 +1712,7 @@ const createScatterplot = (initialProperties = {}) => {
         pointConnectionColorHover
       ),
       opacity:
-        pointConnectionOpacity === null
-          ? pointConnectionOpacity
-          : pointConnectionOpacity[0],
+        pointConnectionOpacity === null ? null : pointConnectionOpacity[0],
       width: pointConnectionSize[0],
     });
   };
@@ -1842,25 +1899,36 @@ const createScatterplot = (initialProperties = {}) => {
     }
   };
 
-  const setPointConnectionColors = (setter) => (newColors) => {
-    const tmpColors = isMultipleColors(newColors) ? newColors : [newColors];
-    setter(tmpColors.map((color) => toRgba(color, true)));
+  const setPointConnectionColors = (setter, getInheritance) => (newColors) => {
+    if (newColors === 'inherit') {
+      setter([...getInheritance()]);
+    } else {
+      const tmpColors = isMultipleColors(newColors) ? newColors : [newColors];
+      setter(tmpColors.map((color) => toRgba(color, true)));
+    }
     updatePointConnectionsStyle();
   };
 
-  const setPointConnectionColor = setPointConnectionColors((newColors) => {
-    pointConnectionColor = newColors;
-  });
+  const setPointConnectionColor = setPointConnectionColors(
+    (newColors) => {
+      pointConnectionColor = newColors;
+    },
+    () => pointColor
+  );
 
   const setPointConnectionColorActive = setPointConnectionColors(
     (newColors) => {
       pointConnectionColorActive = newColors;
-    }
+    },
+    () => pointColorActive
   );
 
-  const setPointConnectionColorHover = setPointConnectionColors((newColors) => {
-    pointConnectionColorHover = newColors;
-  });
+  const setPointConnectionColorHover = setPointConnectionColors(
+    (newColors) => {
+      pointConnectionColorHover = newColors;
+    },
+    () => pointColorHover
+  );
 
   const setPointConnectionOpacity = (newOpacity) => {
     if (isConditionalArray(newOpacity, isPositiveNumber, { minLength: 1 }))
@@ -1876,8 +1944,8 @@ const createScatterplot = (initialProperties = {}) => {
     updatePointConnectionsStyle();
   };
 
-  const setPointConnectionOpacitySelection = (newOpacity) => {
-    pointConnectionOpacitySelection = +newOpacity;
+  const setPointConnectionOpacityActive = (newOpacity) => {
+    pointConnectionOpacityActive = +newOpacity;
   };
 
   const setPointConnectionSize = (newPointConnectionSize) => {
@@ -1894,8 +1962,8 @@ const createScatterplot = (initialProperties = {}) => {
     updatePointConnectionsStyle();
   };
 
-  const setPointConnectionSizeSelected = (newPointConnectionSizeSelected) => {
-    pointConnectionSizeSelected = Math.max(0, newPointConnectionSizeSelected);
+  const setPointConnectionSizeActive = (newPointConnectionSizeActive) => {
+    pointConnectionSizeActive = Math.max(0, newPointConnectionSizeActive);
   };
 
   const setPointConnectionMaxIntPointsPerSegment = (
@@ -1981,11 +2049,11 @@ const createScatterplot = (initialProperties = {}) => {
     if (property === 'pointConnectionOpacity') return pointConnectionOpacity;
     if (property === 'pointConnectionOpacityBy')
       return pointConnectionOpacityBy;
-    if (property === 'pointConnectionOpacitySelection')
-      return pointConnectionOpacitySelection;
+    if (property === 'pointConnectionOpacityActive')
+      return pointConnectionOpacityActive;
     if (property === 'pointConnectionSize') return pointConnectionSize;
-    if (property === 'pointConnectionSizeSelected')
-      return pointConnectionSizeSelected;
+    if (property === 'pointConnectionSizeActive')
+      return pointConnectionSizeActive;
     if (property === 'pointConnectionSizeBy') return pointConnectionSizeBy;
     if (property === 'pointConnectionMaxIntPointsPerSegment')
       return pointConnectionMaxIntPointsPerSegment;
@@ -2097,18 +2165,16 @@ const createScatterplot = (initialProperties = {}) => {
       setPointConnectionOpacity(properties.pointConnectionOpacity);
     }
 
-    if (properties.pointConnectionOpacitySelection !== undefined) {
-      setPointConnectionOpacitySelection(
-        properties.pointConnectionOpacitySelection
-      );
+    if (properties.pointConnectionOpacityActive !== undefined) {
+      setPointConnectionOpacityActive(properties.pointConnectionOpacityActive);
     }
 
     if (properties.pointConnectionSize !== undefined) {
       setPointConnectionSize(properties.pointConnectionSize);
     }
 
-    if (properties.pointConnectionSizeSelected !== undefined) {
-      setPointConnectionSizeSelected(properties.pointConnectionSizeSelected);
+    if (properties.pointConnectionSizeActive !== undefined) {
+      setPointConnectionSizeActive(properties.pointConnectionSizeActive);
     }
 
     if (properties.pointConnectionSizeBy !== undefined) {
@@ -2308,8 +2374,10 @@ const createScatterplot = (initialProperties = {}) => {
       color: pointConnectionColor,
       colorHover: pointConnectionColorHover,
       colorActive: pointConnectionColorActive,
+      opacity:
+        pointConnectionOpacity === null ? null : pointConnectionOpacity[0],
       width: pointConnectionSize[0],
-      widthActive: pointConnectionSizeSelected,
+      widthActive: pointConnectionSizeActive,
       is2d: true,
     });
     recticleHLine = createLine(regl, {

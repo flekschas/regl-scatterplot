@@ -2,8 +2,11 @@
 
 ## v0.16.1
 
+- Allow inheriting `pointConnectionColor` from `pointColor` by setting `pointConnectionColor: 'inherit'`. Same for `pointConnectionColorActive` and `pointConnectionColorHover`.
 - Fix incorrectly initialized `opacity`
 - Fix incorrectly initialized `colorBy`, `opacityBy`, and `sizeBy`
+- Fix not assigned `pointConnectionOpacity`
+- Rename `pointConnectionOpacitySelection` and `pointConnectionSizeSelected` to `pointConnectionOpacityActive` and `pointConnectionSizeActive` for consistency
 
 ## v0.16.0
 
