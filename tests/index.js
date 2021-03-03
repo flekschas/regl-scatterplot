@@ -395,72 +395,33 @@ test('set({ cameraTarget, cameraDistance, cameraRotation, cameraView })', (t) =>
   scatterplot.destroy();
 });
 
-test('set({ colorBy })', (t) => {
+test('set({ colorBy, opacityBy, sizeBy, pointConnectionColorBy, pointConnectionOpacityBy, pointConnectionSizeBy })', (t) => {
   const scatterplot = createScatterplot({ canvas: createCanvas() });
 
-  Object.entries(valueVariants).forEach(([value, variants]) => {
-    variants.forEach((variant) => {
-      scatterplot.set({ colorBy: variant });
+  [
+    'colorBy',
+    'opacityBy',
+    'sizeBy',
+    'pointConnectionColorBy',
+    'pointConnectionOpacityBy',
+    'pointConnectionSizeBy',
+  ].forEach((property) => {
+    Object.entries(valueVariants).forEach(([value, variants]) => {
+      variants.forEach((variant) => {
+        scatterplot.set({ [property]: variant });
 
-      t.equal(
-        scatterplot.get('colorBy'),
-        value,
-        `colorBy should be set to ${value}`
-      );
+        t.equal(
+          scatterplot.get(property),
+          value,
+          `${property} should be set to ${value}`
+        );
+      });
     });
+
+    scatterplot.set({ [property]: null });
+
+    t.equal(scatterplot.get(property), null, 'colorBy should be nullifyable');
   });
-
-  scatterplot.set({ colorBy: null });
-
-  t.equal(scatterplot.get('colorBy'), null, 'colorBy should be nullifyable');
-
-  scatterplot.destroy();
-});
-
-test('set({ opacityBy })', (t) => {
-  const scatterplot = createScatterplot({ canvas: createCanvas() });
-
-  Object.entries(valueVariants).forEach(([value, variants]) => {
-    variants.forEach((variant) => {
-      scatterplot.set({ opacityBy: variant });
-
-      t.equal(
-        scatterplot.get('opacityBy'),
-        value,
-        `opacityBy should be set to ${value}`
-      );
-    });
-  });
-
-  scatterplot.set({ opacityBy: null });
-
-  t.equal(
-    scatterplot.get('opacityBy'),
-    null,
-    'opacityBy should be nullifyable'
-  );
-
-  scatterplot.destroy();
-});
-
-test('set({ sizeBy })', (t) => {
-  const scatterplot = createScatterplot({ canvas: createCanvas() });
-
-  Object.entries(valueVariants).forEach(([value, variants]) => {
-    variants.forEach((variant) => {
-      scatterplot.set({ sizeBy: variant });
-
-      t.equal(
-        scatterplot.get('sizeBy'),
-        value,
-        `sizeBy should be set to ${value}`
-      );
-    });
-  });
-
-  scatterplot.set({ sizeBy: null });
-
-  t.equal(scatterplot.get('sizeBy'), null, 'sizeBy should be nullifyable');
 
   scatterplot.destroy();
 });
