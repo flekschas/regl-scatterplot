@@ -2272,7 +2272,6 @@ const createScatterplot = (initialProperties = {}) => {
     }
 
     updateViewAspectRatio();
-    camera.refresh();
     refresh();
     drawRaf();
   };
