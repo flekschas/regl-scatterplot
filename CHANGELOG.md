@@ -3,6 +3,7 @@
 ## v0.16.2
 
 - Stop calling `camera.refresh()` as that is unnecessary since `v1.2.2`
+- Avoid empty lasso events
 
 ## v0.16.1
 

@@ -726,6 +726,7 @@ const createScatterplot = (initialProperties = {}) => {
   };
 
   const mouseDblClickHandler = () => {
+    lassoManager.hideInitiator();
     if (lassoInitiatorTimeout) {
       clearTimeout(lassoInitiatorTimeout);
       lassoInitiatorTimeout = null;

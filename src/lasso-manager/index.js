@@ -197,7 +197,7 @@ const createLasso = (
     });
   };
 
-  const hideinitiator = () => {
+  const hideInitiator = () => {
     const { opacity, scale, rotate } = getCurrentinitiatorAnimationStyle();
     initiator.style.opacity = opacity;
     initiator.style.transform = `translate(-50%,-50%) scale(${scale}) rotate(${rotate}deg)`;
@@ -284,7 +284,7 @@ const createLasso = (
   };
 
   const initiatorMouseLeaveHandler = () => {
-    hideinitiator();
+    hideInitiator();
   };
 
   const end = ({ merge = false } = {}) => {
@@ -297,7 +297,8 @@ const createLasso = (
 
     clear();
 
-    onEnd(currLassoPos, currLassoPosFlat, { merge });
+    // When `currLassoPos` is empty the user didn't actually lasso
+    if (currLassoPos.length) onEnd(currLassoPos, currLassoPosFlat, { merge });
 
     return currLassoPos;
   };
@@ -355,6 +356,7 @@ const createLasso = (
       extend: extendPublic,
       set,
       showInitiator,
+      hideInitiator,
     });
 
   initiatorParentElement.appendChild(initiator);
