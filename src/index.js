@@ -358,6 +358,10 @@ const createScatterplot = (initialProperties = {}) => {
   opacityBy = getEncodingType(opacityBy);
   sizeBy = getEncodingType(sizeBy);
 
+  pointConnectionColorBy = getEncodingType(pointConnectionColorBy);
+  pointConnectionOpacityBy = getEncodingType(pointConnectionOpacityBy);
+  pointConnectionSizeBy = getEncodingType(pointConnectionSizeBy);
+
   let stateTex; // Stores the point texture holding x, y, category, and value
   let prevStateTex; // Stores the previous point texture. Used for transitions
   let tmpStateTex; // Stores a temporary point texture. Used for transitions

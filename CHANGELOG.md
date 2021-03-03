@@ -4,6 +4,7 @@
 
 - Stop calling `camera.refresh()` as that is unnecessary since `v1.2.2`
 - Avoid empty lasso events
+- Fix incorrectly initialized `pointConnectionColorBy`, `pointConnectionOpacityBy`, and `pointConnectionSizeBy`
 
 ## v0.16.1
 
