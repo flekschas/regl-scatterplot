@@ -9,10 +9,10 @@ import visualizer from 'rollup-plugin-visualizer';
 const basePlugins = [
   resolve({
     dedupe: ['gl-matrix'],
-    mainFields: ['module', 'main']
+    mainFields: ['module', 'main'],
   }),
   commonjs({ sourceMap: false }),
-  json()
+  json(),
 ];
 
 const configurator = (file, format, plugins = []) => ({
@@ -23,26 +23,26 @@ const configurator = (file, format, plugins = []) => ({
     file,
     globals: {
       'pub-sub-es': 'createPubSub',
-      regl: 'createREGL'
-    }
+      regl: 'createREGL',
+    },
   },
   plugins: [...basePlugins, ...plugins],
-  external: ['pub-sub-es', 'regl']
+  external: ['pub-sub-es', 'regl'],
 });
 
 const devConfig = configurator('dist/regl-scatterplot.js', 'umd', [
   babel(),
   filesize(),
-  visualizer()
+  visualizer(),
 ]);
 
 const prodConfig = configurator('dist/regl-scatterplot.min.js', 'umd', [
   babel(),
-  terser()
+  terser(),
 ]);
 
 const esmConfig = configurator('dist/regl-scatterplot.esm.js', 'esm', [
-  filesize()
+  filesize(),
 ]);
 
 export default [devConfig, prodConfig, esmConfig];
