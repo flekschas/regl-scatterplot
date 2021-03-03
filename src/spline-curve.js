@@ -4,8 +4,8 @@ import workerFn from './spline-curve-worker';
 const createSplineCurve = (
   points,
   options = { tolerance: 0.002, maxIntPointsPerSegment: 100 }
-) => {
-  return new Promise((resolve, reject) => {
+) =>
+  new Promise((resolve, reject) => {
     const worker = createWorker(workerFn);
 
     worker.onmessage = (e) => {
@@ -16,6 +16,5 @@ const createSplineCurve = (
 
     worker.postMessage({ points, options });
   });
-};
 
 export default createSplineCurve;
