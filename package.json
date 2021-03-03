@@ -28,8 +28,7 @@
     "pretest": "npm run lint",
     "start": "webpack-dev-server --config ./webpack.config.js --mode development --open",
     "test": "rollup -c ./rollup.test.config.js | tape-run --render='tap-spec'",
-    "watch": "rollup -cw",
-    "prepare": "husky install"
+    "watch": "rollup -cw"
   },
   "dependencies": {
     "@flekschas/utils": "^0.27.0",
@@ -76,7 +75,7 @@
     "gh-pages": "^3.1.0",
     "gl": "^4.5.0",
     "html-webpack-plugin": "^4.3.0",
-    "husky": "^5.1.3",
+    "husky": "^4.3.8",
     "lint-staged": "^10.5.4",
     "merge": ">=1.2.1",
     "prettier": "^2.2.1",
