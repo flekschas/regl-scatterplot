@@ -6,6 +6,7 @@
 - Avoid empty lasso events
 - Fix incorrectly initialized `pointConnectionColorBy`, `pointConnectionOpacityBy`, and `pointConnectionSizeBy`
 - Fix an issue with the color conversion to RGBA
+- Fix an issue blurring an active point connection
 
 ## v0.16.1
 

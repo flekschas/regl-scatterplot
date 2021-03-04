@@ -1705,7 +1705,7 @@ const createScatterplot = (initialProperties = {}) => {
     return out;
   };
 
-  const updatePointConnectionsStyle = () => {
+  const updatePointConnectionStyle = () => {
     pointConnections.setStyle({
       color: getColors(
         pointConnectionColor,
@@ -1907,7 +1907,7 @@ const createScatterplot = (initialProperties = {}) => {
       const tmpColors = isMultipleColors(newColors) ? newColors : [newColors];
       setter(tmpColors.map((color) => toRgba(color, true)));
     }
-    updatePointConnectionsStyle();
+    updatePointConnectionStyle();
   };
 
   const setPointConnectionColor = setPointConnectionColors(
@@ -1942,7 +1942,7 @@ const createScatterplot = (initialProperties = {}) => {
       return color;
     });
 
-    updatePointConnectionsStyle();
+    updatePointConnectionStyle();
   };
 
   const setPointConnectionOpacityActive = (newOpacity) => {
@@ -1961,7 +1961,7 @@ const createScatterplot = (initialProperties = {}) => {
     if (isPositiveNumber(+newPointConnectionSize))
       pointConnectionSize = [+newPointConnectionSize];
 
-    updatePointConnectionsStyle();
+    updatePointConnectionStyle();
   };
 
   const setPointConnectionSizeActive = (newPointConnectionSizeActive) => {
@@ -2311,12 +2311,12 @@ const createScatterplot = (initialProperties = {}) => {
       if (!selectionSet.has(point)) setPointConnectionColorState([point], 2);
       if (newHoveredPoint) pubSub.publish('pointover', hoveredPoint);
     } else {
-      needsRedraw = hoveredPoint;
-      hoveredPoint = undefined;
-      if (+needsRedraw >= 0) {
-        setPointConnectionColorState([needsRedraw], 0);
-        pubSub.publish('pointout', needsRedraw);
+      needsRedraw = +hoveredPoint >= 0;
+      if (needsRedraw && !selectionSet.has(hoveredPoint)) {
+        setPointConnectionColorState([hoveredPoint], 0);
+        pubSub.publish('pointout', hoveredPoint);
       }
+      hoveredPoint = undefined;
     }
 
     if (needsRedraw) drawRaf(null, showRecticleOnce);
