@@ -1946,7 +1946,8 @@ const createScatterplot = (initialProperties = {}) => {
   };
 
   const setPointConnectionOpacityActive = (newOpacity) => {
-    pointConnectionOpacityActive = +newOpacity;
+    if (!Number.isNaN(+newOpacity) && +newOpacity)
+      pointConnectionOpacityActive = +newOpacity;
   };
 
   const setPointConnectionSize = (newPointConnectionSize) => {
@@ -1964,7 +1965,11 @@ const createScatterplot = (initialProperties = {}) => {
   };
 
   const setPointConnectionSizeActive = (newPointConnectionSizeActive) => {
-    pointConnectionSizeActive = Math.max(0, newPointConnectionSizeActive);
+    if (
+      !Number.isNaN(+newPointConnectionSizeActive) &&
+      +newPointConnectionSizeActive
+    )
+      pointConnectionSizeActive = Math.max(0, newPointConnectionSizeActive);
   };
 
   const setPointConnectionMaxIntPointsPerSegment = (

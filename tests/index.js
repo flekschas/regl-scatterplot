@@ -24,6 +24,10 @@ import {
   DEFAULT_LASSO_MIN_DELAY,
   DEFAULT_LASSO_MIN_DIST,
   DEFAULT_LASSO_CLEAR_EVENT,
+  DEFAULT_POINT_CONNECTION_OPACITY,
+  DEFAULT_POINT_CONNECTION_OPACITY_ACTIVE,
+  DEFAULT_POINT_CONNECTION_SIZE,
+  DEFAULT_POINT_CONNECTION_SIZE_ACTIVE,
   KEY_ACTION_LASSO,
   KEY_ACTION_ROTATE,
   SINGLE_CLICK_DELAY,
@@ -630,7 +634,7 @@ test('set({ pointColor, pointColorActive, pointColorHover }) multiple colors', (
   scatterplot.destroy();
 });
 
-test('set({ opacity })', async (t) => {
+test('set({ opacity, pointConnectionOpacity, pointConnectionOpacityActive })', async (t) => {
   const scatterplot = createScatterplot({ canvas: createCanvas() });
 
   let opacity = 0.5;
@@ -643,7 +647,23 @@ test('set({ opacity })', async (t) => {
     `opacity should be set to ${opacity}`
   );
 
-  scatterplot.set({ opacity: 0 });
+  t.equal(
+    scatterplot.get('pointConnectionOpacity'),
+    DEFAULT_POINT_CONNECTION_OPACITY,
+    `pointConnectionOpacity should be set the default value (${DEFAULT_POINT_CONNECTION_OPACITY})`
+  );
+
+  t.equal(
+    scatterplot.get('pointConnectionOpacityActive'),
+    DEFAULT_POINT_CONNECTION_OPACITY_ACTIVE,
+    `pointConnectionOpacityActive should be set the default value (${DEFAULT_POINT_CONNECTION_OPACITY_ACTIVE})`
+  );
+
+  scatterplot.set({
+    opacity: 0,
+    pointConnectionOpacity: opacity,
+    pointConnectionOpacityActive: opacity,
+  });
 
   t.equal(
     scatterplot.get('opacity'),
@@ -651,14 +671,42 @@ test('set({ opacity })', async (t) => {
     'opacity should not be nullifyable'
   );
 
+  t.equal(
+    scatterplot.get('pointConnectionOpacity'),
+    opacity,
+    `pointConnectionOpacity should be set to ${opacity}`
+  );
+
+  t.equal(
+    scatterplot.get('pointConnectionOpacityActive'),
+    opacity,
+    `pointConnectionOpacityActive should be set to ${opacity}`
+  );
+
   opacity = [0.5, 0.75, 1];
 
-  scatterplot.set({ opacity });
+  scatterplot.set({
+    opacity,
+    pointConnectionOpacity: opacity,
+    pointConnectionOpacityActive: opacity,
+  });
 
   t.equal(
     scatterplot.get('opacity'),
     opacity,
     'should accept multiple opacities'
+  );
+
+  t.equal(
+    scatterplot.get('pointConnectionOpacity'),
+    opacity,
+    `pointConnectionOpacity should be set to ${opacity}`
+  );
+
+  t.equal(
+    scatterplot.get('pointConnectionOpacityActive'),
+    0.5,
+    'pointConnectionOpacityActive should **STILL BE** 0.5'
   );
 
   scatterplot.destroy();
@@ -772,7 +820,7 @@ test('set({ pointOutlineWidth })', async (t) => {
   scatterplot.destroy();
 });
 
-test('set({ pointSize })', async (t) => {
+test('set({ pointSize, pointConnectionSize, pointConnectionSizeActive })', async (t) => {
   const scatterplot = createScatterplot({ canvas: createCanvas() });
 
   const pointSize = 42;
@@ -785,7 +833,23 @@ test('set({ pointSize })', async (t) => {
     `pointSize should be set to ${pointSize}`
   );
 
-  scatterplot.set({ pointSize: 0 });
+  t.equal(
+    scatterplot.get('pointConnectionSize'),
+    DEFAULT_POINT_CONNECTION_SIZE,
+    `pointConnectionSize should be set the default value (${DEFAULT_POINT_CONNECTION_SIZE})`
+  );
+
+  t.equal(
+    scatterplot.get('pointConnectionSizeActive'),
+    DEFAULT_POINT_CONNECTION_SIZE_ACTIVE,
+    `pointConnectionSizeActive should be set the default value (${DEFAULT_POINT_CONNECTION_SIZE_ACTIVE})`
+  );
+
+  scatterplot.set({
+    pointSize: 0,
+    pointConnectionSize: pointSize,
+    pointConnectionSizeActive: pointSize,
+  });
 
   t.equal(
     scatterplot.get('pointSize'),
@@ -793,12 +857,40 @@ test('set({ pointSize })', async (t) => {
     'pointSize should not be nullifyable'
   );
 
-  scatterplot.set({ pointSize: [2, 4, 6] });
+  t.equal(
+    scatterplot.get('pointConnectionSize'),
+    pointSize,
+    `pointConnectionSize should be set to ${pointSize}`
+  );
+
+  t.equal(
+    scatterplot.get('pointConnectionSizeActive'),
+    pointSize,
+    `pointConnectionSizeActive should be set to ${pointSize}`
+  );
+
+  scatterplot.set({
+    pointSize: [2, 4, 6],
+    pointConnectionSize: [2, 4, 6],
+    pointConnectionSizeActive: [2, 4, 6],
+  });
 
   t.equal(
     scatterplot.get('pointSize'),
     [2, 4, 6],
     'pointSize should accept multiple sizes'
+  );
+
+  t.equal(
+    scatterplot.get('pointConnectionSize'),
+    [2, 4, 6],
+    'pointConnectionSize should accept multiple sizes'
+  );
+
+  t.equal(
+    scatterplot.get('pointConnectionSizeActive'),
+    pointSize,
+    `pointConnectionSize should **STILL BE**  ${pointSize}`
   );
 
   scatterplot.destroy();
