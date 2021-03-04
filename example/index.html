@@ -136,27 +136,44 @@
         background: #fff;
       }
 
-      button {
+      button,
+      a.button-like {
+        display: inline-block;
+        padding: 0.15em 0.4em;
         font-size: 0.9em;
         line-height: 1.5em;
         text-transform: uppercase;
+        text-decoration: none;
         border-radius: 0.2rem;
         border: 0;
+        color: black;
         background: #ccc;
         box-shadow: 0 0 0 0 black, 0 0 0 0 #6fb2e4;
         transition: background 0.15s cubic-bezier(0.25, 0.1, 0.25, 1),
           box-shadow 0.15s cubic-bezier(0.25, 0.1, 0.25, 1);
       }
 
-      button:hover {
+      button:hover,
+      a.button-like:hover {
         background: #fff;
       }
 
-      button:focus {
+      button:focus,
+      a.button-like:focus {
         background: #fff;
         border: 0;
         outline: 0;
         box-shadow: 0 0 0 1px black, 0 0 0 3px #6fb2e4;
+      }
+
+      a {
+        color: white;
+        text-decoration: underline;
+        text-decoration-color: rgba(255, 255, 255, 0.33);
+      }
+
+      a:hover {
+        text-decoration-color: rgba(255, 255, 255, 1);
       }
 
       .flex-c {
@@ -432,6 +449,8 @@
             >
           </li>
         </ul>
+        <hr />
+        <a class="button-like" href="https://github.com/flekschas/regl-scatterplot" target="_blank">Source code</a>
       </aside>
     </header>
     <div id="parent-wrapper">
