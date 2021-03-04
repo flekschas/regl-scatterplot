@@ -292,10 +292,9 @@ const createScatterplot = (initialProperties = {}) => {
   if (pointConnectionColor === 'inherit') {
     pointConnectionColor = [...pointColor];
   } else {
-    pointConnectionColor =
-      pointConnectionColor === isMultipleColors(pointConnectionColor)
-        ? [...pointConnectionColor]
-        : [pointConnectionColor];
+    pointConnectionColor = isMultipleColors(pointConnectionColor)
+      ? [...pointConnectionColor]
+      : [pointConnectionColor];
     pointConnectionColor = pointConnectionColor.map((color) =>
       toRgba(color, true)
     );
@@ -304,11 +303,9 @@ const createScatterplot = (initialProperties = {}) => {
   if (pointConnectionColorActive === 'inherit') {
     pointConnectionColorActive = [...pointColorActive];
   } else {
-    pointConnectionColorActive =
-      pointConnectionColorActive ===
-      isMultipleColors(pointConnectionColorActive)
-        ? [...pointConnectionColorActive]
-        : [pointConnectionColorActive];
+    pointConnectionColorActive = isMultipleColors(pointConnectionColorActive)
+      ? [...pointConnectionColorActive]
+      : [pointConnectionColorActive];
     pointConnectionColorActive = pointConnectionColorActive.map((color) =>
       toRgba(color, true)
     );
@@ -317,10 +314,9 @@ const createScatterplot = (initialProperties = {}) => {
   if (pointConnectionColorHover === 'inherit') {
     pointConnectionColorHover = [...pointColorHover];
   } else {
-    pointConnectionColorHover =
-      pointConnectionColorHover === isMultipleColors(pointConnectionColorHover)
-        ? [...pointConnectionColorHover]
-        : [pointConnectionColorHover];
+    pointConnectionColorHover = isMultipleColors(pointConnectionColorHover)
+      ? [...pointConnectionColorHover]
+      : [pointConnectionColorHover];
     pointConnectionColorHover = pointConnectionColorHover.map((color) =>
       toRgba(color, true)
     );
@@ -2027,7 +2023,8 @@ const createScatterplot = (initialProperties = {}) => {
       return lassoInitiatorParentElement;
     if (property === 'keyMap') return { ...keyMap };
     if (property === 'mouseMode') return mouseMode;
-    if (property === 'opacity') return opacity;
+    if (property === 'opacity')
+      return opacity.length === 1 ? opacity[0] : opacity;
     if (property === 'opacityBy') return opacityBy;
     if (property === 'pointColor')
       return pointColor.length === 1 ? pointColor[0] : pointColor;
@@ -2040,22 +2037,36 @@ const createScatterplot = (initialProperties = {}) => {
         ? pointColorHover[0]
         : pointColorHover;
     if (property === 'pointOutlineWidth') return pointOutlineWidth;
-    if (property === 'pointSize') return pointSize;
+    if (property === 'pointSize')
+      return pointSize.length === 1 ? pointSize[0] : pointSize;
     if (property === 'pointSizeSelected') return pointSizeSelected;
     if (property === 'pointSizeMouseDetection') return pointSizeMouseDetection;
     if (property === 'showPointConnections') return showPointConnections;
-    if (property === 'pointConnectionColor') return pointConnectionColor;
+    if (property === 'pointConnectionColor')
+      return pointConnectionColor.length === 1
+        ? pointConnectionColor[0]
+        : pointConnectionColor;
     if (property === 'pointConnectionColorActive')
-      return pointConnectionColorActive;
+      return pointConnectionColorActive.length === 1
+        ? pointConnectionColorActive[0]
+        : pointConnectionColorActive;
     if (property === 'pointConnectionColorHover')
-      return pointConnectionColorHover;
+      return pointConnectionColorHover.length === 1
+        ? pointConnectionColorHover[0]
+        : pointConnectionColorHover;
     if (property === 'pointConnectionColorBy') return pointConnectionColorBy;
-    if (property === 'pointConnectionOpacity') return pointConnectionOpacity;
+    if (property === 'pointConnectionOpacity')
+      return pointConnectionOpacity.length === 1
+        ? pointConnectionOpacity[0]
+        : pointConnectionOpacity;
     if (property === 'pointConnectionOpacityBy')
       return pointConnectionOpacityBy;
     if (property === 'pointConnectionOpacityActive')
       return pointConnectionOpacityActive;
-    if (property === 'pointConnectionSize') return pointConnectionSize;
+    if (property === 'pointConnectionSize')
+      return pointConnectionSize.length === 1
+        ? pointConnectionSize[0]
+        : pointConnectionSize;
     if (property === 'pointConnectionSizeActive')
       return pointConnectionSizeActive;
     if (property === 'pointConnectionSizeBy') return pointConnectionSizeBy;

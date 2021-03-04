@@ -299,16 +299,17 @@ export const normNumArray = (a) =>
  * @return  {array}  Quadruple defining an RGBA color.
  */
 export const toRgba = (color, isNormalize) => {
-  if (isRgba(color))
+  if (isRgba(color)) {
+    const base = 255 ** !isNormalize;
     return isNormalize && !isNormFloatArray(color)
       ? normNumArray(color)
-      : color;
+      : normNumArray(color).map((x) => x * base);
+  }
 
-  if (isRgb(color))
-    return [
-      ...(isNormalize ? normNumArray(color) : color),
-      255 ** !isNormalize,
-    ];
+  if (isRgb(color)) {
+    const base = 255 ** !isNormalize;
+    return [...normNumArray(color).map((x) => Math.round(x * base)), base];
+  }
 
   if (isHex(color)) return hexToRgba(color, isNormalize);
 

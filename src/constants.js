@@ -79,17 +79,17 @@ export const DEFAULT_WIDTH = 100;
 export const DEFAULT_HEIGHT = 100;
 
 // Default styles
-export const DEFAULT_POINT_SIZE = [6];
+export const DEFAULT_POINT_SIZE = 6;
 export const DEFAULT_POINT_SIZE_SELECTED = 2;
 export const DEFAULT_POINT_OUTLINE_WIDTH = 2;
 export const DEFAULT_SIZE_BY = null;
-export const DEFAULT_POINT_CONNECTION_SIZE = [2];
+export const DEFAULT_POINT_CONNECTION_SIZE = 2;
 export const DEFAULT_POINT_CONNECTION_SIZE_ACTIVE = 2;
 export const DEFAULT_POINT_CONNECTION_SIZE_BY = null;
 export const DEFAULT_POINT_CONNECTION_OPACITY = null;
 export const DEFAULT_POINT_CONNECTION_OPACITY_BY = null;
 export const DEFAULT_POINT_CONNECTION_OPACITY_ACTIVE = 0.66;
-export const DEFAULT_OPACITY = [1];
+export const DEFAULT_OPACITY = 1;
 export const DEFAULT_OPACITY_BY = null;
 
 // Default colors

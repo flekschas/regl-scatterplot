@@ -30,6 +30,8 @@ import {
   DEFAULT_OPACITY,
 } from '../src/constants';
 
+import { toRgba } from '../src/utils';
+
 import {
   asyncForEach,
   createCanvas,
@@ -72,22 +74,22 @@ test('createScatterplot()', (t) => {
   t.equal(
     scatterplot.get('backgroundColor'),
     DEFAULT_COLOR_BG,
-    'scatterplot should have default colors'
+    'scatterplot should have a default backgroundColor'
   );
   t.equal(
     scatterplot.get('pointColor'),
     DEFAULT_COLOR_NORMAL,
-    'scatterplot should have default colors'
+    'scatterplot should have a default pointColor'
   );
   t.equal(
     scatterplot.get('pointColorActive'),
     DEFAULT_COLOR_ACTIVE,
-    'scatterplot should have default colors'
+    'scatterplot should have a default pointColorActive'
   );
   t.equal(
     scatterplot.get('pointColorHover'),
     DEFAULT_COLOR_HOVER,
-    'scatterplot should have default colors'
+    'scatterplot should have a default pointColorHover'
   );
   t.equal(
     scatterplot.get('pointSize'),
@@ -413,7 +415,7 @@ test('set({ colorBy, opacityBy, sizeBy, pointConnectionColorBy, pointConnectionO
         t.equal(
           scatterplot.get(property),
           value,
-          `${property} should be set to ${value}`
+          `${property}: ${variant} should be set to ${value}`
         );
       });
     });
@@ -426,7 +428,7 @@ test('set({ colorBy, opacityBy, sizeBy, pointConnectionColorBy, pointConnectionO
   scatterplot.destroy();
 });
 
-test('set({ pointColor, pointColorActive, pointColorHover }) single color', (t) => {
+test('set({ pointColor, pointColorActive, pointColorHover, pointConnectionColor, pointConnectionColorActive, pointConnectionColorHover }) single color', (t) => {
   const canvas = createCanvas();
   const scatterplot = createScatterplot({ canvas });
 
@@ -444,27 +446,70 @@ test('set({ pointColor, pointColorActive, pointColorHover }) single color', (t) 
     pointColor: '#3a78aa',
     pointColorActive: '#008dff',
     pointColorHover: '#008dff',
+    pointConnectionColor: 'inherit',
+    pointConnectionColorActive: 'inherit',
+    pointConnectionColorHover: 'inherit',
   });
 
-  t.ok(
-    scatterplot
-      .get('pointColor')
-      .every((component, i) => component === rgbaPointColor[i]),
+  t.equal(
+    scatterplot.get('pointColor'),
+    rgbaPointColor,
     'should create normalized RGBA for point color'
   );
 
-  t.ok(
-    scatterplot
-      .get('pointColorActive')
-      .every((component, i) => component === rgbaPointColorActive[i]),
+  t.equal(
+    scatterplot.get('pointColorActive'),
+    rgbaPointColorActive,
     'should create normalized RGBA for point color active'
   );
 
-  t.ok(
-    scatterplot
-      .get('pointColorHover')
-      .every((component, i) => component === rgbaPointColorHover[i]),
+  t.equal(
+    scatterplot.get('pointColorHover'),
+    rgbaPointColorHover,
     'should create normalized RGBA for point color hover'
+  );
+
+  t.equal(
+    scatterplot.get('pointConnectionColor'),
+    rgbaPointColor,
+    'pointConnectionColor should inherit from pointColor'
+  );
+
+  t.equal(
+    scatterplot.get('pointConnectionColorActive'),
+    rgbaPointColorActive,
+    'pointConnectionColorActive should inherit from pointColorActive'
+  );
+
+  t.equal(
+    scatterplot.get('pointConnectionColorHover'),
+    rgbaPointColorHover,
+    'pointConnectionColorHover should inherit from pointColorHover'
+  );
+
+  // Set custom point connection color
+  scatterplot.set({
+    pointConnectionColor: '#ff0000',
+    pointConnectionColorActive: '#00ff00',
+    pointConnectionColorHover: '#0000ff',
+  });
+
+  t.equal(
+    scatterplot.get('pointConnectionColor'),
+    [1, 0, 0, 1],
+    'should create an RGBA value for pointConnectionColor'
+  );
+
+  t.equal(
+    scatterplot.get('pointConnectionColorActive'),
+    [0, 1, 0, 1],
+    'should create an RGBA value for pointConnectionColorActive'
+  );
+
+  t.equal(
+    scatterplot.get('pointConnectionColorHover'),
+    [0, 0, 1, 1],
+    'should create an RGBA value for pointConnectionColorHover'
   );
 
   // Set an invalid color, which should default to white
@@ -480,43 +525,21 @@ test('set({ pointColor, pointColorActive, pointColorHover }) single color', (t) 
   scatterplot.destroy();
 });
 
-test('set({ pointColor }) multiple colors', (t) => {
-  const canvas = createCanvas();
-  const scatterplot = createScatterplot({ canvas });
-
-  const pointColor = [
-    [0, 0.5, 1, 0.5],
-    [1, 0.5, 1, 0.5],
-  ];
-
-  // Set a single color
-  scatterplot.set({ pointColor });
-
-  t.ok(
-    scatterplot
-      .get('pointColor')
-      .every((color, i) => color.every((c, j) => c === pointColor[i][j])),
-    'should accepts multiple normalized RGBA for point color'
-  );
-
-  scatterplot.destroy();
-});
-
 test('set({ pointColor, pointColorActive, pointColorHover }) multiple colors', (t) => {
   const canvas = createCanvas();
   const scatterplot = createScatterplot({ canvas });
 
   const pointColor = [
     [0, 0.5, 1, 0.5],
-    [0, 0.5, 0.5, 0.5],
+    [1, 0.5, 0, 0.5],
   ];
   const pointColorActive = [
     [0.5, 0, 1, 0.5],
-    [0.5, 0, 0.5, 0.5],
+    [1, 0, 0.5, 0.5],
   ];
   const pointColorHover = [
-    [0.5, 0.5, 0, 0.5],
-    [0.5, 0.5, 0, 0.5],
+    [1, 0.5, 0, 0.5],
+    [0, 0.5, 1, 0.5],
   ];
 
   // Set a single color
@@ -524,6 +547,9 @@ test('set({ pointColor, pointColorActive, pointColorHover }) multiple colors', (
     pointColor,
     pointColorActive,
     pointColorHover,
+    pointConnectionColor: 'inherit',
+    pointConnectionColorActive: 'inherit',
+    pointConnectionColorHover: 'inherit',
   });
 
   t.ok(
@@ -547,6 +573,60 @@ test('set({ pointColor, pointColorActive, pointColorHover }) multiple colors', (
     'should accepts multiple normalized RGBA for point color hover'
   );
 
+  t.ok(
+    scatterplot
+      .get('pointConnectionColor')
+      .every((color, i) => color.every((c, j) => c === pointColor[i][j])),
+    'pointConnectionColor should inherit multiple colors from pointColor'
+  );
+
+  t.ok(
+    scatterplot
+      .get('pointConnectionColorActive')
+      .every((color, i) => color.every((c, j) => c === pointColorActive[i][j])),
+    'pointConnectionColorActive should inherit multiple colors from pointColorActive'
+  );
+
+  t.ok(
+    scatterplot
+      .get('pointConnectionColorHover')
+      .every((color, i) => color.every((c, j) => c === pointColorHover[i][j])),
+    'pointConnectionColorHover should inherit multiple colors from pointColorHover'
+  );
+
+  scatterplot.set({
+    pointConnectionColor: ['#ff0000', '#ff00ff'],
+    pointConnectionColorActive: ['#ffff00', '#0000ff'],
+    pointConnectionColorHover: ['#000000', '#ffffff'],
+  });
+
+  t.equal(
+    scatterplot.get('pointConnectionColor'),
+    [
+      [1, 0, 0, 1],
+      [1, 0, 1, 1],
+    ],
+    'should accepts multiple normalized RGBA for pointConnectionColor'
+  );
+
+  t.equal(
+    scatterplot.get('pointConnectionColorActive'),
+    [
+      [1, 1, 0, 1],
+      [0, 0, 1, 1],
+    ],
+    'should accepts multiple normalized RGBA for pointConnectionColorActive'
+  );
+
+  t.equal(
+    scatterplot.get('pointConnectionColorHover'),
+    [
+      [0, 0, 0, 1],
+      [1, 1, 1, 1],
+    ],
+    'should accepts multiple normalized RGBA for pointConnectionColorHover'
+  );
+
   scatterplot.destroy();
 });
 
@@ -559,15 +639,15 @@ test('set({ opacity })', async (t) => {
 
   t.equal(
     scatterplot.get('opacity'),
-    [opacity],
-    `opacity should be set to [${opacity}]`
+    opacity,
+    `opacity should be set to ${opacity}`
   );
 
   scatterplot.set({ opacity: 0 });
 
   t.equal(
     scatterplot.get('opacity'),
-    [opacity],
+    opacity,
     'opacity should not be nullifyable'
   );
 
@@ -699,22 +779,25 @@ test('set({ pointSize })', async (t) => {
 
   scatterplot.set({ pointSize });
 
-  t.ok(
-    flatArrayEqual(scatterplot.get('pointSize'), [pointSize]),
+  t.equal(
+    scatterplot.get('pointSize'),
+    pointSize,
     `pointSize should be set to ${pointSize}`
   );
 
   scatterplot.set({ pointSize: 0 });
 
-  t.ok(
-    flatArrayEqual(scatterplot.get('pointSize'), [pointSize]),
+  t.equal(
+    scatterplot.get('pointSize'),
+    pointSize,
     'pointSize should not be nullifyable'
   );
 
   scatterplot.set({ pointSize: [2, 4, 6] });
 
-  t.ok(
-    flatArrayEqual([2, 4, 6], scatterplot.get('pointSize')),
+  t.equal(
+    scatterplot.get('pointSize'),
+    [2, 4, 6],
     'pointSize should accept multiple sizes'
   );
 
@@ -1527,4 +1610,60 @@ test('select()', async (t) => {
   );
 
   scatterplot.destroy();
+});
+
+/* --------------------------------- Utils ---------------------------------- */
+
+test('toRgba()', async (t) => {
+  t.equal(toRgba('#ff0000'), [255, 0, 0, 255], 'should convert HEX to RGBA');
+
+  t.equal(
+    toRgba('#ff0000', true),
+    [1, 0, 0, 1],
+    'should convert HEX to normalized RGBA'
+  );
+
+  t.equal(toRgba([255, 0, 0]), [255, 0, 0, 255], 'should convert RGB to RGBA');
+
+  t.equal(
+    toRgba([255, 0, 0], true),
+    [1, 0, 0, 1],
+    'should convert RGB to normalized RGBA'
+  );
+
+  t.equal(
+    toRgba([1, 0, 0]),
+    [255, 0, 0, 255],
+    'should convert normalized RGB to RGBA'
+  );
+
+  t.equal(
+    toRgba([1, 0, 0], true),
+    [1, 0, 0, 1],
+    'should convert normalized RGB to normalized RGBA'
+  );
+
+  t.equal(
+    toRgba([255, 0, 0, 153]),
+    [255, 0, 0, 153],
+    'should convert RGBA to RGBA'
+  );
+
+  t.equal(
+    toRgba([255, 0, 0, 153], true),
+    [1, 0, 0, 0.6],
+    'should convert RGBA to normalized RGBA'
+  );
+
+  t.equal(
+    toRgba([1, 0, 0, 0.6]),
+    [255, 0, 0, 153],
+    'should convert normalized RGBA to RGBA'
+  );
+
+  t.equal(
+    toRgba([1, 0, 0, 0.6], true),
+    [1, 0, 0, 0.6],
+    'should convert normalized RGBA to normalized RGBA'
+  );
 });
