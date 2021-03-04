@@ -6,7 +6,7 @@
 [![code style prettier](https://img.shields.io/badge/code_style-prettier-06bcbe.svg?style=flat-square)](https://github.com/prettier/prettier)
 [![regl-scatterplot demo](https://img.shields.io/badge/demo-online-00cca9.svg?style=flat-square)](https://flekschas.github.io/regl-scatterplot/)
 
-A highly-scalable pan-and-zoomable scatter plot library that uses WebGL through [Regl](https://github.com/regl-project/regl). This library sacrifices feature richness for speed to allow rendering up to **20 million points** (depending on your hardware of course) including fast lasso selection. Further, the [footprint of regl-scatterplot](https://bundlephobia.com/result?p=regl-scatterplot) is kept small. **NEW:** Python lovers pleae see [jscatter](https://github.com/flekschas/jupyter-scatter): a Jupyter Notebook/Lab widget that uses regl-scatterplot.
+A highly-scalable pan-and-zoomable scatter plot library that uses WebGL through [Regl](https://github.com/regl-project/regl). This library sacrifices feature richness for speed to allow rendering up to **20 million points** (depending on your hardware of course) including fast lasso selection. Further, the [footprint of regl-scatterplot](https://bundlephobia.com/result?p=regl-scatterplot) is kept small. **NEW:** Python lovers please see [jscatter](https://github.com/flekschas/jupyter-scatter): a Jupyter Notebook/Lab widget that uses regl-scatterplot.
 
 <p>
   <img src="https://user-images.githubusercontent.com/932103/62905669-7679f380-bd39-11e9-9528-86ee56d6dfba.gif" />
