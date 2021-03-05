@@ -242,6 +242,7 @@ const createScatterplot = (initialProperties = {}) => {
   let mouseDown = false;
   let selection = [];
   const selectionSet = new Set();
+  const selectionConnecionSet = new Set();
   let mouseDownTime = null;
   let mouseDownPosition = [0, 0];
   let numPoints = 0;
@@ -511,6 +512,10 @@ const createScatterplot = (initialProperties = {}) => {
       return;
 
     const isNormal = stateIndex === 0;
+    const lineIdCacher =
+      stateIndex === 1
+        ? (lineId) => selectionConnecionSet.add(lineId)
+        : identity;
 
     // Get line IDs
     const lineIds = Object.keys(
@@ -527,28 +532,32 @@ const createScatterplot = (initialProperties = {}) => {
 
     const buffer = pointConnections.getData().opacities;
 
-    lineIds.forEach((lineId) => {
-      const index = pointConnectionMap[lineId][0];
-      const numPointPerLine = pointConnectionMap[lineId][2];
-      const pointOffset = pointConnectionMap[lineId][3];
+    lineIds
+      .filter((lineId) => !selectionConnecionSet.has(+lineId))
+      .forEach((lineId) => {
+        const index = pointConnectionMap[lineId][0];
+        const numPointPerLine = pointConnectionMap[lineId][2];
+        const pointOffset = pointConnectionMap[lineId][3];
 
-      const bufferStart = index * 4 + pointOffset * 2;
-      const bufferEnd = bufferStart + numPointPerLine * 2 + 4;
+        const bufferStart = index * 4 + pointOffset * 2;
+        const bufferEnd = bufferStart + numPointPerLine * 2 + 4;
 
-      // eslint-disable-next-line no-underscore-dangle
-      if (buffer.__original__ === undefined) {
         // eslint-disable-next-line no-underscore-dangle
-        buffer.__original__ = buffer.slice();
-      }
+        if (buffer.__original__ === undefined) {
+          // eslint-disable-next-line no-underscore-dangle
+          buffer.__original__ = buffer.slice();
+        }
 
-      for (let i = bufferStart; i < bufferEnd; i++) {
-        // buffer[i] = Math.floor(buffer[i] / 4) * 4 + stateIndex;
-        buffer[i] = isNormal
-          ? // eslint-disable-next-line no-underscore-dangle
-            buffer.__original__[i]
-          : pointConnectionOpacityActive;
-      }
-    });
+        for (let i = bufferStart; i < bufferEnd; i++) {
+          // buffer[i] = Math.floor(buffer[i] / 4) * 4 + stateIndex;
+          buffer[i] = isNormal
+            ? // eslint-disable-next-line no-underscore-dangle
+              buffer.__original__[i]
+            : pointConnectionOpacityActive;
+        }
+
+        lineIdCacher(lineId);
+      });
 
     pointConnections.getBuffer().opacities.subdata(buffer, 0);
   };
@@ -562,6 +571,7 @@ const createScatterplot = (initialProperties = {}) => {
     if (lassoClearEvent === LASSO_CLEAR_ON_DESELECT) lassoClear();
     if (selection.length) {
       if (!preventEvent) pubSub.publish('deselect');
+      selectionConnecionSet.clear();
       setPointConnectionColorState(selection, 0);
       selection = [];
       selectionSet.clear();
@@ -582,6 +592,7 @@ const createScatterplot = (initialProperties = {}) => {
     const selectionBuffer = new Float32Array(selection.length * 2);
 
     selectionSet.clear();
+    selectionConnecionSet.clear();
     selection.forEach((pointIdx, i) => {
       selectionSet.add(pointIdx);
       const texCoords = indexToStateTexCoord(pointIdx);
