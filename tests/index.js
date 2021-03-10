@@ -1742,8 +1742,8 @@ test('toRgba()', async (t) => {
   );
 
   t.equal(
-    toRgba([255, 0, 0, 153], true),
-    [1, 0, 0, 0.6],
+    toRgba([153, 0, 0, 153], true),
+    [0.6, 0, 0, 0.6],
     'should convert RGBA to normalized RGBA'
   );
 

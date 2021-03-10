@@ -302,7 +302,7 @@ export const toRgba = (color, isNormalize) => {
   if (isRgba(color)) {
     const base = 255 ** !isNormalize;
     return isNormalize && !isNormFloatArray(color)
-      ? normNumArray(color)
+      ? color.map((x) => x / 255)
       : normNumArray(color).map((x) => x * base);
   }
 
