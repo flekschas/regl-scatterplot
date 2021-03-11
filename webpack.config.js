@@ -9,6 +9,7 @@ module.exports = (env, argv) => ({
     transition: './example/transition.js',
     sizeEncoding: './example/size-encoding.js',
     connectedPoints: './example/connected-points.js',
+    connectedPointsBySegment: './example/connected-points-by-segments.js',
     performanceMode: './example/performance-mode.js',
   },
   output: {
@@ -65,6 +66,11 @@ module.exports = (env, argv) => ({
       template: 'example/index.html',
       filename: 'connected-points.html',
       chunks: ['connectedPoints'],
+    }),
+    new HtmlWebpackPlugin({
+      template: 'example/index.html',
+      filename: 'connected-points-by-segment.html',
+      chunks: ['connectedPointsBySegment'],
     }),
     new HtmlWebpackPlugin({
       template: 'example/index.html',

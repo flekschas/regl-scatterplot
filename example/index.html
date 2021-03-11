@@ -176,6 +176,10 @@
         text-decoration-color: rgba(255, 255, 255, 1);
       }
 
+      .smaller {
+        font-size: 0.9em;
+      }
+
       .flex-c {
         display: flex;
       }
@@ -306,7 +310,9 @@
       }
 
       #examples li a.active {
-        font-style: italic;
+        color: #80c8ff;
+        font-weight: bold;
+        text-decoration: none;
       }
 
       #num-points-value {
@@ -440,7 +446,16 @@
           </li>
           <li>
             <a id="example-connected-points" href="connected-points.html"
-              >Connected Points</a
+              >Point Connections</a
+            >
+          </li>
+          <li>
+            <a
+              id="example-connected-points-by-segment"
+              href="connected-points-by-segment.html"
+              >Point Connections<br /><span class="smaller"
+                >(encoded by line segment)</span
+              ></a
             >
           </li>
           <li>
@@ -450,7 +465,12 @@
           </li>
         </ul>
         <hr />
-        <a class="button-like" href="https://github.com/flekschas/regl-scatterplot" target="_blank">Source code</a>
+        <a
+          class="button-like"
+          href="https://github.com/flekschas/regl-scatterplot"
+          target="_blank"
+          >Source code</a
+        >
       </aside>
     </header>
     <div id="parent-wrapper">
