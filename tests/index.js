@@ -34,7 +34,7 @@ import {
   DEFAULT_OPACITY,
 } from '../src/constants';
 
-import { toRgba } from '../src/utils';
+import { toRgba, isNormFloatArray } from '../src/utils';
 
 import {
   asyncForEach,
@@ -1705,6 +1705,36 @@ test('select()', async (t) => {
 });
 
 /* --------------------------------- Utils ---------------------------------- */
+
+test('isNormFloatArray()', async (t) => {
+  t.ok(
+    !isNormFloatArray([255, 0, 0, 255]),
+    'should not be a normalized RGBA value'
+  );
+  t.ok(
+    !isNormFloatArray([1, 2, 3, 4]),
+    'should not be a normalized RGBA value'
+  );
+
+  t.ok(isNormFloatArray([0, 0, 0, 0.5]), 'should be a normalized RGBA value');
+  t.ok(
+    isNormFloatArray([0.5, 1, 0.005, 1]),
+    'should be a normalized RGBA value'
+  );
+
+  // Inconclusive
+  // [0, 0, 0, 1] could be [0, 0, 0, 1] or [0, 0, 0, 1/255]
+  t.ok(
+    isNormFloatArray([0, 0, 0, 1]),
+    'should treat inconclusive RGBA value as a normalized RGBA value'
+  );
+
+  // [1, 1, 1, 1] could be [1, 1, 1, 1] or [1/255, 1/255, 1/255, 1/255]
+  t.ok(
+    isNormFloatArray([1, 1, 1, 1]),
+    'should treat inconclusive RGBA value as a normalized RGBA value'
+  );
+});
 
 test('toRgba()', async (t) => {
   t.equal(toRgba('#ff0000'), [255, 0, 0, 255], 'should convert HEX to RGBA');
