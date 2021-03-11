@@ -48,7 +48,6 @@
   },
   "devDependencies": {
     "@babel/core": "^7.13.8",
-    "@babel/plugin-proposal-logical-assignment-operators": "^7.13.8",
     "@babel/plugin-transform-regenerator": "^7.12.13",
     "@babel/polyfill": "^7.12.1",
     "@babel/preset-env": "7.13.9",

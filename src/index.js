@@ -229,7 +229,10 @@ const createScatterplot = (initialProperties = {}) => {
 
   checkReglExtensions(regl);
 
-  regl ||= createRegl(canvas);
+  // Same as regl ||= createRegl(canvas) but avoids having to rely on
+  // https://babeljs.io/docs/en/babel-plugin-proposal-logical-assignment-operators
+  // eslint-disable-next-line no-unused-expressions
+  regl || (regl = createRegl(canvas));
 
   backgroundColor = toRgba(backgroundColor, true);
   lassoColor = toRgba(lassoColor, true);
