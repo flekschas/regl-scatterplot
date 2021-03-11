@@ -76,9 +76,9 @@ const resizeHandler = () => {
 window.addEventListener('resize', resizeHandler);
 
 const generatePoints = (num) => {
-  const numPointsPerGroup = Math.round(num / 3); // 12.000 / 3 => 4000
-  const numPointsPerStep = Math.round(numPointsPerGroup / 5); // 4000 / 5 => 800
-  // 800 * 3 => 2400
+  const numPointsPerGroup = Math.round(num / 3); // 9.000 / 3 => 3000
+  const numPointsPerStep = Math.round(numPointsPerGroup / 5); // 3000 / 5 => 600
+  // 600 * 3 => 1800 (lines)
 
   const outPoints = [];
 
@@ -164,6 +164,7 @@ resetEl.addEventListener('click', resetClickHandler);
 
 scatterplot.set({
   colorBy: 'valueZ',
+  sizeBy: 'valueW',
   pointColor: [
     [255, 128, 203, 128],
     [87, 199, 255, 128],
@@ -189,9 +190,8 @@ scatterplot.set({
   pointConnectionOpacity: Array(10)
     .fill()
     .map((v, i) => (i + 1) / 100),
-  sizeBy: 'valueW',
   pointConnectionSizeBy: 'valueW',
-  pointConnectionSize: Array(12)
+  pointConnectionSize: Array(18)
     .fill()
     .map((v, i) => (i + 1) / 2),
 });
