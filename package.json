@@ -31,7 +31,7 @@
     "watch": "rollup -cw"
   },
   "dependencies": {
-    "@flekschas/utils": "^0.27.0",
+    "@flekschas/utils": "^0.28.0",
     "camera-2d-simple": "~2.2.1",
     "dom-2d-camera": "~1.2.3",
     "gl-matrix": "~3.3.0",
@@ -39,7 +39,7 @@
     "lodash-es": "~4.17.21",
     "pub-sub-es": "~2.0.1",
     "regl": "~1.3.13",
-    "regl-line": "~0.4.2",
+    "regl-line": "~0.4.3",
     "with-raf": "~1.1.1"
   },
   "peerDependencies": {

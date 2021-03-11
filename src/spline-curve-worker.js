@@ -171,7 +171,6 @@ const worker = function worker() {
     // is larger than sqTolerance
     for (let i = 0; i < numPoints - 1; i++) {
       let segmentPoints = [points[i].slice(0, 2)];
-      // outPoints.push(points[i].slice(0, 2));
       prevPoint = points[i];
 
       for (let j = 1; j < maxIntPointsPerSegment; j++) {

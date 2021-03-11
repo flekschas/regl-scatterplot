@@ -4,7 +4,7 @@ import createPubSub from 'pub-sub-es';
 import withRaf from 'with-raf';
 import { mat4, vec4 } from 'gl-matrix';
 import createLine from 'regl-line';
-import { identity, unionIntegers } from '@flekschas/utils';
+import { identity, rangeMap, unionIntegers } from '@flekschas/utils';
 
 import createLassoManager from './lasso-manager';
 
@@ -101,6 +101,7 @@ import {
   getBBox,
   isConditionalArray,
   isPositiveNumber,
+  isStrictlyPositiveNumber,
   isMultipleColors,
   isPointInPolygon,
   isString,
@@ -126,7 +127,11 @@ const checkDeprecations = (properties) => {
     });
 };
 
-const getEncodingType = (type, defaultValue) => {
+const getEncodingType = (
+  type,
+  defaultValue,
+  { allowSegment = false } = false
+) => {
   switch (type) {
     case 'category':
     case 'value1':
@@ -141,6 +146,9 @@ const getEncodingType = (type, defaultValue) => {
     case 'valueW':
     case 'w':
       return 'valueW'; // W refers to the 4th component of the RGBA value
+
+    case 'segment':
+      return allowSegment ? 'segment' : defaultValue;
 
     default:
       return defaultValue;
@@ -351,13 +359,25 @@ const createScatterplot = (initialProperties = {}) => {
       : [pointConnectionSize];
   }
 
-  colorBy = getEncodingType(colorBy);
-  opacityBy = getEncodingType(opacityBy);
-  sizeBy = getEncodingType(sizeBy);
+  colorBy = getEncodingType(colorBy, DEFAULT_COLOR_BY);
+  opacityBy = getEncodingType(opacityBy, DEFAULT_OPACITY_BY);
+  sizeBy = getEncodingType(sizeBy, DEFAULT_SIZE_BY);
 
-  pointConnectionColorBy = getEncodingType(pointConnectionColorBy);
-  pointConnectionOpacityBy = getEncodingType(pointConnectionOpacityBy);
-  pointConnectionSizeBy = getEncodingType(pointConnectionSizeBy);
+  pointConnectionColorBy = getEncodingType(
+    pointConnectionColorBy,
+    DEFAULT_POINT_CONNECTION_COLOR_BY,
+    { allowSegment: true }
+  );
+  pointConnectionOpacityBy = getEncodingType(
+    pointConnectionOpacityBy,
+    DEFAULT_POINT_CONNECTION_OPACITY_BY,
+    { allowSegment: true }
+  );
+  pointConnectionSizeBy = getEncodingType(
+    pointConnectionSizeBy,
+    DEFAULT_POINT_CONNECTION_SIZE_BY,
+    { allowSegment: true }
+  );
 
   let stateTex; // Stores the point texture holding x, y, category, and value
   let prevStateTex; // Stores the previous point texture. Used for transitions
@@ -959,7 +979,7 @@ const createScatterplot = (initialProperties = {}) => {
     if (isConditionalArray(newPointSize, isPositiveNumber, { minLength: 1 }))
       pointSize = [...newPointSize];
 
-    if (isPositiveNumber(+newPointSize)) pointSize = [+newPointSize];
+    if (isStrictlyPositiveNumber(+newPointSize)) pointSize = [+newPointSize];
 
     encodingTex = createEncodingTexture();
     computePointSizeMouseDetection();
@@ -989,7 +1009,7 @@ const createScatterplot = (initialProperties = {}) => {
     if (isConditionalArray(newOpacity, isPositiveNumber, { minLength: 1 }))
       opacity = [...newOpacity];
 
-    if (isPositiveNumber(+newOpacity)) opacity = [+newOpacity];
+    if (isStrictlyPositiveNumber(+newOpacity)) opacity = [+newOpacity];
 
     encodingTex = createEncodingTexture();
   };
@@ -1007,14 +1027,14 @@ const createScatterplot = (initialProperties = {}) => {
     }
   };
 
-  const getEncodingValueToIdx = (type, rangeMap) => {
+  const getEncodingValueToIdx = (type, rangeValues) => {
     switch (type) {
       default:
       case 'categorical':
         return identity;
 
       case 'continuous':
-        return (value) => Math.round(value * (rangeMap.length - 1));
+        return (value) => Math.round(value * (rangeValues.length - 1));
     }
   };
 
@@ -1030,19 +1050,22 @@ const createScatterplot = (initialProperties = {}) => {
   const setPointConnectionColorBy = (type) => {
     pointConnectionColorBy = getEncodingType(
       type,
-      DEFAULT_POINT_CONNECTION_COLOR_BY
+      DEFAULT_POINT_CONNECTION_COLOR_BY,
+      { allowSegment: true }
     );
   };
   const setPointConnectionOpacityBy = (type) => {
     pointConnectionOpacityBy = getEncodingType(
       type,
-      DEFAULT_POINT_CONNECTION_OPACITY_BY
+      DEFAULT_POINT_CONNECTION_OPACITY_BY,
+      { allowSegment: true }
     );
   };
   const setPointConnectionSizeBy = (type) => {
     pointConnectionSizeBy = getEncodingType(
       type,
-      DEFAULT_POINT_CONNECTION_SIZE_BY
+      DEFAULT_POINT_CONNECTION_SIZE_BY,
+      { allowSegment: true }
     );
   };
 
@@ -1437,9 +1460,44 @@ const createScatterplot = (initialProperties = {}) => {
     isInit = true;
   };
 
-  const getPointConnectionColorIndices = () => {
+  const getPointConnectionColorIndices = (curvePoints) => {
     const colorEncoding =
       pointConnectionColorBy === 'inherit' ? colorBy : pointConnectionColorBy;
+
+    if (colorEncoding === 'segment') {
+      const maxColorIdx = pointConnectionColor.length - 1;
+      if (maxColorIdx < 1) return [];
+      return curvePoints.reduce((colorIndices, curve, index) => {
+        let totalLength = 0;
+        const segLengths = [];
+        // Compute the total length of the line
+        for (let i = 2; i < curve.length; i += 2) {
+          const segLength = Math.sqrt(
+            (curve[i - 2] - curve[i]) ** 2 + (curve[i - 1] - curve[i + 1]) ** 2
+          );
+          segLengths.push(segLength);
+          totalLength += segLength;
+        }
+        colorIndices[index] = [0];
+        let cumLength = 0;
+        // Assign the color index based on the cumulative length
+        for (let i = 0; i < curve.length / 2 - 1; i++) {
+          cumLength += segLengths[i];
+          // The `4` comes from the fact that we have 4 color states:
+          // normal, active, hover, and background
+          colorIndices[index].push(
+            Math.floor((cumLength / totalLength) * maxColorIdx) * 4
+          );
+        }
+        // The `4` comes from the fact that we have 4 color states:
+        // normal, active, hover, and background
+        // colorIndices[index] = rangeMap(
+        //   curve.length,
+        //   (i) => Math.floor((i / (curve.length - 1)) * maxColorIdx) * 4
+        // );
+        return colorIndices;
+      }, []);
+    }
 
     if (colorEncoding) {
       const encodingIdx = getEncodingIdx(colorEncoding);
@@ -1468,6 +1526,25 @@ const createScatterplot = (initialProperties = {}) => {
         ? opacityBy
         : pointConnectionOpacityBy;
 
+    if (opacityEncoding === 'segment') {
+      const maxOpacityIdx = pointConnectionOpacity.length - 1;
+      if (maxOpacityIdx < 1) return [];
+      return pointConnectionMap.reduce(
+        // eslint-disable-next-line no-unused-vars
+        (opacities, [index, referencePoint, length]) => {
+          opacities[index] = rangeMap(
+            length,
+            (i) =>
+              pointConnectionOpacity[
+                Math.floor((i / (length - 1)) * maxOpacityIdx)
+              ]
+          );
+          return opacities;
+        },
+        []
+      );
+    }
+
     if (opacityEncoding) {
       const encodingIdx = getEncodingIdx(opacityEncoding);
       const encodingRangeMap =
@@ -1491,6 +1568,23 @@ const createScatterplot = (initialProperties = {}) => {
   const getPointConnectionWidths = () => {
     const sizeEncoding =
       pointConnectionSizeBy === 'inherit' ? sizeBy : pointConnectionSizeBy;
+
+    if (sizeEncoding === 'segment') {
+      const maxSizeIdx = pointConnectionSize.length - 1;
+      if (maxSizeIdx < 1) return [];
+      return pointConnectionMap.reduce(
+        // eslint-disable-next-line no-unused-vars
+        (widths, [index, referencePoint, length]) => {
+          widths[index] = rangeMap(
+            length,
+            (i) =>
+              pointConnectionSize[Math.floor((i / (length - 1)) * maxSizeIdx)]
+          );
+          return widths;
+        },
+        []
+      );
+    }
 
     if (sizeEncoding) {
       const encodingIdx = getEncodingIdx(sizeEncoding);
@@ -1519,6 +1613,8 @@ const createScatterplot = (initialProperties = {}) => {
         index,
         curvePoints[id].reference,
         curvePoints[id].length / 2,
+        // Used for offsetting in the buffer manipulations on
+        // hovering and selecting
         cumLinePoints,
       ];
       cumLinePoints += curvePoints[id].length / 2;
@@ -1537,10 +1633,11 @@ const createScatterplot = (initialProperties = {}) => {
           tolerance: pointConnectionTolerance,
         }).then((curvePoints) => {
           setPointConnectionMap(curvePoints);
-          pointConnections.setPoints(Object.values(curvePoints), {
-            colorIndices: getPointConnectionColorIndices(),
-            opacities: getPointConnectionOpacities(),
-            widths: getPointConnectionWidths(),
+          const curvePointValues = Object.values(curvePoints);
+          pointConnections.setPoints(curvePointValues, {
+            colorIndices: getPointConnectionColorIndices(curvePointValues),
+            opacities: getPointConnectionOpacities(curvePointValues),
+            widths: getPointConnectionWidths(curvePointValues),
           });
           computingPointConnectionCurves = false;
           resolve();
@@ -1946,10 +2043,13 @@ const createScatterplot = (initialProperties = {}) => {
     if (isConditionalArray(newOpacity, isPositiveNumber, { minLength: 1 }))
       pointConnectionOpacity = [...newOpacity];
 
-    if (isPositiveNumber(+newOpacity)) pointConnectionOpacity = [+newOpacity];
+    if (isStrictlyPositiveNumber(+newOpacity))
+      pointConnectionOpacity = [+newOpacity];
 
     pointConnectionColor = pointConnectionColor.map((color) => {
-      color[3] = pointConnectionOpacity[0];
+      color[3] = !Number.isNaN(+pointConnectionOpacity[0])
+        ? +pointConnectionOpacity[0]
+        : color[3];
       return color;
     });
 
@@ -1969,7 +2069,7 @@ const createScatterplot = (initialProperties = {}) => {
     )
       pointConnectionSize = [...newPointConnectionSize];
 
-    if (isPositiveNumber(+newPointConnectionSize))
+    if (isStrictlyPositiveNumber(+newPointConnectionSize))
       pointConnectionSize = [+newPointConnectionSize];
 
     updatePointConnectionStyle();

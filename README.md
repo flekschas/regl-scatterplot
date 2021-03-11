@@ -441,8 +441,11 @@ the forth component use `value` (only for backwards compatibility), `value2`,
 
 In addition to the properties understood by [`colorBy`, etc.](#property-by),
 `pointConnectionColorBy`, `pointConnectionOpacityBy`, and `pointConnectionSizeBy`
-also understand `"inherit"`. When set to `"inherit"` the value will be inherited
-from its point-specific counterpart.
+also understand `"inherit"` and `"segment"`. When set to `"inherit"`, the value
+will be inherited from its point-specific counterpart. When set to `"segment"`,
+each segment of a point connection will be encoded separately. This allows you
+to, for instance, color connection by a gradient from the start to the end of
+each line.
 
 <a name="property-lassoInitiator" href="#property-lassoInitiator">#</a> <b>lassoInitiator:</b>
 

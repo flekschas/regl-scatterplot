@@ -1,5 +1,8 @@
 ## Next
 
+## v0.17.0
+
+- Add the ability to color point connections by their segment via `pointConnectionColorBy: 'segment'`
 - Fix an issue with normalizing RGB(A) values
 
 ## v0.16.2

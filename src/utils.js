@@ -105,7 +105,9 @@ export const hexToRgb = (hex, isNormalize = false) =>
 export const isConditionalArray = (a, condition, { minLength = 0 } = {}) =>
   Array.isArray(a) && a.length >= minLength && a.every(condition);
 
-export const isPositiveNumber = (x) => !Number.isNaN(+x) && +x > 0;
+export const isPositiveNumber = (x) => !Number.isNaN(+x) && +x >= 0;
+
+export const isStrictlyPositiveNumber = (x) => !Number.isNaN(+x) && +x > 0;
 
 /**
  * Create a function to limit choices to a predefined list
