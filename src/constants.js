@@ -77,6 +77,7 @@ export const DEFAULT_KEY_MAP = {
 export const DEFAULT_DATA_ASPECT_RATIO = 1;
 export const DEFAULT_WIDTH = 'auto';
 export const DEFAULT_HEIGHT = 'auto';
+export const DEFAULT_GAMMA = 1;
 
 // Default styles
 export const DEFAULT_POINT_SIZE = 6;

@@ -91,6 +91,7 @@ import {
   LONG_CLICK_TIME,
   DEFAULT_OPACITY,
   DEFAULT_OPACITY_BY,
+  DEFAULT_GAMMA,
 } from './constants';
 
 import {
@@ -222,6 +223,7 @@ const createScatterplot = (initialProperties = {}) => {
     sizeBy = DEFAULT_SIZE_BY,
     height = DEFAULT_HEIGHT,
     width = DEFAULT_WIDTH,
+    gamma = DEFAULT_GAMMA,
   } = initialProperties;
 
   let currentWidth = width === 'auto' ? 1 : width;
@@ -1165,6 +1167,7 @@ const createScatterplot = (initialProperties = {}) => {
     count: 3,
   });
 
+  // From https://observablehq.com/@rreusser/selecting-the-right-opacity-for-2d-point-clouds
   const copyToScreen = regl({
     vert: `
       precision highp float;
@@ -1176,9 +1179,15 @@ const createScatterplot = (initialProperties = {}) => {
       precision highp float;
       uniform vec2 srcRes;
       uniform sampler2D src;
+      uniform float gamma;
+
+      vec3 approxLinearToSRGB (vec3 rgb, float gamma) {
+        return pow(clamp(rgb, vec3(0), vec3(1)), vec3(1.0 / gamma));
+      }
 
       void main () {
-        gl_FragColor = texture2D(src, gl_FragCoord.xy / srcRes);
+        vec4 color = texture2D(src, gl_FragCoord.xy / srcRes);
+        gl_FragColor = vec4(approxLinearToSRGB(color.rgb, gamma), 1);
       }`,
     attributes: {
       xy: [-4, -4, 4, -4, 0, 4],
@@ -1186,6 +1195,7 @@ const createScatterplot = (initialProperties = {}) => {
     uniforms: {
       src: () => fbo,
       srcRes: () => fboRes,
+      gamma: () => gamma,
     },
     count: 3,
     depth: { enable: false },
@@ -1683,15 +1693,15 @@ const createScatterplot = (initialProperties = {}) => {
   const draw = (showRecticleOnce) => {
     if (!isInit || !regl) return;
 
+    // Update camera
+    isViewChanged = camera.tick();
+
     fbo.use(() => {
       regl.clear({
         // background color (transparent)
         color: [0, 0, 0, 0],
         depth: 1,
       });
-
-      // Update camera
-      isViewChanged = camera.tick();
 
       // eslint-disable-next-line no-underscore-dangle
       if (backgroundImage && backgroundImage._reglType) {
@@ -1711,15 +1721,15 @@ const createScatterplot = (initialProperties = {}) => {
       if (!mouseDown && (showRecticle || showRecticleOnce)) drawRecticle();
       if (hoveredPoint >= 0) drawHoveredPoint();
       if (selection.length) drawSelectedPoint();
-
-      lasso.draw({
-        projection: getProjection(),
-        model: getModel(),
-        view: getView(),
-      });
     });
 
     copyToScreen();
+
+    lasso.draw({
+      projection: getProjection(),
+      model: getModel(),
+      view: getView(),
+    });
 
     // Publish camera change
     if (isViewChanged) {
@@ -2136,6 +2146,10 @@ const createScatterplot = (initialProperties = {}) => {
     computePointSizeMouseDetection();
   };
 
+  const setGamma = (newGamma) => {
+    gamma = +newGamma;
+  };
+
   /**
    * Update Regl's viewport, drawingBufferWidth, and drawingBufferHeight
    *
@@ -2233,6 +2247,7 @@ const createScatterplot = (initialProperties = {}) => {
     if (property === 'xScale') return xScale;
     if (property === 'yScale') return yScale;
     if (property === 'performanceMode') return performanceMode;
+    if (property === 'gamma') return gamma;
 
     return undefined;
   };
@@ -2431,6 +2446,10 @@ const createScatterplot = (initialProperties = {}) => {
 
     if (properties.deselectOnEscape !== undefined) {
       setDeselectOnEscape(properties.deselectOnEscape);
+    }
+
+    if (properties.gamma !== undefined) {
+      setGamma(properties.gamma);
     }
 
     // setWidth and setHeight can be async when width or height are set to
