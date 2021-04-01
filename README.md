@@ -339,8 +339,8 @@ can be read and written via [`scatterplot.get()`](#scatterplot.get) and [`scatte
 | regl                                  | object          | `createRegl(canvas)`                |                                                                 | `false`  | `false`     |
 | syncEvents                            | boolean         | `false`                             |                                                                 | `false`  | `false`     |
 | version                               | string          |                                     |                                                                 | `false`  | `false`     |
-| width                                 | integer         | `300`                               | > 0                                                             | `true`   | `false`     |
-| height                                | integer         | `200`                               | > 0                                                             | `true`   | `false`     |
+| width                                 | int or str      | `'auto'`                            | `'auto'` or > 0                                                 | `true`   | `false`     |
+| height                                | int or str      | `'auto'`                            | `'auto'` or > 0                                                 | `true`   | `false`     |
 | aspectRatio                           | float           | `1.0`                               | > 0                                                             | `true`   | `false`     |
 | backgroundColor                       | string or array | rgba(0, 0, 0, 1)                    | hex, rgb, rgba                                                  | `true`   | `false`     |
 | backgroundImage                       | function        | `null`                              | Regl texture                                                    | `true`   | `true`      |
@@ -358,9 +358,9 @@ can be read and written via [`scatterplot.get()`](#scatterplot.get) and [`scatte
 | pointColor                            | quadruple       | `[0.66, 0.66, 0.66, 1]`             | single value or list of hex, rgb, rgba                          | `true`   | `false`     |
 | pointColorActive                      | quadruple       | `[0, 0.55, 1, 1]`                   | single value or list of hex, rgb, rgba                          | `true`   | `false`     |
 | pointColorHover                       | quadruple       | `[1, 1, 1, 1]`                      | single value or list of hex, rgb, rgba                          | `true`   | `false`     |
-| pointOutlineWidth                     | integer         | `2`                                 | >= 0                                                            | `true`   | `false`     |
-| pointSize                             | integer         | `6`                                 | > 0                                                             | `true`   | `false`     |
-| pointSizeSelected                     | integer         | `2`                                 | >= 0                                                            | `true`   | `false`     |
+| pointOutlineWidth                     | int             | `2`                                 | >= 0                                                            | `true`   | `false`     |
+| pointSize                             | int             | `6`                                 | > 0                                                             | `true`   | `false`     |
+| pointSizeSelected                     | int             | `2`                                 | >= 0                                                            | `true`   | `false`     |
 | showPointConnection                   | boolean         | `false`                             |                                                                 | `true`   | `false`     |
 | pointConnectionColor                  | quadruple       | `[0.66, 0.66, 0.66, 0.2]`           |                                                                 | `true`   | `false`     |
 | pointConnectionColorActive            | quadruple       | `[0, 0.55, 1, 1]`                   |                                                                 | `true`   | `false`     |
@@ -372,11 +372,11 @@ can be read and written via [`scatterplot.get()`](#scatterplot.get) and [`scatte
 | pointConnectionSize                   | float           | `2`                                 |                                                                 | `true`   | `false`     |
 | pointConnectionSizeActive             | float           | `2`                                 |                                                                 | `true`   | `false`     |
 | pointConnectionSizeBy                 | string          | `null`                              | See [data encoding](#property-point-conntection-by)             | `true`   | `false`     |
-| pointConnectionMaxIntPointsPerSegment | integer         | `100`                               |                                                                 | `true`   | `false`     |
+| pointConnectionMaxIntPointsPerSegment | int             | `100`                               |                                                                 | `true`   | `false`     |
 | pointConnectionTolerance              | float           | `0.002`                             |                                                                 | `true`   | `false`     |
 | lassoColor                            | quadruple       | rgba(0, 0.667, 1, 1)                | hex, rgb, rgba                                                  | `true`   | `false`     |
-| lassoMinDelay                         | integer         | 15                                  | >= 0                                                            | `true`   | `false`     |
-| lassoMinDist                          | integer         | 4                                   | >= 0                                                            | `true`   | `false`     |
+| lassoMinDelay                         | int             | 15                                  | >= 0                                                            | `true`   | `false`     |
+| lassoMinDist                          | int             | 4                                   | >= 0                                                            | `true`   | `false`     |
 | lassoClearEvent                       | string          | `'lassoEnd'`                        | `'lassoEnd'` or `'deselect'`                                    | `true`   | `false`     |
 | lassoInitiator                        | boolean         | `false`                             |                                                                 | `true`   | `false`     |
 | lassoInitiatorElement                 | object          | the lasso dom element               |                                                                 | `false`  | `false`     |
@@ -395,6 +395,11 @@ can be read and written via [`scatterplot.get()`](#scatterplot.get) and [`scatte
   are **not nullifiable** will be ignored if you try to set them to a falsy
   value. For example, if you call `scatterplot.attr({ width: 0 });` the width
   will not be changed as `0` is interpreted as a falsy value.
+
+- By default, the `width` and `height` are set to `'auto'`, which will make the
+  `canvas` stretch all the way to the bounds of its clostest parent element with
+  `position: relative`. When set to `'auto'` the library also takes care of
+  resizing the canvas on `resize` and `orientationchange` events.
 
 - The background of the scatterplot is transparent, i.e., you have to control
   the background with CSS! `background` is used when drawing the
