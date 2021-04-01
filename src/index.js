@@ -970,8 +970,10 @@ const createScatterplot = (initialProperties = {}) => {
   const setHeight = (newHeight) => {
     if (newHeight === 'auto') {
       height = newHeight;
-      setCurrentHeight(canvas.getBoundingClientRect().height);
       canvas.style.height = '100%';
+      window.requestAnimationFrame(() => {
+        if (canvas) setCurrentHeight(canvas.getBoundingClientRect().height);
+      });
       return;
     }
 
@@ -1024,8 +1026,10 @@ const createScatterplot = (initialProperties = {}) => {
   const setWidth = (newWidth) => {
     if (newWidth === 'auto') {
       width = newWidth;
-      setCurrentWidth(canvas.getBoundingClientRect().width);
       canvas.style.width = '100%';
+      window.requestAnimationFrame(() => {
+        if (canvas) setCurrentWidth(canvas.getBoundingClientRect().width);
+      });
       return;
     }
 
@@ -2429,9 +2433,16 @@ const createScatterplot = (initialProperties = {}) => {
       setDeselectOnEscape(properties.deselectOnEscape);
     }
 
-    updateViewAspectRatio();
-    refresh();
-    drawRaf();
+    // setWidth and setHeight can be async when width or height are set to
+    // 'auto'. And since draw() would have anyway been async we can just make
+    // all calls async.
+    window.requestAnimationFrame(() => {
+      if (!canvas) return; // Instance was destroyed in between
+      updateViewAspectRatio();
+      refresh();
+      draw();
+      drawHandler();
+    });
   };
 
   const hover = (point, showRecticleOnce = false) => {
