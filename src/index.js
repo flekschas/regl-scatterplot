@@ -220,16 +220,12 @@ const createScatterplot = (initialProperties = {}) => {
     opacity = DEFAULT_OPACITY,
     opacityBy = DEFAULT_OPACITY_BY,
     sizeBy = DEFAULT_SIZE_BY,
+    height = DEFAULT_HEIGHT,
+    width = DEFAULT_WIDTH,
   } = initialProperties;
 
-  let width =
-    initialProperties.width ||
-    canvas.getBoundingClientRect().width ||
-    DEFAULT_WIDTH;
-  let height =
-    initialProperties.height ||
-    canvas.getBoundingClientRect().height ||
-    DEFAULT_HEIGHT;
+  let currentWidth = width === 'auto' ? 1 : width;
+  let currentHeight = height === 'auto' ? 1 : height;
 
   // The following properties cannod be changed after the initialization
   const { performanceMode = DEFAULT_PERFORMANCE_MODE } = initialProperties;
@@ -245,10 +241,7 @@ const createScatterplot = (initialProperties = {}) => {
   lassoColor = toRgba(lassoColor, true);
   recticleColor = toRgba(recticleColor, true);
 
-  const fboRes = [
-    Math.floor(width * window.devicePixelRatio),
-    Math.floor(height * window.devicePixelRatio),
-  ];
+  const fboRes = [512, 512];
   const fbo = regl.framebuffer({
     width: fboRes[0],
     height: fboRes[1],
@@ -427,16 +420,16 @@ const createScatterplot = (initialProperties = {}) => {
   if (xScale) {
     xDomainStart = xScale.domain()[0];
     xDomainSize = xScale.domain()[1] - xScale.domain()[0];
-    xScale.range([0, width]);
+    xScale.range([0, currentWidth]);
   }
   if (yScale) {
     yDomainStart = yScale.domain()[0];
     yDomainSize = yScale.domain()[1] - yScale.domain()[0];
-    yScale.range([height, 0]);
+    yScale.range([currentHeight, 0]);
   }
 
-  const getNdcX = (x) => -1 + (x / width) * 2;
-  const getNdcY = (y) => 1 + (y / height) * -2;
+  const getNdcX = (x) => -1 + (x / currentWidth) * 2;
+  const getNdcY = (y) => 1 + (y / currentHeight) * -2;
 
   // Get relative WebGL position
   const getMouseGlPos = () => [
@@ -475,7 +468,7 @@ const createScatterplot = (initialProperties = {}) => {
     // The height of the view in normalized device coordinates
     const heightNdc = getScatterGlPos(1, 1)[1] - getScatterGlPos(-1, -1)[1];
     // The size of a pixel in the current view in normalized device coordinates
-    const pxNdc = heightNdc / height;
+    const pxNdc = heightNdc / currentHeight;
     // The scaled point size in normalized device coordinates
     const pointSizeNdc =
       computedPointSizeMouseDetection * pointScale * pxNdc * 0.66;
@@ -500,7 +493,7 @@ const createScatterplot = (initialProperties = {}) => {
       }
     });
 
-    if (minDist < (computedPointSizeMouseDetection / width) * 2)
+    if (minDist < (computedPointSizeMouseDetection / currentWidth) * 2)
       return clostestPoint;
     return -1;
   };
@@ -877,13 +870,13 @@ const createScatterplot = (initialProperties = {}) => {
   };
 
   const updateFbo = () => {
-    fboRes[0] = Math.floor(width * window.devicePixelRatio);
-    fboRes[1] = Math.floor(height * window.devicePixelRatio);
+    fboRes[0] = Math.floor(currentWidth * window.devicePixelRatio);
+    fboRes[1] = Math.floor(currentHeight * window.devicePixelRatio);
     fbo.resize(...fboRes);
   };
 
   const updateViewAspectRatio = () => {
-    viewAspectRatio = width / height;
+    viewAspectRatio = currentWidth / currentHeight;
     projection = mat4.fromScaling([], [1 / viewAspectRatio, 1, 1]);
     model = mat4.fromScaling([], [dataAspectRatio, 1, 1]);
     updateFbo();
@@ -965,15 +958,28 @@ const createScatterplot = (initialProperties = {}) => {
     if (yScale) yScale.domain(yDomainView);
   };
 
-  const setHeight = (newHeight) => {
-    if (!+newHeight || +newHeight <= 0) return;
-    height = +newHeight;
-    canvas.style.height = `${height}px`;
-    canvas.height = Math.floor(height * window.devicePixelRatio);
+  const setCurrentHeight = (newCurrentHeight) => {
+    currentHeight = newCurrentHeight;
+    canvas.height = Math.floor(currentHeight * window.devicePixelRatio);
     if (yScale) {
-      yScale.range([height, 0]);
+      yScale.range([currentHeight, 0]);
       updateScales();
     }
+  };
+
+  const setHeight = (newHeight) => {
+    if (newHeight === 'auto') {
+      height = newHeight;
+      setCurrentHeight(canvas.getBoundingClientRect().height);
+      canvas.style.height = '100%';
+      return;
+    }
+
+    if (!+newHeight || +newHeight <= 0) return;
+
+    height = +newHeight;
+    setCurrentHeight(height);
+    canvas.style.height = `${height}px`;
   };
 
   const computePointSizeMouseDetection = () => {
@@ -1006,15 +1012,28 @@ const createScatterplot = (initialProperties = {}) => {
     pointOutlineWidth = +newPointOutlineWidth;
   };
 
-  const setWidth = (newWidth) => {
-    if (!+newWidth || +newWidth <= 0) return;
-    width = +newWidth;
-    canvas.style.width = `${width}px`;
-    canvas.width = Math.floor(width * window.devicePixelRatio);
+  const setCurrentWidth = (newCurrentWidth) => {
+    currentWidth = newCurrentWidth;
+    canvas.width = Math.floor(currentWidth * window.devicePixelRatio);
     if (xScale) {
-      xScale.range([0, width]);
+      xScale.range([0, currentWidth]);
       updateScales();
     }
+  };
+
+  const setWidth = (newWidth) => {
+    if (newWidth === 'auto') {
+      width = newWidth;
+      setCurrentWidth(canvas.getBoundingClientRect().width);
+      canvas.style.width = '100%';
+      return;
+    }
+
+    if (!+newWidth || +newWidth <= 0) return;
+
+    width = +newWidth;
+    setCurrentWidth(width);
+    canvas.style.width = `${currentWidth}px`;
   };
 
   const setOpacity = (newOpacity) => {
@@ -2506,6 +2525,24 @@ const createScatterplot = (initialProperties = {}) => {
     pointConnections.clear();
   };
 
+  const resizeHandler = () => {
+    const autoWidth = width === 'auto';
+    const autoHeight = height === 'auto';
+    if (autoWidth || autoHeight) {
+      const {
+        width: newWidth,
+        height: newHeight,
+      } = canvas.getBoundingClientRect();
+
+      if (autoWidth) setCurrentWidth(newWidth);
+      if (autoHeight) setCurrentHeight(newHeight);
+
+      updateViewAspectRatio();
+      refresh();
+      drawRaf();
+    }
+  };
+
   const init = () => {
     updateViewAspectRatio();
     initCamera();
@@ -2563,6 +2600,8 @@ const createScatterplot = (initialProperties = {}) => {
     window.addEventListener('blur', blurHandler, false);
     window.addEventListener('mouseup', mouseUpHandler, false);
     window.addEventListener('mousemove', mouseMoveHandler, false);
+    window.addEventListener('resize', resizeHandler);
+    window.addEventListener('orientationchange', resizeHandler);
     canvas.addEventListener('mousedown', mouseDownHandler, false);
     canvas.addEventListener('mouseenter', mouseEnterCanvasHandler, false);
     canvas.addEventListener('mouseleave', mouseLeaveCanvasHandler, false);
@@ -2575,6 +2614,8 @@ const createScatterplot = (initialProperties = {}) => {
     window.removeEventListener('blur', blurHandler, false);
     window.removeEventListener('mouseup', mouseUpHandler, false);
     window.removeEventListener('mousemove', mouseMoveHandler, false);
+    window.removeEventListener('resize', resizeHandler);
+    window.removeEventListener('orientationchange', resizeHandler);
     canvas.removeEventListener('mousedown', mouseDownHandler, false);
     canvas.removeEventListener('mouseenter', mouseEnterCanvasHandler, false);
     canvas.removeEventListener('mouseleave', mouseLeaveCanvasHandler, false);
