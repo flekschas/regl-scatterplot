@@ -220,9 +220,16 @@ const createScatterplot = (initialProperties = {}) => {
     opacity = DEFAULT_OPACITY,
     opacityBy = DEFAULT_OPACITY_BY,
     sizeBy = DEFAULT_SIZE_BY,
-    width = DEFAULT_WIDTH,
-    height = DEFAULT_HEIGHT,
   } = initialProperties;
+
+  let width =
+    initialProperties.width ||
+    canvas.getBoundingClientRect().width ||
+    DEFAULT_WIDTH;
+  let height =
+    initialProperties.height ||
+    canvas.getBoundingClientRect().height ||
+    DEFAULT_HEIGHT;
 
   // The following properties cannod be changed after the initialization
   const { performanceMode = DEFAULT_PERFORMANCE_MODE } = initialProperties;
@@ -961,7 +968,8 @@ const createScatterplot = (initialProperties = {}) => {
   const setHeight = (newHeight) => {
     if (!+newHeight || +newHeight <= 0) return;
     height = +newHeight;
-    canvas.height = height * window.devicePixelRatio;
+    canvas.style.height = `${height}px`;
+    canvas.height = Math.floor(height * window.devicePixelRatio);
     if (yScale) {
       yScale.range([height, 0]);
       updateScales();
@@ -1001,7 +1009,8 @@ const createScatterplot = (initialProperties = {}) => {
   const setWidth = (newWidth) => {
     if (!+newWidth || +newWidth <= 0) return;
     width = +newWidth;
-    canvas.width = width * window.devicePixelRatio;
+    canvas.style.width = `${width}px`;
+    canvas.width = Math.floor(width * window.devicePixelRatio);
     if (xScale) {
       xScale.range([0, width]);
       updateScales();
@@ -2582,7 +2591,7 @@ const createScatterplot = (initialProperties = {}) => {
     pubSub.clear();
   };
 
-  init(canvas);
+  init();
 
   return {
     clear: withDraw(clear),

@@ -71,7 +71,7 @@ test('createRegl()', (t) => {
 });
 
 test('createScatterplot()', (t) => {
-  const canvas = createCanvas();
+  const canvas = createCanvas(null, null);
   const scatterplot = createScatterplot({ canvas });
 
   t.equal(scatterplot.get('canvas'), canvas, 'canvas object should equal');

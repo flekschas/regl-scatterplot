@@ -1,5 +1,9 @@
 ## Next
 
+## v0.17.1
+
+- Fix default canvas width to fix an issue on high-dpi monitors that do not style the canvas element (#41)
+
 ## v0.17.0
 
 - Add the ability to color point connections by their segment via `pointConnectionColorBy: 'segment'`
