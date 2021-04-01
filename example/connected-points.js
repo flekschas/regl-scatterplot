@@ -16,8 +16,6 @@ const exampleEl = document.querySelector('#example-connected-points');
 exampleEl.setAttribute('class', 'active');
 exampleEl.removeAttribute('href');
 
-let { width, height } = canvas.getBoundingClientRect();
-
 let points = [];
 let numPoints = 9000;
 let pointSize = 1;
@@ -51,8 +49,6 @@ const deselectHandler = () => {
 
 const scatterplot = createScatterplot({
   canvas,
-  width,
-  height,
   lassoMinDelay,
   lassoMinDist,
   pointSize,
@@ -67,13 +63,6 @@ console.log(`Scatterplot v${scatterplot.get('version')}`);
 
 scatterplot.subscribe('select', selectHandler);
 scatterplot.subscribe('deselect', deselectHandler);
-
-const resizeHandler = () => {
-  ({ width, height } = canvas.getBoundingClientRect());
-  scatterplot.set({ width, height });
-};
-
-window.addEventListener('resize', resizeHandler);
 
 const generatePoints = (num) => {
   const numPointsPerGroup = Math.round(num / 3); // 9.000 / 3 => 3000

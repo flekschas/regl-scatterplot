@@ -19,8 +19,6 @@ const exampleEl = document.querySelector('#example-size-encoding');
 exampleEl.setAttribute('class', 'active');
 exampleEl.removeAttribute('href');
 
-let { width, height } = canvas.getBoundingClientRect();
-
 let points = [];
 let numPoints = 100000;
 let pointSize = 2;
@@ -50,8 +48,6 @@ const deselectHandler = () => {
 
 const scatterplot = createScatterplot({
   canvas,
-  width,
-  height,
   lassoMinDelay,
   lassoMinDist,
   pointSize,
@@ -63,13 +59,6 @@ console.log(`Scatterplot v${scatterplot.get('version')}`);
 
 scatterplot.subscribe('select', selectHandler);
 scatterplot.subscribe('deselect', deselectHandler);
-
-const resizeHandler = () => {
-  ({ width, height } = canvas.getBoundingClientRect());
-  scatterplot.set({ width, height });
-};
-
-window.addEventListener('resize', resizeHandler);
 
 const rndA = randomExponential(2);
 const rndB = randomExponential(4);

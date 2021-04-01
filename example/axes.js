@@ -77,8 +77,6 @@ const deselectHandler = () => {
 
 const scatterplot = createScatterplot({
   canvas,
-  width,
-  height,
   pointSize,
   xScale,
   yScale,
@@ -106,8 +104,6 @@ const resizeHandler = () => {
   // Render grid
   xAxis.tickSizeInner(-height);
   yAxis.tickSizeInner(-width);
-
-  scatterplot.set({ width, height });
 };
 
 window.addEventListener('resize', resizeHandler);

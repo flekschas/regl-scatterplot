@@ -28,8 +28,6 @@ exampleEl.setAttribute('class', 'active');
 exampleEl.removeAttribute('href');
 
 [canvas1, canvas2].forEach((canvas) => {
-  let { width, height } = canvas.getBoundingClientRect();
-
   let points = [];
   let numPoints = 25000;
   let pointSize = 3;
@@ -54,8 +52,6 @@ exampleEl.removeAttribute('href');
 
   const scatterplot = createScatterplot({
     canvas,
-    width,
-    height,
     pointSize,
   });
 
@@ -63,13 +59,6 @@ exampleEl.removeAttribute('href');
 
   scatterplot.subscribe('select', selectHandler);
   scatterplot.subscribe('deselect', deselectHandler);
-
-  const resizeHandler = () => {
-    ({ width, height } = canvas.getBoundingClientRect());
-    scatterplot.set({ width, height });
-  };
-
-  window.addEventListener('resize', resizeHandler);
 
   const generatePoints = (num) =>
     new Array(num).fill().map(() => [

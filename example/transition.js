@@ -16,8 +16,6 @@ const exampleEl = document.querySelector('#example-transition');
 exampleEl.setAttribute('class', 'active');
 exampleEl.removeAttribute('href');
 
-let { width, height } = canvas.getBoundingClientRect();
-
 let points = [];
 let pointStates = [];
 let numPoints = 100000;
@@ -48,8 +46,6 @@ const deselectHandler = () => {
 
 const scatterplot = createScatterplot({
   canvas,
-  width,
-  height,
   lassoMinDelay,
   lassoMinDist,
   pointSize,
@@ -61,13 +57,6 @@ console.log(`Scatterplot v${scatterplot.get('version')}`);
 
 scatterplot.subscribe('select', selectHandler);
 scatterplot.subscribe('deselect', deselectHandler);
-
-const resizeHandler = () => {
-  ({ width, height } = canvas.getBoundingClientRect());
-  scatterplot.set({ width, height });
-};
-
-window.addEventListener('resize', resizeHandler);
 
 const generatePoints = (num) => [
   ...new Array(Math.round(num / 2)).fill().map(() => [
