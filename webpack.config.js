@@ -11,6 +11,7 @@ module.exports = (env, argv) => ({
     connectedPoints: './example/connected-points.js',
     connectedPointsBySegment: './example/connected-points-by-segments.js',
     performanceMode: './example/performance-mode.js',
+    dynamicOpacity: './example/dynamic-opacity.js',
   },
   output: {
     path: `${__dirname}/docs`,
@@ -76,6 +77,11 @@ module.exports = (env, argv) => ({
       template: 'example/index.html',
       filename: 'performance-mode.html',
       chunks: ['performanceMode'],
+    }),
+    new HtmlWebpackPlugin({
+      template: 'example/index.html',
+      filename: 'dynamic-opacity.html',
+      chunks: ['dynamicOpacity'],
     }),
   ],
 });
