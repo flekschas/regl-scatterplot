@@ -247,6 +247,7 @@ const createScatterplot = (initialProperties = {}) => {
   const fbo = regl.framebuffer({
     width: fboRes[0],
     height: fboRes[1],
+    colorFormat: 'rgba',
     colorType: 'float',
   });
   let backgroundColorBrightness = rgbBrightness(backgroundColor);
@@ -1187,7 +1188,7 @@ const createScatterplot = (initialProperties = {}) => {
 
       void main () {
         vec4 color = texture2D(src, gl_FragCoord.xy / srcRes);
-        gl_FragColor = vec4(approxLinearToSRGB(color.rgb, gamma), 1);
+        gl_FragColor = vec4(approxLinearToSRGB(color.rgb, gamma), color.a);
       }`,
     attributes: {
       xy: [-4, -4, 4, -4, 0, 4],
@@ -1199,6 +1200,15 @@ const createScatterplot = (initialProperties = {}) => {
     },
     count: 3,
     depth: { enable: false },
+    blend: {
+      enable: true,
+      func: {
+        srcRGB: 'one',
+        srcAlpha: 'one',
+        dstRGB: 'one minus src alpha',
+        dstAlpha: 'one minus src alpha',
+      },
+    },
   });
 
   const drawPoints = (
@@ -1696,6 +1706,27 @@ const createScatterplot = (initialProperties = {}) => {
     // Update camera
     isViewChanged = camera.tick();
 
+    regl.clear({
+      // background color (transparent)
+      color: [0, 0, 0, 0],
+      depth: 1,
+    });
+
+    // eslint-disable-next-line no-underscore-dangle
+    if (backgroundImage && backgroundImage._reglType) {
+      drawBackgroundImage();
+    }
+
+    if (lassoPointsCurr.length > 2) drawPolygon2d();
+
+    // The draw order of the following calls is important!
+    if (!isTransitioning)
+      pointConnections.draw({
+        projection: getProjection(),
+        model: getModel(),
+        view: getView(),
+      });
+
     fbo.use(() => {
       regl.clear({
         // background color (transparent)
@@ -1703,20 +1734,6 @@ const createScatterplot = (initialProperties = {}) => {
         depth: 1,
       });
 
-      // eslint-disable-next-line no-underscore-dangle
-      if (backgroundImage && backgroundImage._reglType) {
-        drawBackgroundImage();
-      }
-
-      if (lassoPointsCurr.length > 2) drawPolygon2d();
-
-      // The draw order of the following calls is important!
-      if (!isTransitioning)
-        pointConnections.draw({
-          projection: getProjection(),
-          model: getModel(),
-          view: getView(),
-        });
       drawPointBodies();
       if (!mouseDown && (showRecticle || showRecticleOnce)) drawRecticle();
       if (hoveredPoint >= 0) drawHoveredPoint();
@@ -2573,6 +2590,12 @@ const createScatterplot = (initialProperties = {}) => {
     }
   };
 
+  const exportFn = (options = {}) => ({
+    pixels: Uint8ClampedArray.from(regl.read(options)),
+    width: currentWidth * window.devicePixelRatio,
+    height: currentHeight * window.devicePixelRatio,
+  });
+
   const init = () => {
     updateViewAspectRatio();
     initCamera();
@@ -2676,6 +2699,7 @@ const createScatterplot = (initialProperties = {}) => {
     reset: withDraw(reset),
     select,
     set,
+    export: exportFn,
     subscribe: pubSub.subscribe,
     unsubscribe: pubSub.unsubscribe,
   };

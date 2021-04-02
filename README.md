@@ -306,6 +306,14 @@ Refreshes the viewport of the scatterplot's regl instance.
 
 Sets the view back to the initially defined view.
 
+<a name="scatterplot.export" href="#scatterplot.export">#</a> scatterplot.<b>export</b>(<i>options</i>)
+
+**Arguments:**
+
+- `options` is an object for customizing how to export. See [regl.read()](https://github.com/regl-project/regl/blob/master/API.md#reading-pixels) for details.
+
+**Returns:** an object with three properties: `pixels`, `width`, and `height`. The `pixels` is a `Uint8ClampedArray`.
+
 <a name="scatterplot.subscribe" href="#scatterplot.subscribe">#</a> scatterplot.<b>subscribe</b>(<i>eventName</i>, <i>eventHandler</i>)
 
 Subscribe to an event.
