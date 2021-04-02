@@ -4,7 +4,12 @@ import createPubSub from 'pub-sub-es';
 import withRaf from 'with-raf';
 import { mat4, vec4 } from 'gl-matrix';
 import createLine from 'regl-line';
-import { identity, rangeMap, unionIntegers } from '@flekschas/utils';
+import {
+  identity,
+  rangeMap,
+  unionIntegers,
+  throttleAndDebounce,
+} from '@flekschas/utils';
 
 import createLassoManager from './lasso-manager';
 
@@ -91,6 +96,8 @@ import {
   LONG_CLICK_TIME,
   DEFAULT_OPACITY,
   DEFAULT_OPACITY_BY,
+  DEFAULT_OPACITY_BY_DENSITY_FILL,
+  DEFAULT_OPACITY_BY_DENSITY_DEBOUNCE_TIME,
   DEFAULT_GAMMA,
 } from './constants';
 
@@ -131,7 +138,7 @@ const checkDeprecations = (properties) => {
 const getEncodingType = (
   type,
   defaultValue,
-  { allowSegment = false } = false
+  { allowSegment = false, allowDensity = false } = {}
 ) => {
   switch (type) {
     case 'category':
@@ -150,6 +157,9 @@ const getEncodingType = (
 
     case 'segment':
       return allowSegment ? 'segment' : defaultValue;
+
+    case 'density':
+      return allowDensity ? 'density' : defaultValue;
 
     default:
       return defaultValue;
@@ -220,6 +230,7 @@ const createScatterplot = (initialProperties = {}) => {
     pointOutlineWidth = DEFAULT_POINT_OUTLINE_WIDTH,
     opacity = DEFAULT_OPACITY,
     opacityBy = DEFAULT_OPACITY_BY,
+    opacityByDensityFill = DEFAULT_OPACITY_BY_DENSITY_FILL,
     sizeBy = DEFAULT_SIZE_BY,
     height = DEFAULT_HEIGHT,
     width = DEFAULT_WIDTH,
@@ -230,7 +241,10 @@ const createScatterplot = (initialProperties = {}) => {
   let currentHeight = height === 'auto' ? 1 : height;
 
   // The following properties cannod be changed after the initialization
-  const { performanceMode = DEFAULT_PERFORMANCE_MODE } = initialProperties;
+  const {
+    performanceMode = DEFAULT_PERFORMANCE_MODE,
+    opacityByDensityDebounceTime = DEFAULT_OPACITY_BY_DENSITY_DEBOUNCE_TIME,
+  } = initialProperties;
 
   checkReglExtensions(regl);
 
@@ -260,6 +274,7 @@ const createScatterplot = (initialProperties = {}) => {
   let mouseDownTime = null;
   let mouseDownPosition = [0, 0];
   let numPoints = 0;
+  let numPointsInView = 0;
   let lassoActive = false;
   let lassoPointsCurr = [];
   let searchIndex;
@@ -275,6 +290,8 @@ const createScatterplot = (initialProperties = {}) => {
   let computedPointSizeMouseDetection;
   let keyActionMap = flipObj(keyMap);
   let lassoInitiatorTimeout;
+  let topRightNdc;
+  let bottomLeftNdc;
 
   pointColor = isMultipleColors(pointColor) ? [...pointColor] : [pointColor];
   pointColorActive = isMultipleColors(pointColorActive)
@@ -366,7 +383,9 @@ const createScatterplot = (initialProperties = {}) => {
   }
 
   colorBy = getEncodingType(colorBy, DEFAULT_COLOR_BY);
-  opacityBy = getEncodingType(opacityBy, DEFAULT_OPACITY_BY);
+  opacityBy = getEncodingType(opacityBy, DEFAULT_OPACITY_BY, {
+    allowDensity: true,
+  });
   sizeBy = getEncodingType(sizeBy, DEFAULT_SIZE_BY);
 
   pointConnectionColorBy = getEncodingType(
@@ -469,7 +488,7 @@ const createScatterplot = (initialProperties = {}) => {
     const pointScale = getPointScale();
 
     // The height of the view in normalized device coordinates
-    const heightNdc = getScatterGlPos(1, 1)[1] - getScatterGlPos(-1, -1)[1];
+    const heightNdc = topRightNdc[1] - bottomLeftNdc[1];
     // The size of a pixel in the current view in normalized device coordinates
     const pxNdc = heightNdc / currentHeight;
     // The scaled point size in normalized device coordinates
@@ -1080,7 +1099,9 @@ const createScatterplot = (initialProperties = {}) => {
     colorBy = getEncodingType(type, DEFAULT_COLOR_BY);
   };
   const setOpacityBy = (type) => {
-    opacityBy = getEncodingType(type, DEFAULT_OPACITY_BY);
+    opacityBy = getEncodingType(type, DEFAULT_OPACITY_BY, {
+      allowDensity: true,
+    });
   };
   const setSizeBy = (type) => {
     sizeBy = getEncodingType(type, DEFAULT_SIZE_BY);
@@ -1127,13 +1148,13 @@ const createScatterplot = (initialProperties = {}) => {
   const getProjectionViewModel = () =>
     mat4.multiply(pvm, projection, mat4.multiply(pvm, camera.view, model));
   const getPointScale = () =>
-    min(1.0, camera.scaling) +
-    Math.log2(max(1.0, camera.scaling)) * window.devicePixelRatio;
+    1 + Math.log2(max(1.0, camera.scaling)) * window.devicePixelRatio;
   const getNormalNumPoints = () => numPoints;
   const getIsColoredByZ = () => +(colorBy === 'valueZ');
   const getIsColoredByW = () => +(colorBy === 'valueW');
   const getIsOpacityByZ = () => +(opacityBy === 'valueZ');
   const getIsOpacityByW = () => +(opacityBy === 'valueW');
+  const getIsOpacityByDensity = () => +(opacityBy === 'density');
   const getIsSizedByZ = () => +(sizeBy === 'valueZ');
   const getIsSizedByW = () => +(sizeBy === 'valueW');
   const getColorMultiplicator = () => {
@@ -1147,6 +1168,46 @@ const createScatterplot = (initialProperties = {}) => {
   const getSizeMultiplicator = () => {
     if (sizeBy === 'valueZ') return maxValueZ <= 1 ? pointSize.length - 1 : 1;
     return maxValueW <= 1 ? pointSize.length - 1 : 1;
+  };
+  const getOpacityDensity = (context) => {
+    if (opacityBy !== 'density') return 1;
+
+    // Adopted from the fabulous Ricky Reusser:
+    // https://observablehq.com/@rreusser/selecting-the-right-opacity-for-2d-point-clouds
+    // Extended with a point-density based approach
+    const pointScale = getPointScale();
+    const smallestPointSize = pointSize.length === 1 ? pointSize[0] : pointSize;
+    const p = smallestPointSize * pointScale;
+
+    // Compute the plot's x and y range from the view matrix, though these could come from any source
+    const s = (2 / (2 / camera.view[0])) * (2 / (2 / camera.view[5]));
+
+    // Viewport size, in device pixels
+    const H = context.viewportHeight;
+
+    // Adaptation: Instead of using the global number of points, I am using a
+    // density-based approach that takes the points in the view into context
+    // when zooming in. This ensure that in sparse areas, points are opaque and
+    // in dense areas points are more translucent.
+    let alpha =
+      ((opacityByDensityFill * H * H) / (numPointsInView * p * p)) * min(1, s);
+
+    // In performanceMode we use squares, otherwise we use circles, which only
+    // take up (pi r^2) of the unit square
+    alpha *= performanceMode ? 1 : 1 / (0.25 * Math.PI);
+
+    // If the pixels shrink below the minimum permitted size, then we adjust the opacity instead
+    // and apply clamping of the point size in the vertex shader. Note that we add 0.5 since we
+    // slightly inrease the size of points during rendering to accommodate SDF-style antialiasing.
+    const clampedPointDeviceSize = max(smallestPointSize, p) + 0.5;
+
+    // We square this since we're concerned with the ratio of *areas*.
+    // eslint-disable-next-line no-restricted-properties
+    alpha *= Math.pow(p / clampedPointDeviceSize, 2);
+
+    // And finally, we clamp to the range [0, 1]. We should really clamp this to 1 / precision
+    // on the low end, depending on the data type of the destination so that we never render *nothing*.
+    return min(1, max(0, alpha));
   };
 
   const updatePoints = regl({
@@ -1259,10 +1320,12 @@ const createScatterplot = (initialProperties = {}) => {
         isColoredByW: getIsColoredByW,
         isOpacityByZ: getIsOpacityByZ,
         isOpacityByW: getIsOpacityByW,
+        isOpacityByDensity: getIsOpacityByDensity,
         isSizedByZ: getIsSizedByZ,
         isSizedByW: getIsSizedByW,
         colorMultiplicator: getColorMultiplicator,
         opacityMultiplicator: getOpacityMultiplicator,
+        opacityDensity: getOpacityDensity,
         sizeMultiplicator: getSizeMultiplicator,
         numColorStates: COLOR_NUM_STATES,
       },
@@ -1495,6 +1558,7 @@ const createScatterplot = (initialProperties = {}) => {
     isInit = false;
 
     numPoints = newPoints.length;
+    numPointsInView = numPoints;
 
     if (stateTex) stateTex.destroy();
     stateTex = createStateTexture(newPoints);
@@ -1700,11 +1764,33 @@ const createScatterplot = (initialProperties = {}) => {
       }
     });
 
+  const computeNumPointsInView = () => {
+    numPointsInView =
+      camera.scaling <= 1
+        ? numPoints
+        : searchIndex.range(
+            bottomLeftNdc[0],
+            bottomLeftNdc[1],
+            topRightNdc[0],
+            topRightNdc[1]
+          ).length;
+  };
+  const computeNumPointsInViewDb = throttleAndDebounce(
+    computeNumPointsInView,
+    opacityByDensityDebounceTime
+  );
+
   const draw = (showRecticleOnce) => {
     if (!isInit || !regl) return;
 
     // Update camera
     isViewChanged = camera.tick();
+
+    if (isViewChanged) {
+      topRightNdc = getScatterGlPos(1, 1);
+      bottomLeftNdc = getScatterGlPos(-1, -1);
+      computeNumPointsInViewDb();
+    }
 
     regl.clear({
       // background color (transparent)
@@ -2163,6 +2249,10 @@ const createScatterplot = (initialProperties = {}) => {
     computePointSizeMouseDetection();
   };
 
+  const setOpacityByDensityFill = (newOpacityByDensityFill) => {
+    opacityByDensityFill = +newOpacityByDensityFill;
+  };
+
   const setGamma = (newGamma) => {
     gamma = +newGamma;
   };
@@ -2208,6 +2298,9 @@ const createScatterplot = (initialProperties = {}) => {
     if (property === 'opacity')
       return opacity.length === 1 ? opacity[0] : opacity;
     if (property === 'opacityBy') return opacityBy;
+    if (property === 'opacityByDensityFill') return opacityByDensityFill;
+    if (property === 'opacityByDensityDebounceTime')
+      return opacityByDensityDebounceTime;
     if (property === 'pointColor')
       return pointColor.length === 1 ? pointColor[0] : pointColor;
     if (property === 'pointColorActive')
@@ -2465,6 +2558,10 @@ const createScatterplot = (initialProperties = {}) => {
       setDeselectOnEscape(properties.deselectOnEscape);
     }
 
+    if (properties.opacityByDensityFill !== undefined) {
+      setOpacityByDensityFill(properties.opacityByDensityFill);
+    }
+
     if (properties.gamma !== undefined) {
       setGamma(properties.gamma);
     }
@@ -2529,6 +2626,9 @@ const createScatterplot = (initialProperties = {}) => {
     } else {
       camera.setView(mat4.clone(DEFAULT_VIEW));
     }
+
+    topRightNdc = getScatterGlPos(1, 1);
+    bottomLeftNdc = getScatterGlPos(-1, -1);
   };
 
   const reset = () => {

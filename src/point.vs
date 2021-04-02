@@ -18,10 +18,12 @@ uniform float isColoredByZ;
 uniform float isColoredByW;
 uniform float isOpacityByZ;
 uniform float isOpacityByW;
+uniform float isOpacityByDensity;
 uniform float isSizedByZ;
 uniform float isSizedByW;
 uniform float colorMultiplicator;
 uniform float opacityMultiplicator;
+uniform float opacityDensity;
 uniform float sizeMultiplicator;
 uniform float numColorStates;
 uniform float pointScale;
@@ -74,16 +76,20 @@ void main() {
   float pointSize = texture2D(encodingTex, pointSizeTexIndex).x;
 
   // Retrieve opacity
-  float opacityIndexZ = isOpacityByZ * floor(state.z * opacityMultiplicator);
-  float opacityIndexW = isOpacityByW * floor(state.w * opacityMultiplicator);
-  float opacityIndex = opacityIndexZ + opacityIndexW;
+  if (isOpacityByDensity < 0.5) {
+    float opacityIndexZ = isOpacityByZ * floor(state.z * opacityMultiplicator);
+    float opacityIndexW = isOpacityByW * floor(state.w * opacityMultiplicator);
+    float opacityIndex = opacityIndexZ + opacityIndexW;
 
-  float opacityRowIndex = floor((opacityIndex + encodingTexEps) / encodingTexRes);
-  vec2 opacityTexIndex = vec2(
-    (opacityIndex / encodingTexRes) - opacityRowIndex + encodingTexEps,
-    opacityRowIndex / encodingTexRes + encodingTexEps
-  );
-  color.a = min(1.0, texture2D(encodingTex, opacityTexIndex).y + globalState);
+    float opacityRowIndex = floor((opacityIndex + encodingTexEps) / encodingTexRes);
+    vec2 opacityTexIndex = vec2(
+      (opacityIndex / encodingTexRes) - opacityRowIndex + encodingTexEps,
+      opacityRowIndex / encodingTexRes + encodingTexEps
+    );
+    color.a = min(1.0, texture2D(encodingTex, opacityTexIndex).y + globalState);
+  } else {
+    color.a = min(1.0, opacityDensity + globalState);
+  }
 
   finalPointSize = (pointSize * pointScale) + pointSizeExtra;
   gl_PointSize = finalPointSize;

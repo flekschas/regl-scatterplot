@@ -92,6 +92,8 @@ export const DEFAULT_POINT_CONNECTION_OPACITY_BY = null;
 export const DEFAULT_POINT_CONNECTION_OPACITY_ACTIVE = 0.66;
 export const DEFAULT_OPACITY = 1;
 export const DEFAULT_OPACITY_BY = null;
+export const DEFAULT_OPACITY_BY_DENSITY_FILL = 0.15;
+export const DEFAULT_OPACITY_BY_DENSITY_DEBOUNCE_TIME = 25;
 
 // Default colors
 export const DEFAULT_COLORMAP = [];
