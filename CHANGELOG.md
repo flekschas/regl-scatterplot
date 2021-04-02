@@ -2,6 +2,7 @@
 
 ## v0.17.1
 
+- Add [`scatterplot.export`](README.md#scatterplot.export) for exporting the current view as pixels.
 - Add default canvas width/height (`'auto'`) to fix an issue on high-dpi monitors that do not style the canvas element (#41)
 - Add resize handler so when width/height is set to `'auto'` the canvas element is automatically resized on `resize` and `orientationchange` events.
 - Improve framebuffer rendering and add `gamma` prop to allow controlling the opacity blending (#42)
