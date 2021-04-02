@@ -451,6 +451,12 @@ backwards compatibility), `value1`, `valueA`, `valueZ`, or `z`. To reference
 the forth component use `value` (only for backwards compatibility), `value2`,
 `valueB`, `valueW`, or `w`.
 
+**Density-based opacity encoding:** In addition, the opacity can dynamically be
+set based on the point density and zoom level via `opacityBy: 'density'`. As an
+example go to [dynamic-opacity.html](https://flekschas.github.io/regl-scatterplot/dynamic-opacity.html).
+The implementation is an extension of [Ricky Reusser's awesome notebook](https://observablehq.com/@rreusser/selecting-the-right-opacity-for-2d-point-clouds).
+Huuuge kudos Ricky! 🙇‍♂️
+
 <a name="property-point-conntection-by" href="#property-point-conntection-by">#</a> <b>pointConnectionColorBy, pointConnectionOpacityBy, and pointConnectionSizeBy:</b>
 
 In addition to the properties understood by [`colorBy`, etc.](#property-by),
