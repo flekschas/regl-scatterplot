@@ -5,6 +5,7 @@ import { scaleLinear } from 'd3-scale';
 import { select } from 'd3-selection';
 
 import createScatterplot from '../src';
+import { saveAsPng } from './utils';
 
 const parentWrapper = document.querySelector('#parent-wrapper');
 const canvasWrapper = document.querySelector('#canvas-wrapper');
@@ -17,6 +18,7 @@ const opacityEl = document.querySelector('#opacity');
 const opacityValEl = document.querySelector('#opacity-value');
 const clickLassoInitiatorEl = document.querySelector('#click-lasso-initiator');
 const resetEl = document.querySelector('#reset');
+const exportEl = document.querySelector('#export');
 const exampleBg = document.querySelector('#example-axes');
 
 exampleBg.setAttribute('class', 'active');
@@ -82,6 +84,8 @@ const scatterplot = createScatterplot({
   yScale,
   showRecticle: true,
 });
+
+exportEl.addEventListener('click', () => saveAsPng(scatterplot));
 
 console.log(`Scatterplot v${scatterplot.get('version')}`);
 

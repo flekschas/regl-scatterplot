@@ -176,6 +176,18 @@
         text-decoration-color: rgba(255, 255, 255, 1);
       }
 
+      .two-button-group {
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .two-button-group > button,
+      .two-button-group > a.button-like {
+        box-sizing: border-box;
+        width: calc(50% - 0.125rem);
+        text-align: center;
+      }
+
       .smaller {
         font-size: 0.9em;
       }
@@ -459,12 +471,15 @@
           </li>
         </ul>
         <hr />
-        <a
-          class="button-like"
-          href="https://github.com/flekschas/regl-scatterplot"
-          target="_blank"
-          >Source code</a
-        >
+        <div class="two-button-group">
+          <button id="export">Export as PNG</button>
+          <a
+            class="button-like"
+            href="https://github.com/flekschas/regl-scatterplot"
+            target="_blank"
+            >Source code</a
+          >
+        </div>
       </aside>
     </header>
     <div id="parent-wrapper">

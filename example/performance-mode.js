@@ -1,5 +1,6 @@
 /* eslint no-console: 0 */
 import { createWorker } from '@flekschas/utils';
+import { saveAsPng } from './utils';
 
 import createScatterplot from '../src';
 import pointWorkerFn from './performance-mode-point-worker';
@@ -15,6 +16,7 @@ const opacityEl = document.querySelector('#opacity');
 const opacityValEl = document.querySelector('#opacity-value');
 const clickLassoInitiatorEl = document.querySelector('#click-lasso-initiator');
 const resetEl = document.querySelector('#reset');
+const exportEl = document.querySelector('#export');
 const exampleEl = document.querySelector('#example-performance-mode');
 
 exampleEl.setAttribute('class', 'active');
@@ -74,6 +76,8 @@ const scatterplot = createScatterplot({
   showRecticle: true,
   performanceMode: true,
 });
+
+exportEl.addEventListener('click', () => saveAsPng(scatterplot));
 
 console.log(`Scatterplot v${scatterplot.get('version')}`);
 

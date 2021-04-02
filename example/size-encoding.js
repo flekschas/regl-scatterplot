@@ -4,6 +4,7 @@ import { scaleLog } from 'd3-scale';
 import { randomExponential } from 'd3-random';
 
 import createScatterplot from '../src';
+import { saveAsPng } from './utils';
 
 const canvas = document.querySelector('#canvas');
 const numPointsEl = document.querySelector('#num-points');
@@ -14,6 +15,7 @@ const opacityEl = document.querySelector('#opacity');
 const opacityValEl = document.querySelector('#opacity-value');
 const clickLassoInitiatorEl = document.querySelector('#click-lasso-initiator');
 const resetEl = document.querySelector('#reset');
+const exportEl = document.querySelector('#export');
 const exampleEl = document.querySelector('#example-size-encoding');
 
 exampleEl.setAttribute('class', 'active');
@@ -54,6 +56,8 @@ const scatterplot = createScatterplot({
   showRecticle,
   recticleColor,
 });
+
+exportEl.addEventListener('click', () => saveAsPng(scatterplot));
 
 console.log(`Scatterplot v${scatterplot.get('version')}`);
 
