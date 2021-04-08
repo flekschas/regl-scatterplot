@@ -45,8 +45,8 @@ import {
   DEFAULT_LASSO_MIN_DELAY,
   DEFAULT_LASSO_MIN_DIST,
   DEFAULT_LASSO_CLEAR_EVENT,
-  DEFAULT_SHOW_RECTICLE,
-  DEFAULT_RECTICLE_COLOR,
+  DEFAULT_SHOW_RETICLE,
+  DEFAULT_RETICLE_COLOR,
   DEFAULT_POINT_CONNECTION_COLOR_NORMAL,
   DEFAULT_POINT_CONNECTION_COLOR_ACTIVE,
   DEFAULT_POINT_CONNECTION_COLOR_HOVER,
@@ -123,7 +123,10 @@ import {
 
 import { version } from '../package.json';
 
-const deprecations = {};
+const deprecations = {
+  showRecticle: 'showReticle',
+  recticleColor: 'reticleColor',
+};
 
 const checkDeprecations = (properties) => {
   Object.keys(properties)
@@ -132,6 +135,8 @@ const checkDeprecations = (properties) => {
       console.warn(
         `regl-scatterplot: the "${name}" property is deprecated. Please use "${deprecations[name]}" instead.`
       );
+      properties[deprecations[name]] = properties[name];
+      delete properties[name];
     });
 };
 
@@ -206,8 +211,8 @@ const createScatterplot = (initialProperties = {}) => {
     lassoInitiatorParentElement = document.body,
     keyMap = DEFAULT_KEY_MAP,
     mouseMode = DEFAULT_MOUSE_MODE,
-    showRecticle = DEFAULT_SHOW_RECTICLE,
-    recticleColor = DEFAULT_RECTICLE_COLOR,
+    showReticle = DEFAULT_SHOW_RETICLE,
+    reticleColor = DEFAULT_RETICLE_COLOR,
     pointColor = DEFAULT_COLOR_NORMAL,
     pointColorActive = DEFAULT_COLOR_ACTIVE,
     pointColorHover = DEFAULT_COLOR_HOVER,
@@ -255,7 +260,7 @@ const createScatterplot = (initialProperties = {}) => {
 
   backgroundColor = toRgba(backgroundColor, true);
   lassoColor = toRgba(lassoColor, true);
-  recticleColor = toRgba(recticleColor, true);
+  reticleColor = toRgba(reticleColor, true);
 
   const fboRes = [512, 512];
   const fbo = regl.framebuffer({
@@ -285,8 +290,8 @@ const createScatterplot = (initialProperties = {}) => {
   let pointConnections;
   let pointConnectionMap;
   let computingPointConnectionCurves;
-  let recticleHLine;
-  let recticleVLine;
+  let reticleHLine;
+  let reticleVLine;
   let computedPointSizeMouseDetection;
   let keyActionMap = flipObj(keyMap);
   let lassoInitiatorTimeout;
@@ -417,7 +422,7 @@ const createScatterplot = (initialProperties = {}) => {
   let isTransitioning = false;
   let transitionStartTime = null;
   let transitionRafId = null;
-  let preTransitionShowRecticle = showRecticle;
+  let preTransitionShowReticle = showReticle;
 
   let colorTex; // Stores the point color texture
   let colorTexRes = 0; // Width and height of the texture
@@ -1436,7 +1441,7 @@ const createScatterplot = (initialProperties = {}) => {
         .map((_, i) => [0, i + 1, i + 2]),
   });
 
-  const drawRecticle = () => {
+  const drawReticle = () => {
     if (!(hoveredPoint >= 0)) return;
 
     const [x, y] = searchIndex.points[hoveredPoint].slice(0, 2);
@@ -1446,7 +1451,7 @@ const createScatterplot = (initialProperties = {}) => {
 
     // We have to calculate the model-view-projection matrix outside of the
     // shader as we actually don't want the mode, view, or projection of the
-    // line view space to change such that the recticle is visualized across the
+    // line view space to change such that the reticle is visualized across the
     // entire view container and not within the view of the scatterplot
     mat4.multiply(
       scratch,
@@ -1456,11 +1461,11 @@ const createScatterplot = (initialProperties = {}) => {
 
     vec4.transformMat4(v, v, scratch);
 
-    recticleHLine.setPoints([-1, v[1], 1, v[1]]);
-    recticleVLine.setPoints([v[0], 1, v[0], -1]);
+    reticleHLine.setPoints([-1, v[1], 1, v[1]]);
+    reticleVLine.setPoints([v[0], 1, v[0], -1]);
 
-    recticleHLine.draw();
-    recticleVLine.draw();
+    reticleHLine.draw();
+    reticleVLine.draw();
 
     // Draw outer outline
     drawPoints(
@@ -1780,7 +1785,7 @@ const createScatterplot = (initialProperties = {}) => {
     opacityByDensityDebounceTime
   );
 
-  const draw = (showRecticleOnce) => {
+  const draw = (showReticleOnce) => {
     if (!isInit || !regl) return;
 
     // Update camera
@@ -1821,7 +1826,7 @@ const createScatterplot = (initialProperties = {}) => {
       });
 
       drawPointBodies();
-      if (!mouseDown && (showRecticle || showRecticleOnce)) drawRecticle();
+      if (!mouseDown && (showReticle || showReticleOnce)) drawReticle();
       if (hoveredPoint >= 0) drawHoveredPoint();
       if (selection.length) drawSelectedPoint();
     });
@@ -1867,7 +1872,7 @@ const createScatterplot = (initialProperties = {}) => {
   const endTransition = () => {
     isTransitioning = false;
     transitionStartTime = null;
-    showRecticle = preTransitionShowRecticle;
+    showReticle = preTransitionShowReticle;
 
     clearCachedPoints();
 
@@ -1897,8 +1902,8 @@ const createScatterplot = (initialProperties = {}) => {
 
     isTransitioning = true;
     transitionStartTime = null;
-    preTransitionShowRecticle = showRecticle;
-    showRecticle = false;
+    preTransitionShowReticle = showReticle;
+    showReticle = false;
 
     transition(duration, easingFn, drawArgs);
     pubSub.publish('transitionStart');
@@ -1925,7 +1930,7 @@ const createScatterplot = (initialProperties = {}) => {
         ) {
           setPointConnections(newPoints).then(() => {
             pubSub.publish('pointConnectionsDraw');
-            drawRaf(options.showRecticleOnce);
+            drawRaf(options.showReticleOnce);
           });
         }
       }
@@ -1937,7 +1942,7 @@ const createScatterplot = (initialProperties = {}) => {
             // Point connects cannot be transitioned yet so we hide them during
             // the transition. Hence, we need to make sure we call `draw()` once
             // the transition has ended.
-            drawRaf(options.showRecticleOnce);
+            drawRaf(options.showReticleOnce);
             resolve();
           },
           1
@@ -1947,11 +1952,11 @@ const createScatterplot = (initialProperties = {}) => {
             duration: options.transitionDuration,
             easing: options.transitionEasing,
           },
-          [options.showRecticleOnce]
+          [options.showReticleOnce]
         );
       } else {
         pubSub.subscribe('draw', resolve, 1);
-        drawRaf(options.showRecticleOnce);
+        drawRaf(options.showReticleOnce);
       }
     });
 
@@ -2103,19 +2108,19 @@ const createScatterplot = (initialProperties = {}) => {
     });
   };
 
-  const setShowRecticle = (newShowRecticle) => {
-    if (newShowRecticle === null) return;
+  const setShowReticle = (newShowReticle) => {
+    if (newShowReticle === null) return;
 
-    showRecticle = newShowRecticle;
+    showReticle = newShowReticle;
   };
 
-  const setRecticleColor = (newRecticleColor) => {
-    if (!newRecticleColor) return;
+  const setReticleColor = (newReticleColor) => {
+    if (!newReticleColor) return;
 
-    recticleColor = toRgba(newRecticleColor, true);
+    reticleColor = toRgba(newReticleColor, true);
 
-    recticleHLine.setStyle({ color: recticleColor });
-    recticleVLine.setStyle({ color: recticleColor });
+    reticleHLine.setStyle({ color: reticleColor });
+    reticleVLine.setStyle({ color: reticleColor });
   };
 
   const setXScale = (newXScale) => {
@@ -2349,9 +2354,9 @@ const createScatterplot = (initialProperties = {}) => {
       return pointConnectionMaxIntPointsPerSegment;
     if (property === 'pointConnectionTolerance')
       return pointConnectionTolerance;
-    if (property === 'recticleColor') return recticleColor;
+    if (property === 'reticleColor') return reticleColor;
     if (property === 'regl') return regl;
-    if (property === 'showRecticle') return showRecticle;
+    if (property === 'showReticle') return showReticle;
     if (property === 'version') return version;
     if (property === 'width') return width;
     if (property === 'xScale') return xScale;
@@ -2518,12 +2523,12 @@ const createScatterplot = (initialProperties = {}) => {
       setMouseMode(properties.mouseMode);
     }
 
-    if (properties.showRecticle !== undefined) {
-      setShowRecticle(properties.showRecticle);
+    if (properties.showReticle !== undefined) {
+      setShowReticle(properties.showReticle);
     }
 
-    if (properties.recticleColor !== undefined) {
-      setRecticleColor(properties.recticleColor);
+    if (properties.reticleColor !== undefined) {
+      setReticleColor(properties.reticleColor);
     }
 
     if (properties.pointOutlineWidth !== undefined) {
@@ -2578,7 +2583,7 @@ const createScatterplot = (initialProperties = {}) => {
     });
   };
 
-  const hover = (point, showRecticleOnce = false) => {
+  const hover = (point, showReticleOnce = false) => {
     let needsRedraw = false;
 
     if (point >= 0) {
@@ -2605,7 +2610,7 @@ const createScatterplot = (initialProperties = {}) => {
       hoveredPoint = undefined;
     }
 
-    if (needsRedraw) drawRaf(null, showRecticleOnce);
+    if (needsRedraw) drawRaf(null, showReticleOnce);
   };
 
   const initCamera = () => {
@@ -2712,13 +2717,13 @@ const createScatterplot = (initialProperties = {}) => {
       widthActive: pointConnectionSizeActive,
       is2d: true,
     });
-    recticleHLine = createLine(regl, {
-      color: recticleColor,
+    reticleHLine = createLine(regl, {
+      color: reticleColor,
       width: 1,
       is2d: true,
     });
-    recticleVLine = createLine(regl, {
-      color: recticleColor,
+    reticleVLine = createLine(regl, {
+      color: reticleColor,
       width: 1,
       is2d: true,
     });
@@ -2780,8 +2785,8 @@ const createScatterplot = (initialProperties = {}) => {
     regl = undefined;
     lasso.destroy();
     pointConnections.destroy();
-    recticleHLine.destroy();
-    recticleVLine.destroy();
+    reticleHLine.destroy();
+    reticleVLine.destroy();
     pubSub.clear();
   };
 

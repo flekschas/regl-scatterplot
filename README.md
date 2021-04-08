@@ -389,8 +389,8 @@ can be read and written via [`scatterplot.get()`](#scatterplot.get) and [`scatte
 | lassoInitiator                        | boolean         | `false`                             |                                                                 | `true`   | `false`     |
 | lassoInitiatorElement                 | object          | the lasso dom element               |                                                                 | `false`  | `false`     |
 | lassoInitiatorParentElement           | object          | `document.body`                     |                                                                 | `true`   | `false`     |
-| showRecticle                          | boolean         | `false`                             | `true` or `false`                                               | `true`   | `false`     |
-| recticleColor                         | quadruple       | rgba(1, 1, 1, .5)                   | hex, rgb, rgba                                                  | `true`   | `false`     |
+| showReticle                           | boolean         | `false`                             | `true` or `false`                                               | `true`   | `false`     |
+| reticleColor                          | quadruple       | rgba(1, 1, 1, .5)                   | hex, rgb, rgba                                                  | `true`   | `false`     |
 | xScale                                | function        | `null`                              | must follow the D3 scale API                                    | `true`   | `true`      |
 | yScale                                | function        | `null`                              | must follow the D3 scale API                                    | `true`   | `true`      |
 | keyMap                                | object          | `{ alt: 'rotate', shift: 'lasso' }` | See the notes below                                             | `true`   | `false`     |
@@ -564,8 +564,8 @@ scatterplot.set({
   lassoClearEvent: 'deselect',
 });
 
-// Activate recticle and set recticle color to red
-scatterplot.set({ showRecticle: true, recticleColor: [1, 0, 0, 0.66] });
+// Activate reticle and set reticle color to red
+scatterplot.set({ showReticle: true, reticleColor: [1, 0, 0, 0.66] });
 ```
 
 ### Events

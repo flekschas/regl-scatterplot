@@ -15,8 +15,8 @@ import {
   DEFAULT_COLOR_BG,
   DEFAULT_HEIGHT,
   DEFAULT_LASSO_COLOR,
-  DEFAULT_SHOW_RECTICLE,
-  DEFAULT_RECTICLE_COLOR,
+  DEFAULT_SHOW_RETICLE,
+  DEFAULT_RETICLE_COLOR,
   DEFAULT_POINT_OUTLINE_WIDTH,
   DEFAULT_POINT_SIZE,
   DEFAULT_POINT_SIZE_SELECTED,
@@ -920,54 +920,54 @@ test('set({ pointSizeSelected })', async (t) => {
   scatterplot.destroy();
 });
 
-test('set({ showRecticle, recticleColor })', async (t) => {
+test('set({ showReticle, reticleColor })', async (t) => {
   const scatterplot = createScatterplot({ canvas: createCanvas() });
 
   t.equal(
-    scatterplot.get('showRecticle'),
-    DEFAULT_SHOW_RECTICLE,
-    `showRecticle should be set to ${JSON.stringify(
-      DEFAULT_SHOW_RECTICLE
+    scatterplot.get('showReticle'),
+    DEFAULT_SHOW_RETICLE,
+    `showReticle should be set to ${JSON.stringify(
+      DEFAULT_SHOW_RETICLE
     )} by default`
   );
 
   t.equal(
-    scatterplot.get('recticleColor'),
-    DEFAULT_RECTICLE_COLOR,
-    `recticleColor should be set to ${DEFAULT_RECTICLE_COLOR} by default`
+    scatterplot.get('reticleColor'),
+    DEFAULT_RETICLE_COLOR,
+    `reticleColor should be set to ${DEFAULT_RETICLE_COLOR} by default`
   );
 
-  const showRecticle = !DEFAULT_SHOW_RECTICLE;
-  const recticleColor = [1, 0, 0, 0.5];
+  const showReticle = !DEFAULT_SHOW_RETICLE;
+  const reticleColor = [1, 0, 0, 0.5];
 
-  scatterplot.set({ showRecticle, recticleColor });
+  scatterplot.set({ showReticle, reticleColor });
 
   t.equal(
-    scatterplot.get('showRecticle'),
-    showRecticle,
-    `showRecticle should be set to ${showRecticle}`
+    scatterplot.get('showReticle'),
+    showReticle,
+    `showReticle should be set to ${showReticle}`
   );
 
-  scatterplot.set({ showRecticle: null });
+  scatterplot.set({ showReticle: null });
 
   t.equal(
-    scatterplot.get('showRecticle'),
-    showRecticle,
-    'showRecticle should not be nullifyable'
+    scatterplot.get('showReticle'),
+    showReticle,
+    'showReticle should not be nullifyable'
   );
 
   t.equal(
-    scatterplot.get('recticleColor'),
-    recticleColor,
-    `recticleColor should be set to ${recticleColor}`
+    scatterplot.get('reticleColor'),
+    reticleColor,
+    `reticleColor should be set to ${reticleColor}`
   );
 
-  scatterplot.set({ recticleColor: null });
+  scatterplot.set({ reticleColor: null });
 
   t.equal(
-    scatterplot.get('recticleColor'),
-    recticleColor,
-    'recticleColor should not be nullifyable'
+    scatterplot.get('reticleColor'),
+    reticleColor,
+    'reticleColor should not be nullifyable'
   );
 
   scatterplot.destroy();

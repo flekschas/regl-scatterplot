@@ -1,5 +1,9 @@
 ## Next
 
+## v0.18.1
+
+- Rename `showRecticle` to `showReticle` and `recticleColor` to `reticleColor` (#47)
+
 ## v0.18.0
 
 - Add density-based dynamic point opacity via `opacityBy: 'density'`. See
