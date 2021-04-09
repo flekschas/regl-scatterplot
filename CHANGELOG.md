@@ -3,6 +3,7 @@
 ## v0.18.1
 
 - Rename `showRecticle` to `showReticle` and `recticleColor` to `reticleColor` (#47)
+- Fix reticle glitches by updating `regl-line` (#46)
 
 ## v0.18.0
 

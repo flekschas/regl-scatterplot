@@ -802,8 +802,7 @@ const createScatterplot = (initialProperties = {}) => {
 
     // Only ray cast if the mouse cursor is inside
     if (isMouseInCanvas && !lassoActive) {
-      const clostestPoint = raycast();
-      hover(clostestPoint); // eslint-disable-line no-use-before-define
+      hover(raycast()); // eslint-disable-line no-use-before-define
     }
 
     if (lassoActive) lassoManager.extend(event, true);
