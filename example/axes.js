@@ -82,7 +82,7 @@ const scatterplot = createScatterplot({
   pointSize,
   xScale,
   yScale,
-  showRecticle: true,
+  showReticle: true,
 });
 
 exportEl.addEventListener('click', () => saveAsPng(scatterplot));

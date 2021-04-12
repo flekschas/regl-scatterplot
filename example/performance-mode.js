@@ -73,7 +73,7 @@ const scatterplot = createScatterplot({
   lassoMinDelay,
   lassoMinDist,
   pointSize,
-  showRecticle: true,
+  showReticle: true,
   performanceMode: true,
 });
 

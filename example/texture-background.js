@@ -45,7 +45,7 @@ const deselectHandler = () => {
 const scatterplot = createScatterplot({
   canvas,
   pointSize,
-  showRecticle: true,
+  showReticle: true,
   backgroundImage: `https://picsum.photos/${Math.min(640, width)}/${Math.min(
     640,
     height

@@ -26,8 +26,8 @@ let selection = [];
 
 const lassoMinDelay = 10;
 const lassoMinDist = 2;
-const showRecticle = true;
-const recticleColor = [1, 1, 0.878431373, 0.33];
+const showReticle = true;
+const reticleColor = [1, 1, 0.878431373, 0.33];
 
 const selectHandler = ({ points: selectedPoints }) => {
   console.log('Selected:', selectedPoints);
@@ -52,8 +52,8 @@ const scatterplot = createScatterplot({
   pointSize,
   pointColor: '#fff',
   opacityBy: 'density',
-  showRecticle,
-  recticleColor,
+  showReticle,
+  reticleColor,
 });
 
 exportEl.addEventListener('click', () => saveAsPng(scatterplot));

@@ -27,8 +27,8 @@ let selection = [];
 const pointSizeMax = 10;
 const lassoMinDelay = 10;
 const lassoMinDist = 2;
-const showRecticle = true;
-const recticleColor = [1, 1, 0.878431373, 0.33];
+const showReticle = true;
+const reticleColor = [1, 1, 0.878431373, 0.33];
 const showPointConnections = true;
 const pointConnectionColor = [1, 1, 1, 0.15];
 const pointConnectionSize = 2;
@@ -54,8 +54,8 @@ const scatterplot = createScatterplot({
   lassoMinDelay,
   lassoMinDist,
   pointSize,
-  showRecticle,
-  recticleColor,
+  showReticle,
+  reticleColor,
   showPointConnections,
   pointConnectionColor,
   pointConnectionSize,
