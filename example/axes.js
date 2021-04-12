@@ -46,7 +46,9 @@ axisContainer.node().style.pointerEvents = 'none';
 canvasWrapper.style.right = `${yAxisPadding}px`;
 canvasWrapper.style.bottom = `${xAxisPadding}px`;
 
-let { width, height } = canvas.getBoundingClientRect();
+let { width, height } = canvasWrapper.getBoundingClientRect();
+
+console.log(width, height);
 
 xAxisContainer.attr('transform', `translate(0, ${height})`).call(xAxis);
 yAxisContainer.attr('transform', `translate(${width}, 0)`).call(yAxis);
@@ -96,11 +98,17 @@ scatterplot.subscribe('view', (event) => {
   yAxisContainer.call(yAxis.scale(event.yScale));
 });
 
-xAxisContainer.call(xAxis.scale(scatterplot.get('xScale')));
-yAxisContainer.call(yAxis.scale(scatterplot.get('yScale')));
+scatterplot.subscribe(
+  'init',
+  () => {
+    xAxisContainer.call(xAxis.scale(scatterplot.get('xScale')));
+    yAxisContainer.call(yAxis.scale(scatterplot.get('yScale')));
+  },
+  1
+);
 
 const resizeHandler = () => {
-  ({ width, height } = canvas.getBoundingClientRect());
+  ({ width, height } = canvasWrapper.getBoundingClientRect());
 
   xAxisContainer.attr('transform', `translate(0, ${height})`).call(xAxis);
   yAxisContainer.attr('transform', `translate(${width}, 0)`).call(yAxis);
