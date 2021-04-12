@@ -2573,13 +2573,16 @@ const createScatterplot = (initialProperties = {}) => {
     // setWidth and setHeight can be async when width or height are set to
     // 'auto'. And since draw() would have anyway been async we can just make
     // all calls async.
-    window.requestAnimationFrame(() => {
-      if (!canvas) return; // Instance was destroyed in between
-      updateViewAspectRatio();
-      refresh();
-      draw();
-      drawHandler();
-    });
+    return new Promise((resolve) =>
+      window.requestAnimationFrame(() => {
+        if (!canvas) return; // Instance was destroyed in between
+        updateViewAspectRatio();
+        refresh();
+        draw();
+        drawHandler();
+        resolve();
+      })
+    );
   };
 
   const hover = (point, showReticleOnce = false) => {
@@ -2744,7 +2747,7 @@ const createScatterplot = (initialProperties = {}) => {
     encodingTex = createEncodingTexture();
 
     // Set dimensions
-    set({
+    const whenSet = set({
       backgroundImage,
       width,
       height,
@@ -2764,6 +2767,10 @@ const createScatterplot = (initialProperties = {}) => {
     canvas.addEventListener('mouseleave', mouseLeaveCanvasHandler, false);
     canvas.addEventListener('click', mouseClickHandler, false);
     canvas.addEventListener('dblclick', mouseDblClickHandler, false);
+
+    whenSet.then(() => {
+      pubSub.publish('init');
+    });
   };
 
   const destroy = () => {
@@ -2786,6 +2793,7 @@ const createScatterplot = (initialProperties = {}) => {
     pointConnections.destroy();
     reticleHLine.destroy();
     reticleVLine.destroy();
+    pubSub.publish('destroy');
     pubSub.clear();
   };
 

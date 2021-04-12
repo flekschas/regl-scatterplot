@@ -572,6 +572,8 @@ scatterplot.set({ showReticle: true, reticleColor: [1, 0, 0, 0.66] });
 
 | Name                 | Trigger                                    | Payload                            |
 | -------------------- | ------------------------------------------ | ---------------------------------- |
+| init                 | when the scatter plot is initialized       | `undefined`                        |
+| destroy              | when the scatter plot is destroyed         | `undefined`                        |
 | backgroundImageReady | when the background image was loaded       | `undefined`                        |
 | pointOver            | when the mouse cursor is over a point      | pointIndex                         |
 | pointOut             | when the mouse cursor moves out of a point | pointIndex                         |

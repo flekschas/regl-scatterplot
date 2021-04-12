@@ -2,6 +2,7 @@
 
 ## v0.18.2
 
+- Add two events: `init` and `destroy`
 - Fix an issue with normalizing RGBA values
 
 ## v0.18.1

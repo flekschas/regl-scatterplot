@@ -975,6 +975,26 @@ test('set({ showReticle, reticleColor })', async (t) => {
 
 /* ---------------------------------- events -------------------------------- */
 
+test('init and destroy events', async (t) => {
+  const canvas = createCanvas(200, 200);
+  const scatterplot = createScatterplot({ canvas, width: 200, height: 200 });
+
+  const whenInit = new Promise((resolve) =>
+    scatterplot.subscribe('init', resolve, 1)
+  );
+  const whenDestroy = new Promise((resolve) =>
+    scatterplot.subscribe('destroy', resolve, 1)
+  );
+
+  await whenInit;
+
+  scatterplot.destroy();
+
+  await whenDestroy;
+
+  t.equal(true, true, '"init" and "destroy" event fired');
+});
+
 test('tests involving mouse events', async (t2) => {
   await t2.test('draw(), clear(), publish("select")', async (t) => {
     const dim = 200;
