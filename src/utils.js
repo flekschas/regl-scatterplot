@@ -303,25 +303,38 @@ export const normNumArray = (a) =>
  *   normalized to `[0,1]`.
  * @return  {array}  Quadruple defining an RGBA color.
  */
-export const toRgba = (color, isNormalize) => {
+export const toRgba = (color, shouldNormalize) => {
   if (isRgba(color)) {
-    const base = 255 ** !isNormalize;
-    return isNormalize && !isNormFloatArray(color)
-      ? color.map((x) => x / 255)
-      : normNumArray(color).map((x) => x * base);
+    const isNormalized = isNormFloatArray(color);
+    if (
+      (shouldNormalize && isNormalized) ||
+      (!shouldNormalize && !isNormalized)
+    )
+      return color;
+    if (shouldNormalize && !isNormalized) return color.map((x) => x / 255);
+    return color.map((x) => x * 255);
   }
 
   if (isRgb(color)) {
-    const base = 255 ** !isNormalize;
-    return [...normNumArray(color).map((x) => Math.round(x * base)), base];
+    const base = 255 ** !shouldNormalize;
+    const isNormalized = isNormFloatArray(color);
+
+    if (
+      (shouldNormalize && isNormalized) ||
+      (!shouldNormalize && !isNormalized)
+    )
+      return [...color, base];
+    if (shouldNormalize && !isNormalized)
+      return [...color.map((x) => x / 255), base];
+    return [...color.map((x) => x * 255), base];
   }
 
-  if (isHex(color)) return hexToRgba(color, isNormalize);
+  if (isHex(color)) return hexToRgba(color, shouldNormalize);
 
   console.warn(
     'Only HEX, RGB, and RGBA are handled by this function. Returning white instead.'
   );
-  return isNormalize ? [1, 1, 1, 1] : [255, 255, 255, 255];
+  return shouldNormalize ? [1, 1, 1, 1] : [255, 255, 255, 255];
 };
 
 /**

@@ -1,5 +1,9 @@
 ## Next
 
+## v0.18.2
+
+- Fix an issue with normalizing RGBA values
+
 ## v0.18.1
 
 - Rename `showRecticle` to `showReticle` and `recticleColor` to `reticleColor` (#47)
