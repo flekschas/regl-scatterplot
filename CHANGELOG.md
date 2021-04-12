@@ -5,6 +5,7 @@
 - Add two events: `init` and `destroy`
 - Add `lassoLineWidth` to allow adjusting the lasso line width
 - Fix an issue with normalizing RGBA values
+- Fix a camera issue when lassoing in non-`panZoom` mouse mode
 
 ## v0.18.1
 

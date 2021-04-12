@@ -684,7 +684,7 @@ const createScatterplot = (initialProperties = {}) => {
   };
 
   const lassoEnd = (lassoPoints, lassoPointsFlat, { merge = false } = {}) => {
-    if (mouseMode === MOUSE_MODE_PANZOOM) camera.config({ isFixed: false });
+    camera.config({ isFixed: false });
     lassoPointsCurr = [...lassoPoints];
     // const t0 = performance.now();
     const pointsInLasso = findPointsInLasso(lassoPointsFlat);
