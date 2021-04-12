@@ -14,11 +14,7 @@ export const COLOR_HOVER_IDX = 2;
 export const COLOR_BG_IDX = 3;
 export const COLOR_NUM_STATES = 4;
 export const FLOAT_BYTES = Float32Array.BYTES_PER_ELEMENT;
-export const GL_EXTENSIONS = [
-  'OES_standard_derivatives',
-  'OES_texture_float',
-  'OES_element_index_uint',
-];
+export const GL_EXTENSIONS = ['OES_texture_float', 'OES_element_index_uint'];
 
 export const MOUSE_MODE_PANZOOM = 'panZoom';
 export const MOUSE_MODE_LASSO = 'lasso';
@@ -46,6 +42,8 @@ export const DEFAULT_EASING = cubicInOut;
 export const LASSO_CLEAR_ON_DESELECT = 'deselect';
 export const LASSO_CLEAR_ON_END = 'lassoEnd';
 export const LASSO_CLEAR_EVENTS = [LASSO_CLEAR_ON_DESELECT, LASSO_CLEAR_ON_END];
+export const DEFAULT_LASSO_COLOR = [0, 0.666666667, 1, 1];
+export const DEFAULT_LASSO_LINE_WIDTH = 2;
 export const DEFAULT_LASSO_INITIATOR = false;
 export const DEFAULT_LASSO_INITIATOR_BACKGROUND = 'rgba(255, 255, 255, 0.1)';
 export const DEFAULT_LASSO_MIN_DELAY = 10;
@@ -121,7 +119,6 @@ export const DEFAULT_VIEW = new Float32Array([
 
 // Default misc
 export const DEFAULT_BACKGROUND_IMAGE = null;
-export const DEFAULT_LASSO_COLOR = [0, 0.666666667, 1, 1];
 export const DEFAULT_SHOW_RETICLE = false;
 export const DEFAULT_RETICLE_COLOR = [1, 1, 1, 0.5];
 export const DEFAULT_DESELECT_ON_DBL_CLICK = true;

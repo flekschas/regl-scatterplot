@@ -383,6 +383,7 @@ can be read and written via [`scatterplot.get()`](#scatterplot.get) and [`scatte
 | pointConnectionMaxIntPointsPerSegment | int             | `100`                               |                                                                 | `true`   | `false`     |
 | pointConnectionTolerance              | float           | `0.002`                             |                                                                 | `true`   | `false`     |
 | lassoColor                            | quadruple       | rgba(0, 0.667, 1, 1)                | hex, rgb, rgba                                                  | `true`   | `false`     |
+| lassoLineWidth                        | float           | 2                                   | >= 1                                                            | `true`   | `false`     |
 | lassoMinDelay                         | int             | 15                                  | >= 0                                                            | `true`   | `false`     |
 | lassoMinDist                          | int             | 4                                   | >= 0                                                            | `true`   | `false`     |
 | lassoClearEvent                       | string          | `'lassoEnd'`                        | `'lassoEnd'` or `'deselect'`                                    | `true`   | `false`     |

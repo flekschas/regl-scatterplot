@@ -3,6 +3,7 @@
 ## v0.18.2
 
 - Add two events: `init` and `destroy`
+- Add `lassoLineWidth` to allow adjusting the lasso line width
 - Fix an issue with normalizing RGBA values
 
 ## v0.18.1

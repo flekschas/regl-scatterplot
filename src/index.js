@@ -42,6 +42,7 @@ import {
   DEFAULT_EASING,
   DEFAULT_HEIGHT,
   DEFAULT_LASSO_COLOR,
+  DEFAULT_LASSO_LINE_WIDTH,
   DEFAULT_LASSO_MIN_DELAY,
   DEFAULT_LASSO_MIN_DIST,
   DEFAULT_LASSO_CLEAR_EVENT,
@@ -204,6 +205,7 @@ const createScatterplot = (initialProperties = {}) => {
     deselectOnDblClick = DEFAULT_DESELECT_ON_DBL_CLICK,
     deselectOnEscape = DEFAULT_DESELECT_ON_ESCAPE,
     lassoColor = DEFAULT_LASSO_COLOR,
+    lassoLineWidth = DEFAULT_LASSO_LINE_WIDTH,
     lassoMinDelay = DEFAULT_LASSO_MIN_DELAY,
     lassoMinDist = DEFAULT_LASSO_MIN_DIST,
     lassoClearEvent = DEFAULT_LASSO_CLEAR_EVENT,
@@ -2034,6 +2036,14 @@ const createScatterplot = (initialProperties = {}) => {
     lasso.setStyle({ color: lassoColor });
   };
 
+  const setLassoLineWidth = (newLassoLineWidth) => {
+    if (Number.isNaN(+newLassoLineWidth) || +newLassoLineWidth < 1) return;
+
+    lassoLineWidth = +newLassoLineWidth;
+
+    lasso.setStyle({ width: lassoLineWidth });
+  };
+
   const setLassoMinDelay = (newLassoMinDelay) => {
     if (!+newLassoMinDelay) return;
 
@@ -2290,6 +2300,7 @@ const createScatterplot = (initialProperties = {}) => {
     if (property === 'deselectOnEscape') return deselectOnEscape;
     if (property === 'height') return height;
     if (property === 'lassoColor') return lassoColor;
+    if (property === 'lassoLineWidth') return lassoLineWidth;
     if (property === 'lassoMinDelay') return lassoMinDelay;
     if (property === 'lassoMinDist') return lassoMinDist;
     if (property === 'lassoClearEvent') return lassoClearEvent;
@@ -2492,6 +2503,10 @@ const createScatterplot = (initialProperties = {}) => {
 
     if (properties.lassoColor !== undefined) {
       setLassoColor(properties.lassoColor);
+    }
+
+    if (properties.lassoLineWidth !== undefined) {
+      setLassoLineWidth(properties.lassoLineWidth);
     }
 
     if (properties.lassoMinDelay !== undefined) {
@@ -2708,7 +2723,11 @@ const createScatterplot = (initialProperties = {}) => {
     initCamera();
     updateScales();
 
-    lasso = createLine(regl, { color: lassoColor, width: 3, is2d: true });
+    lasso = createLine(regl, {
+      color: lassoColor,
+      width: lassoLineWidth,
+      is2d: true,
+    });
     pointConnections = createLine(regl, {
       color: pointConnectionColor,
       colorHover: pointConnectionColorHover,
