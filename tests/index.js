@@ -1752,6 +1752,71 @@ test('select()', async (t) => {
   scatterplot.destroy();
 });
 
+test('hover()', async (t) => {
+  const scatterplot = createScatterplot({ canvas: createCanvas() });
+
+  const points = [
+    [0, 0],
+    [1, 1],
+    [1, -1],
+    [-1, -1],
+    [-1, 1],
+  ];
+
+  await scatterplot.draw(points);
+
+  let hovering;
+  const pointoverHandler = (newHovering) => {
+    hovering = newHovering;
+  };
+  const pointoutHandler = () => {
+    hovering = undefined;
+  };
+  scatterplot.subscribe('pointover', pointoverHandler);
+  scatterplot.subscribe('pointout', pointoutHandler);
+
+  scatterplot.hover(0);
+
+  await wait(0);
+
+  t.equal(hovering, 0, 'should be hovering point 0');
+
+  scatterplot.hover();
+
+  await wait(0);
+
+  t.equal(hovering, undefined, 'should have stopped hovering point 0');
+
+  scatterplot.hover(2, { preventEvent: true });
+
+  await wait(0);
+
+  t.equal(hovering, undefined, 'should be silently hovering point 2');
+
+  scatterplot.hover(4);
+  scatterplot.hover(undefined, { preventEvent: true });
+
+  await wait(0);
+
+  t.deepEqual(hovering, 4, 'should have silently stopped hovering point 4');
+
+  scatterplot.hover(-1);
+
+  await wait(0);
+
+  // Point 4 should still be registered as being hovered
+  t.deepEqual(hovering, 4, 'should not be hovering an invalid point');
+
+  scatterplot.hover(6);
+
+  await wait(0);
+
+  // Point 4 should still be registered as being hovered
+  t.deepEqual(hovering, 4, 'should not be hovering an invalid point');
+
+  scatterplot.destroy();
+});
+
 /* --------------------------------- Utils ---------------------------------- */
 
 test('isNormFloatArray()', async (t) => {
