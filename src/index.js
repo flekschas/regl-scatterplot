@@ -2600,7 +2600,10 @@ const createScatterplot = (initialProperties = {}) => {
     );
   };
 
-  const hover = (point, showReticleOnce = false) => {
+  const hover = (
+    point,
+    { showReticleOnce = false, preventEvent = false } = {}
+  ) => {
     let needsRedraw = false;
 
     if (point >= 0) {
@@ -2617,12 +2620,13 @@ const createScatterplot = (initialProperties = {}) => {
       hoveredPoint = point;
       hoveredPointIndexBuffer.subdata(indexToStateTexCoord(point));
       if (!selectionSet.has(point)) setPointConnectionColorState([point], 2);
-      if (newHoveredPoint) pubSub.publish('pointover', hoveredPoint);
+      if (newHoveredPoint && !preventEvent)
+        pubSub.publish('pointover', hoveredPoint);
     } else {
       needsRedraw = +hoveredPoint >= 0;
       if (needsRedraw && !selectionSet.has(hoveredPoint)) {
         setPointConnectionColorState([hoveredPoint], 0);
-        pubSub.publish('pointout', hoveredPoint);
+        if (!preventEvent) pubSub.publish('pointout', hoveredPoint);
       }
       hoveredPoint = undefined;
     }

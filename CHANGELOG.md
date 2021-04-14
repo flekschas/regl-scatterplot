@@ -1,5 +1,9 @@
 ## Next
 
+## v0.18.3
+
+- Harmonize `hover(pointIdx, { showReticleOnce, preventEvent })` with `select()` API by allowing it to prevent the `pointover` and `pointout` from being published.
+
 ## v0.18.2
 
 - Add two events: `init` and `destroy`
