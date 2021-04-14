@@ -288,6 +288,29 @@ scatterplot.select([0, 1]);
 
 Deselect all selected points. This will trigger a `deselect` event unless `options.preventEvent === true`.
 
+<a name="scatterplot.hover" href="#scatterplot.hover">#</a> scatterplot.<b>hover</b>(<i>point</i>, <i>options = {}</i>)
+
+Programmatically hover a point, such that it gets visually highlighted. This will trigger a `pointover` or `pointout` event unless `options.preventEvent === true`.
+
+**Arguments:**
+
+- `points` is an array of point indices.
+- `options` [optional] is an object with the following properties:
+  - `showReticleOnce`: if `true` the reticle will be shown once, even if `showReticle === false`.
+  - `preventEvent`: if `true` the `pointover` and `pointout` will not be published.
+
+**Examples:**
+
+```javascript
+scatterplot.draw([
+  [0.1, 0.1],
+  [0.2, 0.2],
+  [0.3, 0.3],
+]);
+
+scatterplot.hover(1); // To hover the second point
+```
+
 **Arguments:**
 
 - `options` [optional] is an object with the following properties:
