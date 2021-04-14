@@ -1,5 +1,9 @@
 ## Next
 
+## v0.18.4
+
+- Fix an issues when programmatically trying to `select()` or `hover()` non-existing points
+
 ## v0.18.3
 
 - Harmonize `hover(pointIdx, { showReticleOnce, preventEvent })` with `select()` API by allowing it to prevent the `pointover` and `pointout` from being published.

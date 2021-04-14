@@ -1690,8 +1690,9 @@ test('select()', async (t) => {
 
   await wait(0);
 
-  t.ok(
-    flatArrayEqual([0, 2, 4], selectedPoints),
+  t.deepEqual(
+    selectedPoints,
+    [0, 2, 4],
     'should have selected point 0, 2, and 4'
   );
 
@@ -1716,9 +1717,36 @@ test('select()', async (t) => {
 
   await wait(0);
 
-  t.ok(
-    flatArrayEqual([0, 2, 4], selectedPoints),
+  t.deepEqual(
+    selectedPoints,
+    [0, 2, 4],
     'should have silently deselected points'
+  );
+
+  scatterplot.select(2);
+
+  await wait(0);
+
+  t.deepEqual(selectedPoints, [2], 'should allow single point index selection');
+
+  scatterplot.select(-1);
+
+  await wait(0);
+
+  t.deepEqual(
+    selectedPoints,
+    [],
+    'should have not selected any point because -1 is invalid'
+  );
+
+  scatterplot.select([0, -1, 2, 4, 6]);
+
+  await wait(0);
+
+  t.deepEqual(
+    selectedPoints,
+    [0, 2, 4],
+    'should have filtered out invalid point selections'
   );
 
   scatterplot.destroy();

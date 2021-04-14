@@ -632,25 +632,35 @@ const createScatterplot = (initialProperties = {}) => {
   };
 
   const select = (pointIdxs, { merge = false, preventEvent = false } = {}) => {
+    const pointIdxsArr = Array.isArray(pointIdxs) ? pointIdxs : [pointIdxs];
+
     if (merge) {
-      selection = unionIntegers(selection, pointIdxs);
+      selection = unionIntegers(selection, pointIdxsArr);
     } else {
       // Unset previously highlight point connections
       if (selection && selection.length)
         setPointConnectionColorState(selection, 0);
-      selection = pointIdxs;
+      selection = pointIdxsArr;
     }
 
-    const selectionBuffer = new Float32Array(selection.length * 2);
+    const selectionBuffer = [];
 
     selectionSet.clear();
     selectionConnecionSet.clear();
-    selection.forEach((pointIdx, i) => {
-      selectionSet.add(pointIdx);
-      const texCoords = indexToStateTexCoord(pointIdx);
-      selectionBuffer[i * 2] = texCoords[0];
-      selectionBuffer[i * 2 + 1] = texCoords[1];
-    });
+
+    for (let i = selection.length - 1; i >= 0; i--) {
+      const pointIdx = selection[i];
+
+      if (pointIdx < 0 || pointIdx >= numPoints) {
+        // Remove invalid selection
+        selection.splice(i, 1);
+      } else {
+        selectionSet.add(pointIdx);
+        const texCoords = indexToStateTexCoord(pointIdx);
+        selectionBuffer.push(texCoords[0]);
+        selectionBuffer.push(texCoords[1]);
+      }
+    }
 
     selectedPointsIndexBuffer({
       usage: 'dynamic',
@@ -2606,7 +2616,7 @@ const createScatterplot = (initialProperties = {}) => {
   ) => {
     let needsRedraw = false;
 
-    if (point >= 0) {
+    if (point >= 0 && point < numPoints) {
       needsRedraw = true;
       const oldHoveredPoint = hoveredPoint;
       const newHoveredPoint = point !== hoveredPoint;
