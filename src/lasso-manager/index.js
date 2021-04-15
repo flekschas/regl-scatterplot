@@ -126,8 +126,8 @@ const createLasso = (
     const { left, top } = element.getBoundingClientRect();
 
     return [
-      event.clientX - left + window.scrollX,
-      event.clientY - top + window.scrollY,
+      event.clientX - left,
+      event.clientY - top,
     ];
   };
 
