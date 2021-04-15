@@ -101,7 +101,7 @@ const createLasso = (
     Math.random().toString(36).substring(2, 5) +
     Math.random().toString(36).substring(2, 5);
   initiator.id = `lasso-initiator-${id}`;
-  initiator.style.position = 'absolute';
+  initiator.style.position = 'fixed';
   initiator.style.display = 'flex';
   initiator.style.justifyContent = 'center';
   initiator.style.alignItems = 'center';
@@ -125,10 +125,7 @@ const createLasso = (
   const getMousePosition = (event) => {
     const { left, top } = element.getBoundingClientRect();
 
-    return [
-      event.clientX - left,
-      event.clientY - top,
-    ];
+    return [event.clientX - left, event.clientY - top];
   };
 
   window.addEventListener('mouseup', mouseUpHandler);
