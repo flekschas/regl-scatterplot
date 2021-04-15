@@ -1,5 +1,7 @@
 ## Next
 
+- Fix an issue with the lasso position when the page is scrollable (#50)
+
 ## v0.18.4
 
 - Fix an issues when programmatically trying to `select()` or `hover()` non-existing points
