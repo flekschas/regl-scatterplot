@@ -3,16 +3,22 @@
 import createScatterplot from '../src';
 
 const canvas1 = document.querySelector('#canvas');
-canvas1.style.width = '50%';
 
-const canvasWrapper = canvas1.parentNode;
+const canvasWrapper1 = canvas1.parentNode;
+canvasWrapper1.style.right = '50%';
+
+const parentWrapper = canvasWrapper1.parentNode;
+
+const canvasWrapper2 = canvasWrapper1.cloneNode();
+canvasWrapper2.style.left = '50%';
+canvasWrapper2.style.right = null;
+parentWrapper.appendChild(canvasWrapper2);
 
 const canvas2 = document.createElement('canvas');
-canvas2.style.position = 'absolute';
-canvas2.style.left = '50%';
-canvas2.style.width = '50%';
-canvas2.style.height = '100%';
-canvasWrapper.appendChild(canvas2);
+canvasWrapper2.appendChild(canvas2);
+
+canvasWrapper1.style.borderRight = '1px solid #333';
+canvasWrapper2.style.borderLeft = '1px solid #333';
 
 const numPointsEl = document.querySelector('#num-points');
 const numPointsValEl = document.querySelector('#num-points-value');
@@ -53,6 +59,7 @@ exampleEl.removeAttribute('href');
   const scatterplot = createScatterplot({
     canvas,
     pointSize,
+    lassoInitiator: true,
   });
 
   console.log(`Scatterplot v${scatterplot.get('version')}`);
@@ -119,6 +126,7 @@ exampleEl.removeAttribute('href');
     'change',
     clickLassoInitiatorChangeHandler
   );
+  clickLassoInitiatorEl.checked = true;
 
   const resetClickHandler = () => {
     scatterplot.reset();
