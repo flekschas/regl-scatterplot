@@ -1,5 +1,7 @@
 ## Next
 
+- Optimize density-based opacity encoding
+
 ## v0.18.5
 
 - Fix an issue with the lasso position when the page is scrollable (#50)

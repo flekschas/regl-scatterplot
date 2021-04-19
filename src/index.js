@@ -62,6 +62,7 @@ import {
   DEFAULT_POINT_CONNECTION_INT_POINTS_TOLERANCE,
   DEFAULT_SHOW_POINT_CONNECTIONS,
   DEFAULT_POINT_OUTLINE_WIDTH,
+  MIN_POINT_SIZE,
   DEFAULT_POINT_SIZE,
   DEFAULT_POINT_SIZE_SELECTED,
   DEFAULT_POINT_SIZE_MOUSE_DETECTION,
@@ -327,6 +328,8 @@ const createScatterplot = (initialProperties = {}) => {
   })
     ? [...pointSize]
     : [pointSize];
+
+  let minPointScale = MIN_POINT_SIZE / pointSize[0];
 
   if (pointConnectionColor === 'inherit') {
     pointConnectionColor = [...pointColor];
@@ -1038,6 +1041,7 @@ const createScatterplot = (initialProperties = {}) => {
 
     if (isStrictlyPositiveNumber(+newPointSize)) pointSize = [+newPointSize];
 
+    minPointScale = MIN_POINT_SIZE / pointSize[0];
     encodingTex = createEncodingTexture();
     computePointSizeMouseDetection();
   };
@@ -1163,8 +1167,16 @@ const createScatterplot = (initialProperties = {}) => {
   const getModel = () => model;
   const getProjectionViewModel = () =>
     mat4.multiply(pvm, projection, mat4.multiply(pvm, camera.view, model));
-  const getPointScale = () =>
-    1 + Math.log2(max(1.0, camera.scaling)) * window.devicePixelRatio;
+  const getPointScale = () => {
+    if (camera.scaling > 1)
+      return (
+        (Math.asinh(max(1.0, camera.scaling)) / Math.asinh(1)) *
+        window.devicePixelRatio
+      );
+
+    return max(minPointScale, camera.scaling) * window.devicePixelRatio;
+  };
+  // 1 + Math.log2(max(1.0, camera.scaling)) * window.devicePixelRatio;
   const getNormalNumPoints = () => numPoints;
   const getIsColoredByZ = () => +(colorBy === 'valueZ');
   const getIsColoredByW = () => +(colorBy === 'valueW');
@@ -1191,22 +1203,22 @@ const createScatterplot = (initialProperties = {}) => {
     // Adopted from the fabulous Ricky Reusser:
     // https://observablehq.com/@rreusser/selecting-the-right-opacity-for-2d-point-clouds
     // Extended with a point-density based approach
-    const pointScale = getPointScale();
-    const smallestPointSize = pointSize.length === 1 ? pointSize[0] : pointSize;
-    const p = smallestPointSize * pointScale;
+    const pointScale = getPointScale(true);
+    const p = pointSize[0] * pointScale;
 
     // Compute the plot's x and y range from the view matrix, though these could come from any source
     const s = (2 / (2 / camera.view[0])) * (2 / (2 / camera.view[5]));
 
     // Viewport size, in device pixels
     const H = context.viewportHeight;
+    const W = context.viewportWidth;
 
     // Adaptation: Instead of using the global number of points, I am using a
     // density-based approach that takes the points in the view into context
     // when zooming in. This ensure that in sparse areas, points are opaque and
     // in dense areas points are more translucent.
     let alpha =
-      ((opacityByDensityFill * H * H) / (numPointsInView * p * p)) * min(1, s);
+      ((opacityByDensityFill * W * H) / (numPointsInView * p * p)) * min(1, s);
 
     // In performanceMode we use squares, otherwise we use circles, which only
     // take up (pi r^2) of the unit square
@@ -1215,7 +1227,7 @@ const createScatterplot = (initialProperties = {}) => {
     // If the pixels shrink below the minimum permitted size, then we adjust the opacity instead
     // and apply clamping of the point size in the vertex shader. Note that we add 0.5 since we
     // slightly inrease the size of points during rendering to accommodate SDF-style antialiasing.
-    const clampedPointDeviceSize = max(smallestPointSize, p) + 0.5;
+    const clampedPointDeviceSize = max(MIN_POINT_SIZE, p) + 0.5;
 
     // We square this since we're concerned with the ratio of *areas*.
     // eslint-disable-next-line no-restricted-properties
