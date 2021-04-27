@@ -1,5 +1,7 @@
 ## Next
 
+## v0.18.6
+
 - Optimize density-based opacity encoding
 
 ## v0.18.5
