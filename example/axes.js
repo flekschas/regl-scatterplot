@@ -85,6 +85,7 @@ const scatterplot = createScatterplot({
   xScale,
   yScale,
   showReticle: true,
+  lassoInitiator: true,
 });
 
 exportEl.addEventListener('click', () => saveAsPng(scatterplot));
@@ -181,6 +182,7 @@ clickLassoInitiatorEl.addEventListener(
   'change',
   clickLassoInitiatorChangeHandler
 );
+clickLassoInitiatorEl.checked = scatterplot.get('lassoInitiator');
 
 const resetClickHandler = () => {
   scatterplot.reset();

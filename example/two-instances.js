@@ -126,7 +126,7 @@ exampleEl.removeAttribute('href');
     'change',
     clickLassoInitiatorChangeHandler
   );
-  clickLassoInitiatorEl.checked = true;
+  clickLassoInitiatorEl.checked = scatterplot.get('lassoInitiator');
 
   const resetClickHandler = () => {
     scatterplot.reset();

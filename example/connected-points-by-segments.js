@@ -61,6 +61,7 @@ const scatterplot = createScatterplot({
   showPointConnections,
   pointConnectionColor,
   pointConnectionSize,
+  lassoInitiator: true,
 });
 
 exportEl.addEventListener('click', () => saveAsPng(scatterplot));
@@ -150,6 +151,7 @@ clickLassoInitiatorEl.addEventListener(
   'change',
   clickLassoInitiatorChangeHandler
 );
+clickLassoInitiatorEl.checked = scatterplot.get('lassoInitiator');
 
 const resetClickHandler = () => {
   scatterplot.reset();

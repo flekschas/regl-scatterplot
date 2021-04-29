@@ -3,6 +3,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 module.exports = (env, argv) => ({
   entry: {
     index: './example/index.js',
+    embedded: './example/embedded.js',
     textureBackground: './example/texture-background.js',
     twoInstances: './example/two-instances.js',
     axes: './example/axes.js',
@@ -82,6 +83,11 @@ module.exports = (env, argv) => ({
       template: 'example/index.html',
       filename: 'dynamic-opacity.html',
       chunks: ['dynamicOpacity'],
+    }),
+    new HtmlWebpackPlugin({
+      template: 'example/index.html',
+      filename: 'embedded.html',
+      chunks: ['embedded'],
     }),
   ],
 });

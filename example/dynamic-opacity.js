@@ -54,6 +54,7 @@ const scatterplot = createScatterplot({
   opacityBy: 'density',
   showReticle,
   reticleColor,
+  lassoInitiator: true,
 });
 
 exportEl.addEventListener('click', () => saveAsPng(scatterplot));
@@ -194,6 +195,7 @@ clickLassoInitiatorEl.addEventListener(
   'change',
   clickLassoInitiatorChangeHandler
 );
+clickLassoInitiatorEl.checked = scatterplot.get('lassoInitiator');
 
 const resetClickHandler = () => {
   scatterplot.reset();

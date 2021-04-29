@@ -13,52 +13,44 @@ const opacityValEl = document.querySelector('#opacity-value');
 const clickLassoInitiatorEl = document.querySelector('#click-lasso-initiator');
 const resetEl = document.querySelector('#reset');
 const exportEl = document.querySelector('#export');
-const exampleEl = document.querySelector('#example-connected-points');
+const exampleEl = document.querySelector('#example-basic');
+
+const canvasWrapper = canvas.parentNode;
+canvasWrapper.style.padding = '15rem 0';
+canvasWrapper.style.height = '100vh';
+canvasWrapper.parentNode.style.overflow = 'auto';
 
 exampleEl.setAttribute('class', 'active');
 exampleEl.removeAttribute('href');
 
 let points = [];
-let numPoints = 9000;
-let pointSize = 1;
+let numPoints = 100000;
+let pointSize = 4;
 let opacity = 0.33;
 let selection = [];
 
-const pointSizeMax = 10;
-const lassoMinDelay = 10;
-const lassoMinDist = 2;
-const showReticle = true;
 const reticleColor = [1, 1, 0.878431373, 0.33];
-const showPointConnections = true;
-const pointConnectionColor = [1, 1, 1, 0.15];
-const pointConnectionSize = 2;
 
 const selectHandler = ({ points: selectedPoints }) => {
-  console.log('Selected:', selectedPoints);
   selection = selectedPoints;
   if (selection.length === 1) {
     const point = points[selection[0]];
     console.log(
+      `Selected: ${selectedPoints}`,
       `X: ${point[0]}\nY: ${point[1]}\nCategory: ${point[2]}\nValue: ${point[3]}`
     );
   }
 };
 
 const deselectHandler = () => {
-  console.log('Deselected:', selection);
   selection = [];
 };
 
 const scatterplot = createScatterplot({
   canvas,
-  lassoMinDelay,
-  lassoMinDist,
   pointSize,
-  showReticle,
+  showReticle: true,
   reticleColor,
-  showPointConnections,
-  pointConnectionColor,
-  pointConnectionSize,
   lassoInitiator: true,
 });
 
@@ -69,29 +61,13 @@ console.log(`Scatterplot v${scatterplot.get('version')}`);
 scatterplot.subscribe('select', selectHandler);
 scatterplot.subscribe('deselect', deselectHandler);
 
-const generatePoints = (num) => {
-  const numPointsPerGroup = Math.round(num / 3); // 9.000 / 3 => 3000
-  const numPointsPerStep = Math.round(numPointsPerGroup / 5); // 3000 / 5 => 600
-  // 600 * 3 => 1800 (lines)
-
-  const outPoints = [];
-
-  for (let g = 0; g < 3; g++) {
-    for (let i = 0; i < numPointsPerStep; i++) {
-      for (let s = 0; s < 5; s++) {
-        outPoints.push([
-          -0.6 + g * 0.6 + (Math.random() * 0.3 - 0.15), // x
-          -0.9 + s * 0.45, // y
-          g, // category
-          Math.random(), // value
-          g * numPointsPerStep + i, // to identify connected points
-        ]);
-      }
-    }
-  }
-
-  return outPoints;
-};
+const generatePoints = (num) =>
+  new Array(num).fill().map(() => [
+    -0.8 + Math.random() * 1.6, // x
+    -0.8 + Math.random() * 1.6, // y
+    Math.round(Math.random()), // category
+    Math.random(), // value
+  ]);
 
 const setNumPoint = (newNumPoints) => {
   numPoints = newNumPoints;
@@ -112,16 +88,11 @@ const numPointsChangeHandler = (event) => setNumPoint(+event.target.value);
 
 numPointsEl.addEventListener('change', numPointsChangeHandler);
 
-const getPointSizeRange = (basePointSize) =>
-  Array(100)
-    .fill()
-    .map((x, i) => 1 + (i / 99) * (basePointSize * pointSizeMax - 1));
-
 const setPointSize = (newPointSize) => {
   pointSize = newPointSize;
   pointSizeEl.value = pointSize;
   pointSizeValEl.innerHTML = pointSize;
-  scatterplot.set({ pointSize: getPointSizeRange(pointSize) });
+  scatterplot.set({ pointSize });
 };
 
 const pointSizeInputHandler = (event) => setPointSize(+event.target.value);
@@ -156,40 +127,6 @@ const resetClickHandler = () => {
 };
 
 resetEl.addEventListener('click', resetClickHandler);
-
-scatterplot.set({
-  colorBy: 'valueZ',
-  sizeBy: 'valueW',
-  pointColor: [
-    [255, 128, 203, 128],
-    [87, 199, 255, 128],
-    [238, 228, 98, 128],
-  ],
-  pointConnectionColorBy: 'valueZ',
-  pointConnectionColor: [
-    [255, 128, 203, 6],
-    [87, 199, 255, 6],
-    [238, 228, 98, 6],
-  ],
-  pointConnectionColorActive: [
-    [255, 128, 203, 128],
-    [87, 199, 255, 128],
-    [238, 228, 98, 128],
-  ],
-  pointConnectionColorHover: [
-    [255, 128, 203, 99],
-    [87, 199, 255, 99],
-    [238, 228, 98, 99],
-  ],
-  pointConnectionOpacityBy: 'valueW',
-  pointConnectionOpacity: Array(10)
-    .fill()
-    .map((v, i) => (i + 1) / 100),
-  pointConnectionSizeBy: 'valueW',
-  pointConnectionSize: Array(18)
-    .fill()
-    .map((v, i) => (i + 1) / 2),
-});
 
 setPointSize(pointSize);
 setOpacity(opacity);
