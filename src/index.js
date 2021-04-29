@@ -758,6 +758,7 @@ const createScatterplot = (initialProperties = {}) => {
     mouseDown = false;
 
     if (lassoActive) {
+      event.preventDefault();
       lassoActive = false;
       lassoManager.end({
         merge: checkModKey(event, KEY_ACTION_MERGE),
@@ -767,6 +768,8 @@ const createScatterplot = (initialProperties = {}) => {
 
   const mouseClickHandler = (event) => {
     if (!isInit) return;
+
+    event.preventDefault();
 
     const currentMousePosition = getRelativeMousePosition(event);
 
@@ -801,13 +804,16 @@ const createScatterplot = (initialProperties = {}) => {
     }
   };
 
-  const mouseDblClickHandler = () => {
+  const mouseDblClickHandler = (event) => {
     lassoManager.hideInitiator();
     if (lassoInitiatorTimeout) {
       clearTimeout(lassoInitiatorTimeout);
       lassoInitiatorTimeout = null;
     }
-    if (deselectOnDblClick) deselect();
+    if (deselectOnDblClick) {
+      event.preventDefault();
+      deselect();
+    }
   };
 
   const mouseMoveHandler = (event) => {
@@ -820,7 +826,10 @@ const createScatterplot = (initialProperties = {}) => {
       hover(raycast()); // eslint-disable-line no-use-before-define
     }
 
-    if (lassoActive) lassoManager.extend(event, true);
+    if (lassoActive) {
+      event.preventDefault();
+      lassoManager.extend(event, true);
+    }
 
     // Always redraw when mousedown as the user might have panned or lassoed
     if (mouseDown) drawRaf(); // eslint-disable-line no-use-before-define

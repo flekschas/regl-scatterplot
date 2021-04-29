@@ -1,5 +1,9 @@
 ## Next
 
+## v0.18.7
+
+- Avoid text selection when lassoing
+
 ## v0.18.6
 
 - Optimize density-based opacity encoding
