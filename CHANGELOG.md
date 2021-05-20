@@ -1,5 +1,11 @@
 ## Next
 
+**Breaking changes:**
+
+- Improve the handling of the connection order by switching from a structured 5th component to a 6th component.
+
+  Previously to provide a specific order, the 5th component had to be a tuple of `[lineComponentId, orderIndex]`. With this update the 5th component will always just be `lineComponentId` and the 6th will be `orderIndex`.
+
 ## v0.18.7
 
 - Avoid text selection when lassoing

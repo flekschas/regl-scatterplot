@@ -85,6 +85,7 @@ const generatePoints = (num) => {
           g, // category
           Math.random(), // value
           g * numPointsPerStep + i, // to identify connected points
+          // (s + 2) % 5, // specifies the order of the connected points
         ]);
       }
     }

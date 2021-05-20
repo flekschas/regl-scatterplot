@@ -210,13 +210,13 @@ const worker = function worker() {
   const groupPoints = (points) => {
     const groupedPoints = {};
 
+    const isOrdered = !Number.isNaN(+points[0][5]);
     points.forEach((point) => {
-      const isStruct = Array.isArray(point[4]);
-      const segId = isStruct ? point[4][0] : point[4];
+      const segId = point[4];
 
       if (!groupedPoints[segId]) groupedPoints[segId] = [];
 
-      if (isStruct) groupedPoints[segId][point[4][1]] = point;
+      if (isOrdered) groupedPoints[segId][point[5]] = point;
       else groupedPoints[segId].push(point);
     });
 
