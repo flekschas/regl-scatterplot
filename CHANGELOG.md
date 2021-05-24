@@ -1,5 +1,7 @@
 ## Next
 
+- Simplify drawing loop by using `regl.frame` and bailing out of when nothing needs to be redrawn
+
 ## v0.19.0
 
 - Ensure inter buffers and viewports are properly updated on every draw call.

@@ -1,7 +1,6 @@
 import createDom2dCamera from 'dom-2d-camera';
 import KDBush from 'kdbush';
 import createPubSub from 'pub-sub-es';
-import withRaf from 'with-raf';
 import { mat4, vec4 } from 'gl-matrix';
 import createLine from 'regl-line';
 import {
@@ -301,6 +300,9 @@ const createScatterplot = (initialProperties = {}) => {
   let topRightNdc;
   let bottomLeftNdc;
 
+  let draw = true;
+  let drawReticleOnce = false;
+
   pointColor = isMultipleColors(pointColor) ? [...pointColor] : [pointColor];
   pointColorActive = isMultipleColors(pointColorActive)
     ? [...pointColorActive]
@@ -426,7 +428,8 @@ const createScatterplot = (initialProperties = {}) => {
 
   let isTransitioning = false;
   let transitionStartTime = null;
-  let transitionRafId = null;
+  let transitionDuration;
+  let transitionEasing;
   let preTransitionShowReticle = showReticle;
 
   let colorTex; // Stores the point color texture
@@ -630,7 +633,7 @@ const createScatterplot = (initialProperties = {}) => {
       setPointConnectionColorState(selection, 0);
       selection = [];
       selectionSet.clear();
-      drawRaf(); // eslint-disable-line no-use-before-define
+      draw = true;
     }
   };
 
@@ -675,7 +678,7 @@ const createScatterplot = (initialProperties = {}) => {
 
     if (!preventEvent) pubSub.publish('select', { points: selection });
 
-    drawRaf(); // eslint-disable-line no-use-before-define
+    draw = true;
   };
 
   const getRelativeMousePosition = (event) => {
@@ -832,7 +835,7 @@ const createScatterplot = (initialProperties = {}) => {
     }
 
     // Always redraw when mousedown as the user might have panned or lassoed
-    if (mouseDown) drawRaf(); // eslint-disable-line no-use-before-define
+    if (mouseDown) draw = true;
   };
 
   const blurHandler = () => {
@@ -843,7 +846,7 @@ const createScatterplot = (initialProperties = {}) => {
     hoveredPoint = undefined;
     isMouseInCanvas = false;
     mouseUpHandler();
-    drawRaf(); // eslint-disable-line no-use-before-define
+    draw = true;
   };
 
   const createEncodingTexture = () => {
@@ -1817,88 +1820,12 @@ const createScatterplot = (initialProperties = {}) => {
     opacityByDensityDebounceTime
   );
 
-  const draw = (showReticleOnce) => {
-    if (!isInit || !regl) return;
-
-    regl.poll();
-
-    // Update camera
-    isViewChanged = camera.tick();
-
-    if (isViewChanged) {
-      topRightNdc = getScatterGlPos(1, 1);
-      bottomLeftNdc = getScatterGlPos(-1, -1);
-      computeNumPointsInViewDb();
-    }
-
-    regl.clear({
-      // background color (transparent)
-      color: [0, 0, 0, 0],
-      depth: 1,
-    });
-
-    // eslint-disable-next-line no-underscore-dangle
-    if (backgroundImage && backgroundImage._reglType) {
-      drawBackgroundImage();
-    }
-
-    if (lassoPointsCurr.length > 2) drawPolygon2d();
-
-    // The draw order of the following calls is important!
-    if (!isTransitioning)
-      pointConnections.draw({
-        projection: getProjection(),
-        model: getModel(),
-        view: getView(),
-      });
-
-    fbo.use(() => {
-      regl.clear({
-        // background color (transparent)
-        color: [0, 0, 0, 0],
-        depth: 1,
-      });
-
-      drawPointBodies();
-      if (!mouseDown && (showReticle || showReticleOnce)) drawReticle();
-      if (hoveredPoint >= 0) drawHoveredPoint();
-      if (selection.length) drawSelectedPoint();
-    });
-
-    copyToScreen();
-
-    lasso.draw({
-      projection: getProjection(),
-      model: getModel(),
-      view: getView(),
-    });
-
-    // Publish camera change
-    if (isViewChanged) {
-      updateScales();
-
-      pubSub.publish('view', {
-        view: camera.view,
-        camera,
-        xScale,
-        yScale,
-      });
-    }
-  };
-
-  const drawHandler = () => pubSub.publish('draw');
-
-  const drawRaf = withRaf(draw, drawHandler);
-
-  const tween = (duration, easing, drawArgs) => {
+  const tween = (duration, easing) => {
     if (!transitionStartTime) transitionStartTime = performance.now();
 
     const dt = performance.now() - transitionStartTime;
 
     updatePoints({ t: Math.min(1, Math.max(0, easing(dt / duration))) });
-
-    draw.apply(drawArgs);
-    pubSub.publish('draw');
 
     return dt < duration;
   };
@@ -1906,6 +1833,8 @@ const createScatterplot = (initialProperties = {}) => {
   const endTransition = () => {
     isTransitioning = false;
     transitionStartTime = null;
+    transitionDuration = undefined;
+    transitionEasing = undefined;
     showReticle = preTransitionShowReticle;
 
     clearCachedPoints();
@@ -1913,33 +1842,18 @@ const createScatterplot = (initialProperties = {}) => {
     pubSub.publish('transitionEnd');
   };
 
-  const transition = (duration, easing, drawArgs) => {
-    transitionRafId = window.requestAnimationFrame(() => {
-      if (tween(duration, easing, drawArgs))
-        transition(duration, easing, drawArgs);
-      else endTransition();
-    });
-  };
-
-  const startTransition = (
-    { duration = 500, easing = DEFAULT_EASING },
-    drawArgs = []
-  ) => {
-    const easingFn = isString(easing)
-      ? EASING_FNS[easing] || DEFAULT_EASING
-      : easing;
-
-    if (isTransitioning) {
-      pubSub.publish('transitionEnd');
-      window.cancelAnimationFrame(transitionRafId);
-    }
+  const startTransition = ({ duration = 500, easing = DEFAULT_EASING }) => {
+    if (isTransitioning) pubSub.publish('transitionEnd');
 
     isTransitioning = true;
     transitionStartTime = null;
+    transitionDuration = duration;
+    transitionEasing = isString(easing)
+      ? EASING_FNS[easing] || DEFAULT_EASING
+      : easing;
     preTransitionShowReticle = showReticle;
     showReticle = false;
 
-    transition(duration, easingFn, drawArgs);
     pubSub.publish('transitionStart');
   };
 
@@ -1964,39 +1878,39 @@ const createScatterplot = (initialProperties = {}) => {
         ) {
           setPointConnections(newPoints).then(() => {
             pubSub.publish('pointConnectionsDraw');
-            drawRaf(options.showReticleOnce);
+            draw = true;
+            drawReticleOnce = options.showReticleOnce;
           });
         }
       }
 
-      if (transition && pointsCached) {
+      if (options.transition && pointsCached) {
         pubSub.subscribe(
           'transitionEnd',
           () => {
             // Point connects cannot be transitioned yet so we hide them during
             // the transition. Hence, we need to make sure we call `draw()` once
             // the transition has ended.
-            drawRaf(options.showReticleOnce);
+            draw = true;
+            drawReticleOnce = options.showReticleOnce;
             resolve();
           },
           1
         );
-        startTransition(
-          {
-            duration: options.transitionDuration,
-            easing: options.transitionEasing,
-          },
-          [options.showReticleOnce]
-        );
+        startTransition({
+          duration: options.transitionDuration,
+          easing: options.transitionEasing,
+        });
       } else {
         pubSub.subscribe('draw', resolve, 1);
-        drawRaf(options.showReticleOnce);
+        draw = true;
+        drawReticleOnce = options.showReticleOnce;
       }
     });
 
   const withDraw = (f) => (...args) => {
     const out = f(...args);
-    drawRaf();
+    draw = true;
     return out;
   };
 
@@ -2033,7 +1947,7 @@ const createScatterplot = (initialProperties = {}) => {
     } else if (isString(newBackgroundImage)) {
       createTextureFromUrl(regl, newBackgroundImage).then((texture) => {
         backgroundImage = texture;
-        drawRaf();
+        draw = true;
         pubSub.publish('backgroundImageReady');
       });
       // eslint-disable-next-line no-underscore-dangle
@@ -2195,7 +2109,7 @@ const createScatterplot = (initialProperties = {}) => {
       if (hasPointConnections(searchIndex.points[0])) {
         setPointConnections(searchIndex.points).then(() => {
           pubSub.publish('pointConnectionsDraw');
-          drawRaf();
+          draw = true;
         });
       }
     } else {
@@ -2626,8 +2540,7 @@ const createScatterplot = (initialProperties = {}) => {
         if (!canvas) return; // Instance was destroyed in between
         updateViewAspectRatio();
         refresh();
-        draw();
-        drawHandler();
+        draw = true;
         resolve();
       })
     );
@@ -2664,7 +2577,10 @@ const createScatterplot = (initialProperties = {}) => {
       hoveredPoint = undefined;
     }
 
-    if (needsRedraw) drawRaf(null, showReticleOnce);
+    if (needsRedraw) {
+      draw = true;
+      drawReticleOnce = showReticleOnce;
+    }
   };
 
   const initCamera = () => {
@@ -2719,11 +2635,11 @@ const createScatterplot = (initialProperties = {}) => {
   const mouseLeaveCanvasHandler = () => {
     hover();
     isMouseInCanvas = false;
-    drawRaf();
+    draw = true;
   };
 
   const wheelHandler = () => {
-    drawRaf();
+    draw = true;
   };
 
   const clear = () => {
@@ -2744,8 +2660,7 @@ const createScatterplot = (initialProperties = {}) => {
       if (autoHeight) setCurrentHeight(newHeight);
 
       updateViewAspectRatio();
-      refresh();
-      drawRaf();
+      draw = true;
     }
   };
 
@@ -2829,7 +2744,83 @@ const createScatterplot = (initialProperties = {}) => {
     });
   };
 
+  const frame = regl.frame(() => {
+    if (!isInit || !(draw || isTransitioning)) return;
+
+    if (isTransitioning && !tween(transitionDuration, transitionEasing))
+      endTransition();
+
+    // Update camera
+    isViewChanged = camera.tick();
+
+    if (isViewChanged) {
+      topRightNdc = getScatterGlPos(1, 1);
+      bottomLeftNdc = getScatterGlPos(-1, -1);
+      computeNumPointsInViewDb();
+    }
+
+    regl.clear({
+      // background color (transparent)
+      color: [0, 0, 0, 0],
+      depth: 1,
+    });
+
+    // eslint-disable-next-line no-underscore-dangle
+    if (backgroundImage && backgroundImage._reglType) {
+      drawBackgroundImage();
+    }
+
+    if (lassoPointsCurr.length > 2) drawPolygon2d();
+
+    // The draw order of the following calls is important!
+    if (!isTransitioning)
+      pointConnections.draw({
+        projection: getProjection(),
+        model: getModel(),
+        view: getView(),
+      });
+
+    fbo.use(() => {
+      regl.clear({
+        // background color (transparent)
+        color: [0, 0, 0, 0],
+        depth: 1,
+      });
+
+      drawPointBodies();
+      if (!mouseDown && (showReticle || drawReticleOnce)) drawReticle();
+      if (hoveredPoint >= 0) drawHoveredPoint();
+      if (selection.length) drawSelectedPoint();
+    });
+
+    copyToScreen();
+
+    lasso.draw({
+      projection: getProjection(),
+      model: getModel(),
+      view: getView(),
+    });
+
+    // Publish camera change
+    if (isViewChanged) {
+      updateScales();
+
+      pubSub.publish('view', {
+        view: camera.view,
+        camera,
+        xScale,
+        yScale,
+      });
+    }
+
+    draw = false;
+    drawReticleOnce = false;
+
+    pubSub.publish('draw');
+  });
+
   const destroy = () => {
+    frame.cancel();
     window.removeEventListener('keyup', keyUpHandler, false);
     window.removeEventListener('blur', blurHandler, false);
     window.removeEventListener('mouseup', mouseUpHandler, false);
