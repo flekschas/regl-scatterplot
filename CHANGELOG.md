@@ -1,5 +1,9 @@
 ## Next
 
+## v0.19.0
+
+- Ensure inter buffers and viewports are properly updated on every draw call.
+
 **Breaking changes:**
 
 - Improve the handling of the connection order by switching from a structured 5th component to a 6th component.

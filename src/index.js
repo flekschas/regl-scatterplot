@@ -1820,6 +1820,8 @@ const createScatterplot = (initialProperties = {}) => {
   const draw = (showReticleOnce) => {
     if (!isInit || !regl) return;
 
+    regl.poll();
+
     // Update camera
     isViewChanged = camera.tick();
 
