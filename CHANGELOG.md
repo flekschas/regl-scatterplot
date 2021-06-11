@@ -1,6 +1,9 @@
 ## Next
 
+## v0.19.1
+
 - Simplify drawing loop by using `regl.frame` and bailing out of when nothing needs to be redrawn
+- Update regl-line to be compatible with regl v2
 
 ## v0.19.0
 
