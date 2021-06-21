@@ -1,5 +1,9 @@
 ## Next
 
+## v0.19.2
+
+- Fix an issue with not properly publishing the pointout event (#58)
+
 ## v0.19.1
 
 - Simplify drawing loop by using `regl.frame` and bailing out of when nothing needs to be redrawn
