@@ -2571,8 +2571,12 @@ const createScatterplot = (initialProperties = {}) => {
     } else {
       needsRedraw = +hoveredPoint >= 0;
       if (needsRedraw) {
-        if (!selectionSet.has(hoveredPoint)) setPointConnectionColorState([hoveredPoint], 0);
-        if (!preventEvent) pubSub.publish('pointout', hoveredPoint);
+        if (!selectionSet.has(hoveredPoint)) {
+          setPointConnectionColorState([hoveredPoint], 0);
+        }
+        if (!preventEvent) {
+          pubSub.publish('pointout', hoveredPoint);
+        }
       }
       hoveredPoint = undefined;
     }
