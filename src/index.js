@@ -2570,9 +2570,13 @@ const createScatterplot = (initialProperties = {}) => {
         pubSub.publish('pointover', hoveredPoint);
     } else {
       needsRedraw = +hoveredPoint >= 0;
-      if (needsRedraw && !selectionSet.has(hoveredPoint)) {
-        setPointConnectionColorState([hoveredPoint], 0);
-        if (!preventEvent) pubSub.publish('pointout', hoveredPoint);
+      if (needsRedraw) {
+        if (!selectionSet.has(hoveredPoint)) {
+          setPointConnectionColorState([hoveredPoint], 0);
+        }
+        if (!preventEvent) {
+          pubSub.publish('pointout', hoveredPoint);
+        }
       }
       hoveredPoint = undefined;
     }
