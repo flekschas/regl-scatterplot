@@ -124,7 +124,7 @@ export const limit = (choices, defaultChoice) => (choice) =>
 /**
  * Promised-based image loading
  * @param {string}  src  Remote image source, i.e., a URL
- * @param {boolean} isCrossOrigin
+ * @param {boolean} isCrossOrigin If `true` allow loading image from a source of another origin.
  * @return  {Promise<HTMLImageElement>}  Promise resolving to the image once its loaded
  */
 export const loadImage = (src, isCrossOrigin = false) =>
@@ -144,14 +144,21 @@ export const loadImage = (src, isCrossOrigin = false) =>
  * Create a Regl texture from an URL.
  * @param   {import('regl').Regl}  regl  Regl instance used for creating the texture.
  * @param   {string}  url  Source URL of the image.
+ * @return  {Promise<import('regl').Texture2D>}  Promise resolving to the texture object.
  */
-export const createTextureFromUrl = async (regl, url) => {
-  const image = await loadImage(
-    url,
-    url.indexOf(window.location.origin) !== 0 && url.indexOf('base64') === -1
-  );
-  return regl.texture(image);
-}
+export const createTextureFromUrl = (regl, url) =>
+  new Promise((resolve, reject) => {
+    loadImage(
+      url,
+      url.indexOf(window.location.origin) !== 0 && url.indexOf('base64') === -1
+    )
+      .then((image) => {
+        resolve(regl.texture(image));
+      })
+      .catch((error) => {
+        reject(error);
+      });
+  });
 
 /**
  * Convert a HEX-encoded color to an RGBA-encoded color

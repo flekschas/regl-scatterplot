@@ -250,7 +250,7 @@ const getEncodingIdx = (type) => {
  * }} Settable
  *
  * @typedef {{
- *   canvas: HTMLElement;
+ *   canvas: HTMLCanvasElement;
  *   regl: import('regl').Regl;
  *   syncEvents: boolean;
  *   version: string;
