@@ -185,17 +185,28 @@ const getEncodingIdx = (type) => {
   }
 };
 
-
 /**
  * @typedef {[number, number, number, number] | [number, number, number]} Color
+ *
  * @typedef {'category' | 'value1' | 'valueA' | 'valueZ' | 'z'} Category
+ *
  * @typedef {'value' | 'value2' | 'valueB' | 'valueW' | 'w'} Value
+ *
  * @typedef {Category | Value} DataEncoding
+ *
  * @typedef {DataEncoding | 'inherit' | 'segment'} PointDataEncoding
- * 
+ *
+ * @typedef {'alt' | 'cmd' | 'ctrl' | 'meta' | 'shift'} Key
+ *
+ * @typedef {'lasso' | 'rotate' | 'merge' | 'panZoom'} Action
+ *
+ * @typedef {'deselect' | 'lassoEnd'} LassoClearEvent
+ *
+ * @typedef {Record<string, any>} Camera2D
+ *
  * @typedef {{
  *   backgroundColor: Color | string;
- *   backgroundImage: import('regl').Texture | string;
+ *   backgroundImage: import('regl').Texture2D | string;
  *   colorBy: DataEncoding;
  *   deselectOnDblClick: boolean;
  *   deselectOnEscape: boolean;
@@ -203,10 +214,10 @@ const getEncodingIdx = (type) => {
  *   lassoLineWidth: number;
  *   lassoMinDelay: number;
  *   lassoMinDist: number;
- *   lassoClearEvent: 'deselect' | 'lassoEnd';
+ *   lassoClearEvent: LassoClearEvent;
  *   lassoInitiator: boolean;
- *   keyMap: Record<'alt' | 'cmd' | 'ctrl' | 'meta' | 'shift', 'lasso' | 'rotate' | 'merge'>;
- *   mouseMode: 'lasso' | 'rotate' | 'panZoom';
+ *   keyMap: Record<Key, Omit<Action, 'panZoom'>>;
+ *   mouseMode: Omit<Action, 'merge'>;
  *   showReticle: boolean;
  *   reticleColor: Color | string;
  *   pointColor: Color;
@@ -235,24 +246,31 @@ const getEncodingIdx = (type) => {
  *   sizeBy: DataEncoding;
  *   height: 'auto' | number;
  *   width: 'auto' | number;
- *   gamma: number; 
+ *   gamma: number;
  * }} Settable
- * 
+ *
  * @typedef {{
  *   canvas: HTMLElement;
  *   regl: import('regl').Regl;
  *   syncEvents: boolean;
  *   version: string;
  *   lassoInitiatorElement: HTMLElement;
- *   camera: ReturnType<import('dom-2d-camera').createDom2dCamera>;
+ *   camera: Camera2D;
  *   performanceMode: boolean;
  *   opacityByDensityDebounceTime: number;
  * } & Settable} Properties
- * 
- * @param {Partial<Properties>} initialProperties 
+ *
+ * @param {Partial<Properties>} initialProperties
  */
 const createScatterplot = (initialProperties = {}) => {
   /**
+   * @typedef {{
+   *  camera: Camera2D;
+   *  view: any;
+   *  xScale: [number, number];
+   *  yScale: [number, number];
+   * }} DrawPayload
+   *
    * @typedef {{
    *   init: () => void;
    *   destroy: () => void;
@@ -261,8 +279,8 @@ const createScatterplot = (initialProperties = {}) => {
    *   pointOut: (pointIndex: number) => void;
    *   select: (payload: { points: number[][] }) => void;
    *   deselect: () => void;
-   *   view: (payload: { camera: any, view: any, xScale: [number, number], yScale: [number, number] }) => void;
-   *   draw: (payload: { camera: any, view: any, xScale: [number, number], yScale: [number, number] }) => void;
+   *   view: (payload: DrawPayload) => void;
+   *   draw: (payload: DrawPayload) => void;
    *   lassoStart: () => void;
    *   lassoExtend: (payload: { coordinates: number[] }) => void;
    *   lassoEnd: (payload: { coordinates: number[] }) => void;
@@ -270,10 +288,10 @@ const createScatterplot = (initialProperties = {}) => {
    *   transitionEnd: (payload: import('regl').Regl) => void;
    *   pointConnectionsDraw: () => void;
    * }} Events
-   * 
+   *
    * @type {{
    *  subscribe: <Event extends keyof Events>(event: Event, handler: Events[Event], times: number) => void;
-   *  unsubscribe: <Event exnteds keyof Events>(event: Event) => void;
+   *  unsubscribe: <Event extends keyof Events>(event: Event) => void;
    * }}
    */
   const pubSub = createPubSub({
@@ -727,7 +745,10 @@ const createScatterplot = (initialProperties = {}) => {
     }
   };
 
-  const select = (/** @type {number | number[]} */ pointIdxs, { merge = false, preventEvent = false } = {}) => {
+  const select = (
+    /** @type {number | number[]} */ pointIdxs,
+    { merge = false, preventEvent = false } = {}
+  ) => {
     const pointIdxsArr = Array.isArray(pointIdxs) ? pointIdxs : [pointIdxs];
 
     if (merge) {
@@ -1953,9 +1974,9 @@ const createScatterplot = (initialProperties = {}) => {
    *  transitionDuration: number;
    *  transitionEasing: string;
    * }} DrawOptions
-   * 
-   * @param {number[][]} newPoints 
-   * @param {Partial<DrawOptions>=} options 
+   *
+   * @param {number[][]} newPoints
+   * @param {Partial<DrawOptions>=} options
    * @returns {Promise<void>}
    */
   const publicDraw = (newPoints, options = {}) =>
@@ -2021,7 +2042,7 @@ const createScatterplot = (initialProperties = {}) => {
       color: getColors(
         pointConnectionColor,
         pointConnectionColorActive,
-        pointConnectionColorHover,
+        pointConnectionColorHover
       ),
       opacity:
         pointConnectionOpacity === null ? null : pointConnectionOpacity[0],
