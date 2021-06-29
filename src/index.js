@@ -185,6 +185,74 @@ const getEncodingIdx = (type) => {
   }
 };
 
+
+/**
+ * @typedef {[number, number, number, number] | [number, number, number]} Color
+ * @typedef {'category' | 'value1' | 'valueA' | 'valueZ' | 'z'} Category
+ * @typedef {'value' | 'value2' | 'valueB' | 'valueW' | 'w'} Value
+ * @typedef {Category | Value} DataEncoding
+ * @typedef {DataEncoding | 'inherit' | 'segment'} PointDataEncoding
+ * 
+ * @typedef {{
+ *   backgroundColor: Color | string;
+ *   backgroundImage: import('regl').Texture | string;
+ *   colorBy: DataEncoding;
+ *   deselectOnDblClick: boolean;
+ *   deselectOnEscape: boolean;
+ *   lassoColor: Color | string;
+ *   lassoLineWidth: number;
+ *   lassoMinDelay: number;
+ *   lassoMinDist: number;
+ *   lassoClearEvent: 'deselect' | 'lassoEnd';
+ *   lassoInitiator: boolean;
+ *   keyMap: Record<'alt' | 'cmd' | 'ctrl' | 'meta' | 'shift', 'lasso' | 'rotate' | 'merge'>;
+ *   mouseMode: 'lasso' | 'rotate' | 'panZoom';
+ *   showReticle: boolean;
+ *   reticleColor: Color | string;
+ *   pointColor: Color;
+ *   pointColorActive: Color;
+ *   pointColorHover: Color;
+ *   showPointConnections: boolean;
+ *   pointConnectionColor: Color;
+ *   pointConnectionColorActive: Color;
+ *   pointConnectionColorHover: Color;
+ *   pointConnectionColorBy: PointDataEncoding;
+ *   pointConnectionOpacity: number;
+ *   pointConnectionOpacityBy: PointDataEncoding;
+ *   pointConnectionOpacityActive: number;
+ *   pointConnectionSize: number;
+ *   pointConnectionSizeActive: number;
+ *   pointConnectionSizeBy: PointDataEncoding;
+ *   pointConnectionMaxIntPointsPerSegment: number;
+ *   pointConnectionTolerance: number;
+ *   pointSize: number;
+ *   pointSizeSelected: number;
+ *   pointSizeMouseDetection: 'auto';
+ *   pointOutlineWidth: number;
+ *   opacity: number;
+ *   opacityBy: DataEncoding;
+ *   opacityByDensityFill: number;
+ *   sizeBy: DataEncoding;
+ *   height: 'auto' | number;
+ *   width: 'auto' | number;
+ *   gamma: number; 
+ * }} Settable
+ * 
+ * @typedef {{
+ *   canvas: HTMLElement;
+ *   regl: import('regl').Regl;
+ *   syncEvents: boolean;
+ *   version: string;
+ *   lassoInitiatorElement: HTMLElement;
+ *   camera: ReturnType<import('dom-2d-camera').createDom2dCamera>;
+ *   performanceMode: boolean;
+ *   opacityByDensityDebounceTime: number;
+ * } & Settable} Properties
+ * 
+ * @typedef {'init' | 'destroy' | 'backgroundImageReady' | 'pointOver' | 'pointOut' | 'select'} ScatterEvent
+ * 
+ * @param {Partial<Properties>} initialProperties 
+ */
 const createScatterplot = (initialProperties = {}) => {
   const pubSub = createPubSub({
     async: !initialProperties.syncEvents,
@@ -247,7 +315,7 @@ const createScatterplot = (initialProperties = {}) => {
   let currentWidth = width === 'auto' ? 1 : width;
   let currentHeight = height === 'auto' ? 1 : height;
 
-  // The following properties cannod be changed after the initialization
+  // The following properties cannot be changed after the initialization
   const {
     performanceMode = DEFAULT_PERFORMANCE_MODE,
     opacityByDensityDebounceTime = DEFAULT_OPACITY_BY_DENSITY_DEBOUNCE_TIME,
@@ -637,7 +705,7 @@ const createScatterplot = (initialProperties = {}) => {
     }
   };
 
-  const select = (pointIdxs, { merge = false, preventEvent = false } = {}) => {
+  const select = (/** @type {number | number[]} */ pointIdxs, { merge = false, preventEvent = false } = {}) => {
     const pointIdxsArr = Array.isArray(pointIdxs) ? pointIdxs : [pointIdxs];
 
     if (merge) {
@@ -1919,7 +1987,7 @@ const createScatterplot = (initialProperties = {}) => {
       color: getColors(
         pointConnectionColor,
         pointConnectionColorActive,
-        pointConnectionColorHover
+        pointConnectionColorHover,
       ),
       opacity:
         pointConnectionOpacity === null ? null : pointConnectionOpacity[0],
@@ -2228,6 +2296,7 @@ const createScatterplot = (initialProperties = {}) => {
     regl.poll();
   };
 
+  /** @type {<Key extends keyof Properties>(property: Key) => Properties[Key] } */
   const get = (property) => {
     checkDeprecations({ property: true });
 
@@ -2324,6 +2393,7 @@ const createScatterplot = (initialProperties = {}) => {
     return undefined;
   };
 
+  /** @type {(properties: Partial<Settable>) => void} */
   const set = (properties = {}) => {
     checkDeprecations(properties);
 
@@ -2547,7 +2617,7 @@ const createScatterplot = (initialProperties = {}) => {
   };
 
   const hover = (
-    point,
+    /** @type {number | number[]} */ point,
     { showReticleOnce = false, preventEvent = false } = {}
   ) => {
     let needsRedraw = false;
@@ -2871,3 +2941,6 @@ const createScatterplot = (initialProperties = {}) => {
 export default createScatterplot;
 
 export { createRegl, createTextureFromUrl };
+
+
+const t = createScatterplot({});

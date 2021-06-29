@@ -30,7 +30,7 @@ export const checkReglExtensions = (regl) => {
 
 /**
  * Create a new Regl instance with `GL_EXTENSIONS` enables
- * @param   {object}  canvas  Canvas element to be rendered on
+ * @param   {HTMLCanvasElement}  canvas  Canvas element to be rendered on
  * @return  {function}  New Regl instance
  */
 export const createRegl = (canvas) => {
@@ -123,8 +123,9 @@ export const limit = (choices, defaultChoice) => (choice) =>
 
 /**
  * Promised-based image loading
- * @param   {string}  src  Remote image source, i.e., a URL
- * @return  {object}  Promise resolving to the image once its loaded
+ * @param {string}  src  Remote image source, i.e., a URL
+ * @param {boolean} isCrossOrigin
+ * @return  {Promise<HTMLImageElement>}  Promise resolving to the image once its loaded
  */
 export const loadImage = (src, isCrossOrigin = false) =>
   new Promise((accept, reject) => {
@@ -141,25 +142,16 @@ export const loadImage = (src, isCrossOrigin = false) =>
 
 /**
  * Create a Regl texture from an URL.
- * @param   {function}  regl  Regl instance used for creating the texture.
+ * @param   {import('regl').Regl}  regl  Regl instance used for creating the texture.
  * @param   {string}  url  Source URL of the image.
- * @param   {boolean}  isCrossOrigin  If `true` allow loading image from a
- *   source of another origin.
- * @return  {object}  Promise resolving to the texture object.
  */
-export const createTextureFromUrl = (regl, url) =>
-  new Promise((resolve, reject) => {
-    loadImage(
-      url,
-      url.indexOf(window.location.origin) !== 0 && url.indexOf('base64') === -1
-    )
-      .then((image) => {
-        resolve(regl.texture(image));
-      })
-      .catch((error) => {
-        reject(error);
-      });
-  });
+export const createTextureFromUrl = async (regl, url) => {
+  const image = await loadImage(
+    url,
+    url.indexOf(window.location.origin) !== 0 && url.indexOf('base64') === -1
+  );
+  return regl.texture(image);
+}
 
 /**
  * Convert a HEX-encoded color to an RGBA-encoded color
