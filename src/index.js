@@ -202,7 +202,7 @@ const getEncodingIdx = (type) => {
  *
  * @typedef {'deselect' | 'lassoEnd'} LassoClearEvent
  *
- * @typedef {Record<string, any>} Camera2D
+ * @typedef {ReturnType<import('camera-2d-simple')>} Camera2D
  *
  * @typedef {import('d3-scale').ScaleContinuousNumeric<number, number>} Scale
  *
@@ -271,7 +271,7 @@ const getEncodingIdx = (type) => {
 /** @param {Partial<Properties>} initialProperties */
 const createScatterplot = (initialProperties = {}) => {
   /**
-   * @typedef {{camera: Camera2D, view: any, xScale: Scale | null, yScale: Scale | null}} DrawPayload
+   * @typedef {{camera: Camera2D, view: Camera2D['view'], xScale: Scale | null, yScale: Scale | null}} DrawPayload
    *
    * @typedef {{
    *   init: () => void;
