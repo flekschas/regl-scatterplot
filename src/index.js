@@ -204,18 +204,15 @@ const getEncodingIdx = (type) => {
  *
  * @typedef {Record<string, any>} Camera2D
  *
- * @typedef {{
- *  domain: () => number[];
- *  range: (range: Iterable<number>) => Scale;
- * }} Scale
+ * @typedef {import('d3-scale').ScaleContinuousNumeric<number, number>} Scale
  *
  * @typedef {{
  *   backgroundImage: import('regl').Texture2D | string;
  *   sizeBy: null | DataEncoding;
  *   opacityBy: null | DataEncoding;
  *   colorBy: null | DataEncoding;
- *   xScale: Scale | null;
- *   yScale: Scale | null;
+ *   xScale: null | Scale;
+ *   yScale: null | Scale;
  * }} Nullifiable
  *
  * @typedef {{
@@ -274,7 +271,7 @@ const getEncodingIdx = (type) => {
 /** @param {Partial<Properties>} initialProperties */
 const createScatterplot = (initialProperties = {}) => {
   /**
-   * @typedef {{camera: Camera2D, view: any, xScale: Scale, yScale: Scale}} DrawPayload
+   * @typedef {{camera: Camera2D, view: any, xScale: Scale | null, yScale: Scale | null}} DrawPayload
    *
    * @typedef {{
    *   init: () => void;
