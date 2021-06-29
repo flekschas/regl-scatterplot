@@ -12,6 +12,7 @@
   "license": "MIT",
   "main": "dist/regl-scatterplot.js",
   "module": "dist/regl-scatterplot.esm.js",
+  "types": "dist/regl-scatterplot.esm.d.ts",
   "files": [
     "src/*",
     "dist/*"

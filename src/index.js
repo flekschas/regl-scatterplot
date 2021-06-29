@@ -287,11 +287,11 @@ const createScatterplot = (initialProperties = {}) => {
    *   transtionStart: () => void;
    *   transitionEnd: (payload: import('regl').Regl) => void;
    *   pointConnectionsDraw: () => void;
-   * }} Events
+   * }} PubSubEvents
    *
    * @type {{
-   *  subscribe: <Event extends keyof Events>(event: Event, handler: Events[Event], times: number) => void;
-   *  unsubscribe: <Event extends keyof Events>(event: Event) => void;
+   *  subscribe: <Event extends keyof PubSubEvents>(event: Event, handler: PubSubEvents[Event], times: number) => void;
+   *  unsubscribe: <Event extends keyof PubSubEvents>(event: Event) => void;
    * }}
    */
   const pubSub = createPubSub({
