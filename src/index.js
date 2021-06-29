@@ -291,7 +291,7 @@ const createScatterplot = (initialProperties = {}) => {
    *
    * @type {{
    *  subscribe: <Event extends keyof PubSubEvents>(event: Event, handler: PubSubEvents[Event], times: number) => void;
-   *  unsubscribe: <Event extends keyof PubSubEvents>(event: Event) => void;
+   *  unsubscribe: (event: keyof PubSubEvents) => void;
    * }}
    */
   const pubSub = createPubSub({
