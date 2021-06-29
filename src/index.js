@@ -205,9 +205,21 @@ const getEncodingIdx = (type) => {
  * @typedef {Record<string, any>} Camera2D
  *
  * @typedef {{
- *   backgroundColor: Color | string;
+ *  domain: () => number[];
+ *  range: (range: Iterable<number>) => Scale;
+ * }} Scale
+ *
+ * @typedef {{
  *   backgroundImage: import('regl').Texture2D | string;
- *   colorBy: DataEncoding;
+ *   sizeBy: null | DataEncoding;
+ *   opacityBy: null | DataEncoding;
+ *   colorBy: null | DataEncoding;
+ *   xScale: Scale | null;
+ *   yScale: Scale | null;
+ * }} Nullifiable
+ *
+ * @typedef {{
+ *   backgroundColor: Color | string;
  *   deselectOnDblClick: boolean;
  *   deselectOnEscape: boolean;
  *   lassoColor: Color | string;
@@ -241,13 +253,11 @@ const getEncodingIdx = (type) => {
  *   pointSizeMouseDetection: 'auto';
  *   pointOutlineWidth: number;
  *   opacity: number;
- *   opacityBy: DataEncoding;
  *   opacityByDensityFill: number;
- *   sizeBy: DataEncoding;
  *   height: 'auto' | number;
  *   width: 'auto' | number;
  *   gamma: number;
- * }} Settable
+ * } & Nullifiable} Settable
  *
  * @typedef {{
  *   canvas: HTMLCanvasElement;
@@ -259,17 +269,12 @@ const getEncodingIdx = (type) => {
  *   performanceMode: boolean;
  *   opacityByDensityDebounceTime: number;
  * } & Settable} Properties
- *
- * @param {Partial<Properties>} initialProperties
  */
+
+/** @param {Partial<Properties>} initialProperties */
 const createScatterplot = (initialProperties = {}) => {
   /**
-   * @typedef {{
-   *  camera: Camera2D;
-   *  view: any;
-   *  xScale: [number, number];
-   *  yScale: [number, number];
-   * }} DrawPayload
+   * @typedef {{camera: Camera2D, view: any, xScale: Scale, yScale: Scale}} DrawPayload
    *
    * @typedef {{
    *   init: () => void;
