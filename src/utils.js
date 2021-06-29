@@ -12,7 +12,7 @@ export const arrayMax = (max, x) => (max > x ? max : x);
 
 /**
  * Check if all GL extensions are enabled and warn otherwise
- * @param   {function}  regl  Regl instance to be tested
+ * @param   {import('regl').Regl}  regl  Regl instance to be tested
  * @return  {function}  Returns the Regl instance itself
  */
 export const checkReglExtensions = (regl) => {
@@ -31,7 +31,7 @@ export const checkReglExtensions = (regl) => {
 /**
  * Create a new Regl instance with `GL_EXTENSIONS` enables
  * @param   {HTMLCanvasElement}  canvas  Canvas element to be rendered on
- * @return  {function}  New Regl instance
+ * @return  {import('regl').Regl}  New Regl instance
  */
 export const createRegl = (canvas) => {
   const gl = canvas.getContext('webgl', {

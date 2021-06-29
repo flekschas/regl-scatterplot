@@ -254,6 +254,30 @@ const getEncodingIdx = (type) => {
  * @param {Partial<Properties>} initialProperties 
  */
 const createScatterplot = (initialProperties = {}) => {
+  /**
+   * @typedef {{
+   *   init: () => void;
+   *   destroy: () => void;
+   *   backgroundImageReady: () => void;
+   *   pointOver: (pointIndex: number) => void;
+   *   pointOut: (pointIndex: number) => void;
+   *   select: (payload: { points: number[][] }) => void;
+   *   deselect:  () => void;
+   *   view:  (payload: { camera: any, view: any, xScale: [number, number], yScale: [number, number] }) => void;
+   *   draw:  (payload: { camera: any, view: any, xScale: [number, number], yScale: [number, number] }) => void;
+   *   lassoStart: () => void;
+   *   lassoExtend: (payload: { coordinates: number[] }) => void;
+   *   lassoEnd: (payload: { coordinates: number[] }) => void;
+   *   transtionStart: () => void;
+   *   transitionEnd: (payload: import('regl').Regl) => void;
+   *   pointConnectionsDraw: () => void;
+   * }} Events
+   * 
+   * @type {{
+   *  subscribe: <Event extends keyof Events>(event: Event, handler: Events[Event], times: number) => void;
+   *  unsubscribe: <Event exnteds keyof Events>(event: Event) => void;
+   * }}
+   */
   const pubSub = createPubSub({
     async: !initialProperties.syncEvents,
     caseInsensitive: true,
@@ -1925,6 +1949,17 @@ const createScatterplot = (initialProperties = {}) => {
     pubSub.publish('transitionStart');
   };
 
+  /**
+   * @typedef {{
+   *  transition: boolean;
+   *  transitionDuration: number;
+   *  transitionEasing: string;
+   * }} DrawOptions
+   * 
+   * @param {number[][]} newPoints 
+   * @param {Partial<DrawOptions>=} options 
+   * @returns {Promise<void>}
+   */
   const publicDraw = (newPoints, options = {}) =>
     new Promise((resolve) => {
       let pointsCached = false;
@@ -1976,6 +2011,7 @@ const createScatterplot = (initialProperties = {}) => {
       }
     });
 
+  /** @type {<F extends Function>(f: F) => (...args: Parameters<F>) => ReturnType<F>}*/
   const withDraw = (f) => (...args) => {
     const out = f(...args);
     draw = true;
@@ -2738,6 +2774,7 @@ const createScatterplot = (initialProperties = {}) => {
     }
   };
 
+  /** @param {import('regl').ReadOptions<Uint8Array>} options */
   const exportFn = (options = {}) => ({
     pixels: Uint8ClampedArray.from(regl.read(options)),
     width: currentWidth * window.devicePixelRatio,
@@ -2941,6 +2978,3 @@ const createScatterplot = (initialProperties = {}) => {
 export default createScatterplot;
 
 export { createRegl, createTextureFromUrl };
-
-
-const t = createScatterplot({});
