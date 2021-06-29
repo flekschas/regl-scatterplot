@@ -249,8 +249,6 @@ const getEncodingIdx = (type) => {
  *   opacityByDensityDebounceTime: number;
  * } & Settable} Properties
  * 
- * @typedef {'init' | 'destroy' | 'backgroundImageReady' | 'pointOver' | 'pointOut' | 'select'} ScatterEvent
- * 
  * @param {Partial<Properties>} initialProperties 
  */
 const createScatterplot = (initialProperties = {}) => {
@@ -262,9 +260,9 @@ const createScatterplot = (initialProperties = {}) => {
    *   pointOver: (pointIndex: number) => void;
    *   pointOut: (pointIndex: number) => void;
    *   select: (payload: { points: number[][] }) => void;
-   *   deselect:  () => void;
-   *   view:  (payload: { camera: any, view: any, xScale: [number, number], yScale: [number, number] }) => void;
-   *   draw:  (payload: { camera: any, view: any, xScale: [number, number], yScale: [number, number] }) => void;
+   *   deselect: () => void;
+   *   view: (payload: { camera: any, view: any, xScale: [number, number], yScale: [number, number] }) => void;
+   *   draw: (payload: { camera: any, view: any, xScale: [number, number], yScale: [number, number] }) => void;
    *   lassoStart: () => void;
    *   lassoExtend: (payload: { coordinates: number[] }) => void;
    *   lassoEnd: (payload: { coordinates: number[] }) => void;
@@ -2011,7 +2009,7 @@ const createScatterplot = (initialProperties = {}) => {
       }
     });
 
-  /** @type {<F extends Function>(f: F) => (...args: Parameters<F>) => ReturnType<F>}*/
+  /** @type {<F extends Function>(f: F) => (...args: Parameters<F>) => ReturnType<F>} */
   const withDraw = (f) => (...args) => {
     const out = f(...args);
     draw = true;
