@@ -154,23 +154,12 @@ test('createScatterplot({ cameraTarget, cameraDistance, cameraRotation, cameraVi
     `The camera rotation should be ${cameraRotation}`
   );
 
+  // prettier-ignore
   const cameraView = new Float32Array([
-    0.5,
-    0,
-    0,
-    0.5,
-    0,
-    0.5,
-    0,
-    0.5,
-    0,
-    0,
-    0.5,
-    0,
-    0,
-    0,
-    0,
-    1,
+    0.5,   0,   0, 0.5,
+    0,   0.5,   0, 0.5,
+    0,     0, 0.5,   0,
+    0,     0,   0,   1,
   ]);
   const scatterplot2 = createScatterplot({ cameraView });
 
@@ -437,10 +426,7 @@ test('set({ pointColor, pointColorActive, pointColorHover, pointConnectionColor,
   const scatterplot = createScatterplot({ canvas });
 
   const rgbaPointColor = [
-    0.22745098039215686,
-    0.47058823529411764,
-    0.6666666666666666,
-    1,
+    0.22745098039215686, 0.47058823529411764, 0.6666666666666666, 1,
   ];
   const rgbaPointColorActive = [0, 0.5529411764705883, 1, 1];
   const rgbaPointColorHover = [0, 0.5529411764705883, 1, 1];
@@ -1752,18 +1738,15 @@ test('select()', async (t) => {
   scatterplot.destroy();
 });
 
-test('hover()', async (t) => {
+test('hover() with columnar data', async (t) => {
   const scatterplot = createScatterplot({ canvas: createCanvas() });
 
-  const points = [
-    [0, 0],
-    [1, 1],
-    [1, -1],
-    [-1, -1],
-    [-1, 1],
-  ];
+  const data = {
+    x: [0, 1, 1, -1, -1],
+    y: [0, 1, -1, -1, 1],
+  };
 
-  await scatterplot.draw(points);
+  await scatterplot.draw(data);
 
   let hovering;
   const pointoverHandler = (newHovering) => {

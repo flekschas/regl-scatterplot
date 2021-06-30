@@ -43,7 +43,7 @@ Note, you can remap `rotate` and `lasso` to other modifier keys via the `keyMap`
 - x/y point position (obviously)
 - categorical and continuous color encoding (including opacity)
 - categorical and continuous size encoding
-- point connections (stemming for example from time series data)
+- point connections (stemming, for example, from time series data)
 
 ## Install
 
@@ -122,9 +122,9 @@ For a complete example see [example/index.js](example/index.js) and [example/siz
 
 #### Connecting points
 
-You can connect points visually using spline curves by adding a 5th component to your point data and setting `connectPoints: true` when calling `draw()`.
+You can connect points visually using spline curves by adding a 5th component to your point data and setting `showPointConnections: true`.
 
-The 5th component is needed to identify which points should be connected. The order of points are connected is defined by the order in which the points appear in your data.
+The 5th component is needed to identify which points should be connected. By default, the order of how the points are connected is defined by the order in which the points appear in your data.
 
 ```javascript
 const points = [
@@ -136,14 +136,35 @@ const points = [
 ];
 ```
 
-In the example above, the points would be connected in as following:
+In the example above, the points would be connected as follows:
 
 ```
-1 -> 2 -> 5
-3 -> 4
+0 -> 1 -> 4
+2 -> 3
 ```
 
-Finally, to visualize the point connection call `scatterplot.set({ showPointConnection: true })`.
+**Line Ordering:**
+
+To explicitely define or change the order of how points are connected, you can define a 6th component as follows:
+
+```javascript
+const points = [
+  [1, 1, 0, 0, 0, 2],
+  [2, 2, 0, 0, 0, 0],
+  [3, 3, 0, 0, 1, 1],
+  [4, 4, 0, 0, 1, 0],
+  [5, 5, 0, 0, 0, 1],
+];
+```
+
+would lead tp the following line segment ordering:
+
+```
+1 -> 4 -> 0
+3 -> 2
+```
+
+Note, to visualize the point connections, make sure `scatterplot.set({ showPointConnection: true })` is set!
 
 For an example see [example/connected-points.js](example/connected-points.js).
 
@@ -199,8 +220,11 @@ Sets and draws `points`. Note that repeatedly calling this method without specif
 
 **Arguments:**
 
-- `points` is an array of quadruples defining the point data. Each quadruple must be of the form `[x, y, category, value]` where `category` and `value` are optional and can be used for [color encoding](#color-by-value-or-category) or [size encoding](#size-by-value-or-category).
+- `points` can either be an array of quadruples (row-oriented) or an object of arrays (column-oriented):
+  - For row-oriented data, each nested array defines a point data of the form `[x, y, ?valueA, ?valueB, ?line, ?lineOrder]`. `valueA` and `valueB` are optional and can be used for [color, opacity, or size encoding](#property-by). `line` and `lineOrder` are also optional and can be used to [visually connect points by lines](#connecting-points).
+  - For column-oriented data, the object must be of the form `{ x: [], y: [], ?valueA: [], ?valueB: [], ?line: [], ?lineOrder: [] }`.
 - `options` is an object with the following properties:
+  - `showPointConnectionsOnce` [default: `false`]: if `true` and if points contain a `line` component/dimension the points will be visually conntected.
   - `transition` [default: `false`]: if `true` and if the current number of points equals `points.length`, the current points will be transitioned to the new points
   - `transitionDuration` [default: `500`]: the duration in milliseconds over which the transition should occur
   - `transitionEasing` [default: `cubicInOut`]: the easing function, which determines how intermediate values of the transition are calculated

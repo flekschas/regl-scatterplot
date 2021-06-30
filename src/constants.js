@@ -131,3 +131,5 @@ export const DEFAULT_POINT_SIZE_MOUSE_DETECTION = 'auto';
 export const DEFAULT_PERFORMANCE_MODE = false;
 export const SINGLE_CLICK_DELAY = 200;
 export const LONG_CLICK_TIME = 500;
+export const Z_NAMES = ['z', 'valueZ', 'valueA', 'value1', 'category'];
+export const W_NAMES = ['w', 'valueW', 'valueB', 'value2', 'value'];
