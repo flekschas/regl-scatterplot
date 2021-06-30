@@ -30,7 +30,10 @@ const showReticle = true;
 const reticleColor = [1, 1, 0.878431373, 0.33];
 
 const pointoverHandler = (pointId) => {
-  const [x, y, category, value] = points[pointId];
+  const x = points.x[pointId];
+  const y = points.y[pointId];
+  const category = points.z[pointId];
+  const value = points.w[pointId];
   console.log(
     `Out point: ${pointId}`,
     `X: ${x}\nY: ${y}\nCategory: ${category}\nValue: ${value}`
@@ -39,7 +42,10 @@ const pointoverHandler = (pointId) => {
 
 const pointoutHandler = (pointId) => {
   console.log('Out point:', pointId);
-  const [x, y, category, value] = points[pointId];
+  const x = points.x[pointId];
+  const y = points.y[pointId];
+  const category = points.z[pointId];
+  const value = points.w[pointId];
   console.log(
     `Out point: ${pointId}`,
     `X: ${x}\nY: ${y}\nCategory: ${category}\nValue: ${value}`
@@ -81,20 +87,18 @@ scatterplot.subscribe('pointout', pointoutHandler);
 scatterplot.subscribe('select', selectHandler);
 scatterplot.subscribe('deselect', deselectHandler);
 
-const generatePoints = (num) =>
-  new Array(num).fill().map(() => [
-    -1 + Math.random() * 2, // x
-    -1 + Math.random() * 2, // y
-    Math.round(Math.random()), // category
-    Math.random(), // value
-  ]);
+const generatePoints = (length) => ({
+  x: Array.from({ length }, () => -1 + Math.random() * 2),
+  y: Array.from({ length }, () => -1 + Math.random() * 2),
+  z: Array.from({ length }, () => Math.round(Math.random())), // category
+  w: Array.from({ length }, () => Math.random()), // value
+});
 
 const setNumPoint = (newNumPoints) => {
   numPoints = newNumPoints;
   numPointsEl.value = numPoints;
   numPointsValEl.innerHTML = numPoints;
   points = generatePoints(numPoints);
-  scatterplot.draw(points);
 };
 
 const numPointsInputHandler = (event) => {
