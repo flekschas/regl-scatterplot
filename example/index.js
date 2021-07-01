@@ -99,6 +99,7 @@ const setNumPoint = (newNumPoints) => {
   numPointsEl.value = numPoints;
   numPointsValEl.innerHTML = numPoints;
   points = generatePoints(numPoints);
+  scatterplot.draw(points);
 };
 
 const numPointsInputHandler = (event) => {
