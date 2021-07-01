@@ -20,7 +20,7 @@
     "build": "npm run build-library; npm run build-demo",
     "build-library": "rm -rf dist/*; rollup -c; ",
     "build-demo": "webpack --config ./webpack.config.js --mode production",
-    "deploy": "npm run build-demo; touch docs/.nojekyll; gh-pages -d docs -t --git git",
+    "deploy": "npm run build-demo; touch docs/.nojekyll; cp example/favicon.png docs/favicon.png; gh-pages -d docs -t --git git",
     "lint": "eslint src tests rollup.config.js webpack.config.js",
     "precommit": "NODE_ENV=production lint-staged; npm run test",
     "prepublishOnly": "npm run test; rm -rf dist/*; npm run build;",
