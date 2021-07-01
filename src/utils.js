@@ -141,6 +141,8 @@ export const loadImage = (src, isCrossOrigin = false) =>
   });
 
 /**
+ * @deprecated Please use `scatterplot.createTextureFromUrl(url)`
+ *
  * Create a Regl texture from an URL.
  * @param   {import('regl').Regl}  regl  Regl instance used for creating the texture.
  * @param   {string}  url  Source URL of the image.
