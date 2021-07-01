@@ -149,10 +149,10 @@ const getEncodingType = (
   { allowSegment = false, allowDensity = false } = {}
 ) => {
   // Z refers to the 3rd component of the RGBA value
-  if (Z_NAMES.indexOf(type) >= 0) return 'valueZ';
+  if (Z_NAMES.has(type)) return 'valueZ';
 
   // W refers to the 4th component of the RGBA value
-  if (W_NAMES.indexOf(type) >= 0) return 'valueW';
+  if (W_NAMES.has(type)) return 'valueW';
 
   if (type === 'segment') return allowSegment ? 'segment' : defaultValue;
 
@@ -1859,15 +1859,11 @@ const createScatterplot = (initialProperties = {}) => {
 
         const components = Object.keys(points);
         const getZ = (() => {
-          const z = components.find((c) =>
-            Z_NAMES.find((zName) => zName === c)
-          );
+          const z = components.find((c) => Z_NAMES.has(c));
           return z && ((i) => points[z][i]);
         })();
         const getW = (() => {
-          const w = components.find((c) =>
-            W_NAMES.find((wName) => wName === c)
-          );
+          const w = components.find((c) => W_NAMES.has(c));
           return w && ((i) => points[w][i]);
         })();
 
