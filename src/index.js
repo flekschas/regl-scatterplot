@@ -100,6 +100,8 @@ import {
   DEFAULT_OPACITY_BY_DENSITY_FILL,
   DEFAULT_OPACITY_BY_DENSITY_DEBOUNCE_TIME,
   DEFAULT_GAMMA,
+  Z_NAMES,
+  W_NAMES,
 } from './constants';
 
 import {
@@ -146,30 +148,17 @@ const getEncodingType = (
   defaultValue,
   { allowSegment = false, allowDensity = false } = {}
 ) => {
-  switch (type) {
-    case 'category':
-    case 'value1':
-    case 'valueA':
-    case 'valueZ':
-    case 'z':
-      return 'valueZ'; // Z refers to the 3rd component of the RGBA value
+  // Z refers to the 3rd component of the RGBA value
+  if (Z_NAMES.has(type)) return 'valueZ';
 
-    case 'value':
-    case 'value2':
-    case 'valueB':
-    case 'valueW':
-    case 'w':
-      return 'valueW'; // W refers to the 4th component of the RGBA value
+  // W refers to the 4th component of the RGBA value
+  if (W_NAMES.has(type)) return 'valueW';
 
-    case 'segment':
-      return allowSegment ? 'segment' : defaultValue;
+  if (type === 'segment') return allowSegment ? 'segment' : defaultValue;
 
-    case 'density':
-      return allowDensity ? 'density' : defaultValue;
+  if (type === 'density') return allowDensity ? 'density' : defaultValue;
 
-    default:
-      return defaultValue;
-  }
+  return defaultValue;
 };
 
 const getEncodingIdx = (type) => {
@@ -1857,62 +1846,115 @@ const createScatterplot = (initialProperties = {}) => {
     pubSub.publish('transitionStart');
   };
 
-  const publicDraw = (newPoints, options = {}) =>
-    new Promise((resolve) => {
-      let pointsCached = false;
-      if (newPoints) {
-        if (options.transition) {
-          if (newPoints.length === numPoints) {
-            pointsCached = cachePoints(newPoints);
-          } else {
-            console.warn(
-              'Cannot transition! The number of points between the previous and current draw call must be identical.'
-            );
-          }
-        }
-        setPoints(newPoints);
-        if (
-          showPointConnections ||
-          (options.showPointConnectionsOnce &&
-            hasPointConnections(newPoints[0]))
-        ) {
-          setPointConnections(newPoints).then(() => {
-            pubSub.publish('pointConnectionsDraw');
-            draw = true;
-            drawReticleOnce = options.showReticleOnce;
-          });
-        }
-      }
-
-      if (options.transition && pointsCached) {
-        pubSub.subscribe(
-          'transitionEnd',
-          () => {
-            // Point connects cannot be transitioned yet so we hide them during
-            // the transition. Hence, we need to make sure we call `draw()` once
-            // the transition has ended.
-            draw = true;
-            drawReticleOnce = options.showReticleOnce;
-            resolve();
-          },
-          1
-        );
-        startTransition({
-          duration: options.transitionDuration,
-          easing: options.transitionEasing,
-        });
+  const toArrayOrientedPoints = (points) =>
+    new Promise((resolve, reject) => {
+      if (!points || Array.isArray(points)) {
+        resolve(points);
       } else {
-        pubSub.subscribe('draw', resolve, 1);
-        draw = true;
-        drawReticleOnce = options.showReticleOnce;
+        const getX = Array.isArray(points.x) && ((i) => points.x[i]);
+        const getY = Array.isArray(points.y) && ((i) => points.y[i]);
+        const getL = Array.isArray(points.line) && ((i) => points.line[i]);
+        const getLO =
+          Array.isArray(points.lineOrder) && ((i) => points.lineOrder[i]);
+
+        const components = Object.keys(points);
+        const getZ = (() => {
+          const z = components.find((c) => Z_NAMES.has(c));
+          return z && ((i) => points[z][i]);
+        })();
+        const getW = (() => {
+          const w = components.find((c) => W_NAMES.has(c));
+          return w && ((i) => points[w][i]);
+        })();
+
+        if (getX && getY && getZ && getW && getL && getLO) {
+          resolve(
+            points.x.map((x, i) => [
+              x,
+              getY(i),
+              getZ(i),
+              getW(i),
+              getL(i),
+              getLO(i),
+            ])
+          );
+        } else if (getX && getY && getZ && getW && getL) {
+          resolve(
+            points.x.map((x, i) => [x, getY(i), getZ(i), getW(i), getL(i)])
+          );
+        } else if (getX && getY && getZ && getW) {
+          resolve(points.x.map((x, i) => [x, getY(i), getZ(i), getW(i)]));
+        } else if (getX && getY && getZ) {
+          resolve(points.x.map((x, i) => [x, getY(i), getZ(i)]));
+        } else if (getX && getY) {
+          resolve(points.x.map((x, i) => [x, getY(i)]));
+        } else {
+          reject(new Error('You need to specify at least x and y'));
+        }
       }
     });
 
-  const withDraw = (f) => (...args) => {
-    const out = f(...args);
-    draw = true;
-    return out;
-  };
+  const publicDraw = (newPoints, options = {}) =>
+    toArrayOrientedPoints(newPoints).then(
+      (points) =>
+        new Promise((resolve) => {
+          let pointsCached = false;
+          if (points) {
+            if (options.transition) {
+              if (points.length === numPoints) {
+                pointsCached = cachePoints(points);
+              } else {
+                console.warn(
+                  'Cannot transition! The number of points between the previous and current draw call must be identical.'
+                );
+              }
+            }
+            setPoints(points);
+            if (
+              showPointConnections ||
+              (options.showPointConnectionsOnce &&
+                hasPointConnections(points[0]))
+            ) {
+              setPointConnections(points).then(() => {
+                pubSub.publish('pointConnectionsDraw');
+                draw = true;
+                drawReticleOnce = options.showReticleOnce;
+              });
+            }
+          }
+
+          if (options.transition && pointsCached) {
+            pubSub.subscribe(
+              'transitionEnd',
+              () => {
+                // Point connects cannot be transitioned yet so we hide them during
+                // the transition. Hence, we need to make sure we call `draw()` once
+                // the transition has ended.
+                draw = true;
+                drawReticleOnce = options.showReticleOnce;
+                resolve();
+              },
+              1
+            );
+            startTransition({
+              duration: options.transitionDuration,
+              easing: options.transitionEasing,
+            });
+          } else {
+            pubSub.subscribe('draw', resolve, 1);
+            draw = true;
+            drawReticleOnce = options.showReticleOnce;
+          }
+        })
+    );
+
+  const withDraw =
+    (f) =>
+    (...args) => {
+      const out = f(...args);
+      draw = true;
+      return out;
+    };
 
   const updatePointConnectionStyle = () => {
     pointConnections.setStyle({
@@ -2655,10 +2697,8 @@ const createScatterplot = (initialProperties = {}) => {
     const autoWidth = width === 'auto';
     const autoHeight = height === 'auto';
     if (autoWidth || autoHeight) {
-      const {
-        width: newWidth,
-        height: newHeight,
-      } = canvas.getBoundingClientRect();
+      const { width: newWidth, height: newHeight } =
+        canvas.getBoundingClientRect();
 
       if (autoWidth) setCurrentWidth(newWidth);
       if (autoHeight) setCurrentHeight(newHeight);
