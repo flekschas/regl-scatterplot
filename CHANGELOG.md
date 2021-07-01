@@ -1,5 +1,8 @@
 ## Next
 
+- Support drawing columnar data `scatterplot.draw({ x: [...], y: [...], ... })` (#59)
+- Fix the rendering issue with with Safari 14 (#45)
+
 ## v0.19.2
 
 - Fix an issue with not properly publishing the pointout event (#58)

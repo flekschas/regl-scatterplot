@@ -14,7 +14,12 @@ export const COLOR_HOVER_IDX = 2;
 export const COLOR_BG_IDX = 3;
 export const COLOR_NUM_STATES = 4;
 export const FLOAT_BYTES = Float32Array.BYTES_PER_ELEMENT;
-export const GL_EXTENSIONS = ['OES_texture_float', 'OES_element_index_uint'];
+export const GL_EXTENSIONS = [
+  'OES_texture_float',
+  'OES_element_index_uint',
+  'WEBGL_color_buffer_float',
+  'EXT_float_blend',
+];
 
 export const MOUSE_MODE_PANZOOM = 'panZoom';
 export const MOUSE_MODE_LASSO = 'lasso';
@@ -131,3 +136,5 @@ export const DEFAULT_POINT_SIZE_MOUSE_DETECTION = 'auto';
 export const DEFAULT_PERFORMANCE_MODE = false;
 export const SINGLE_CLICK_DELAY = 200;
 export const LONG_CLICK_TIME = 500;
+export const Z_NAMES = new Set(['z', 'valueZ', 'valueA', 'value1', 'category']);
+export const W_NAMES = new Set(['w', 'valueW', 'valueB', 'value2', 'value']);
