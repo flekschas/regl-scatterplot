@@ -1899,9 +1899,9 @@ const createScatterplot = (initialProperties = {}) => {
         }
       }
     });
-  
+
   /**
-   * @param {number[][]} newPoints
+   * @param {import('./types').Points} newPoints
    * @param {import('./types').ScatterPlotOptions['draw']} options
    * @returns {Promise<void>}
    */
@@ -2713,8 +2713,10 @@ const createScatterplot = (initialProperties = {}) => {
     const autoWidth = width === 'auto';
     const autoHeight = height === 'auto';
     if (autoWidth || autoHeight) {
-      const { width: newWidth, height: newHeight } =
-        canvas.getBoundingClientRect();
+      const {
+        width: newWidth,
+        height: newHeight,
+      } = canvas.getBoundingClientRect();
 
       if (autoWidth) setCurrentWidth(newWidth);
       if (autoHeight) setCurrentHeight(newHeight);

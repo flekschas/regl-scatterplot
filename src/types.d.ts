@@ -13,6 +13,15 @@ type MouseMode = 'panZoom' | 'lasso' | 'rotate';
 type Camera2D = ReturnType<import('camera-2d-simple')>;
 type Scale = import('d3-scale').ScaleContinuousNumeric<number, number>;
 
+type PointsObject = {
+  x: ArrayLike<number>;
+  y: ArrayLike<number>;
+} & {
+  [Key in Category | Value]?: ArrayLike<number>;
+};
+
+export type Points = number[][] | PointsObject;
+
 type Nullifiable = {
   backgroundImage: null | import('regl').Texture2D | string;
   colorBy: null | DataEncoding;

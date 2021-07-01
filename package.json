@@ -19,7 +19,7 @@
   ],
   "scripts": {
     "build": "npm run build-library; npm run build-demo",
-    "build-library": "rm -rf dist/*; rollup -c; cp src/types.d.ts dist/; tsc dist/regl-scatterplot.esm.js --allowJs --declaration --emitDeclarationOnly",
+    "build-library": "rm -rf dist/*; rollup -c; cp src/types.d.ts dist/; tsc dist/*.esm.js --allowJs --declaration --emitDeclarationOnly",
     "build-demo": "webpack --config ./webpack.config.js --mode production",
     "deploy": "npm run build-demo; touch docs/.nojekyll; cp example/favicon.png docs/favicon.png; gh-pages -d docs -t --git git",
     "lint": "eslint src tests rollup.config.js webpack.config.js",
