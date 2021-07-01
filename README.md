@@ -264,6 +264,13 @@ scatterplot.draw([[0.6, 0.6, 0, 0.6]], { transition: true });
 // redraw existing points you have to actively pass in an empty array.
 // Alternatively, call `scatterplot.clear()`
 scatterplot.draw([]);
+
+// Finally, you can also specify the point data in a column-oriented format. The
+// following call will draw three points: (1,3), (2,2), and (3,1)
+scatterplot.draw({
+  x: [1, 2, 3],
+  y: [3, 2, 1],
+});
 ```
 
 <a name="scatterplot.clear" href="#scatterplot.clear">#</a> scatterplot.<b>clear</b>()
