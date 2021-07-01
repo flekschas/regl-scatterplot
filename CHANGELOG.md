@@ -1,6 +1,7 @@
 ## Next
 
 - Support drawing columnar data `scatterplot.draw({ x: [...], y: [...], ... })` (#59)
+- Fix the rendering issue with with Safari 14 (#45)
 
 ## v0.19.2
 
