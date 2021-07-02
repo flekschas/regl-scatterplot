@@ -174,8 +174,9 @@ const getEncodingIdx = (type) => {
   }
 };
 
-/** @param {Partial<import('./types').Properties>} */
-const createScatterplot = (initialProperties = {}) => {
+const createScatterplot = (
+  /** @type {Partial<import('./types').Properties>} */ initialProperties = {}
+) => {
   /** @type {import('./types').PubSub} */
   const pubSub = createPubSub({
     async: !initialProperties.syncEvents,
