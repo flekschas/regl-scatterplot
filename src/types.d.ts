@@ -21,22 +21,24 @@ type Scale = import('d3-scale').ScaleContinuousNumeric<number, number>;
 type PointsObject = {
   x: ArrayLike<number>;
   y: ArrayLike<number>;
+  line?: ArrayLike<number>;
+  lineOrder?: ArrayLike<number>;
 } & {
   [Key in Category | Value]?: ArrayLike<number>;
 };
 
 export type Points = Array<Array<number>> | PointsObject;
 
-interface PointOptions {
+type PointOptions = {
   color: ColorMap;
   colorActive: Color;
   colorHover: Color;
   outlineWidth: number;
   size: number | Array<number>;
   sizeSelected: number;
-}
+};
 
-interface PointConnectionOptions {
+type PointConnectionOptions = {
   color: ColorMap;
   colorActive: Color;
   colorHover: Color;
@@ -50,9 +52,9 @@ interface PointConnectionOptions {
   colorBy: null | PointDataEncoding;
   opacityBy: null | PointDataEncoding;
   sizeBy: null | PointDataEncoding;
-}
+};
 
-interface LassoOptions {
+type LassoOptions = {
   color: Color;
   lineWidth: number;
   minDelay: number;
@@ -60,14 +62,14 @@ interface LassoOptions {
   clearEvent: 'lassoEnd' | 'deselect';
   initiator: boolean;
   initiatorParentElement: HTMLElement;
-}
+};
 
-interface CameraOptions {
+type CameraOptions = {
   target: [number, number];
   distance: number;
   rotation: number;
   view: Float32Array;
-}
+};
 
 interface BaseOptions {
   backgroundColor: Color;
@@ -128,7 +130,7 @@ export interface ScatterplotMethodOptions {
   draw: Partial<{
     transition: boolean;
     transitionDuration: number;
-    transitionEasing: string;
+    transitionEasing: (t: number) => number;
   }>;
   hover: Partial<{
     showReticleOnce: boolean;
