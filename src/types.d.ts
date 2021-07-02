@@ -1,4 +1,9 @@
-type Color = [number, number, number, number] | [number, number, number];
+type Hex = string;
+type Rgb = [number, number, number];
+type Rgba = [number, number, number, number];
+
+type Color = Hex | Rgb | Rgba;
+type ColorMap = Color | Array<Color>;
 
 type Category = 'category' | 'value1' | 'valueA' | 'valueZ' | 'z';
 type Value = 'value' | 'value2' | 'valueB' | 'valueW' | 'w';
@@ -35,18 +40,18 @@ type Nullifiable = {
 };
 
 type PointOptions = {
-  pointColor: Color;
+  pointColor: ColorMap;
   pointColorActive: Color;
   pointColorHover: Color;
   pointOutlineWidth: number;
-  pointSize: number;
+  pointSize: number | Array<number>;
   pointSizeSelected: number;
-  pointConnectionColor: Color;
+  pointConnectionColor: ColorMap;
   pointConnectionColorActive: Color;
   pointConnectionColorHover: Color;
-  pointConnectionOpacity: number;
+  pointConnectionOpacity: number | Array<number>;
   pointConnectionOpacityActive: number;
-  pointConnectionSize: number;
+  pointConnectionSize: number | Array<number>;
   pointConnectionSizeActive: number;
   pointConnectionMaxIntPointsPerSegment: number;
   pointConnectionTolerance: number;
