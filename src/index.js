@@ -631,7 +631,7 @@ const createScatterplot = (
 
   /**
    * @param {number | number[]} pointIdxs
-   * @param {import('./types').ScatterPlotOptions['select']}
+   * @param {import('./types').ScatterplotMethodOptions['select']}
    */
   const select = (pointIdxs, { merge = false, preventEvent = false } = {}) => {
     const pointIdxsArr = Array.isArray(pointIdxs) ? pointIdxs : [pointIdxs];
@@ -1903,7 +1903,7 @@ const createScatterplot = (
 
   /**
    * @param {import('./types').Points} newPoints
-   * @param {import('./types').ScatterPlotOptions['draw']} options
+   * @param {import('./types').ScatterplotMethodOptions['draw']} options
    * @returns {Promise<void>}
    */
   const publicDraw = (newPoints, options = {}) =>
@@ -2603,7 +2603,7 @@ const createScatterplot = (
 
   /**
    * @param {number | number[]} point
-   * @param {import('./types').ScatterPlotOptions['hover']} options
+   * @param {import('./types').ScatterplotMethodOptions['hover']} options
    */
   const hover = (
     point,

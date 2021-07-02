@@ -27,54 +27,49 @@ type PointsObject = {
 
 export type Points = Array<Array<number>> | PointsObject;
 
-type Nullifiable = {
-  backgroundImage: null | import('regl').Texture2D | string;
-  colorBy: null | DataEncoding;
-  sizeBy: null | DataEncoding;
-  opacityBy: null | DataEncoding;
-  xScale: null | Scale;
-  yScale: null | Scale;
-  pointConnectionColorBy: null | PointDataEncoding;
-  pointConnectionOpacityBy: null | PointDataEncoding;
-  pointConnectionSizeBy: null | PointDataEncoding;
-};
+interface PointOptions {
+  color: ColorMap;
+  colorActive: Color;
+  colorHover: Color;
+  outlineWidth: number;
+  size: number | Array<number>;
+  sizeSelected: number;
+}
 
-type PointOptions = {
-  pointColor: ColorMap;
-  pointColorActive: Color;
-  pointColorHover: Color;
-  pointOutlineWidth: number;
-  pointSize: number | Array<number>;
-  pointSizeSelected: number;
-  pointConnectionColor: ColorMap;
-  pointConnectionColorActive: Color;
-  pointConnectionColorHover: Color;
-  pointConnectionOpacity: number | Array<number>;
-  pointConnectionOpacityActive: number;
-  pointConnectionSize: number | Array<number>;
-  pointConnectionSizeActive: number;
-  pointConnectionMaxIntPointsPerSegment: number;
-  pointConnectionTolerance: number;
-};
+interface PointConnectionOptions {
+  color: ColorMap;
+  colorActive: Color;
+  colorHover: Color;
+  opacity: number | Array<number>;
+  opacityActive: number;
+  size: number | Array<number>;
+  sizeActive: number;
+  maxIntPointsPerSegment: number;
+  tolerance: number;
+  // Nullifiable
+  colorBy: null | PointDataEncoding;
+  opacityBy: null | PointDataEncoding;
+  sizeBy: null | PointDataEncoding;
+}
 
-type CameraOptions = {
-  cameraTarget: [number, number];
-  cameraDistance: number;
-  cameraRotation: number;
-  cameraView: Float32Array;
-};
+interface LassoOptions {
+  color: Color;
+  lineWidth: number;
+  minDelay: number;
+  minDist: number;
+  clearEvent: 'lassoEnd' | 'deselect';
+  initiator: boolean;
+  initiatorParentElement: HTMLElement;
+}
 
-type LassoOptions = {
-  lassoColor: Color;
-  lassoLineWidth: number;
-  lassoMinDelay: number;
-  lassoMinDist: number;
-  lassoClearEvent: 'lassoEnd' | 'deselect';
-  lassoInitiator: boolean;
-  lassoInitiatorParentElement: HTMLElement;
-};
+interface CameraOptions {
+  target: [number, number];
+  distance: number;
+  rotation: number;
+  view: Float32Array;
+}
 
-export type Settable = {
+interface BaseOptions {
   backgroundColor: Color;
   deselectOnDblClick: boolean;
   deselectOnEscape: boolean;
@@ -88,10 +83,33 @@ export type Settable = {
   height: 'auto' | number;
   width: 'auto' | number;
   gamma: number;
-} & PointOptions &
-  CameraOptions &
-  LassoOptions &
-  Nullifiable;
+  // Nullifiable
+  backgroundImage: null | import('regl').Texture2D | string;
+  colorBy: null | DataEncoding;
+  sizeBy: null | DataEncoding;
+  opacityBy: null | DataEncoding;
+  xScale: null | Scale;
+  yScale: null | Scale;
+}
+
+/**
+ * Helper type. Adds a prefix to keys of Options.
+ *
+ * type A = { a: number; b: string };
+ * WithPrefix<'myPrefix', A> === { myPrefixA: number, myPrefixB: string };
+ */
+type WithPrefix<
+  Name extends string,
+  Options extends Record<string, unknown>
+> = {
+  [Key in keyof Options as `${Name}${Capitalize<string & Key>}`]: Options[Key];
+};
+
+export type Settable = BaseOptions &
+  WithPrefix<'point', PointOptions> &
+  WithPrefix<'pointConnection', PointConnectionOptions> &
+  WithPrefix<'lasso', LassoOptions> &
+  WithPrefix<'camera', CameraOptions>;
 
 export type Properties = {
   canvas: HTMLCanvasElement;
@@ -104,9 +122,9 @@ export type Properties = {
   opacityByDensityDebounceTime: number;
 } & Settable;
 
-// Options for plot.{draw, select, hover, deselect}
 
-export type ScatterPlotOptions = {
+// Options for plot.{draw, select, hover}
+export interface ScatterplotMethodOptions {
   draw: Partial<{
     transition: boolean;
     transitionDuration: number;
@@ -120,16 +138,12 @@ export type ScatterPlotOptions = {
     merge: boolean;
     preventEvent: boolean;
   }>;
-};
+}
+
 
 // PubSub definitions
-
 type PubSubEvent<EventName extends string, Payload extends unknown> = {
   [Key in EventName]: Payload;
-};
-
-type DrawPayload = Pick<Properties, 'camera' | 'xScale' | 'yScale'> & {
-  view: Properties['cameraView'];
 };
 
 type EventMap = PubSubEvent<
@@ -142,11 +156,16 @@ type EventMap = PubSubEvent<
   | 'pointConnectionsDraw',
   undefined
 > &
-  PubSubEvent<'view' | 'draw', DrawPayload> &
   PubSubEvent<'lassoEnd' | 'lassoExtend', { coordinates: number[] }> &
   PubSubEvent<'pointOver' | 'pointOut', number> &
   PubSubEvent<'points', { points: Array<Array<number>> }> &
-  PubSubEvent<'transitionEnd', import('regl').Regl>;
+  PubSubEvent<'transitionEnd', import('regl').Regl> &
+  PubSubEvent<
+    'view' | 'draw',
+    Pick<Properties, 'camera' | 'xScale' | 'yScale'> & {
+      view: Properties['cameraView'];
+    }
+  >;
 
 export interface PubSub {
   subscribe<EventName extends keyof EventMap>(
