@@ -25,7 +25,7 @@ type PointsObject = {
   [Key in Category | Value]?: ArrayLike<number>;
 };
 
-export type Points = number[][] | PointsObject;
+export type Points = Array<Array<number>> | PointsObject;
 
 type Nullifiable = {
   backgroundImage: null | import('regl').Texture2D | string;
@@ -145,7 +145,7 @@ type EventMap = PubSubEvent<
   PubSubEvent<'view' | 'draw', DrawPayload> &
   PubSubEvent<'lassoEnd' | 'lassoExtend', { coordinates: number[] }> &
   PubSubEvent<'pointOver' | 'pointOut', number> &
-  PubSubEvent<'points', { points: number[][] }> &
+  PubSubEvent<'points', { points: Array<Array<number>> }> &
   PubSubEvent<'transitionEnd', import('regl').Regl>;
 
 export interface PubSub {
