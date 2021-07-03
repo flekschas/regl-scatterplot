@@ -12,7 +12,7 @@ export const arrayMax = (max, x) => (max > x ? max : x);
 
 /**
  * Check if all GL extensions are enabled and warn otherwise
- * @param   {function}  regl  Regl instance to be tested
+ * @param   {import('regl').Regl}  regl  Regl instance to be tested
  * @return  {function}  Returns the Regl instance itself
  */
 export const checkReglExtensions = (regl) => {
@@ -30,8 +30,8 @@ export const checkReglExtensions = (regl) => {
 
 /**
  * Create a new Regl instance with `GL_EXTENSIONS` enables
- * @param   {object}  canvas  Canvas element to be rendered on
- * @return  {function}  New Regl instance
+ * @param   {HTMLCanvasElement}  canvas  Canvas element to be rendered on
+ * @return  {import('regl').Regl}  New Regl instance
  */
 export const createRegl = (canvas) => {
   const gl = canvas.getContext('webgl', {
@@ -123,8 +123,9 @@ export const limit = (choices, defaultChoice) => (choice) =>
 
 /**
  * Promised-based image loading
- * @param   {string}  src  Remote image source, i.e., a URL
- * @return  {object}  Promise resolving to the image once its loaded
+ * @param {string}  src  Remote image source, i.e., a URL
+ * @param {boolean} isCrossOrigin If `true` allow loading image from a source of another origin.
+ * @return  {Promise<HTMLImageElement>}  Promise resolving to the image once its loaded
  */
 export const loadImage = (src, isCrossOrigin = false) =>
   new Promise((accept, reject) => {
@@ -140,12 +141,12 @@ export const loadImage = (src, isCrossOrigin = false) =>
   });
 
 /**
+ * @deprecated Please use `scatterplot.createTextureFromUrl(url)`
+ *
  * Create a Regl texture from an URL.
- * @param   {function}  regl  Regl instance used for creating the texture.
+ * @param   {import('regl').Regl}  regl  Regl instance used for creating the texture.
  * @param   {string}  url  Source URL of the image.
- * @param   {boolean}  isCrossOrigin  If `true` allow loading image from a
- *   source of another origin.
- * @return  {object}  Promise resolving to the texture object.
+ * @return  {Promise<import('regl').Texture2D>}  Promise resolving to the texture object.
  */
 export const createTextureFromUrl = (regl, url) =>
   new Promise((resolve, reject) => {

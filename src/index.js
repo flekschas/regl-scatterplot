@@ -174,7 +174,10 @@ const getEncodingIdx = (type) => {
   }
 };
 
-const createScatterplot = (initialProperties = {}) => {
+const createScatterplot = (
+  /** @type {Partial<import('./types').Properties>} */ initialProperties = {}
+) => {
+  /** @type {import('./types').PubSub} */
   const pubSub = createPubSub({
     async: !initialProperties.syncEvents,
     caseInsensitive: true,
@@ -236,7 +239,7 @@ const createScatterplot = (initialProperties = {}) => {
   let currentWidth = width === 'auto' ? 1 : width;
   let currentHeight = height === 'auto' ? 1 : height;
 
-  // The following properties cannod be changed after the initialization
+  // The following properties cannot be changed after the initialization
   const {
     performanceMode = DEFAULT_PERFORMANCE_MODE,
     opacityByDensityDebounceTime = DEFAULT_OPACITY_BY_DENSITY_DEBOUNCE_TIME,
@@ -626,6 +629,10 @@ const createScatterplot = (initialProperties = {}) => {
     }
   };
 
+  /**
+   * @param {number | number[]} pointIdxs
+   * @param {import('./types').ScatterplotMethodOptions['select']}
+   */
   const select = (pointIdxs, { merge = false, preventEvent = false } = {}) => {
     const pointIdxsArr = Array.isArray(pointIdxs) ? pointIdxs : [pointIdxs];
 
@@ -1894,6 +1901,11 @@ const createScatterplot = (initialProperties = {}) => {
       }
     });
 
+  /**
+   * @param {import('./types').Points} newPoints
+   * @param {import('./types').ScatterplotMethodOptions['draw']} options
+   * @returns {Promise<void>}
+   */
   const publicDraw = (newPoints, options = {}) =>
     toArrayOrientedPoints(newPoints).then(
       (points) =>
@@ -1948,13 +1960,12 @@ const createScatterplot = (initialProperties = {}) => {
         })
     );
 
-  const withDraw =
-    (f) =>
-    (...args) => {
-      const out = f(...args);
-      draw = true;
-      return out;
-    };
+  /** @type {<F extends Function>(f: F) => (...args: Parameters<F>) => ReturnType<F>} */
+  const withDraw = (f) => (...args) => {
+    const out = f(...args);
+    draw = true;
+    return out;
+  };
 
   const updatePointConnectionStyle = () => {
     pointConnections.setStyle({
@@ -2270,6 +2281,7 @@ const createScatterplot = (initialProperties = {}) => {
     regl.poll();
   };
 
+  /** @type {<Key extends keyof import('./types').Properties>(property: Key) => import('./types').Properties[Key] } */
   const get = (property) => {
     checkDeprecations({ property: true });
 
@@ -2366,6 +2378,7 @@ const createScatterplot = (initialProperties = {}) => {
     return undefined;
   };
 
+  /** @type {(properties: Partial<import('./types').Settable>) => void} */
   const set = (properties = {}) => {
     checkDeprecations(properties);
 
@@ -2588,6 +2601,10 @@ const createScatterplot = (initialProperties = {}) => {
     );
   };
 
+  /**
+   * @param {number | number[]} point
+   * @param {import('./types').ScatterplotMethodOptions['hover']} options
+   */
   const hover = (
     point,
     { showReticleOnce = false, preventEvent = false } = {}
@@ -2697,8 +2714,10 @@ const createScatterplot = (initialProperties = {}) => {
     const autoWidth = width === 'auto';
     const autoHeight = height === 'auto';
     if (autoWidth || autoHeight) {
-      const { width: newWidth, height: newHeight } =
-        canvas.getBoundingClientRect();
+      const {
+        width: newWidth,
+        height: newHeight,
+      } = canvas.getBoundingClientRect();
 
       if (autoWidth) setCurrentWidth(newWidth);
       if (autoHeight) setCurrentHeight(newHeight);
@@ -2708,6 +2727,7 @@ const createScatterplot = (initialProperties = {}) => {
     }
   };
 
+  /** @param {import('regl').ReadOptions<Uint8Array>} options */
   const exportFn = (options = {}) => ({
     pixels: Uint8ClampedArray.from(regl.read(options)),
     width: currentWidth * window.devicePixelRatio,
@@ -2892,7 +2912,8 @@ const createScatterplot = (initialProperties = {}) => {
 
   return {
     clear: withDraw(clear),
-    createTextureFromUrl: (url) => createTextureFromUrl(regl, url),
+    createTextureFromUrl: (/** @type {string} */ url) =>
+      createTextureFromUrl(regl, url),
     deselect,
     destroy,
     draw: publicDraw,
