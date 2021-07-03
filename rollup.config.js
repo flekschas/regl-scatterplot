@@ -7,11 +7,14 @@ import replace from '@rollup/plugin-replace';
 
 import pkg from './package.json';
 
-const basePlugins = () => [
+export const replaceVersion = () =>
   replace({
     preventAssignment: true,
     'import.meta.env.version': JSON.stringify(pkg.version),
-  }),
+  });
+
+const basePlugins = () => [
+  replaceVersion(),
   resolve({
     dedupe: ['gl-matrix'],
     mainFields: ['module', 'main'],

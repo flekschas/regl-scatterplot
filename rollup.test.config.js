@@ -2,25 +2,14 @@ import babel from 'rollup-plugin-babel';
 import commonjs from '@rollup/plugin-commonjs';
 import json from '@rollup/plugin-json';
 import resolve from '@rollup/plugin-node-resolve';
-import replace from '@rollup/plugin-replace';
-
-import pkg from './package.json';
+import { replaceVersion } from './rollup.config';
 
 export default {
   input: './tests/index.js',
   output: {
     name: 'test',
     format: 'iife',
-    sourcemap: 'inline'
+    sourcemap: 'inline',
   },
-  plugins: [
-    replace({
-      preventAssignment: true,
-      'import.meta.env.version': JSON.stringify(pkg.version),
-    }),
-    resolve(),
-    babel(),
-    json(),
-    commonjs(),
-  ],
+  plugins: [replaceVersion(), resolve(), babel(), json(), commonjs()],
 };
