@@ -4,7 +4,7 @@ import { axisBottom, axisRight } from 'd3-axis';
 import { scaleLinear } from 'd3-scale';
 import { select } from 'd3-selection';
 
-import createScatterplot from '../src';
+import createScatterplot from 'regl-scatterplot';
 import { saveAsPng } from './utils';
 
 const parentWrapper = document.querySelector('#parent-wrapper');

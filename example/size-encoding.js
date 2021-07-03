@@ -3,7 +3,7 @@
 import { scaleLog } from 'd3-scale';
 import { randomExponential } from 'd3-random';
 
-import createScatterplot from '../src';
+import createScatterplot from 'regl-scatterplot';
 import { saveAsPng } from './utils';
 
 const canvas = document.querySelector('#canvas');
@@ -55,7 +55,6 @@ const scatterplot = createScatterplot({
   pointSize,
   showReticle,
   reticleColor,
-  lassoInitiator: true,
   lassoInitiator: true,
 });
 

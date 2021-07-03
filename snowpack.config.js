@@ -38,6 +38,9 @@ module.exports = {
   env: {
     version: pkg.version,
   },
+  buildOptions: {
+    out: 'docs',
+  },
   optimize: {
     bundle: true,
     splitting: true,

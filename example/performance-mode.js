@@ -2,7 +2,7 @@
 import { createWorker } from '@flekschas/utils';
 import { saveAsPng } from './utils';
 
-import createScatterplot from '../src';
+import createScatterplot from 'regl-scatterplot';
 import pointWorkerFn from './performance-mode-point-worker';
 
 const modal = document.querySelector('#modal');
