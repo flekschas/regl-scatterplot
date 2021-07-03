@@ -2,28 +2,34 @@ const path = require('path');
 const fs = require('fs');
 const pkg = require('./package.json');
 
-function generateHtml(outDir) {
-  const source = path.join(__dirname, 'example', 'template.html');
-  const template = fs.readFileSync(source).toString();
+const outDir = '__html';
+const exclude = new Set(['favicon.png', 'utils.js', 'template.html']);
 
-  const outdir = path.join(__dirname, outDir);
-  if (!fs.existsSync(outdir)) {
-    fs.mkdirSync(outdir);
+const watch = (file, cb) => {
+  cb(file);
+  return fs.watchFile(file, () => cb(file));
+};
+
+const build = (template) => {
+  const html = fs.readFileSync(template).toString();
+  if (!fs.existsSync(outDir)) {
+    fs.mkdirSync(outDir);
   }
-
-  const exclude = new Set(['favicon.png', 'utils.js', 'template.html']);
-  fs.readdirSync(path.join(__dirname, 'example')).forEach((file) => {
+  fs.readdirSync('example').forEach((file) => {
     if (exclude.has(file)) return;
-    const htmlPath = path.join(outdir, file.replace('.js', '.html'));
-    const contents = template.replace(
-      '<!-- INSERT_ENTRYPOINT -->',
-      `<script type="module" src="%PUBLIC_URL%${file}"></script>`
+    const outfile = path.join(outDir, file.replace('.js', '.html'));
+    fs.writeFileSync(
+      outfile,
+      html.replace(
+        '<!-- INSERT_ENTRYPOINT -->',
+        `<script type="module" src="%PUBLIC_URL%${file}"></script>`
+      )
     );
-    fs.writeFileSync(htmlPath, contents);
   });
-}
+};
 
-generateHtml('__html');
+// Build html entrypoints in '__html'
+watch(path.join('example', 'template.html'), build);
 
 /** @type {import('snowpack').SnowpackUserConfig} */
 module.exports = {
@@ -31,7 +37,7 @@ module.exports = {
     'regl-scatterplot': './src/index.js',
   },
   mount: {
-    __html: '/',
+    [outDir]: '/',
     example: '/',
     src: '/_dist_',
   },
