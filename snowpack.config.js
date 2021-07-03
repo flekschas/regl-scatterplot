@@ -17,7 +17,7 @@ function generateHtml(outDir) {
     const htmlPath = path.join(outdir, file.replace('.js', '.html'));
     const contents = template.replace(
       '<!-- INSERT_ENTRYPOINT -->',
-      `<script type="module" src="/${file}"></script>`
+      `<script type="module" src="%PUBLIC_URL%${file}"></script>`
     );
     fs.writeFileSync(htmlPath, contents);
   });
@@ -40,6 +40,7 @@ module.exports = {
   },
   buildOptions: {
     out: 'docs',
+    baseUrl: './',
   },
   optimize: {
     bundle: true,
