@@ -124,7 +124,7 @@ import {
   rgbBrightness,
 } from './utils';
 
-import { version } from '../package.json';
+const version = import.meta.env.version;
 
 const deprecations = {
   showRecticle: 'showReticle',
@@ -1961,11 +1961,13 @@ const createScatterplot = (
     );
 
   /** @type {<F extends Function>(f: F) => (...args: Parameters<F>) => ReturnType<F>} */
-  const withDraw = (f) => (...args) => {
-    const out = f(...args);
-    draw = true;
-    return out;
-  };
+  const withDraw =
+    (f) =>
+    (...args) => {
+      const out = f(...args);
+      draw = true;
+      return out;
+    };
 
   const updatePointConnectionStyle = () => {
     pointConnections.setStyle({
@@ -2714,10 +2716,8 @@ const createScatterplot = (
     const autoWidth = width === 'auto';
     const autoHeight = height === 'auto';
     if (autoWidth || autoHeight) {
-      const {
-        width: newWidth,
-        height: newHeight,
-      } = canvas.getBoundingClientRect();
+      const { width: newWidth, height: newHeight } =
+        canvas.getBoundingClientRect();
 
       if (autoWidth) setCurrentWidth(newWidth);
       if (autoHeight) setCurrentHeight(newHeight);
