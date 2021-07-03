@@ -1,18 +1,21 @@
 import babel from 'rollup-plugin-babel';
-import commonjs from '@rollup/plugin-commonjs';
 import filesize from 'rollup-plugin-filesize';
-import json from '@rollup/plugin-json';
 import resolve from '@rollup/plugin-node-resolve';
 import { terser } from 'rollup-plugin-terser';
 import visualizer from 'rollup-plugin-visualizer';
+import replace from '@rollup/plugin-replace';
 
-const basePlugins = [
+import pkg from './package.json';
+
+const basePlugins = () => [
+  replace({
+    preventAssignment: true,
+    'import.meta.env.version': JSON.stringify(pkg.version),
+  }),
   resolve({
     dedupe: ['gl-matrix'],
     mainFields: ['module', 'main'],
   }),
-  commonjs({ sourceMap: false }),
-  json(),
 ];
 
 const configurator = (file, format, plugins = []) => ({
@@ -26,7 +29,7 @@ const configurator = (file, format, plugins = []) => ({
       regl: 'createREGL',
     },
   },
-  plugins: [...basePlugins, ...plugins],
+  plugins: [...basePlugins(), ...plugins],
   external: ['pub-sub-es', 'regl'],
 });
 
