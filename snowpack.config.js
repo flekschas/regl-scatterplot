@@ -3,7 +3,12 @@ const fs = require('fs');
 const pkg = require('./package.json');
 
 const outDir = '__html';
-const exclude = new Set(['favicon.png', 'utils.js', 'template.html']);
+const exclude = new Set([
+  'favicon.png',
+  'utils.js',
+  'template.html',
+  'performance-mode-point-worker.js',
+]);
 
 const watch = (file, cb) => {
   cb(file);
