@@ -124,7 +124,7 @@ import {
   rgbBrightness,
 } from './utils';
 
-const version = import.meta.env.version;
+import { version } from '../package.json';
 
 const deprecations = {
   showRecticle: 'showReticle',
