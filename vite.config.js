@@ -16,11 +16,6 @@ const pages = [
   'two-instances.js',
 ];
 
-const watch = (file, cb) => {
-  cb(file);
-  return fs.watchFile(file, () => cb(file));
-};
-
 const build = (template) => {
   const html = fs.readFileSync(template).toString();
   if (!fs.existsSync(outDir)) {
@@ -35,8 +30,12 @@ const build = (template) => {
 };
 
 
-export default () => {
-  watch('index.html', build);
+export default ({ command }) => {
+  const template = 'index.html';
+  build(template);
+  if (command !== 'build') {
+    fs.watchFile(template, () => build(template));
+  }
 
   return defineConfig({
     base: './',
