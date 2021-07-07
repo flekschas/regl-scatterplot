@@ -3,7 +3,8 @@ import path from 'path';
 import fs from 'fs';
 
 const outDir = 'pages';
-const pages = [
+const chunks = [
+  'index.js',
   'axes.js',
   'connected-points-by-segments.js',
   'connected-points.js',
@@ -21,13 +22,21 @@ const render = (template) => {
   if (!fs.existsSync(outDir)) {
     fs.mkdirSync(outDir);
   }
-  pages.forEach((file) => {
+  chunks.forEach((file) => {
     fs.writeFileSync(
       path.join(outDir, file.replace('.js', '.html')),
-      html.replace('/example/index.js', `/example/${file}`)
+      html.replace(
+        '<!-- INSERT_ENTRYPOINT -->',
+        `<script type="module" src="../example/${file}"></script>`
+      )
     );
   });
 };
+
+const pages = chunks.map((chunk) => {
+  const name = chunk.replace('.js', '');
+  return [name, path.resolve(__dirname, outDir, `${name}.html`)];
+});
 
 const build = (temp, watch) => {
   render(temp);
@@ -39,18 +48,11 @@ export default ({ command }) => {
 
   return defineConfig({
     base: './',
+    root: outDir,
     build: {
-      outDir: 'docs',
+      outDir: path.resolve(__dirname, 'docs'),
       rollupOptions: {
-        input: {
-          main: 'index.html',
-          ...Object.fromEntries(
-            pages.map((page) => {
-              const base = page.replace('.js', '');
-              return [base, `./${outDir}/${base}.html`];
-            })
-          ),
-        },
+        input: Object.fromEntries(pages),
       },
     },
     resolve: {
@@ -58,7 +60,10 @@ export default ({ command }) => {
         // vite pre-bundling (esbuild) can't be configured to
         // resolve .fs/.vs in regl-line. This alias forces vite
         // use the UMD build since it can transform this module correctly.
-        'regl-line': '/node_modules/regl-line/dist/regl-line.js',
+        'regl-line': path.resolve(
+          __dirname,
+          'node_modules/regl-line/dist/regl-line.js'
+        ),
       },
     },
   });
