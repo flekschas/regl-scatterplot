@@ -22,7 +22,7 @@
     "build-library": "rm -rf dist/*; rollup -c; cp src/types.d.ts dist/; tsc dist/*.esm.js --allowJs --declaration --emitDeclarationOnly",
     "build-demo": "vite build",
     "deploy": "npm run build-demo; touch docs/.nojekyll; gh-pages -d docs -t --git git",
-    "lint": "eslint src tests rollup.config.js snowpack.config.js",
+    "lint": "eslint src tests rollup.config.js vite.config.js",
     "precommit": "NODE_ENV=production lint-staged; npm run test",
     "prepublishOnly": "npm run test; rm -rf dist/*; npm run build;",
     "prerelease": "rm -rf dist/*; npm run build; zip -r dist.zip dist",

@@ -8,7 +8,7 @@ export default {
   output: {
     name: 'test',
     format: 'iife',
-    sourcemap: 'inline',
+    sourcemap: 'inline'
   },
-  plugins: [replaceVersion(), resolve(), babel(), json(), commonjs()],
+  plugins: [resolve(), commonjs(), babel(), json()]
 };
