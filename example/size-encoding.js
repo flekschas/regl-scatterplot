@@ -3,7 +3,7 @@
 import { scaleLog } from 'd3-scale';
 import { randomExponential } from 'd3-random';
 
-import createScatterplot from 'regl-scatterplot';
+import createScatterplot from '../src';
 import { saveAsPng } from './utils';
 
 const canvas = document.querySelector('#canvas');

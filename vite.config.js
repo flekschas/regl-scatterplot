@@ -41,7 +41,6 @@ export default ({ command }) => {
     base: './',
     resolve: {
       alias: {
-        'regl-scatterplot': '/src/index.js',
         // vite pre-bundling (esbuild) can't be configured to
         // resolve .fs/.vs in regl-line. This alias forces vite
         // use the UMD build since it can transform this module correctly.

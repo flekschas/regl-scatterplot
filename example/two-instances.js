@@ -1,6 +1,6 @@
 /* eslint no-console: 0 */
 
-import createScatterplot from 'regl-scatterplot';
+import createScatterplot from '../src';
 
 const canvas1 = document.querySelector('#canvas');
 
