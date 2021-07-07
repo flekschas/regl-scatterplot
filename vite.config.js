@@ -16,7 +16,7 @@ const pages = [
   'two-instances.js',
 ];
 
-const build = (template) => {
+const render = (template) => {
   const html = fs.readFileSync(template).toString();
   if (!fs.existsSync(outDir)) {
     fs.mkdirSync(outDir);
@@ -24,28 +24,42 @@ const build = (template) => {
   pages.forEach((file) => {
     fs.writeFileSync(
       path.join(outDir, file.replace('.js', '.html')),
-      html.replace('/example/index.js', `/example/${file}`),
+      html.replace('/example/index.js', `/example/${file}`)
     );
   });
 };
 
+const build = (temp, watch) => {
+  render(temp);
+  return watch && fs.watchFile(temp, () => render(temp));
+};
 
 export default ({ command }) => {
-  const template = 'index.html';
-  build(template);
-  if (command !== 'build') {
-    fs.watchFile(template, () => build(template));
-  }
+  build('index.html', command === 'serve');
 
   return defineConfig({
     base: './',
+    build: {
+      outDir: 'docs',
+      rollupOptions: {
+        input: {
+          main: 'index.html',
+          ...Object.fromEntries(
+            pages.map((page) => {
+              const base = page.replace('.js', '');
+              return [base, `./${outDir}/${base}.html`];
+            })
+          ),
+        },
+      },
+    },
     resolve: {
       alias: {
         // vite pre-bundling (esbuild) can't be configured to
         // resolve .fs/.vs in regl-line. This alias forces vite
         // use the UMD build since it can transform this module correctly.
         'regl-line': '/node_modules/regl-line/dist/regl-line.js',
-      }
-    }
+      },
+    },
   });
 };
