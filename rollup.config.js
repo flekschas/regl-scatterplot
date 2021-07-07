@@ -3,18 +3,10 @@ import filesize from 'rollup-plugin-filesize';
 import resolve from '@rollup/plugin-node-resolve';
 import { terser } from 'rollup-plugin-terser';
 import visualizer from 'rollup-plugin-visualizer';
-import replace from '@rollup/plugin-replace';
-
-import pkg from './package.json';
-
-export const replaceVersion = () =>
-  replace({
-    preventAssignment: true,
-    'import.meta.env.version': JSON.stringify(pkg.version),
-  });
+import json from '@rollup/plugin-json';
 
 const basePlugins = () => [
-  replaceVersion(),
+  json(),
   resolve({
     dedupe: ['gl-matrix'],
     mainFields: ['module', 'main'],
