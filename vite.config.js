@@ -34,33 +34,20 @@ const build = (template) => {
   });
 };
 
-watch('index.html', build);
 
+export default () => {
+  watch('index.html', build);
 
-/** @returns {import('rollup').Plugin}*/
-const resolveJs = () => {
-  const exts = new Set(['.vs', '.fs']);
-  return {
-    name: 'resolve-js',
-    transform: async (src, id) => {
-      if (!exts.has(path.extname(id))) return;
-      return { code: src, mapp: null };
+  return defineConfig({
+    base: './',
+    resolve: {
+      alias: {
+        'regl-scatterplot': '/src/index.js',
+        // vite pre-bundling (esbuild) can't be configured to
+        // resolve .fs/.vs in regl-line. This alias forces vite
+        // use the UMD build since it can transform this module correctly.
+        'regl-line': '/node_modules/regl-line/dist/regl-line.js',
+      }
     }
-  }
-}
-
-export default defineConfig({
-  resolve: {
-    alias: {
-      'regl-scatterplot': '/src/index.js',
-      'regl-line': '/node_modules/regl-line/dist/regl-line.js'
-    }
-  },
-  plugins: [ resolveJs() ],
-  esbuild: {
-    loader: {
-      '.fs': 'js',
-      '.vs': 'js'
-    }
-  }
-});
+  });
+};
