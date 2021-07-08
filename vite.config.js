@@ -89,6 +89,7 @@ export default async ({ command }) => {
       outDir: resolve('docs'),
       emptyOutDir: true,
       rollupOptions: {
+        // https://vitejs.dev/guide/build.html#multi-page-app
         input: Object.fromEntries(
           builder.chunks.map((c) => [c.name, resolve(builder.outDir, c.html)])
         ),
@@ -96,10 +97,15 @@ export default async ({ command }) => {
     },
     resolve: {
       alias: {
+        /**
+         * Aliases the inserted script tag src to ./example/*
+         */
         [builder.importAlias]: resolve(builder.inDir),
-        // vite pre-bundling (esbuild) can't be configured to
-        // resolve .fs/.vs in regl-line. This alias forces vite
-        // use the UMD build since it can transform this module correctly.
+        /**
+         * vite pre-bundling (esbuild) can't be configured to
+         * resolve .fs/.vs in regl-line. This alias forces vite
+         * use the UMD build since it can transform this module correctly.
+         */
         'regl-line': resolve('node_modules/regl-line/dist/regl-line.js'),
       },
     },
