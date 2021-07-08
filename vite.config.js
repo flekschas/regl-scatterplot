@@ -53,7 +53,7 @@ class HTMLBuilder {
 
   /** Starts a file watcher on index.html. */
   watch() {
-    return fs.watchFile(this.template, this.build);
+    return fs.watchFile(this.template, () => this.build());
   }
 }
 
@@ -61,6 +61,7 @@ export default async ({ command }) => {
   const builder = new HTMLBuilder({
     inDir: 'example',
     outDir: '_pages',
+    assets: ['favicon.png'],
     chunks: [
       'index',
       'axes',
@@ -74,7 +75,6 @@ export default async ({ command }) => {
       'transition',
       'two-instances',
     ].map(nameToChunk),
-    assets: ['favicon.png'],
   });
 
   await builder.build();
