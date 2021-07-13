@@ -1,7 +1,12 @@
 ## Next
 
+## v1.0.0
+
+Woohoo 🥳 It's time to release v1! Nothing dramatic changed in this release but I felt that the library/API is now stable enough. Also, a big shoutout to [@manzt](https://github.com/manzt) and [@japrescott](https://github.com/japrescott) for their PRs.
+
 - Support drawing columnar data `scatterplot.draw({ x: [...], y: [...], ... })` (#59)
 - Fix the rendering issue with with Safari 14 (#45)
+- Replace webpack with vite (#64)
 
 ## v0.19.2
 
