@@ -24,7 +24,22 @@ const pages = Object.fromEntries(
 
 export default defineConfig({
   base: './',
-  plugins: [virtualHtmlTemplate({ pages })],
+  plugins: [
+    virtualHtmlTemplate({ pages }),
+    {
+      name: 'inject-vite-client',
+      apply: 'serve', // only for dev server
+      transform(code, id) {
+        if (id.includes('example')) {
+          return `import "/@vite/client";\n${code}`;
+        }
+        return null;
+      },
+      handleHotUpdate({ server }) {
+        server.ws.send({ type: 'full-reload' });
+      },
+    },
+  ],
   build: {
     outDir: 'docs',
     rollupOptions: {
