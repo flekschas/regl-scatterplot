@@ -1,7 +1,6 @@
 import { defineConfig } from 'vite';
 import virtualHtmlTemplate from 'vite-plugin-virtual-html-template';
 
-
 const chunks = [
   'index',
   'axes',
@@ -17,7 +16,7 @@ const chunks = [
 ];
 
 /** @returns {import('vite').Plugin} */
-const htmlPlugin = ({ chunks, isDev }) => {
+const htmlPlugin = ({ isDev }) => {
   /**
    * `vite-plugin-virtual-html-template` intercepts & handles requests for html
    * from the client. Vite normally handles these requests and injects a script
@@ -36,31 +35,32 @@ const htmlPlugin = ({ chunks, isDev }) => {
   return virtualHtmlTemplate({ pages, data: { vite } });
 };
 
-export default ({ command }) => defineConfig({
-  base: './',
-  plugins: [
-    htmlPlugin({ chunks, isDev: command === 'serve' }),
-    {
-      name: 'simple-reload',
-      handleHotUpdate({ server }) {
-        server.ws.send({ type: 'full-reload' });
-      }
-    }
-  ],
-  build: {
-    outDir: 'docs',
-    rollupOptions: {
-      input: Object.fromEntries(chunks.map((c) => [c, `${c}.html`])),
-    }
-  },
-  resolve: {
-    alias: {
-      /**
-       * vite pre-bundling (esbuild) can't be configured to
-       * resolve .fs/.vs in regl-line. This alias forces
-       * resolution with rollup, which avoids this error.
-       */
-      'regl-line': '/node_modules/regl-line/src/index.js',
+export default ({ command }) =>
+  defineConfig({
+    base: './',
+    plugins: [
+      htmlPlugin({ isDev: command === 'serve' }),
+      {
+        name: 'simple-reload',
+        handleHotUpdate({ server }) {
+          server.ws.send({ type: 'full-reload' });
+        },
+      },
+    ],
+    build: {
+      outDir: 'docs',
+      rollupOptions: {
+        input: Object.fromEntries(chunks.map((c) => [c, `${c}.html`])),
+      },
     },
-  },
-});
+    resolve: {
+      alias: {
+        /**
+         * vite pre-bundling (esbuild) can't be configured to
+         * resolve .fs/.vs in regl-line. This alias forces
+         * resolution with rollup, which avoids this error.
+         */
+        'regl-line': '/node_modules/regl-line/src/index.js',
+      },
+    },
+  });
