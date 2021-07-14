@@ -15,6 +15,8 @@ const chunks = [
   'two-instances',
 ];
 
+const mapObject = (arr, fn) => Object.fromEntries(arr.map(d => [d, fn(d)]))
+
 /** @returns {import('vite').Plugin} */
 const htmlPlugin = ({ isDev }) => {
   /**
@@ -29,9 +31,7 @@ const htmlPlugin = ({ isDev }) => {
   const vite = isDev
     ? '<script type="module" src="/@vite/client"></script>'
     : '';
-  const pages = Object.fromEntries(
-    chunks.map((c) => [c, { entry: `example/${c}.js` }])
-  );
+  const pages = mapObject(chunks, (c) => ({ entry: `example/${c}.js`}));
   return virtualHtmlTemplate({ pages, data: { vite } });
 };
 
@@ -41,16 +41,18 @@ export default ({ command }) =>
     plugins: [
       htmlPlugin({ isDev: command === 'serve' }),
       {
-        name: 'simple-reload',
-        handleHotUpdate({ server }) {
-          server.ws.send({ type: 'full-reload' });
-        },
-      },
+        name: 'simple-reload-template',
+        handleHotUpdate({ file, server }) {
+          if (file.includes('index.html')) {
+            server.ws.send({ type: 'full-reload' });
+          }
+        }
+      }
     ],
     build: {
       outDir: 'docs',
       rollupOptions: {
-        input: Object.fromEntries(chunks.map((c) => [c, `${c}.html`])),
+        input: mapObject(chunks, (c) => `${c}.html`),
       },
     },
     resolve: {
