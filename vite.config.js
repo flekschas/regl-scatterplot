@@ -15,44 +15,40 @@ const chunks = [
   'two-instances',
 ];
 
-const mapObject = (arr, fn) => Object.fromEntries(arr.map(d => [d, fn(d)]))
+const chunkMapping = (fn) => Object.fromEntries(chunks.map((c) => [c, fn(c)]));
 
-/** @returns {import('vite').Plugin} */
-const htmlPlugin = ({ isDev }) => {
-  /**
-   * `vite-plugin-virtual-html-template` intercepts & handles requests for html
-   * from the client. Vite normally handles these requests and injects a script
-   * tag during dev (with a client runtime for HMR).
-   *
-   * The plugin uses `lodash.template` to runder the HTML, so a `<%= vite %>`
-   * tag is replaced with the missing vite client during dev. In prod, nothing is
-   * added.
-   */
-  const vite = isDev
-    ? '<script type="module" src="/@vite/client"></script>'
-    : '';
-  const pages = mapObject(chunks, (c) => ({ entry: `example/${c}.js`}));
-  return virtualHtmlTemplate({ pages, data: { vite } });
-};
+/**
+ * `vite-plugin-virtual-html-template` intercepts & handles requests for html
+ * from the client. Vite normally handles these requests and injects a script
+ * tag during dev (with a client runtime for HMR).
+ *
+ * The plugin uses `lodash.template` to render the HTML, so a `<%= vite %>`
+ * tag is replaced with the missing vite client during dev. In prod, nothing is
+ * added.
+ */
+const viteModule = '<script type="module" src="/@vite/client"></script>';
 
 export default ({ command }) =>
   defineConfig({
     base: './',
     plugins: [
-      htmlPlugin({ isDev: command === 'serve' }),
+      virtualHtmlTemplate({
+        pages: chunkMapping((c) => ({ entry: `example/${c}.js` })),
+        data: { vite: command === 'build' ? '' : viteModule },
+      }),
       {
         name: 'simple-reload-template',
         handleHotUpdate({ file, server }) {
           if (file.includes('index.html')) {
             server.ws.send({ type: 'full-reload' });
           }
-        }
-      }
+        },
+      },
     ],
     build: {
       outDir: 'docs',
       rollupOptions: {
-        input: mapObject(chunks, (c) => `${c}.html`),
+        input: chunkMapping((c) => `${c}.html`),
       },
     },
     resolve: {
