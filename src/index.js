@@ -1961,11 +1961,13 @@ const createScatterplot = (
     );
 
   /** @type {<F extends Function>(f: F) => (...args: Parameters<F>) => ReturnType<F>} */
-  const withDraw = (f) => (...args) => {
-    const out = f(...args);
-    draw = true;
-    return out;
-  };
+  const withDraw =
+    (f) =>
+    (...args) => {
+      const out = f(...args);
+      draw = true;
+      return out;
+    };
 
   const updatePointConnectionStyle = () => {
     pointConnections.setStyle({
@@ -2714,10 +2716,8 @@ const createScatterplot = (
     const autoWidth = width === 'auto';
     const autoHeight = height === 'auto';
     if (autoWidth || autoHeight) {
-      const {
-        width: newWidth,
-        height: newHeight,
-      } = canvas.getBoundingClientRect();
+      const { width: newWidth, height: newHeight } =
+        canvas.getBoundingClientRect();
 
       if (autoWidth) setCurrentWidth(newWidth);
       if (autoHeight) setCurrentHeight(newHeight);
@@ -2908,6 +2908,20 @@ const createScatterplot = (
     pubSub.clear();
   };
 
+  const getPointsInView = () => {
+    const pointsInBBox = searchIndex.range(
+      bottomLeftNdc[0],
+      bottomLeftNdc[1],
+      topRightNdc[0],
+      topRightNdc[1]
+    );
+    const pts = [];
+    pointsInBBox.forEach((idx) => {
+      pts.push(idx);
+    });
+    return pts;
+  };
+
   init();
 
   return {
@@ -2926,6 +2940,7 @@ const createScatterplot = (
     export: exportFn,
     subscribe: pubSub.subscribe,
     unsubscribe: pubSub.unsubscribe,
+    getPointsInView,
   };
 };
 
