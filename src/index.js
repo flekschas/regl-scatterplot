@@ -2907,6 +2907,19 @@ const createScatterplot = (
     pubSub.publish('destroy');
     pubSub.clear();
   };
+  const getPointsInView = () => {
+    const pointsInBBox = searchIndex.range(
+      bottomLeftNdc[0],
+      bottomLeftNdc[1],
+      topRightNdc[0],
+      topRightNdc[1]
+    );
+    const pts = [];
+    pointsInBBox.forEach((idx) => {
+      pts.push(idx);
+    });
+    return pts;
+  };
 
   init();
 
@@ -2926,6 +2939,7 @@ const createScatterplot = (
     export: exportFn,
     subscribe: pubSub.subscribe,
     unsubscribe: pubSub.unsubscribe,
+    getPointsInView,
   };
 };
 
