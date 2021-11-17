@@ -2908,17 +2908,23 @@ const createScatterplot = (
     pubSub.clear();
   };
   const getPointsInView = () => {
-    const pointsInBBox = searchIndex.range(
-      bottomLeftNdc[0],
-      bottomLeftNdc[1],
-      topRightNdc[0],
-      topRightNdc[1]
-    );
+    const bbox = canvas.getBoundingClientRect();
+    const blX = bottomLeftNdc[0];
+    const blY = bottomLeftNdc[1];
+    const trX = topRightNdc[0];
+    const trY = topRightNdc[1];
+
+    const pointsInBBox = searchIndex.range(blX, blY, trX, trY);
     const pts = [];
+    const coords = [];
     pointsInBBox.forEach((idx) => {
+      const [ptX, ptY] = searchIndex.points[idx];
+      const absPtX = ((ptX - blX) / (trX - blX)) * bbox.width;
+      const absPtY = ((ptY - trY) / (blY - trY)) * bbox.height;
+      coords.push([absPtX, absPtY]);
       pts.push(idx);
     });
-    return pts;
+    return { pts, coords };
   };
 
   init();
