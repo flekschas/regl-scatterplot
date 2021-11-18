@@ -122,8 +122,9 @@ export type Properties = {
   camera: Camera2D;
   performanceMode: boolean;
   opacityByDensityDebounceTime: number;
+  points: [number, number][];
+  pointsInView: number[];
 } & Settable;
-
 
 // Options for plot.{draw, select, hover}
 export interface ScatterplotMethodOptions {
@@ -141,7 +142,6 @@ export interface ScatterplotMethodOptions {
     preventEvent: boolean;
   }>;
 }
-
 
 // PubSub definitions
 type PubSubEvent<EventName extends string, Payload extends unknown> = {
