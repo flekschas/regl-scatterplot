@@ -4,6 +4,7 @@ import virtualHtmlTemplate from 'vite-plugin-virtual-html-template';
 const chunks = [
   'index',
   'axes',
+  'text-labels',
   'connected-points-by-segments',
   'connected-points',
   'dynamic-opacity',

@@ -385,6 +385,21 @@
         background: rgba(33, 33, 33, 0.9);
         color: white;
       }
+
+      #note {
+        position: absolute;
+        left: 50%;
+        bottom: 2rem;
+        transform: translate(-50%, 0);
+        padding: 0.5rem;
+        font-size: 0.8rem;
+        font-weight: bold;
+        color: black;
+        background: rgba(111, 178, 228, 0.9);
+        border-radius: 0.25rem;
+        pointer-events: none;
+        transition: opacity 0.15s cubic-bezier(0.25, 0.1, 0.25, 1);
+      }
     </style>
   </head>
 
@@ -470,6 +485,11 @@
           </li>
           <li>
             <a id="example-axes" href="axes.html">Axes</a>
+          </li>
+          <li>
+            <a id="example-text-overlay" href="text-labels.html"
+              >Dynamic Text Labels</a
+            >
           </li>
           <li>
             <a id="example-transition" href="transition.html">Transition</a>
