@@ -177,19 +177,33 @@ Under the hood regl-scatterplot uses a [2D camera](https://github.com/flekschas/
 ```javascript
 const xScale = scaleLinear().domain([0, 42]);
 const yScale = scaleLinear().domain([-5, 5]);
-
-const scatterplot = createScatterplot({
-  canvas,
-  width,
-  height,
-  xScale,
-  yScale,
-});
+const scatterplot = createScatterplot({ canvas, width, height, xScale, yScale });
 ```
 
 Now whenever you pan or zoom, the domains of `xScale` and `yScale` will be updated according to your current view. Note, the ranges are automatically set to the width and height of your `canvas` object.
 
 For a complete example with D3 axes see [example/axes.js](example/axes.js).
+
+#### Translating Point Coordinates to Screen Coordinates
+
+Imagine you want to render additional features on top of points points, for which you need to know where on the canvas points are drawn. To determine the screen coordinates of points you can use [D3 scales](#synchronize-d3-x-and-y-scales-with-the-scatterplot-view) and `scatterplot.get('pointsInView')` as follows:
+
+```javascript
+const points = Array.from({ length: 100 }, () => [Math.random() * 42, Math.random()]);
+const [xScale, yScale] = [scaleLinear().domain([0, 42]), scaleLinear().domain([0, 1])];
+
+const scatterplot = createScatterplot({ ..., xScale, yScale });
+scatterplot.draw(points);
+
+scatterplot.subscribe('view', ({ xScale, yScale }) => {
+  console.log('pointsInScreenCoords', scatterplot.get('pointsInView').map((pointIndex) => [
+    xScale(points[pointIndex][0]),
+    yScale(points[pointIndex][1])
+  ]));
+});
+```
+
+For a complete example see [example/text-labels.js](example/text-labels.js).
 
 ## API
 
