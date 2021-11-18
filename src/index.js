@@ -1800,19 +1800,18 @@ const createScatterplot = (
       }
     });
 
-  const computeNumPointsInView = () => {
-    numPointsInView =
-      camera.scaling <= 1
-        ? numPoints
-        : searchIndex.range(
-            bottomLeftNdc[0],
-            bottomLeftNdc[1],
-            topRightNdc[0],
-            topRightNdc[1]
-          ).length;
-  };
-  const computeNumPointsInViewDb = throttleAndDebounce(
-    computeNumPointsInView,
+  const getPointsInView = () =>
+    searchIndex.range(
+      bottomLeftNdc[0],
+      bottomLeftNdc[1],
+      topRightNdc[0],
+      topRightNdc[1]
+    );
+
+  const getNumPointsInView = () => getPointsInView().length;
+
+  const getNumPointsInViewDb = throttleAndDebounce(
+    getNumPointsInView,
     opacityByDensityDebounceTime
   );
 
@@ -2319,6 +2318,8 @@ const createScatterplot = (
     if (property === 'opacityByDensityFill') return opacityByDensityFill;
     if (property === 'opacityByDensityDebounceTime')
       return opacityByDensityDebounceTime;
+    if (property === 'points') return searchIndex.points;
+    if (property === 'pointsInView') return getPointsInView();
     if (property === 'pointColor')
       return pointColor.length === 1 ? pointColor[0] : pointColor;
     if (property === 'pointColorActive')
@@ -2820,7 +2821,7 @@ const createScatterplot = (
     if (isViewChanged) {
       topRightNdc = getScatterGlPos(1, 1);
       bottomLeftNdc = getScatterGlPos(-1, -1);
-      computeNumPointsInViewDb();
+      getNumPointsInViewDb();
     }
 
     regl.clear({
@@ -2907,25 +2908,6 @@ const createScatterplot = (
     pubSub.publish('destroy');
     pubSub.clear();
   };
-  const getPointsInView = () => {
-    const bbox = canvas.getBoundingClientRect();
-    const blX = bottomLeftNdc[0];
-    const blY = bottomLeftNdc[1];
-    const trX = topRightNdc[0];
-    const trY = topRightNdc[1];
-
-    const pointsInBBox = searchIndex.range(blX, blY, trX, trY);
-    const pts = [];
-    const coords = [];
-    pointsInBBox.forEach((idx) => {
-      const [ptX, ptY] = searchIndex.points[idx];
-      const absPtX = ((ptX - blX) / (trX - blX)) * bbox.width;
-      const absPtY = ((ptY - trY) / (blY - trY)) * bbox.height;
-      coords.push([absPtX, absPtY]);
-      pts.push(idx);
-    });
-    return { pts, coords };
-  };
 
   init();
 
@@ -2945,7 +2927,6 @@ const createScatterplot = (
     export: exportFn,
     subscribe: pubSub.subscribe,
     unsubscribe: pubSub.unsubscribe,
-    getPointsInView,
   };
 };
 
