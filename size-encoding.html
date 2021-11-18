@@ -1,4 +1,20 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"/><title>Regl Scatterplot</title><meta name="description" content="Scalable WebGL-based Scatterplot for millions of points build with Regl"/><meta name="author" content="Fritz Lekschas"/><link rel="shortcut icon" type="image/png" href="favicon.png"/><style>html,
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+
+    <title>Regl Scatterplot</title>
+    <meta
+      name="description"
+      content="Scalable WebGL-based Scatterplot for millions of points build with Regl"
+    />
+    <meta name="author" content="Fritz Lekschas" />
+
+    <link rel="shortcut icon" type="image/png" href="./favicon.png" />
+
+    <style type="text/css">
+      html,
       body {
         padding: 0;
         margin: 0;
@@ -73,7 +89,7 @@
         outline-offset: -1px;
       }
 
-      input[type=range]:focus::-moz-range-track {
+      input[type='range']:focus::-moz-range-track {
         background: #444;
       }
 
@@ -325,7 +341,7 @@
       }
 
       #examples li a.active {
-        color: #34BBFF;
+        color: #34bbff;
         font-weight: bold;
         text-decoration: none;
       }
@@ -368,4 +384,157 @@
         right: 0;
         background: rgba(33, 33, 33, 0.9);
         color: white;
-      }</style></head><body><div id="modal" class="flex-c flex-jc-c flex-a-c"><span class="no-select"></span></div><header id="topbar" tabindex="0"><div id="title-wrapper" class="flex-c flex-jc-sb"><h1 id="title">Regl Scatterplot</h1><span class="no-select">Menu</span></div><aside id="controls" class="flex-c flex-v"><label class="flex-c flex-v"><div class="flex-a-c no-select"><span class="label"><abbr title="Number of points">Num. PTS</abbr></span> <span id="num-points-value" class="value">1000</span></div><input id="num-points" type="range" min="1000" max="2000000" step="1000" value="10000"/></label> <label class="flex-c flex-v"><div class="flex-a-c no-select"><span class="label"><abbr title="Point size">PT Size</abbr></span> <span id="point-size-value" class="value">5</span></div><input id="point-size" type="range" min="1" max="100" step="1" value="5"/></label> <label class="flex-c flex-v"><div class="flex-a-c no-select"><span class="label">Opacity</span> <span id="opacity-value" class="value">1.0</span></div><input id="opacity" type="range" min="0.01" max="1" step="0.01" value="1"/></label> <label class="flex-c flex-a-c"><input id="click-lasso-initiator" type="checkbox"/> <span class="no-select">Click to Lasso Initiator</span></label> <button id="reset">Reset</button><hr/><label>Examples:</label><ul id="examples"><li><a id="example-basic" href="index.html">Color Encoding</a></li><li><a id="example-size-encoding" href="size-encoding.html">Size &amp; Opacity Encoding</a></li><li><a id="example-dynamic-opacity" href="dynamic-opacity.html">Dynamic Opacity</a></li><li><a id="example-background" href="texture-background.html">Background Image</a></li><li><a id="example-axes" href="axes.html">Axes</a></li><li><a id="example-transition" href="transition.html">Transition</a></li><li><a id="example-connected-points" href="connected-points.html">Point Connections</a></li><li><a id="example-connected-points-by-segment" href="connected-points-by-segment.html">Point Connections<br/><span class="smaller">(encoded by line segment)</span></a></li><li><a id="example-performance-mode" href="performance-mode.html">Performance Mode (<abbr title="20 million">20M</abbr> points)</a></li></ul><hr/><div class="two-button-group"><button id="export">Export as PNG</button> <a class="button-like" href="https://github.com/flekschas/regl-scatterplot" target="_blank">Source code</a></div></aside></header><div id="parent-wrapper"><div id="canvas-wrapper"><canvas id="canvas"></canvas></div></div><script src="./sizeEncoding.js"></script></body></html>
+      }
+
+      #note {
+        position: absolute;
+        left: 50%;
+        bottom: 2rem;
+        transform: translate(-50%, 0);
+        padding: 0.5rem;
+        font-size: 0.8rem;
+        font-weight: bold;
+        color: black;
+        background: rgba(111, 178, 228, 0.9);
+        border-radius: 0.25rem;
+        pointer-events: none;
+        transition: opacity 0.15s cubic-bezier(0.25, 0.1, 0.25, 1);
+      }
+    </style>
+  <script type="module" crossorigin src="./assets/size-encoding.a8213854.js"></script>
+  <link rel="modulepreload" href="./assets/index.61f09c13.js">
+  <link rel="modulepreload" href="./assets/vendor.943e55ed.js">
+  <link rel="modulepreload" href="./assets/utils.94e61320.js">
+</head>
+
+  <body>
+    <div id="modal" class="flex-c flex-jc-c flex-a-c">
+      <span class="no-select"></span>
+    </div>
+    <header id="topbar" tabindex="0">
+      <div id="title-wrapper" class="flex-c flex-jc-sb">
+        <h1 id="title">Regl Scatterplot</h1>
+        <span class="no-select">Menu</span>
+      </div>
+      <aside id="controls" class="flex-c flex-v">
+        <label class="flex-c flex-v">
+          <div class="flex-a-c no-select">
+            <span class="label"
+              ><abbr title="Number of points">Num. PTS</abbr></span
+            >
+            <span id="num-points-value" class="value">1000</span>
+          </div>
+          <input
+            id="num-points"
+            type="range"
+            min="1000"
+            max="2000000"
+            step="1000"
+            value="10000"
+          />
+        </label>
+        <label class="flex-c flex-v">
+          <div class="flex-a-c no-select">
+            <span class="label"><abbr title="Point size">PT Size</abbr></span>
+            <span id="point-size-value" class="value">5</span>
+          </div>
+          <input
+            id="point-size"
+            type="range"
+            min="1"
+            max="100"
+            step="1"
+            value="5"
+          />
+        </label>
+        <label class="flex-c flex-v">
+          <div class="flex-a-c no-select">
+            <span class="label">Opacity</span>
+            <span id="opacity-value" class="value">1.0</span>
+          </div>
+          <input
+            id="opacity"
+            type="range"
+            min="0.01"
+            max="1"
+            step="0.01"
+            value="1"
+          />
+        </label>
+        <label class="flex-c flex-a-c">
+          <input id="click-lasso-initiator" type="checkbox" />
+          <span class="no-select">Click to Lasso Initiator</span>
+        </label>
+        <button id="reset">Reset</button>
+        <hr />
+        <label>Examples:</label>
+        <ul id="examples">
+          <li>
+            <a id="example-basic" href="index.html">Color Encoding</a>
+          </li>
+          <li>
+            <a id="example-size-encoding" href="size-encoding.html"
+              >Size &amp; Opacity Encoding</a
+            >
+          </li>
+          <li>
+            <a id="example-dynamic-opacity" href="dynamic-opacity.html"
+              >Dynamic Opacity</a
+            >
+          </li>
+          <li>
+            <a id="example-background" href="texture-background.html"
+              >Background Image</a
+            >
+          </li>
+          <li>
+            <a id="example-axes" href="axes.html">Axes</a>
+          </li>
+          <li>
+            <a id="example-text-overlay" href="text-labels.html"
+              >Dynamic Text Labels</a
+            >
+          </li>
+          <li>
+            <a id="example-transition" href="transition.html">Transition</a>
+          </li>
+          <li>
+            <a id="example-connected-points" href="connected-points.html"
+              >Point Connections</a
+            >
+          </li>
+          <li>
+            <a
+              id="example-connected-points-by-segment"
+              href="connected-points-by-segments.html"
+              >Point Connections<br /><span class="smaller"
+                >(encoded by line segment)</span
+              ></a
+            >
+          </li>
+          <li>
+            <a id="example-performance-mode" href="performance-mode.html"
+              >Performance Mode (<abbr title="20 million">20M</abbr> points)</a
+            >
+          </li>
+        </ul>
+        <hr />
+        <div class="two-button-group">
+          <button id="export">Export as PNG</button>
+          <a
+            class="button-like"
+            href="https://github.com/flekschas/regl-scatterplot"
+            target="_blank"
+            >Source code</a
+          >
+        </div>
+      </aside>
+    </header>
+    <div id="parent-wrapper">
+      <div id="canvas-wrapper">
+        <canvas id="canvas"></canvas>
+      </div>
+    </div>
+    
+</body>
+</html>
