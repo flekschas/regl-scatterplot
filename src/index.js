@@ -1808,7 +1808,9 @@ const createScatterplot = (
       topRightNdc[1]
     );
 
-  const getNumPointsInView = () => getPointsInView().length;
+  const getNumPointsInView = () => {
+    numPointsInView = getPointsInView().length;
+  };
 
   const getNumPointsInViewDb = throttleAndDebounce(
     getNumPointsInView,
