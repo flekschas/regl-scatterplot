@@ -419,6 +419,8 @@ can be read and written via [`scatterplot.get()`](#scatterplot.get) and [`scatte
 | deselectOnDblClick                    | boolean         | `true`                              |                                                                 | `true`   | `false`     |
 | deselectOnEscape                      | boolean         | `true`                              |                                                                 | `true`   | `false`     |
 | opacity                               | float           | `1`                                 | > 0                                                             | `true`   | `false`     |
+| points                                | tuple           | `[0.5, 2.3]`                        |                                                                 | `false`  | `false`     |
+| pointsInView                          | int[]           | `[1, 2, 12]`                        |                                                                 | `false`  | `false`     |
 | pointColor                            | quadruple       | `[0.66, 0.66, 0.66, 1]`             | single value or list of hex, rgb, rgba                          | `true`   | `false`     |
 | pointColorActive                      | quadruple       | `[0, 0.55, 1, 1]`                   | single value or list of hex, rgb, rgba                          | `true`   | `false`     |
 | pointColorHover                       | quadruple       | `[1, 1, 1, 1]`                      | single value or list of hex, rgb, rgba                          | `true`   | `false`     |

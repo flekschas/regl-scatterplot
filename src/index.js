@@ -1800,19 +1800,18 @@ const createScatterplot = (
       }
     });
 
-  const computeNumPointsInView = () => {
-    numPointsInView =
-      camera.scaling <= 1
-        ? numPoints
-        : searchIndex.range(
-            bottomLeftNdc[0],
-            bottomLeftNdc[1],
-            topRightNdc[0],
-            topRightNdc[1]
-          ).length;
-  };
-  const computeNumPointsInViewDb = throttleAndDebounce(
-    computeNumPointsInView,
+  const getPointsInView = () =>
+    searchIndex.range(
+      bottomLeftNdc[0],
+      bottomLeftNdc[1],
+      topRightNdc[0],
+      topRightNdc[1]
+    );
+
+  const getNumPointsInView = () => getPointsInView().length;
+
+  const getNumPointsInViewDb = throttleAndDebounce(
+    getNumPointsInView,
     opacityByDensityDebounceTime
   );
 
@@ -1961,11 +1960,13 @@ const createScatterplot = (
     );
 
   /** @type {<F extends Function>(f: F) => (...args: Parameters<F>) => ReturnType<F>} */
-  const withDraw = (f) => (...args) => {
-    const out = f(...args);
-    draw = true;
-    return out;
-  };
+  const withDraw =
+    (f) =>
+    (...args) => {
+      const out = f(...args);
+      draw = true;
+      return out;
+    };
 
   const updatePointConnectionStyle = () => {
     pointConnections.setStyle({
@@ -2317,6 +2318,8 @@ const createScatterplot = (
     if (property === 'opacityByDensityFill') return opacityByDensityFill;
     if (property === 'opacityByDensityDebounceTime')
       return opacityByDensityDebounceTime;
+    if (property === 'points') return searchIndex.points;
+    if (property === 'pointsInView') return getPointsInView();
     if (property === 'pointColor')
       return pointColor.length === 1 ? pointColor[0] : pointColor;
     if (property === 'pointColorActive')
@@ -2714,10 +2717,8 @@ const createScatterplot = (
     const autoWidth = width === 'auto';
     const autoHeight = height === 'auto';
     if (autoWidth || autoHeight) {
-      const {
-        width: newWidth,
-        height: newHeight,
-      } = canvas.getBoundingClientRect();
+      const { width: newWidth, height: newHeight } =
+        canvas.getBoundingClientRect();
 
       if (autoWidth) setCurrentWidth(newWidth);
       if (autoHeight) setCurrentHeight(newHeight);
@@ -2820,7 +2821,7 @@ const createScatterplot = (
     if (isViewChanged) {
       topRightNdc = getScatterGlPos(1, 1);
       bottomLeftNdc = getScatterGlPos(-1, -1);
-      computeNumPointsInViewDb();
+      getNumPointsInViewDb();
     }
 
     regl.clear({
