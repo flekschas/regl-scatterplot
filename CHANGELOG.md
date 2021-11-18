@@ -1,5 +1,11 @@
 ## Next
 
+## v1.1.0
+
+- Add `scatterplot.get('pointsInView')` to retrieve the indices of the points currently visible within the view (#72). Shoutout to [@dulex123](https://github.com/dulex123) for his PR!
+- Add `scatterplot.get('points')` to retrieve all currently drawn points.
+- Add an example for demonstrating how labels can be rendered. The demo using `scatterplot.get('pointsInView')` to determine when to render text labels. See https://flekschas.github.io/regl-scatterplot/text-labels.html
+
 ## v1.0.0
 
 Woohoo 🥳 It's time to release v1! Nothing dramatic changed in this release but I felt that the library/API is now stable enough. Also, a big shoutout to [@manzt](https://github.com/manzt) and [@japrescott](https://github.com/japrescott) for their PRs.
