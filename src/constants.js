@@ -8,6 +8,8 @@ import {
   quadOut,
 } from '@flekschas/utils';
 
+export const AUTO = 'auto';
+
 export const COLOR_NORMAL_IDX = 0;
 export const COLOR_ACTIVE_IDX = 1;
 export const COLOR_HOVER_IDX = 2;
@@ -78,8 +80,8 @@ export const DEFAULT_KEY_MAP = {
 
 // Default attribute
 export const DEFAULT_DATA_ASPECT_RATIO = 1;
-export const DEFAULT_WIDTH = 'auto';
-export const DEFAULT_HEIGHT = 'auto';
+export const DEFAULT_WIDTH = AUTO;
+export const DEFAULT_HEIGHT = AUTO;
 export const DEFAULT_GAMMA = 1;
 
 // Default styles
@@ -102,7 +104,7 @@ export const DEFAULT_OPACITY_BY_DENSITY_DEBOUNCE_TIME = 25;
 // Default colors
 export const DEFAULT_COLORMAP = [];
 export const DEFAULT_COLOR_BY = null;
-export const DEFAULT_COLOR_NORMAL = [0.66, 0.66, 0.66, 1];
+export const DEFAULT_COLOR_NORMAL = [0.66, 0.66, 0.66, DEFAULT_OPACITY];
 export const DEFAULT_COLOR_ACTIVE = [0, 0.55, 1, 1];
 export const DEFAULT_COLOR_HOVER = [1, 1, 1, 1];
 export const DEFAULT_COLOR_BG = [0, 0, 0, 1];

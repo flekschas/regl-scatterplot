@@ -35,6 +35,13 @@ attribute vec2 stateIndex;
 varying vec4 color;
 varying float finalPointSize;
 
+float getVec4ValueAtIndex(vec4 vector, int index) {
+  if (index == 1) return vector[1];
+  if (index == 2) return vector[2];
+  if (index == 3) return vector[3];
+  return vector[0];
+}
+
 void main() {
   vec4 state = texture2D(stateTex, stateIndex);
 
@@ -86,7 +93,13 @@ void main() {
       (opacityIndex / encodingTexRes) - opacityRowIndex + encodingTexEps,
       opacityRowIndex / encodingTexRes + encodingTexEps
     );
-    color.a = min(1.0, texture2D(encodingTex, opacityTexIndex).y + globalState);
+    color.a = min(
+      1.0,
+      getVec4ValueAtIndex(
+        texture2D(encodingTex, opacityTexIndex),
+        int(1.0 + globalState)
+      )
+    );
   } else {
     color.a = min(1.0, opacityDensity + globalState);
   }

@@ -1,5 +1,9 @@
 ## Next
 
+## v1.1.1
+
+- Fix incorrect opacity handling (#74)
+
 ## v1.1.0
 
 - Add `scatterplot.get('pointsInView')` to retrieve the indices of the points currently visible within the view (#72). Shoutout to [@dulex123](https://github.com/dulex123) for his PR!

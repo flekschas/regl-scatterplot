@@ -23,6 +23,7 @@ import POINT_UPDATE_VS from './point-update.vs';
 import createSplineCurve from './spline-curve';
 
 import {
+  AUTO,
   COLOR_ACTIVE_IDX,
   COLOR_BG_IDX,
   COLOR_HOVER_IDX,
@@ -95,7 +96,6 @@ import {
   DEFAULT_MOUSE_MODE,
   SINGLE_CLICK_DELAY,
   LONG_CLICK_TIME,
-  DEFAULT_OPACITY,
   DEFAULT_OPACITY_BY,
   DEFAULT_OPACITY_BY_DENSITY_FILL,
   DEFAULT_OPACITY_BY_DENSITY_DEBOUNCE_TIME,
@@ -227,7 +227,7 @@ const createScatterplot = (
     pointSizeSelected = DEFAULT_POINT_SIZE_SELECTED,
     pointSizeMouseDetection = DEFAULT_POINT_SIZE_MOUSE_DETECTION,
     pointOutlineWidth = DEFAULT_POINT_OUTLINE_WIDTH,
-    opacity = DEFAULT_OPACITY,
+    opacity = AUTO,
     opacityBy = DEFAULT_OPACITY_BY,
     opacityByDensityFill = DEFAULT_OPACITY_BY_DENSITY_FILL,
     sizeBy = DEFAULT_SIZE_BY,
@@ -236,8 +236,8 @@ const createScatterplot = (
     gamma = DEFAULT_GAMMA,
   } = initialProperties;
 
-  let currentWidth = width === 'auto' ? 1 : width;
-  let currentHeight = height === 'auto' ? 1 : height;
+  let currentWidth = width === AUTO ? 1 : width;
+  let currentHeight = height === AUTO ? 1 : height;
 
   // The following properties cannot be changed after the initialization
   const {
@@ -854,6 +854,8 @@ const createScatterplot = (
     for (let i = 0; i < maxEncoding; i++) {
       rgba[i * 4] = pointSize[i] || 0;
       rgba[i * 4 + 1] = opacity[i] || 0;
+      rgba[i * 4 + 2] = (pointColorActive[i] || pointColorActive[0])[3] || 1;
+      rgba[i * 4 + 3] = (pointColorHover[i] || pointColorHover[0])[3] || 1;
     }
 
     return regl.texture({
@@ -1017,7 +1019,7 @@ const createScatterplot = (
   };
 
   const setHeight = (newHeight) => {
-    if (newHeight === 'auto') {
+    if (newHeight === AUTO) {
       height = newHeight;
       canvas.style.height = '100%';
       window.requestAnimationFrame(() => {
@@ -1036,7 +1038,7 @@ const createScatterplot = (
   const computePointSizeMouseDetection = () => {
     computedPointSizeMouseDetection = pointSizeMouseDetection;
 
-    if (pointSizeMouseDetection === 'auto') {
+    if (pointSizeMouseDetection === AUTO) {
       computedPointSizeMouseDetection = Array.isArray(pointSize)
         ? pointSize[Math.floor(pointSize.length / 2)]
         : pointSize;
@@ -1074,7 +1076,7 @@ const createScatterplot = (
   };
 
   const setWidth = (newWidth) => {
-    if (newWidth === 'auto') {
+    if (newWidth === AUTO) {
       width = newWidth;
       canvas.style.width = '100%';
       window.requestAnimationFrame(() => {
@@ -2716,8 +2718,8 @@ const createScatterplot = (
   };
 
   const resizeHandler = () => {
-    const autoWidth = width === 'auto';
-    const autoHeight = height === 'auto';
+    const autoWidth = width === AUTO;
+    const autoHeight = height === AUTO;
     if (autoWidth || autoHeight) {
       const { width: newWidth, height: newHeight } =
         canvas.getBoundingClientRect();
