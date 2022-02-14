@@ -16,7 +16,7 @@ const opacityValEl = document.querySelector('#opacity-value');
 const clickLassoInitiatorEl = document.querySelector('#click-lasso-initiator');
 const resetEl = document.querySelector('#reset');
 const exportEl = document.querySelector('#export');
-const exampleEl = document.querySelector('#example-size-encoding');
+const exampleEl = document.querySelector('#example-text-overlay');
 
 exampleEl.setAttribute('class', 'active');
 exampleEl.removeAttribute('href');
