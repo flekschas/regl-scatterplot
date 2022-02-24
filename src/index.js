@@ -16,7 +16,7 @@ import BG_FS from './bg.fs';
 import BG_VS from './bg.vs';
 import POINT_FS from './point.fs';
 import POINT_SIMPLE_FS from './point-simple.fs';
-import POINT_VS from './point.vs';
+import createVertexShader from './point.vs';
 import POINT_UPDATE_FS from './point-update.fs';
 import POINT_UPDATE_VS from './point-update.vs';
 
@@ -854,8 +854,12 @@ const createScatterplot = (
     for (let i = 0; i < maxEncoding; i++) {
       rgba[i * 4] = pointSize[i] || 0;
       rgba[i * 4 + 1] = opacity[i] || 0;
-      rgba[i * 4 + 2] = (pointColorActive[i] || pointColorActive[0])[3] || 1;
-      rgba[i * 4 + 3] = (pointColorHover[i] || pointColorHover[0])[3] || 1;
+
+      const active = Number((pointColorActive[i] || pointColorActive[0])[3]);
+      rgba[i * 4 + 2] = Number.isNaN(active) ? 1 : active;
+
+      const hover = Number((pointColorHover[i] || pointColorHover[0])[3]);
+      rgba[i * 4 + 3] = Number.isNaN(hover) ? 1 : hover;
     }
 
     return regl.texture({
@@ -1188,6 +1192,7 @@ const createScatterplot = (
   };
   // 1 + Math.log2(max(1.0, camera.scaling)) * window.devicePixelRatio;
   const getNormalNumPoints = () => numPoints;
+  const getSelectedNumPoints = () => selection.length;
   const getIsColoredByZ = () => +(colorBy === 'valueZ');
   const getIsColoredByW = () => +(colorBy === 'valueW');
   const getIsOpacityByZ = () => +(opacityBy === 'valueZ');
@@ -1318,7 +1323,7 @@ const createScatterplot = (
   ) =>
     regl({
       frag: performanceMode ? POINT_SIMPLE_FS : POINT_FS,
-      vert: POINT_VS,
+      vert: createVertexShader(globalState),
 
       blend: {
         enable: !performanceMode,
@@ -1386,33 +1391,31 @@ const createScatterplot = (
     COLOR_HOVER_IDX
   );
 
-  const drawSelectedPoint = () => {
-    const numOutlinedPoints = selection.length;
+  const drawSelectedPointOutlines = drawPoints(
+    () => (pointSizeSelected + pointOutlineWidth * 2) * window.devicePixelRatio,
+    getSelectedNumPoints,
+    getSelectedPointsIndexBuffer,
+    COLOR_ACTIVE_IDX
+  );
 
-    // Draw outer outline
-    drawPoints(
-      () =>
-        (pointSizeSelected + pointOutlineWidth * 2) * window.devicePixelRatio,
-      () => numOutlinedPoints,
-      getSelectedPointsIndexBuffer,
-      COLOR_ACTIVE_IDX
-    )();
+  const drawSelectedPointInnerBorder = drawPoints(
+    () => (pointSizeSelected + pointOutlineWidth) * window.devicePixelRatio,
+    getSelectedNumPoints,
+    getSelectedPointsIndexBuffer,
+    COLOR_BG_IDX
+  );
 
-    // Draw inner outline
-    drawPoints(
-      () => (pointSizeSelected + pointOutlineWidth) * window.devicePixelRatio,
-      () => numOutlinedPoints,
-      getSelectedPointsIndexBuffer,
-      COLOR_BG_IDX
-    )();
+  const drawSelectedPointBodies = drawPoints(
+    () => pointSizeSelected,
+    getSelectedNumPoints,
+    getSelectedPointsIndexBuffer,
+    COLOR_ACTIVE_IDX
+  );
 
-    // Draw body
-    drawPoints(
-      () => pointSizeSelected,
-      () => numOutlinedPoints,
-      getSelectedPointsIndexBuffer,
-      COLOR_ACTIVE_IDX
-    )();
+  const drawSelectedPoints = () => {
+    drawSelectedPointOutlines();
+    drawSelectedPointInnerBorder();
+    drawSelectedPointBodies();
   };
 
   const drawBackgroundImage = regl({
@@ -2859,7 +2862,7 @@ const createScatterplot = (
       drawPointBodies();
       if (!mouseDown && (showReticle || drawReticleOnce)) drawReticle();
       if (hoveredPoint >= 0) drawHoveredPoint();
-      if (selection.length) drawSelectedPoint();
+      if (selection.length) drawSelectedPoints();
     });
 
     copyToScreen();
