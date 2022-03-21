@@ -318,6 +318,80 @@
         line-height: 0.9rem;
       }
 
+      #footer.hidden {
+        opacity: 0;
+        pointer-events: none;
+      }
+
+      #info {
+        position: absolute;
+        z-index: 1;
+        bottom: 0.5rem;
+        left: 0.5rem;
+        width: 1rem;
+        padding: 0.5rem;
+        font-size: 0.9rem;
+        background: rgba(32, 32, 32, 0.9);
+        border-radius: 0.2rem;
+        transition: background 0.15s cubic-bezier(0.25, 0.1, 0.25, 1);
+      }
+
+      #info:focus,
+      #info:focus-within {
+        pointer-events: none;
+        outline: none;
+        background: rgba(32, 32, 32, 1);
+        width: 16rem;
+      }
+
+      #info-title {
+        padding: 0;
+        margin: 0;
+        width: 1rem;
+        font-size: 0.9rem;
+        line-height: 1rem;
+        text-align: center;
+        color: #808080;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        -khtml-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+      }
+
+      #info-title:hover {
+        color: #fff;
+      }
+
+      #info-title:before {
+        content: 'i';
+      }
+
+      #info:focus #info-title,
+      #info:focus-within #info-title {
+        color: #fff;
+        padding-top: 0.5rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        text-align: left;
+        width: 16rem;
+      }
+
+      #info:focus #info-title:before,
+      #info:focus-within #info-title:before {
+        content: 'info';
+      }
+
+      #info-content {
+        display: none;
+      }
+
+      #info:focus #info-content,
+      #info:focus-within #info-content {
+        display: block;
+        pointer-events: auto;
+      }
+
       #examples {
         margin: 0;
         padding: 0 0 0 1.25em;
@@ -388,6 +462,7 @@
 
       #note {
         position: absolute;
+        z-index: 2;
         left: 50%;
         bottom: 2rem;
         transform: translate(-50%, 0);
@@ -400,11 +475,25 @@
         pointer-events: none;
         transition: opacity 0.15s cubic-bezier(0.25, 0.1, 0.25, 1);
       }
+
+      #center-note {
+        position: absolute;
+        z-index: 2;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0);
+        padding: 0.25rem;
+        background-color: rgba(0, 0, 0, 1);
+        border-radius: 0.25rem;
+        pointer-events: none;
+        transition: transform 0.15s cubic-bezier(0.25, 0.1, 0.25, 1),
+          opacity 0.15s cubic-bezier(0.25, 0.1, 0.25, 1);
+      }
     </style>
-  <script type="module" crossorigin src="./assets/connected-points.5b94226a.js"></script>
-  <link rel="modulepreload" href="./assets/index.61f09c13.js">
-  <link rel="modulepreload" href="./assets/vendor.943e55ed.js">
-  <link rel="modulepreload" href="./assets/utils.94e61320.js">
+  <script type="module" crossorigin src="./assets/connected-points.7a65d1af.js"></script>
+  <link rel="modulepreload" href="./assets/index.5638c92a.js">
+  <link rel="modulepreload" href="./assets/vendor.ad595088.js">
+  <link rel="modulepreload" href="./assets/utils.1dbcb5de.js">
 </head>
 
   <body>
@@ -517,6 +606,11 @@
               >Performance Mode (<abbr title="20 million">20M</abbr> points)</a
             >
           </li>
+          <li>
+            <a id="example-multiple-instances" href="multiple-instances.html"
+              >Multiple Instances</a
+            >
+          </li>
         </ul>
         <hr />
         <div class="two-button-group">
@@ -535,6 +629,12 @@
         <canvas id="canvas"></canvas>
       </div>
     </div>
+    <footer id="footer" class="hidden">
+      <div id="info" tabindex="0">
+        <div id="info-content"></div>
+        <div id="info-title"></div>
+      </div>
+    </footer>
     
 </body>
 </html>
