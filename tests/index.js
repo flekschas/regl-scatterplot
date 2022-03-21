@@ -1632,7 +1632,7 @@ test('tests involving mouse events', async (t2) => {
     });
     await scatterplot.draw([[0, 0]]);
 
-    const predictedView = mat4.fromTranslation([], [0, -1, 0]);
+    const predictedView = mat4.fromTranslation([], [-1, 0, 0]);
 
     let currentView;
     let currentCamera;
@@ -1642,8 +1642,8 @@ test('tests involving mouse events', async (t2) => {
     };
     scatterplot.subscribe('view', viewHandler);
 
-    // window.dispatchEvent(createMouseEvent('mouseup', hdim, hdim));
-    // window.dispatchEvent(createMouseEvent('mousemove', hdim, hdim));
+    window.dispatchEvent(createMouseEvent('mouseup', hdim, hdim));
+    window.dispatchEvent(createMouseEvent('mousemove', hdim, hdim));
     await wait(50);
 
     canvas.dispatchEvent(
@@ -1661,13 +1661,9 @@ test('tests involving mouse events', async (t2) => {
 
     t.ok(currentCamera, 'should have published the camera');
 
-    t.deepEqual(xScale.domain(), [-5, 5], 'should have published the camera');
+    t.deepEqual(xScale.domain(), [0, 10], 'should have published the camera');
 
-    t.deepEqual(
-      yScale.domain(),
-      [0.25, 0.75],
-      'should have published the camera'
-    );
+    t.deepEqual(yScale.domain(), [0, 0.5], 'should have published the camera');
 
     scatterplot.destroy();
   });
