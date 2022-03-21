@@ -1,5 +1,9 @@
 ## Next
 
+## v1.2.1
+
+- Update dom-2d-camera to fix internal tests
+
 ## v1.2.0
 
 - Outsource WebGL renderer to improve instancing: You can now use a single shared WebGL renderer (via `createRenderer()`) to power multiple scatter plot instances. See https://flekschas.github.io/regl-scatterplot/multiple-instances.html.
