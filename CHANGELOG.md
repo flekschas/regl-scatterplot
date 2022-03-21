@@ -1,5 +1,16 @@
 ## Next
 
+## v1.2.0
+
+- Outsource WebGL renderer to improve instancing: You can now use a single shared WebGL renderer (via `createRenderer()`) to power multiple scatter plot instances. See https://flekschas.github.io/regl-scatterplot/multiple-instances.html.
+- Add `scatterplot.redraw()` to enforce a redrawing of the scene. This can be necessary when you manually updated the camera.
+- Add `scatterplot.view(cameraView, { preventEvent })` as a shorthand for setting the scatter plot's camera view. The `preventEvent` option enables synchronizing multiple scatter plot instances. See https://flekschas.github.io/regl-scatterplot/multiple-instances.html.
+- Allow passing typed arrays to `scatterplot.draw({ x, y, z, w })`.
+
+**Breaking changes:**
+
+- `scatterplot.export()` is now returning an [ImageData](https://developer.mozilla.org/en-US/docs/Web/API/ImageData) object for better utility.
+
 ## v1.1.1
 
 - Fix incorrect opacity handling (#74)

@@ -141,6 +141,9 @@ export interface ScatterplotMethodOptions {
     merge: boolean;
     preventEvent: boolean;
   }>;
+  preventEvent: Partial<{
+    preventEvent: boolean;
+  }>;
 }
 
 // PubSub definitions

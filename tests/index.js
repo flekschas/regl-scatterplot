@@ -4,10 +4,15 @@ import '@babel/polyfill';
 import { test } from 'zora';
 import { scaleLinear } from 'd3-scale';
 import { mat4 } from 'gl-matrix';
+import { isFunction } from '@flekschas/utils';
 
 import { version } from '../package.json';
 
-import createScatterplot, { createRegl, createTextureFromUrl } from '../src';
+import createScatterplot, {
+  createRegl,
+  createRenderer,
+  createTextureFromUrl,
+} from '../src';
 import {
   DEFAULT_COLOR_NORMAL,
   DEFAULT_COLOR_ACTIVE,
@@ -28,6 +33,7 @@ import {
   DEFAULT_POINT_CONNECTION_OPACITY_ACTIVE,
   DEFAULT_POINT_CONNECTION_SIZE,
   DEFAULT_POINT_CONNECTION_SIZE_ACTIVE,
+  DEFAULT_GAMMA,
   KEY_ACTION_LASSO,
   KEY_ACTION_ROTATE,
   SINGLE_CLICK_DELAY,
@@ -189,12 +195,62 @@ test('createTextureFromUrl()', async (t) => {
   );
 });
 
+test('createRenderer()', (t) => {
+  const canvas = createCanvas();
+  const regl = createRegl(canvas);
+  const renderer = createRenderer({ canvas, regl });
+
+  t.ok(!!renderer, 'renderer should be instanciated');
+  t.equal(renderer.canvas, canvas, 'canvas should be a canvas element');
+  t.equal(renderer.regl, regl, 'regl should be a regl instance');
+  t.equal(
+    renderer.gamma,
+    DEFAULT_GAMMA,
+    `renderer should have gamma set to ${DEFAULT_GAMMA}`
+  );
+  t.ok(isFunction(renderer.render), 'renderer should have render function');
+  t.ok(isFunction(renderer.onFrame), 'renderer should have onFrame function');
+  t.ok(isFunction(renderer.refresh), 'renderer should have refresh function');
+  t.ok(isFunction(renderer.destroy), 'renderer should have destroy function');
+
+  const sp1 = createScatterplot({ renderer });
+  const sp2 = createScatterplot({ renderer });
+
+  t.equal(sp1.get('renderer'), renderer, 'sp1.renderer should be renderer');
+  t.equal(
+    sp2.get('renderer'),
+    sp1.get('renderer'),
+    'sp1.renderer should be the same as sp1.renderer'
+  );
+
+  sp1.destroy();
+  sp2.destroy();
+
+  // Renderer should have not been destroyed
+  t.equal(renderer.canvas, canvas, 'canvas should still be a canvas element');
+  t.equal(renderer.regl, regl, 'regl should still  be a regl instance');
+
+  const sp3 = createScatterplot({ renderer });
+  t.equal(sp3.get('renderer'), renderer, 'sp3.renderer should be renderer');
+
+  renderer.gamma = 10;
+  t.equal(renderer.gamma, 10, 'gamma should be 10');
+
+  sp3.destroy();
+  renderer.destroy();
+
+  // Now the renderer should have been destroyed
+  t.equal(renderer.canvas, undefined, 'canvas should be undefined');
+  t.equal(renderer.regl, undefined, 'regl should be undefined');
+});
+
 /* ---------------------------- get() and set() ----------------------------- */
 
 test('get("canvas"), get("regl"), and get("version")', async (t) => {
   const canvas = createCanvas();
   const regl = createRegl(canvas);
-  const scatterplot = createScatterplot({ canvas, regl });
+  const renderer = createRenderer({ regl });
+  const scatterplot = createScatterplot({ canvas, renderer });
 
   t.equal(
     scatterplot.get('canvas'),
@@ -1358,7 +1414,7 @@ test('tests involving mouse events', async (t2) => {
       (mapping) => mapping[1] === KEY_ACTION_ROTATE
     );
 
-    // Test multi selections via mousedown + mousemove
+    // Test rotation via mousedown + mousemove + keydown
     window.dispatchEvent(
       createKeyboardEvent('keydown', capitalize(rotateKey), {
         [`${rotateKey}Key`]: true,
@@ -1366,7 +1422,7 @@ test('tests involving mouse events', async (t2) => {
     );
     window.dispatchEvent(createMouseEvent('mousemove', dim * 0.75, hdim));
 
-    await wait(0);
+    await wait(10);
 
     canvas.dispatchEvent(
       createMouseEvent('mousedown', dim * 0.75, hdim, {
@@ -1375,7 +1431,7 @@ test('tests involving mouse events', async (t2) => {
       })
     );
 
-    await wait(0);
+    await wait(10);
 
     const mousePositions = [
       [dim * 0.75, hdim],
@@ -1399,11 +1455,11 @@ test('tests involving mouse events', async (t2) => {
     );
 
     await whenDrawn;
-    await wait(0);
+    await wait(10);
 
     t.ok(
-      initialRotation !== rotation && !Number.isNaN(+rotation),
-      'view should be have been rotated'
+      initialRotation !== rotation && Number.isFinite(rotation),
+      'view should have been rotated'
     );
 
     const lastRotation = rotation;
@@ -1413,9 +1469,9 @@ test('tests involving mouse events', async (t2) => {
     scatterplot.set({ keyMap: { [rotateKey]: 'rotate' } });
 
     // Needed to first digest the keyMap change
-    await wait(0);
+    await wait(10);
 
-    // Test multi selections via mousedown + mousemove
+    // Test rotation via mousedown + mousemove + keydown
     window.dispatchEvent(
       createKeyboardEvent('keydown', capitalize(oldRotateKey), {
         [`${oldRotateKey}Key`]: true,
@@ -1433,7 +1489,7 @@ test('tests involving mouse events', async (t2) => {
     );
 
     // Needed to first digest the mousedown event
-    await wait(0);
+    await wait(10);
 
     whenDrawn = new Promise((resolve) =>
       scatterplot.subscribe('draw', resolve, 1)
@@ -1452,7 +1508,7 @@ test('tests involving mouse events', async (t2) => {
     );
 
     await whenDrawn;
-    await wait(0);
+    await wait(10);
 
     t.equal(
       lastRotation,
@@ -1462,7 +1518,7 @@ test('tests involving mouse events', async (t2) => {
 
     await wait(2);
 
-    // Test multi selections via mousedown + mousemove
+    // Test rotation via mousedown + mousemove + keydown
     window.dispatchEvent(
       createKeyboardEvent('keydown', capitalize(rotateKey), {
         [`${rotateKey}Key`]: true,
@@ -1470,7 +1526,7 @@ test('tests involving mouse events', async (t2) => {
     );
     window.dispatchEvent(createMouseEvent('mousemove', dim * 0.75, hdim));
 
-    await wait(0);
+    await wait(10);
 
     canvas.dispatchEvent(
       createMouseEvent('mousedown', dim * 0.75, hdim, {

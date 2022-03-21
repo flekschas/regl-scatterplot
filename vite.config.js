@@ -13,7 +13,7 @@ const chunks = [
   'size-encoding',
   'texture-background',
   'transition',
-  'two-instances',
+  'multiple-instances',
 ];
 
 const pages = Object.fromEntries(

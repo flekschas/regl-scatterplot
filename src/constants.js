@@ -22,6 +22,10 @@ export const GL_EXTENSIONS = [
   'WEBGL_color_buffer_float',
   'EXT_float_blend',
 ];
+export const CLEAR_OPTIONS = {
+  color: [0, 0, 0, 0], // Transparent background color
+  depth: 1,
+};
 
 export const MOUSE_MODE_PANZOOM = 'panZoom';
 export const MOUSE_MODE_LASSO = 'lasso';

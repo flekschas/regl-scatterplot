@@ -71,13 +71,14 @@ const createOutAnimationRule = (opacity, scale, rotate) => `
 `;
 let outAnimationRuleIndex = null;
 
-const createLasso = (
+export const createLasso = (
   element,
   {
     onDraw: initialOnDraw = identity,
     onStart: initialOnStart = identity,
     onEnd: initialOnEnd = identity,
-    enableInitiator: initialenableInitiator = DEFAULT_LASSO_START_INITIATOR_SHOW,
+    enableInitiator:
+      initialenableInitiator = DEFAULT_LASSO_START_INITIATOR_SHOW,
     initiatorParentElement: initialinitiatorParentElement = document.body,
     minDelay: initialMinDelay = DEFAULT_LASSO_MIN_DELAY,
     minDist: initialMinDist = DEFAULT_LASSO_MIN_DIST,

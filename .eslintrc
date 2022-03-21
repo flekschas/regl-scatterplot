@@ -7,20 +7,19 @@
     "eslint:recommended",
     "plugin:react/recommended",
     "airbnb/base",
-    "prettier",
+    "prettier"
   ],
   "parserOptions": {
     "ecmaVersion": 2021,
-    "sourceType": "module",
+    "sourceType": "module"
   },
-  "plugins": [
-    "prettier"
-  ],
+  "plugins": ["prettier"],
   "globals": {
     "VERSION": false
   },
   "rules": {
     "import/no-extraneous-dependencies": ["error", { "devDependencies": true }],
+    "import/no-named-as-default": 0,
     "no-console": ["error", { "allow": ["warn", "error"] }],
     "no-plusplus": 0,
     "no-param-reassign": ["error", { "props": false }],

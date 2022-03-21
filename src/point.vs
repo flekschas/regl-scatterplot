@@ -27,18 +27,17 @@ uniform float opacityDensity;
 uniform float sizeMultiplicator;
 uniform float numColorStates;
 uniform float pointScale;
-uniform mat4 projectionViewModel;
+uniform mat4 modelViewProjection;
 
 attribute vec2 stateIndex;
 
-// variables to send to the fragment shader
 varying vec4 color;
 varying float finalPointSize;
 
 void main() {
   vec4 state = texture2D(stateTex, stateIndex);
 
-  gl_Position = projectionViewModel * vec4(state.x, state.y, 0.0, 1.0);
+  gl_Position = modelViewProjection * vec4(state.x, state.y, 0.0, 1.0);
 
   // Determine color index
   float colorIndexZ =  isColoredByZ * floor(state.z * colorMultiplicator);
@@ -93,10 +92,7 @@ void main() {
             (opacityIndex / encodingTexRes) - opacityRowIndex + encodingTexEps,
             opacityRowIndex / encodingTexRes + encodingTexEps
           );
-          color.a = min(
-            1.0,
-            texture2D(encodingTex, opacityTexIndex)[${1 + globalState}]
-          );
+          color.a = texture2D(encodingTex, opacityTexIndex)[${1 + globalState}];
         } else {
           color.a = min(1.0, opacityDensity + globalState);
         }
