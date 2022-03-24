@@ -1,5 +1,9 @@
 ## Next
 
+## v1.2.2
+
+- Fix a minor issue in `destroy()` that prevented disconnecting resize listeners
+
 ## v1.2.1
 
 - Update dom-2d-camera to fix internal tests

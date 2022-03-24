@@ -2913,7 +2913,7 @@ const createScatterplot = (
     canvas.removeEventListener('click', mouseClickHandler, false);
     canvas.removeEventListener('dblclick', mouseDblClickHandler, false);
     if (canvasObserver) {
-      canvasObserver.observe(canvas);
+      canvasObserver.disconnect();
     } else {
       window.removeEventListener('resize', resizeHandler);
       window.removeEventListener('orientationchange', resizeHandler);
