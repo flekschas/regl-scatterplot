@@ -2146,6 +2146,8 @@ const createScatterplot = (
     xScale = newXScale;
     xDomainStart = newXScale.domain()[0];
     xDomainSize = newXScale ? newXScale.domain()[1] - newXScale.domain()[0] : 0;
+    xScale.range([0, currentWidth]);
+    updateScales();
   };
 
   const setYScale = (newYScale) => {
@@ -2154,6 +2156,8 @@ const createScatterplot = (
     yScale = newYScale;
     yDomainStart = yScale.domain()[0];
     yDomainSize = yScale ? yScale.domain()[1] - yScale.domain()[0] : 0;
+    yScale.range([currentHeight, 0]);
+    updateScales();
   };
 
   const setDeselectOnDblClick = (newDeselectOnDblClick) => {

@@ -1,5 +1,9 @@
 ## Next
 
+## v1.2.3
+
+- Properly initialize new x/y scales upon calling `set()`
+
 ## v1.2.2
 
 - Fix a minor issue in `destroy()` that prevented disconnecting resize listeners
