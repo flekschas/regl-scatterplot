@@ -55,7 +55,7 @@ _FYI, regl-scatterplot doesn't bundle regl and pub-sub-es, which is why you have
 
 ## Getting started
 
-#### Basic Example
+### Basic Example
 
 ```javascript
 import createScatterplot from 'regl-scatterplot';
@@ -78,7 +78,9 @@ const points = new Array(10000)
 scatterplot.draw(points);
 ```
 
-#### Color, Opacity, and Size Encoding
+**IMPORTANT:** Your points positions need to be normalized to `[-1, 1]` (normalized device coordinates). Why? Regl-scatterplot is designed to be a lower-level library, whose primary purpose is speed. As such it expects you to normalize the data upfront.
+
+### Color, Opacity, and Size Encoding
 
 In regl-scatterplot, points can be associated with two data values. These two values are defined as the third and forth component of the point quadruples (`[x, y, value, value]`). For instance:
 
@@ -122,7 +124,7 @@ You can encode a point data value in multiple ways. For instance, as you can see
 
 For a complete example see [example/index.js](example/index.js) and [example/size-encoding.js](example/size-encoding.js).
 
-#### Connecting points
+### Connecting points
 
 You can connect points visually using spline curves by adding a 5th component to your point data and setting `showPointConnections: true`.
 
@@ -170,7 +172,7 @@ Note, to visualize the point connections, make sure `scatterplot.set({ showPoint
 
 For an example see [example/connected-points.js](example/connected-points.js).
 
-#### Synchronize D3 x and y scales with the scatterplot view
+### Synchronize D3 x and y scales with the scatterplot view
 
 Under the hood regl-scatterplot uses a [2D camera](https://github.com/flekschas/dom-2d-camera), which you can either get via `scatterplot.get('camera')` or `scatterplot.subscribe('view', ({ camera }) => {})`. You can use the camera's `view` matrix to compute the x and y scale domains. However, since this is tedious, regl-scatterplot allows you to specify D3 x and y scales that will automatically be synchronized. For example:
 
@@ -190,7 +192,7 @@ Now whenever you pan or zoom, the domains of `xScale` and `yScale` will be updat
 
 For a complete example with D3 axes see [example/axes.js](example/axes.js).
 
-#### Translating Point Coordinates to Screen Coordinates
+### Translating Point Coordinates to Screen Coordinates
 
 Imagine you want to render additional features on top of points points, for which you need to know where on the canvas points are drawn. To determine the screen coordinates of points you can use [D3 scales](#synchronize-d3-x-and-y-scales-with-the-scatterplot-view) and `scatterplot.get('pointsInView')` as follows:
 
@@ -245,7 +247,9 @@ _DEPRECATED! Use [`scatterplot.createTextureFromUrl()`](#scatterplot.createTextu
 
 <a name="scatterplot.draw" href="#scatterplot.draw">#</a> scatterplot.<b>draw</b>(<i>points</i>, <i>options</i>)
 
-Sets and draws `points`. Note that repeatedly calling this method without specifying `points` will not clear previously set points. To clear points use [`scatterplot.clear()`](#scatterplot.clear)
+Sets and draws `points`. Importantly, the `points`' x and y coordinates need to have been normalized to `[-1, 1]` (normalized device coordinates). The two additional values (`valueA` and `valueB`) need to be normalized to `[0, 1]` (if they represent continuous data) or `[0, >1]` (if they represent categorical data).
+
+Note that repeatedly calling this method without specifying `points` will not clear previously set points. To clear points use [`scatterplot.clear()`](#scatterplot.clear).
 
 **Arguments:**
 
@@ -265,9 +269,9 @@ Sets and draws `points`. Note that repeatedly calling this method without specif
 ```javascript
 const points = [
   [
-    // The relative X position in normalized device coordinates
+    // The relative X position in [-1,1] (normalized device coordinates)
     0.9,
-    // The relative Y position in normalized device coordinates
+    // The relative Y position in [-1,1] (normalized device coordinates)
     0.3,
     // The category, which defaults to `0` if `undefined`
     0,
