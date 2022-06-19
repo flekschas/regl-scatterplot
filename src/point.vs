@@ -12,6 +12,8 @@ uniform sampler2D encodingTex;
 uniform float encodingTexRes;
 uniform float encodingTexEps;
 uniform float pointSizeExtra;
+uniform float pointOpacityMax;
+uniform float pointOpacityScale;
 uniform float numPoints;
 uniform float globalState;
 uniform float isColoredByZ;
@@ -100,6 +102,7 @@ void main() {
     })()
   }
 
+  color.a = min(pointOpacityMax, color.a) * pointOpacityScale;
   finalPointSize = (pointSize * pointScale) + pointSizeExtra;
   gl_PointSize = finalPointSize;
 }

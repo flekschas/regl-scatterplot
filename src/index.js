@@ -100,6 +100,8 @@ import {
   DEFAULT_OPACITY_BY,
   DEFAULT_OPACITY_BY_DENSITY_FILL,
   DEFAULT_OPACITY_BY_DENSITY_DEBOUNCE_TIME,
+  DEFAULT_OPACITY_INACTIVE_MAX,
+  DEFAULT_OPACITY_INACTIVE_SCALE,
   Z_NAMES,
   W_NAMES,
 } from './constants';
@@ -229,6 +231,8 @@ const createScatterplot = (
     opacity = AUTO,
     opacityBy = DEFAULT_OPACITY_BY,
     opacityByDensityFill = DEFAULT_OPACITY_BY_DENSITY_FILL,
+    opacityInactiveMax = DEFAULT_OPACITY_INACTIVE_MAX,
+    opacityInactiveScale = DEFAULT_OPACITY_INACTIVE_SCALE,
     sizeBy = DEFAULT_SIZE_BY,
     height = DEFAULT_HEIGHT,
     width = DEFAULT_WIDTH,
@@ -1195,6 +1199,10 @@ const createScatterplot = (
   };
   const getNormalNumPoints = () => numPoints;
   const getSelectedNumPoints = () => selection.length;
+  const getPointOpacityMaxBase = () =>
+    getSelectedNumPoints() > 0 ? opacityInactiveMax : 1;
+  const getPointOpacityScaleBase = () =>
+    getSelectedNumPoints() > 0 ? opacityInactiveScale : 1;
   const getIsColoredByZ = () => +(colorBy === 'valueZ');
   const getIsColoredByW = () => +(colorBy === 'valueW');
   const getIsOpacityByZ = () => +(opacityBy === 'valueZ');
@@ -1278,7 +1286,9 @@ const createScatterplot = (
     getPointSizeExtra,
     getNumPoints,
     getStateIndexBuffer,
-    globalState = COLOR_NORMAL_IDX
+    globalState = COLOR_NORMAL_IDX,
+    getPointOpacityMax = getPointOpacityMaxBase,
+    getPointOpacityScale = getPointOpacityScaleBase
   ) =>
     renderer.regl({
       frag: performanceMode ? POINT_SIMPLE_FS : POINT_FS,
@@ -1311,6 +1321,8 @@ const createScatterplot = (
         encodingTex: getEncodingTex,
         encodingTexRes: getEncodingTexRes,
         encodingTexEps: getEncodingTexEps,
+        pointOpacityMax: getPointOpacityMax,
+        pointOpacityScale: getPointOpacityScale,
         pointSizeExtra: getPointSizeExtra,
         globalState,
         colorTex: getColorTex,
@@ -1348,28 +1360,36 @@ const createScatterplot = (
     getNormalPointSizeExtra,
     () => 1,
     () => hoveredPointIndexBuffer,
-    COLOR_HOVER_IDX
+    COLOR_HOVER_IDX,
+    () => 1,
+    () => 1
   );
 
   const drawSelectedPointOutlines = drawPoints(
     () => (pointSizeSelected + pointOutlineWidth * 2) * window.devicePixelRatio,
     getSelectedNumPoints,
     getSelectedPointsIndexBuffer,
-    COLOR_ACTIVE_IDX
+    COLOR_ACTIVE_IDX,
+    () => 1,
+    () => 1
   );
 
   const drawSelectedPointInnerBorder = drawPoints(
     () => (pointSizeSelected + pointOutlineWidth) * window.devicePixelRatio,
     getSelectedNumPoints,
     getSelectedPointsIndexBuffer,
-    COLOR_BG_IDX
+    COLOR_BG_IDX,
+    () => 1,
+    () => 1
   );
 
   const drawSelectedPointBodies = drawPoints(
     () => pointSizeSelected * window.devicePixelRatio,
     getSelectedNumPoints,
     getSelectedPointsIndexBuffer,
-    COLOR_ACTIVE_IDX
+    COLOR_ACTIVE_IDX,
+    () => 1,
+    () => 1
   );
 
   const drawSelectedPoints = () => {
@@ -2279,6 +2299,14 @@ const createScatterplot = (
     opacityByDensityFill = +newOpacityByDensityFill;
   };
 
+  const setOpacityInactiveMax = (newOpacityInactiveMax) => {
+    opacityInactiveMax = +newOpacityInactiveMax;
+  };
+
+  const setOpacityInactiveScale = (newOpacityInactiveScale) => {
+    opacityInactiveScale = +newOpacityInactiveScale;
+  };
+
   const setGamma = (newGamma) => {
     renderer.gamma = newGamma;
   };
@@ -2319,6 +2347,8 @@ const createScatterplot = (
     if (property === 'opacityByDensityFill') return opacityByDensityFill;
     if (property === 'opacityByDensityDebounceTime')
       return opacityByDensityDebounceTime;
+    if (property === 'opacityInactiveMax') return opacityInactiveMax;
+    if (property === 'opacityInactiveScale') return opacityInactiveScale;
     if (property === 'points') return searchIndex.points;
     if (property === 'pointsInView') return getPointsInView();
     if (property === 'pointColor')
@@ -2586,6 +2616,14 @@ const createScatterplot = (
 
     if (properties.opacityByDensityFill !== undefined) {
       setOpacityByDensityFill(properties.opacityByDensityFill);
+    }
+
+    if (properties.opacityInactiveMax !== undefined) {
+      setOpacityInactiveMax(properties.opacityInactiveMax);
+    }
+
+    if (properties.opacityInactiveScale !== undefined) {
+      setOpacityInactiveScale(properties.opacityInactiveScale);
     }
 
     if (properties.gamma !== undefined) {

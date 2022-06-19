@@ -452,7 +452,9 @@ can be read and written via [`scatterplot.get()`](#scatterplot.get) and [`scatte
 | opacityBy                             | string                                       | `null`                              | See [data encoding](#property-by)                               | `true`   | `true`      |
 | deselectOnDblClick                    | boolean                                      | `true`                              |                                                                 | `true`   | `false`     |
 | deselectOnEscape                      | boolean                                      | `true`                              |                                                                 | `true`   | `false`     |
-| opacity                               | float                                        | `1`                                 | > 0                                                             | `true`   | `false`     |
+| opacity                               | float                                        | `1`                                 | Must be in ]0, 1]                                               | `true`   | `false`     |
+| opacityInactiveMax                    | float                                        | `1`                                 | Must be in [0, 1]                                               | `true`   | `false`     |
+| opacityInactiveScale                  | float                                        | `1`                                 | Must be in [0, 1]                                               | `true`   | `false`     |
 | points                                | tuple                                        | `[0.5, 2.3]`                        |                                                                 | `false`  | `false`     |
 | pointsInView                          | int[]                                        | `[1, 2, 12]`                        |                                                                 | `false`  | `false`     |
 | pointColor                            | quadruple                                    | `[0.66, 0.66, 0.66, 1]`             | single value or list of hex, rgb, rgba                          | `true`   | `false`     |
@@ -637,6 +639,10 @@ scatterplot.set({
 // Set base opacity
 scatterplot.set({ opacity: 0.5 });
 
+// If you want to deemphasize unselected points (when some points are selected)
+// you can rescale the unselected points' opacity as follows
+scatterplot.set({ opacityInactiveScale: 0.5 });
+
 // Set the width of the outline of selected points
 scatterplot.set({ pointOutlineWidth: 2 });
 
@@ -739,3 +745,66 @@ scatterplot.set({ width, height });
 #### Using regl-scatterplot with Vue
 
 Related to the resizing, when conditionally displaying regl-scatterplot in Vue you might have to update the `width` and `height` when the visibility is changed. See [issue #20](https://github.com/flekschas/regl-scatterplot/issues/20#issuecomment-639377810) for an example.
+
+| Name                       | Type                                                                                     | Default                                        |
+| -------------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| `data`                     | pandas.DataFrame                                                                         | `None`                                         |
+| `x`                        | str \| list[float] \| ndarray                                                            | `None`                                         |
+| `x_scale`                  | 'linear' \| 'log' \| 'pow' \| tuple[float] \| [LogNorm][lognorm] \| [PowerNorm][pownorm] | `linear`                                       |
+| `y`                        | str \| list[float] \| ndarray                                                            | `None`                                         |
+| `y_scale`                  | 'linear' \| 'log' \| 'pow' \| tuple[float] \| [LogNorm][lognorm] \| [PowerNorm][pownorm] | `linear`                                       |
+| `selection`                | list[int]                                                                                | `[]`                                           |
+| `width`                    | int \| 'auto'                                                                            | `'auto'`                                       |
+| `height`                   | int                                                                                      | `240`                                          |
+| `color`                    | str \| tuple[float] \| list[float]                                                       | `(0, 0, 0, 0.66)`                              |
+| `color_active`             | str \| tuple[float] \| list[float]                                                       | `(0, 0.55, 1, 1)`                              |
+| `color_hover`              | str \| tuple[float] \| list[float]                                                       | `(0, 0, 0, 1)`                                 |
+| `color_by`                 | str \| list[float \| str]                                                                | `None`                                         |
+| `color_map`                | str \| list[str] \| [Colormap][colormap] \| dict \| 'auto'                               | `None`                                         |
+| `color_norm`               | tuple[float] \| [Normalize][linnorm]                                                     | `matplotlib.colors.Normalize(0, 1, clip=True)` |
+| `color_order`              | list[str \| int] \| 'reverse'                                                            | `None`                                         |
+| `opacity`                  | float                                                                                    | `0.66`                                         |
+| `opacity_by`               | str \| list[float]                                                                       | `'density'`                                    |
+| `opacity_map`              | triple[float] \| list[float] \| dict \| 'auto'                                           | `None`                                         |
+| `opacity_norm`             | tuple[float] \| [Normalize][linnorm]                                                     | `matplotlib.colors.Normalize(0, 1, clip=True)` |
+| `opacity_order`            | list[str \| int] \| 'reverse'                                                            | `None`                                         |
+| `size`                     | int                                                                                      | `3`                                            |
+| `size_by`                  | str \| list[int]                                                                         | `None`                                         |
+| `size_map`                 | triple[float] \| list[int] \| dict \| 'auto'                                             | `None`                                         |
+| `size_norm`                | tuple[float] \| [Normalize][linnorm]                                                     | `matplotlib.colors.Normalize(0, 1, clip=True)` |
+| `size_order`               | list[str \| int] \| 'reverse'                                                            | `None`                                         |
+| `connect_by`               | str \| list[int]                                                                         | `None`                                         |
+| `connect_order`            | str \| list[int]                                                                         | `None`                                         |
+| `connection_color`         | str \| tuple[float] \| list[float]                                                       | `(0, 0, 0, 0.1)`                               |
+| `connection_color_active`  | str \| tuple[float] \| list[float]                                                       | `(0, 0.55, 1, 1)`                              |
+| `connection_color_hover`   | str \| tuple[float] \| list[float]                                                       | `(0, 0, 0, 0.66)`                              |
+| `connection_color_by`      | str \| list[float \| str]                                                                | `None`                                         |
+| `connection_color_map`     | str \| list[str] \| [Colormap][colormap] \| dict \| 'auto'                               | `None`                                         |
+| `connection_color_norm`    | tuple[float] \| [Normalize][linnorm]                                                     | `matplotlib.colors.Normalize(0, 1, clip=True)` |
+| `connection_color_order`   | list[str \| int] \| 'reverse'                                                            | `None`                                         |
+| `connection_opacity`       | float                                                                                    | `0.1`                                          |
+| `connection_opacity_by`    | str \| list[float]                                                                       | `None`                                         |
+| `connection_opacity_map`   | triple[float] \| list[float] \| dict \| 'auto'                                           | `None`                                         |
+| `connection_opacity_norm`  | tuple[float] \| [Normalize][linnorm]                                                     | `matplotlib.colors.Normalize(0, 1, clip=True)` |
+| `connection_opacity_order` | list[str \| int] \| 'reverse'                                                            | `None`                                         |
+| `connection_size`          | int                                                                                      | `2`                                            |
+| `connection_size_by`       | str \| list[int]                                                                         | `None`                                         |
+| `connection_size_map`      | triple[float] \| list[int] \| dict \| 'auto'                                             | `None`                                         |
+| `connection_size_norm`     | tuple[float] \| [Normalize][linnorm]                                                     | `matplotlib.colors.Normalize(0, 1, clip=True)` |
+| `connection_size_order`    | list[str \| int] \| 'reverse'                                                            | `None`                                         |
+| `axes`                     | bool                                                                                     | `True`                                         |
+| `axes_grid`                | bool                                                                                     | `False`                                        |
+| `lasso_color`              | str \| tuple[float] \| list[float]                                                       | `(0, 0.666666667, 1, 1)`                       |
+| `lasso_initiator`          | bool                                                                                     | `True`                                         |
+| `lasso_min_delay`          | int                                                                                      | `10`                                           |
+| `lasso_min_dist`           | int                                                                                      | `3`                                            |
+| `reticle`                  | bool                                                                                     | `True`                                         |
+| `reticle_color`            | str \| 'auto'                                                                            | `'auto'`                                       |
+| `background_color`         | str                                                                                      | `'white'`                                      |
+| `background_image`         | str \| array-like or PIL image                                                           | `None`                                         |
+| `mouse_mode`               | 'panZoom' \| 'lasso' \| 'rotate'                                                         | `'panZoom'`                                    |
+| `camera_target`            | tuple[float]                                                                             | `[0, 0]`                                       |
+| `camera_distance`          | float                                                                                    | `1`                                            |
+| `camera_rotation`          | float                                                                                    | `0`                                            |
+| `camera_view`              | list[float]                                                                              | `None`                                         |
+| `options`                  | dict                                                                                     | `{}`                                           |

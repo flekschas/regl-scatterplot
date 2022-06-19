@@ -82,6 +82,8 @@ interface BaseOptions {
   reticleColor: Color;
   opacity: number;
   opacityByDensityFill: number;
+  opacityInactiveMax: number;
+  opacityInactiveScale: number;
   height: 'auto' | number;
   width: 'auto' | number;
   gamma: number;

@@ -1,5 +1,9 @@
 ## Next
 
+## v1.3.0
+
+- Add properties `opacityInactiveScale` and `opacityInactiveMax` to enable de-emphasizing unselected points and highlight selected points. The final point opacity is now set to `min(opacityInactiveMax, currentOpacity) * opacityInactiveScale` when at least one point is selected. By default `opacityInactiveScale` and `opacityInactiveMax` are set to `1`. I.e., the default behavior did not change.
+
 ## v1.2.3
 
 - Properly initialize new x/y scales upon calling `set()`

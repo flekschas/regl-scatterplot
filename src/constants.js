@@ -104,6 +104,8 @@ export const DEFAULT_OPACITY = 1;
 export const DEFAULT_OPACITY_BY = null;
 export const DEFAULT_OPACITY_BY_DENSITY_FILL = 0.15;
 export const DEFAULT_OPACITY_BY_DENSITY_DEBOUNCE_TIME = 25;
+export const DEFAULT_OPACITY_INACTIVE_MAX = 1;
+export const DEFAULT_OPACITY_INACTIVE_SCALE = 1;
 
 // Default colors
 export const DEFAULT_COLORMAP = [];

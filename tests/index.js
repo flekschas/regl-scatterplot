@@ -25,6 +25,8 @@ import {
   DEFAULT_POINT_OUTLINE_WIDTH,
   DEFAULT_POINT_SIZE,
   DEFAULT_POINT_SIZE_SELECTED,
+  DEFAULT_OPACITY_INACTIVE_MAX,
+  DEFAULT_OPACITY_INACTIVE_SCALE,
   DEFAULT_WIDTH,
   DEFAULT_LASSO_MIN_DELAY,
   DEFAULT_LASSO_MIN_DIST,
@@ -120,6 +122,16 @@ test('createScatterplot()', (t) => {
     scatterplot.get('opacity'),
     DEFAULT_OPACITY,
     'scatterplot should have default point opacity'
+  );
+  t.equal(
+    scatterplot.get('opacityInactiveMax'),
+    DEFAULT_OPACITY_INACTIVE_MAX,
+    'scatterplot should have default inactive point max opacity'
+  );
+  t.equal(
+    scatterplot.get('opacityInactiveScale'),
+    DEFAULT_OPACITY_INACTIVE_SCALE,
+    'scatterplot should have default inactive point opacity scaling'
   );
   t.equal(
     scatterplot.get('width'),

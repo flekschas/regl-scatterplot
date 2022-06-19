@@ -56,6 +56,7 @@ const scatterplot = createScatterplot({
   showReticle,
   reticleColor,
   lassoInitiator: true,
+  opacityInactiveScale: 0.66,
 });
 
 exportEl.addEventListener('click', () => saveAsPng(scatterplot));
