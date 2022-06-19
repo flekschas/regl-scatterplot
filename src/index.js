@@ -538,7 +538,7 @@ const createScatterplot = (
     // next we test each point in the bounding box if it is in the polygon too
     const pointsInPolygon = [];
     pointsInBBox.forEach((pointIdx) => {
-      if (isPointInPolygon(searchIndex.points[pointIdx], lassoPolygon))
+      if (isPointInPolygon(lassoPolygon, searchIndex.points[pointIdx]))
         pointsInPolygon.push(pointIdx);
     });
 
@@ -1126,12 +1126,12 @@ const createScatterplot = (
 
   const getEncodingValueToIdx = (type, rangeValues) => {
     switch (type) {
-      default:
-      case 'categorical':
-        return identity;
-
       case 'continuous':
         return (value) => Math.round(value * (rangeValues.length - 1));
+
+      case 'categorical':
+      default:
+        return identity;
     }
   };
 
@@ -1256,7 +1256,7 @@ const createScatterplot = (
 
     // We square this since we're concerned with the ratio of *areas*.
     // eslint-disable-next-line no-restricted-properties
-    alpha *= Math.pow(p / clampedPointDeviceSize, 2);
+    alpha *= (p / clampedPointDeviceSize) ** 2;
 
     // And finally, we clamp to the range [0, 1]. We should really clamp this to 1 / precision
     // on the low end, depending on the data type of the destination so that we never render *nothing*.
@@ -2633,7 +2633,7 @@ const createScatterplot = (
     // setWidth and setHeight can be async when width or height are set to
     // 'auto'. And since draw() would have anyway been async we can just make
     // all calls async.
-    return new Promise((resolve) =>
+    return new Promise((resolve) => {
       window.requestAnimationFrame(() => {
         if (!canvas) return; // Instance was destroyed in between
         updateViewAspectRatio();
@@ -2641,8 +2641,8 @@ const createScatterplot = (
         renderer.refresh();
         draw = true;
         resolve();
-      })
-    );
+      });
+    });
   };
 
   /**

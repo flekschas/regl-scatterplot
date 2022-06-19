@@ -395,9 +395,9 @@ test('set({ backgroundImage })', async (t) => {
 
   scatterplot.set({ backgroundImage: 'https://picsum.photos/300/200/' });
 
-  await new Promise((resolve) =>
-    scatterplot.subscribe('backgroundImageReady', resolve, 1)
-  );
+  await new Promise((resolve) => {
+    scatterplot.subscribe('backgroundImageReady', resolve, 1);
+  });
 
   t.equal(
     scatterplot.get('backgroundImage').width,
@@ -411,9 +411,9 @@ test('set({ backgroundImage })', async (t) => {
       'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4QDeRXhpZgAASUkqAAgAAAAGABIBAwABAAAAAQAAABoBBQABAAAAVgAAABsBBQABAAAAXgAAACgBAwABAAAAAgAAABMCAwABAAAAAQAAAGmHBAABAAAAZgAAAAAAAAA4YwAA6AMAADhjAADoAwAABwAAkAcABAAAADAyMTABkQcABAAAAAECAwCGkgcAFQAAAMAAAAAAoAcABAAAADAxMDABoAMAAQAAAP//AAACoAQAAQAAABAAAAADoAQAAQAAABAAAAAAAAAAQVNDSUkAAABQaWNzdW0gSUQ6IDM1AP/bAEMACAYGBwYFCAcHBwkJCAoMFA0MCwsMGRITDxQdGh8eHRocHCAkLicgIiwjHBwoNyksMDE0NDQfJzk9ODI8LjM0Mv/bAEMBCQkJDAsMGA0NGDIhHCEyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMv/CABEIABAAEAMBIgACEQEDEQH/xAAVAAEBAAAAAAAAAAAAAAAAAAAEBf/EABQBAQAAAAAAAAAAAAAAAAAAAAT/2gAMAwEAAhADEAAAAXqhhMj/xAAZEAADAAMAAAAAAAAAAAAAAAABAgMFERP/2gAIAQEAAQUClkNit1EkQol3PT//xAAYEQACAwAAAAAAAAAAAAAAAAABAwACIf/aAAgBAwEBPwFa6jTP/8QAGBEAAgMAAAAAAAAAAAAAAAAAAAIBAyH/2gAIAQIBAT8Be12yD//EABsQAAIDAAMAAAAAAAAAAAAAAAABAhExIzKR/9oACAEBAAY/AuSHhJraOo1Wo//EABkQAAMBAQEAAAAAAAAAAAAAAAABESFBUf/aAAgBAQABPyHK09GZVWkzrMZfGL//2gAMAwEAAgADAAAAEG//xAAVEQEBAAAAAAAAAAAAAAAAAAAAAf/aAAgBAwEBPxCsP//EABURAQEAAAAAAAAAAAAAAAAAAABR/9oACAECAQE/EJG//8QAGxABAAMAAwEAAAAAAAAAAAAAAQARITFBcZH/2gAIAQEAAT8QLFXq/H7McnD32o87LUuUMEBVpM48n//Z',
   });
 
-  await new Promise((resolve) =>
-    scatterplot.subscribe('backgroundImageReady', resolve, 1)
-  );
+  await new Promise((resolve) => {
+    scatterplot.subscribe('backgroundImageReady', resolve, 1);
+  });
 
   t.equal(
     scatterplot.get('backgroundImage').width,
@@ -1033,12 +1033,12 @@ test('init and destroy events', async (t) => {
   const canvas = createCanvas(200, 200);
   const scatterplot = createScatterplot({ canvas, width: 200, height: 200 });
 
-  const whenInit = new Promise((resolve) =>
-    scatterplot.subscribe('init', resolve, 1)
-  );
-  const whenDestroy = new Promise((resolve) =>
-    scatterplot.subscribe('destroy', resolve, 1)
-  );
+  const whenInit = new Promise((resolve) => {
+    scatterplot.subscribe('init', resolve, 1);
+  });
+  const whenDestroy = new Promise((resolve) => {
+    scatterplot.subscribe('destroy', resolve, 1);
+  });
 
   await whenInit;
 
@@ -1450,9 +1450,9 @@ test('tests involving mouse events', async (t2) => {
       [dim * 0.75, hdim * 0.5],
     ];
 
-    let whenDrawn = new Promise((resolve) =>
-      scatterplot.subscribe('draw', resolve, 1)
-    );
+    let whenDrawn = new Promise((resolve) => {
+      scatterplot.subscribe('draw', resolve, 1);
+    });
 
     await asyncForEach(mousePositions, async (mousePosition) => {
       window.dispatchEvent(createMouseEvent('mousemove', ...mousePosition));
@@ -1503,9 +1503,9 @@ test('tests involving mouse events', async (t2) => {
     // Needed to first digest the mousedown event
     await wait(10);
 
-    whenDrawn = new Promise((resolve) =>
-      scatterplot.subscribe('draw', resolve, 1)
-    );
+    whenDrawn = new Promise((resolve) => {
+      scatterplot.subscribe('draw', resolve, 1);
+    });
 
     await asyncForEach(mousePositions, async (mousePosition) => {
       window.dispatchEvent(createMouseEvent('mousemove', ...mousePosition));
@@ -1550,9 +1550,9 @@ test('tests involving mouse events', async (t2) => {
     // Needed to first digest the mousedown event
     await wait(10);
 
-    whenDrawn = new Promise((resolve) =>
-      scatterplot.subscribe('draw', resolve, 1)
-    );
+    whenDrawn = new Promise((resolve) => {
+      scatterplot.subscribe('draw', resolve, 1);
+    });
 
     await asyncForEach(mousePositions, async (mousePosition) => {
       window.dispatchEvent(createMouseEvent('mousemove', ...mousePosition));

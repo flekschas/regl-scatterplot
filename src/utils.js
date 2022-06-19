@@ -201,7 +201,7 @@ export const isNormFloatArray = (a) => Array.isArray(a) && a.every(isNormFloat);
  * @param   {Array}  polygon  1D list of vertices defining the polygon.
  * @return  {boolean}  If `true` point lies within the polygon.
  */
-export const isPointInPolygon = ([px, py] = [], polygon) => {
+export const isPointInPolygon = (polygon, [px, py] = []) => {
   let x1;
   let y1;
   let x2;
