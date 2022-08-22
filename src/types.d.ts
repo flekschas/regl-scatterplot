@@ -157,6 +157,7 @@ type EventMap = PubSubEvent<
   | 'init'
   | 'destroy'
   | 'backgroundImageReady'
+  | 'select'
   | 'deselect'
   | 'lassoStart'
   | 'transitionStart'

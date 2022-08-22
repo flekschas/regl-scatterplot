@@ -1673,9 +1673,9 @@ test('tests involving mouse events', async (t2) => {
 
     t.ok(currentCamera, 'should have published the camera');
 
-    t.deepEqual(xScale.domain(), [0, 10], 'should have published the camera');
+    t.deepEqual(xScale.domain(), [0, 10], 'should have updated the xScale');
 
-    t.deepEqual(yScale.domain(), [0, 0.5], 'should have published the camera');
+    t.deepEqual(yScale.domain(), [0, 0.5], 'should have updated the yScale');
 
     scatterplot.destroy();
   });
