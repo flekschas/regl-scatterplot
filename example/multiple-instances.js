@@ -1,6 +1,7 @@
 /* eslint no-console: 0 */
 import { tableFromIPC } from 'apache-arrow';
 import createScatterplot, { createRenderer } from '../src';
+import { showModal, closeModal } from './utils';
 
 /**
  * General configuration
@@ -45,20 +46,7 @@ const whenData = fetch(
 /**
  * Modal
  */
-const modal = document.querySelector('#modal');
-const modalText = document.querySelector('#modal span');
-const showModal = (text, isError) => {
-  modal.style.display = 'flex';
-  modalText.style.color = isError ? '#cc79A7' : '#bbb';
-  modalText.textContent = text;
-};
-
-const closeModal = () => {
-  modal.style.display = 'none';
-  modalText.textContent = '';
-};
-
-showModal(`Loading...`);
+showModal('Loading...');
 
 /**
  * Add info to footer
@@ -167,6 +155,13 @@ exampleEl.removeAttribute('href');
  * Create a reusable renderer
  */
 const renderer = createRenderer();
+
+if (!renderer.isSupported) {
+  showModal(
+    'Unfortunately, your browser does not support all WebGL extensions required by regl-scatterplot',
+    true
+  );
+}
 
 /**
  * Create a scatter plot instances

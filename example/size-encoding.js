@@ -4,7 +4,7 @@ import { scaleLog } from 'd3-scale';
 import { randomExponential } from 'd3-random';
 
 import createScatterplot from '../src';
-import { saveAsPng } from './utils';
+import { saveAsPng, checkSupport } from './utils';
 
 const canvas = document.querySelector('#canvas');
 const numPointsEl = document.querySelector('#num-points');
@@ -58,6 +58,8 @@ const scatterplot = createScatterplot({
   lassoInitiator: true,
   opacityInactiveScale: 0.66,
 });
+
+checkSupport(scatterplot);
 
 exportEl.addEventListener('click', () => saveAsPng(scatterplot));
 

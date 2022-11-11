@@ -1,6 +1,6 @@
 /* eslint no-console: 0 */
 import { createWorker } from '@flekschas/utils';
-import { saveAsPng } from './utils';
+import { saveAsPng, checkSupport } from './utils';
 
 import createScatterplot from '../src';
 import pointWorkerFn from './performance-mode-point-worker';
@@ -77,6 +77,8 @@ const scatterplot = createScatterplot({
   performanceMode: true,
   lassoInitiator: true,
 });
+
+checkSupport(scatterplot);
 
 exportEl.addEventListener('click', () => saveAsPng(scatterplot));
 

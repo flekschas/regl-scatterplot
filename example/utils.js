@@ -25,3 +25,27 @@ export function saveAsPng(scatterplot) {
   };
   imageObject.src = scatterplot.get('canvas').toDataURL();
 }
+
+export function showModal(text, isError) {
+  const modal = document.querySelector('#modal');
+  const modalText = document.querySelector('#modal span');
+  modal.style.display = 'flex';
+  modalText.style.color = isError ? '#cc79A7' : '#bbb';
+  modalText.textContent = text;
+}
+
+export function closeModal() {
+  const modal = document.querySelector('#modal');
+  const modalText = document.querySelector('#modal span');
+  modal.style.display = 'none';
+  modalText.textContent = '';
+}
+
+export function checkSupport(scatterplot) {
+  if (!scatterplot.isSupported) {
+    showModal(
+      'Unfortunately, your browser does not support all WebGL extensions required by regl-scatterplot',
+      true
+    );
+  }
+}

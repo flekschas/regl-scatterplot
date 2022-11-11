@@ -3,7 +3,7 @@
 import { scaleLinear, scaleLog } from 'd3-scale';
 
 import createScatterplot from '../src';
-import { saveAsPng } from './utils';
+import { saveAsPng, checkSupport } from './utils';
 
 const canvas = document.querySelector('#canvas');
 const canvasWrapper = document.querySelector('#canvas-wrapper');
@@ -80,6 +80,8 @@ const scatterplot = createScatterplot({
   opacityBy: 'density',
   lassoInitiator: true,
 });
+
+checkSupport(scatterplot);
 
 exportEl.addEventListener('click', () => saveAsPng(scatterplot));
 

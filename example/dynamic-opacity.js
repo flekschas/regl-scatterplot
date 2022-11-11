@@ -1,7 +1,7 @@
 /* eslint no-console: 0 */
 
 import createScatterplot from '../src';
-import { saveAsPng } from './utils';
+import { saveAsPng, checkSupport } from './utils';
 
 const canvas = document.querySelector('#canvas');
 const numPointsEl = document.querySelector('#num-points');
@@ -56,6 +56,8 @@ const scatterplot = createScatterplot({
   reticleColor,
   lassoInitiator: true,
 });
+
+checkSupport(scatterplot);
 
 exportEl.addEventListener('click', () => saveAsPng(scatterplot));
 
@@ -162,12 +164,10 @@ opacityEl.style.display = 'none';
 opacityValEl.innerHTML = 'Auto';
 
 const opacityByDensityFillEl = opacityByDensityFillGroup.querySelector('input');
-const opacityByDensityFillLabEl = opacityByDensityFillGroup.querySelector(
-  '.label'
-);
-const opacityByDensityFillValEl = opacityByDensityFillGroup.querySelector(
-  '.value'
-);
+const opacityByDensityFillLabEl =
+  opacityByDensityFillGroup.querySelector('.label');
+const opacityByDensityFillValEl =
+  opacityByDensityFillGroup.querySelector('.value');
 
 opacityByDensityFillLabEl.innerHTML = 'Opacity Density Fill';
 
