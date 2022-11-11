@@ -116,6 +116,7 @@ export type Settable = BaseOptions &
   WithPrefix<'camera', CameraOptions>;
 
 export type Properties = {
+  renderer: ReturnType<typeof import('./renderer').createRenderer>;
   canvas: HTMLCanvasElement;
   regl: import('regl').Regl;
   syncEvents: boolean;

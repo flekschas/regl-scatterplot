@@ -2981,6 +2981,10 @@ const createScatterplot = (
   init();
 
   return {
+    /**
+     * Get whether the browser supports all necessary WebGL features
+     * @return {boolean} If `true` the browser supports all necessary WebGL features
+     */
     get isSupported() {
       return renderer.isSupported;
     },

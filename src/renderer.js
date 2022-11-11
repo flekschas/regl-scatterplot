@@ -89,6 +89,11 @@ export const createRenderer = (options = {}) => {
     );
   };
 
+  /**
+   * The render function
+   * @param {function} draw - The function for drawing
+   * @param {HTMLCanvasElement} targetCanvas - The canvas element that should received the rendered pixels.
+   */
   const render = (draw, targetCanvas) => {
     // Clear internal canvas
     regl.clear(CLEAR_OPTIONS);
@@ -116,6 +121,11 @@ export const createRenderer = (options = {}) => {
 
   const drawFns = new Set();
 
+  /**
+   * Register an draw function that is going to be invoked on every animation
+   * frame.
+   * @param {function} draw - The callback function
+   */
   const onFrame = (draw) => {
     drawFns.add(draw);
     return () => {
@@ -146,6 +156,9 @@ export const createRenderer = (options = {}) => {
     resize();
   }
 
+  /**
+   * Destroy the renderer to free resources and cancel animation frames
+   */
   const destroy = () => {
     frame.cancel();
     canvas = undefined;
@@ -155,18 +168,38 @@ export const createRenderer = (options = {}) => {
   };
 
   return {
+    /**
+     * Get the associated canvas element
+     * @return {HTMLCanvasElement} The associated canvas element
+     */
     get canvas() {
       return canvas;
     },
+    /**
+     * Get the associated Regl instance
+     * @return {import('regl').Regl} The associated Regl instance
+     */
     get regl() {
       return regl;
     },
+    /**
+     * Get the gamma value
+     * @return {number} The gamma value
+     */
     get gamma() {
       return gamma;
     },
+    /**
+     * Set gamma to a new value
+     * @param {number} newGamma - The new gamma value
+     */
     set gamma(newGamma) {
       gamma = +newGamma;
     },
+    /**
+     * Get whether the browser supports all necessary WebGL features
+     * @return {boolean} If `true` the browser supports all necessary WebGL features
+     */
     get isSupported() {
       return isSupportingAllGlExtensions;
     },

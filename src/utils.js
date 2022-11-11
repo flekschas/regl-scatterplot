@@ -11,17 +11,20 @@ import { GL_EXTENSIONS } from './constants';
 export const arrayMax = (max, x) => (max > x ? max : x);
 
 /**
- * Check if all GL extensions are enabled and warn otherwise
+ * Check if all GL extensions are supported and enabled and warn otherwise
  * @param   {import('regl').Regl}  regl  Regl instance to be tested
- * @return  {function}  Returns the Regl instance itself
+ * @param   {boolean}  silent  If `true` the function will not print `console.warn` statements
+ * @return  {boolean}  If `true` all required GL extensions are supported
  */
-export const checkReglExtensions = (regl) => {
+export const checkReglExtensions = (regl, silent) => {
   if (!regl) return false;
   return GL_EXTENSIONS.reduce((every, EXTENSION) => {
     if (!regl.hasExtension(EXTENSION)) {
-      console.warn(
-        `WebGL: ${EXTENSION} extension not supported. Scatterplot might not render properly`
-      );
+      if (!silent) {
+        console.warn(
+          `WebGL: ${EXTENSION} extension not supported. Scatterplot might not render properly`
+        );
+      }
       return false;
     }
     return every;
