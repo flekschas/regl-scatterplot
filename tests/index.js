@@ -12,7 +12,9 @@ import createScatterplot, {
   createRegl,
   createRenderer,
   createTextureFromUrl,
+  checkSupport,
 } from '../src';
+
 import {
   DEFAULT_COLOR_NORMAL,
   DEFAULT_COLOR_ACTIVE,
@@ -1864,6 +1866,31 @@ test('hover() with columnar data', async (t) => {
   scatterplot.destroy();
 });
 
+test('isSupported', (t) => {
+  const scatterplot = createScatterplot({ canvas: createCanvas() });
+  const renderer = scatterplot.get('renderer');
+
+  t.ok(
+    Object.prototype.hasOwnProperty.call(scatterplot, 'isSupported'),
+    'scatter plot instance should have `isSupported` property'
+  );
+
+  t.ok(
+    Object.prototype.hasOwnProperty.call(renderer, 'isSupported'),
+    'renderer instance should have `isSupported` property'
+  );
+
+  t.ok(
+    scatterplot.isSupported === true || scatterplot.isSupported === false,
+    '`isSupported` should return a Boolean value'
+  );
+
+  t.ok(
+    renderer.isSupported === true || renderer.isSupported === false,
+    '`isSupported` should return a Boolean value'
+  );
+});
+
 /* --------------------------------- Utils ---------------------------------- */
 
 test('isNormFloatArray()', async (t) => {
@@ -1947,5 +1974,12 @@ test('toRgba()', async (t) => {
     toRgba([0, 0, 0, 0.1], true),
     [0, 0, 0, 0.1],
     'should leave normalized RGBA unchanged'
+  );
+});
+
+test('checkSupport()', (t) => {
+  t.ok(
+    checkSupport() === true || checkSupport() === false,
+    'should return a Boolean value'
   );
 });

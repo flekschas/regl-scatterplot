@@ -1,5 +1,10 @@
 ## Next
 
+## v1.3.2
+
+- Add `scatterplot.isSupported` and `renderer.isSupported` as read-only properties to expose if all GL extensions are supported and enabled in the user's browser (#90)
+- Add `checkSupport()` as a globally exported function for users to check if their browser supports and has enabled all required GL extensions (#90)
+
 ## v1.3.1
 
 - Add a missing `select` event name to the type definition (#87)

@@ -2981,6 +2981,9 @@ const createScatterplot = (
   init();
 
   return {
+    get isSupported() {
+      return renderer.isSupported;
+    },
     clear: withDraw(clear),
     createTextureFromUrl: (/** @type {string} */ url) =>
       createTextureFromUrl(renderer.regl, url),
@@ -3004,3 +3007,5 @@ const createScatterplot = (
 export default createScatterplot;
 
 export { createRegl, createRenderer, createTextureFromUrl };
+
+export { checkReglExtensions as checkSupport } from './utils';

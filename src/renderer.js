@@ -8,12 +8,12 @@ export const createRenderer = (options = {}) => {
     gamma = DEFAULT_GAMMA,
   } = options;
 
-  checkReglExtensions(regl);
-
   // Same as regl ||= createRegl(canvas) but avoids having to rely on
   // https://babeljs.io/docs/en/babel-plugin-proposal-logical-assignment-operators
   // eslint-disable-next-line no-unused-expressions
   regl || (regl = createRegl(canvas));
+
+  const isSupportingAllGlExtensions = checkReglExtensions(regl);
 
   const fboRes = [canvas.width, canvas.height];
   const fbo = regl.framebuffer({
@@ -166,6 +166,9 @@ export const createRenderer = (options = {}) => {
     },
     set gamma(newGamma) {
       gamma = +newGamma;
+    },
+    get isSupported() {
+      return isSupportingAllGlExtensions;
     },
     render,
     onFrame,
