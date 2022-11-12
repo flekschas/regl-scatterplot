@@ -26,25 +26,36 @@ export function saveAsPng(scatterplot) {
   imageObject.src = scatterplot.get('canvas').toDataURL();
 }
 
-export function showModal(text, isError) {
-  const modal = document.querySelector('#modal');
-  const modalText = document.querySelector('#modal span');
-  modal.style.display = 'flex';
-  modalText.style.color = isError ? '#cc79A7' : '#bbb';
-  modalText.textContent = text;
-}
-
 export function closeModal() {
   const modal = document.querySelector('#modal');
-  const modalText = document.querySelector('#modal span');
+  const modalText = document.querySelector('#modal-text');
   modal.style.display = 'none';
   modalText.textContent = '';
 }
 
+export function showModal(text, isError, isClosable) {
+  const modal = document.querySelector('#modal');
+  modal.style.display = 'flex';
+
+  const modalText = document.querySelector('#modal-text');
+  modalText.style.color = isError ? '#cc79A7' : '#bbb';
+  modalText.textContent = text;
+
+  const modalClose = document.querySelector('#modal-close');
+  if (isClosable) {
+    modalClose.style.display = 'block';
+    modalClose.style.background = isError ? '#cc79A7' : '#bbb';
+    modalClose.addEventListener('click', closeModal, { once: true });
+  } else {
+    modalClose.style.display = 'none';
+  }
+}
+
 export function checkSupport(scatterplot) {
-  if (!scatterplot.isSupported) {
+  if (scatterplot.isSupported) {
     showModal(
-      'Unfortunately, your browser does not support all WebGL extensions required by regl-scatterplot',
+      'Your browser does not support all necessary WebGL features. The scatter plot might not render properly.',
+      true,
       true
     );
   }
