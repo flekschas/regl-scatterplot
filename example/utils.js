@@ -52,7 +52,7 @@ export function showModal(text, isError, isClosable) {
 }
 
 export function checkSupport(scatterplot) {
-  if (scatterplot.isSupported) {
+  if (!scatterplot.isSupported) {
     showModal(
       'Your browser does not support all necessary WebGL features. The scatter plot might not render properly.',
       true,
