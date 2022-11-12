@@ -206,8 +206,11 @@
         font-size: 0.9em;
       }
 
-      .flex-c {
+      .flex {
         display: flex;
+      }
+      .flex-col {
+        flex-direction: column;
       }
       .flex-jc-sb {
         justify-content: space-between;
@@ -460,6 +463,12 @@
         color: white;
       }
 
+      #modal-close {
+        display: none;
+        margin-top: 0.5rem;
+        width: fit-content;
+      }
+
       #note {
         position: absolute;
         z-index: 2;
@@ -490,22 +499,25 @@
           opacity 0.15s cubic-bezier(0.25, 0.1, 0.25, 1);
       }
     </style>
-  <script type="module" crossorigin src="./assets/transition.b6a5d18a.js"></script>
-  <link rel="modulepreload" href="./assets/utils.29f73a53.js">
-  <link rel="modulepreload" href="./assets/vendor.70696f60.js">
+  <script type="module" crossorigin src="./assets/transition.c473152a.js"></script>
+  <link rel="modulepreload" href="./assets/utils.65df8bc0.js">
+  <link rel="modulepreload" href="./assets/vendor.de749451.js">
 </head>
 
   <body>
-    <div id="modal" class="flex-c flex-jc-c flex-a-c">
-      <span class="no-select"></span>
+    <div id="modal" class="flex flex-jc-c flex-a-c">
+      <div class="flex flex-col flex-jc-c flex-a-c">
+        <span id="modal-text" class="no-select"></span>
+        <button id="modal-close">Okay</button>
+      </div>
     </div>
     <header id="topbar" tabindex="0">
-      <div id="title-wrapper" class="flex-c flex-jc-sb">
+      <div id="title-wrapper" class="flex flex-jc-sb">
         <h1 id="title">Regl Scatterplot</h1>
         <span class="no-select">Menu</span>
       </div>
-      <aside id="controls" class="flex-c flex-v">
-        <label class="flex-c flex-v">
+      <aside id="controls" class="flex flex-v">
+        <label class="flex flex-v">
           <div class="flex-a-c no-select">
             <span class="label"
               ><abbr title="Number of points">Num. PTS</abbr></span
@@ -521,7 +533,7 @@
             value="10000"
           />
         </label>
-        <label class="flex-c flex-v">
+        <label class="flex flex-v">
           <div class="flex-a-c no-select">
             <span class="label"><abbr title="Point size">PT Size</abbr></span>
             <span id="point-size-value" class="value">5</span>
@@ -535,7 +547,7 @@
             value="5"
           />
         </label>
-        <label class="flex-c flex-v">
+        <label class="flex flex-v">
           <div class="flex-a-c no-select">
             <span class="label">Opacity</span>
             <span id="opacity-value" class="value">1.0</span>
@@ -549,7 +561,7 @@
             value="1"
           />
         </label>
-        <label class="flex-c flex-a-c">
+        <label class="flex flex-a-c">
           <input id="click-lasso-initiator" type="checkbox" />
           <span class="no-select">Click to Lasso Initiator</span>
         </label>
