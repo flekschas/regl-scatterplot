@@ -23,6 +23,19 @@ const pages = Object.fromEntries(
   ])
 );
 
+const manualChunks = (id) => {
+  if (id.includes('node_modules')) {
+    if (id.includes('apache-arrow')) {
+      return 'apache-arrow';
+    }
+    if (id.includes('d3')) {
+      return 'd3';
+    }
+    return 'vendor';
+  }
+  return undefined;
+};
+
 export default defineConfig({
   base: './',
   plugins: [virtualHtmlTemplate({ pages })],
@@ -32,6 +45,7 @@ export default defineConfig({
       input: Object.fromEntries(
         chunks.map((chunk) => [chunk, `${chunk}.html`])
       ),
+      output: { manualChunks },
     },
   },
   resolve: {
