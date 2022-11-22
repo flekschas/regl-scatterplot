@@ -229,20 +229,20 @@ resetEl.addEventListener('click', resetClickHandler);
 /**
  * Link scatter plots
  */
-const syncView = (source, cameraView) => {
-  scatterplots
-    .filter((sp) => sp !== source)
-    .forEach((sp) => {
-      sp.view(cameraView, { preventEvent: true });
-    });
-};
-
 const syncSelection = (source, selectedPoints, classIds) => {
   scatterplots
     .filter((sp) => sp !== source)
     .forEach((sp) => {
       sp.select(selectedPoints, { preventEvent: true });
     });
+
+  scatterplots.forEach((sp) => {
+    sp.zoomToPoints(selectedPoints, {
+      padding: 0.2,
+      transition: true,
+      transitionDuration: 1500,
+    });
+  });
 
   const pointId =
     selectedPoints[Math.floor(Math.random() * (selectedPoints.length - 1))];
@@ -255,6 +255,13 @@ const syncDeselection = (source) => {
     .forEach((sp) => {
       sp.deselect({ preventEvent: true });
     });
+
+  scatterplots.forEach((sp) => {
+    sp.zoomToOrigin({
+      transition: true,
+      transitionDuration: 1500,
+    });
+  });
 
   hideImg();
 };
@@ -288,7 +295,6 @@ whenData
         );
       });
       sp.subscribe('pointout', hideNote);
-      sp.subscribe('view', ({ view }) => syncView(sp, view));
       sp.subscribe('select', ({ points }) =>
         syncSelection(sp, points, classIds)
       );

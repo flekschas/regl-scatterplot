@@ -1,5 +1,13 @@
 ## Next
 
+## v1.4.0
+
+- Add zooming via the following four methods. All four methods supported animated transition just like `draw()`.
+  1. `scatterplot.zoomToLocation(target, distance)` for zooming to a specific point location
+  2. `scatterplot.zoomToArea(rectangle)` for zooming to an area specified by a rectangular bounding box
+  3. `scatterplot.zoomToPoints(pointIndices)` for zooming to a set of points
+  4. `scatterplot.zoomToOrigin()` for zooming to the origin
+
 ## v1.3.2
 
 - Add `scatterplot.isSupported` and `renderer.isSupported` as read-only properties to expose if all GL extensions are supported and enabled in the user's browser (#90)

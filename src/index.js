@@ -123,6 +123,7 @@ import {
   min,
   flipObj,
   rgbBrightness,
+  clip,
 } from './utils';
 
 import { version } from '../package.json';
@@ -417,6 +418,11 @@ const createScatterplot = (
   let selectedPointsIndexBuffer; // Used for pointing to the selected texels
   let hoveredPointIndexBuffer; // Used for pointing to the hovered texels
 
+  let cameraZoomTargetStart; // Stores the start (i.e., current) camera target for zooming
+  let cameraZoomTargetEnd; // Stores the end camera target for zooming
+  let cameraZoomDistanceStart; // Stores the start camera distance for zooming
+  let cameraZoomDistanceEnd; // Stores the end camera distance for zooming
+
   let isTransitioning = false;
   let transitionStartTime = null;
   let transitionDuration;
@@ -484,10 +490,7 @@ const createScatterplot = (
     return v.slice(0, 2);
   };
 
-  const raycast = () => {
-    const [xGl, yGl] = getMouseGlPos();
-    const [xNdc, yNdc] = getScatterGlPos(xGl, yGl);
-
+  const getPointSizeNdc = () => {
     // eslint-disable-next-line no-use-before-define
     const pointScale = getPointScale();
 
@@ -496,8 +499,14 @@ const createScatterplot = (
     // The size of a pixel in the current view in normalized device coordinates
     const pxNdc = heightNdc / currentHeight;
     // The scaled point size in normalized device coordinates
-    const pointSizeNdc =
-      computedPointSizeMouseDetection * pointScale * pxNdc * 0.66;
+    return computedPointSizeMouseDetection * pointScale * pxNdc * 0.66;
+  };
+
+  const raycast = () => {
+    const [xGl, yGl] = getMouseGlPos();
+    const [xNdc, yNdc] = getScatterGlPos(xGl, yGl);
+
+    const pointSizeNdc = getPointSizeNdc();
 
     // Get all points within a close range
     const pointsInBBox = searchIndex.range(
@@ -629,6 +638,7 @@ const createScatterplot = (
   };
 
   /**
+   * Select and highlight a set of points
    * @param {number | number[]} pointIdxs
    * @param {import('./types').ScatterplotMethodOptions['select']}
    */
@@ -697,9 +707,7 @@ const createScatterplot = (
   const lassoEnd = (lassoPoints, lassoPointsFlat, { merge = false } = {}) => {
     camera.config({ isFixed: false });
     lassoPointsCurr = [...lassoPoints];
-    // const t0 = performance.now();
     const pointsInLasso = findPointsInLasso(lassoPointsFlat);
-    // console.log(`found ${pointsInLasso.length} in ${performance.now() - t0} msec`);
     select(pointsInLasso, { merge });
     pubSub.publish('lassoEnd', {
       coordinates: lassoPointsCurr,
@@ -1565,6 +1573,8 @@ const createScatterplot = (
     return true;
   };
 
+  const hasCachedPoints = () => Boolean(prevStateTex && tmpStateTex);
+
   const clearCachedPoints = () => {
     if (prevStateTex) {
       prevStateTex.destroy();
@@ -1600,6 +1610,28 @@ const createScatterplot = (
     );
 
     isInit = true;
+  };
+
+  const cacheCamera = (newTarget, newDistance) => {
+    cameraZoomTargetStart = camera.target;
+    cameraZoomTargetEnd = newTarget;
+    cameraZoomDistanceStart = camera.distance[0];
+    cameraZoomDistanceEnd = newDistance;
+  };
+
+  const hasCachedCamera = () =>
+    Boolean(
+      cameraZoomTargetStart !== undefined &&
+        cameraZoomTargetEnd !== undefined &&
+        cameraZoomDistanceStart !== undefined &&
+        cameraZoomDistanceEnd !== undefined
+    );
+
+  const clearCachedCamera = () => {
+    cameraZoomTargetStart = undefined;
+    cameraZoomTargetEnd = undefined;
+    cameraZoomDistanceStart = undefined;
+    cameraZoomDistanceEnd = undefined;
   };
 
   const getPointConnectionColorIndices = (curvePoints) => {
@@ -1804,12 +1836,36 @@ const createScatterplot = (
     opacityByDensityDebounceTime
   );
 
+  const tweenCamera = (t) => {
+    const [xStart, yStart] = cameraZoomTargetStart;
+    const [xEnd, yEnd] = cameraZoomTargetEnd;
+
+    const ti = 1.0 - t;
+
+    const targetX = xStart * ti + xEnd * t;
+    const targetY = yStart * ti + yEnd * t;
+    const distance = cameraZoomDistanceStart * ti + cameraZoomDistanceEnd * t;
+
+    camera.lookAt([targetX, targetY], distance);
+  };
+
+  const isTransitioningPoints = () => hasCachedPoints();
+
+  const isTransitioningCamera = () => hasCachedCamera();
+
   const tween = (duration, easing) => {
     if (!transitionStartTime) transitionStartTime = performance.now();
 
     const dt = performance.now() - transitionStartTime;
+    const t = clip(easing(dt / duration), 0, 1);
 
-    updatePoints({ t: Math.min(1, Math.max(0, easing(dt / duration))) });
+    if (isTransitioningPoints()) {
+      updatePoints({ t });
+    }
+
+    if (isTransitioningCamera()) {
+      tweenCamera(t);
+    }
 
     return dt < duration;
   };
@@ -1822,6 +1878,7 @@ const createScatterplot = (
     showReticle = preTransitionShowReticle;
 
     clearCachedPoints();
+    clearCachedCamera();
 
     pubSub.publish('transitionEnd');
   };
@@ -1992,6 +2049,130 @@ const createScatterplot = (
       draw = true;
       return out;
     };
+
+  /**
+   * Get the bounding box of a set of points.
+   * @param {number[]} pointIdxs - A list of point indices
+   * @returns {import('./types').Rect} The bounding box
+   */
+  const getBBoxOfPoints = (pointIdxs) => {
+    let xMin = Infinity;
+    let xMax = -Infinity;
+    let yMin = Infinity;
+    let yMax = -Infinity;
+
+    for (let i = 0; i < pointIdxs.length; i++) {
+      const [x, y] = searchIndex.points[pointIdxs[i]];
+      xMin = Math.min(xMin, x);
+      xMax = Math.max(xMax, x);
+      yMin = Math.min(yMin, y);
+      yMax = Math.max(yMax, y);
+    }
+
+    return { x: xMin, y: yMin, width: xMax - xMin, height: yMax - yMin };
+  };
+
+  /**
+   * Zoom to an area specified as a rectangle
+   * @param {import('./types').Rect} rect - The rectangle to zoom to
+   * @param {import('./types').ScatterplotMethodOptions['draw']} options
+   * @returns {Promise<void>}
+   */
+  const zoomToArea = (rect, options = {}) =>
+    new Promise((resolve) => {
+      const target = [rect.x + rect.width / 2, rect.y + rect.height / 2];
+
+      // Vertical field of view
+      const vFOV = 2 * Math.atan(1 / camera.view[5]);
+
+      const distance =
+        rect.height * viewAspectRatio > rect.width
+          ? // Distance is based on the height of the bounding box
+            rect.height / 2 / Math.tan(vFOV / 2)
+          : // Distance is based on the width of the bounding box
+            rect.width / 2 / Math.tan((vFOV * viewAspectRatio) / 2);
+
+      if (options.transition) {
+        camera.config({ isFixed: true });
+        cacheCamera(target, distance);
+        pubSub.subscribe(
+          'transitionEnd',
+          () => {
+            resolve();
+            camera.config({ isFixed: false });
+          },
+          1
+        );
+        startTransition({
+          duration: options.transitionDuration,
+          easing: options.transitionEasing,
+        });
+      } else {
+        camera.lookAt(target, distance);
+        pubSub.subscribe('draw', resolve, 1);
+        draw = true;
+      }
+    });
+
+  /**
+   * Zoom to a set of points
+   * @param {number[]} pointIdxs - A list of point indices
+   * @param {import('./types').ScatterplotMethodOptions['zoomToPoints']} options
+   * @returns {Promise<void>}
+   */
+  const zoomToPoints = (pointIdxs, options = {}) => {
+    const rect = getBBoxOfPoints(pointIdxs);
+    const cX = rect.x + rect.width / 2;
+    const cY = rect.y + rect.height / 2;
+
+    const pointSizeNdc = getPointSizeNdc();
+    const scale = 1 + (options.padding || 0);
+
+    const w = Math.max(rect.width, pointSizeNdc) * scale;
+    const h = Math.max(rect.height, pointSizeNdc) * scale;
+    const x = cX - w / 2;
+    const y = cY - h / 2;
+
+    return zoomToArea({ x, y, width: w, height: h }, options);
+  };
+
+  /**
+   * Zoom to a location specified in normalized devide coordinates.
+   * @param {number[]} target - The camera target
+   * @param {number} distance - The camera distance
+   * @param {import('./types').ScatterplotMethodOptions['draw']} options
+   * @returns {Promise<void>}
+   */
+  const zoomToLocation = (target, distance, options = {}) =>
+    new Promise((resolve) => {
+      if (options.transition) {
+        camera.config({ isFixed: true });
+        cacheCamera(target, distance);
+        pubSub.subscribe(
+          'transitionEnd',
+          () => {
+            resolve();
+            camera.config({ isFixed: false });
+          },
+          1
+        );
+        startTransition({
+          duration: options.transitionDuration,
+          easing: options.transitionEasing,
+        });
+      } else {
+        camera.lookAt(target, distance);
+        pubSub.subscribe('draw', resolve, 1);
+        draw = true;
+      }
+    });
+
+  /**
+   * Zoom to the origin
+   * @param {import('./types').ScatterplotMethodOptions['draw']} options
+   * @returns {Promise<void>}
+   */
+  const zoomToOrigin = (options = {}) => zoomToLocation([0, 0], 1, options);
 
   const updatePointConnectionStyle = () => {
     pointConnections.setStyle({
@@ -3005,6 +3186,10 @@ const createScatterplot = (
     subscribe: pubSub.subscribe,
     unsubscribe: pubSub.unsubscribe,
     view,
+    zoomToLocation,
+    zoomToArea,
+    zoomToPoints,
+    zoomToOrigin,
   };
 };
 

@@ -122,7 +122,7 @@ You can encode a point data value in multiple ways. For instance, as you can see
 
 **Why can't I specify a range function instead of a map?** Until we have implemented enough scale functions in the shader it's easier to let _you_ pre-compute the map. For instance, if you wanted to encode a continuous values on a log scale of point size, you can simply do `pointSize: Array(100).fill().map((v, i) => Math.log(i + 1) + 1)`.
 
-For a complete example see [example/index.js](example/index.js) and [example/size-encoding.js](example/size-encoding.js).
+[Code Example](example/index.js) | [Demo](https://flekschas.github.io/regl-scatterplot/index.html)
 
 ### Connecting points
 
@@ -170,7 +170,7 @@ would lead tp the following line segment ordering:
 
 Note, to visualize the point connections, make sure `scatterplot.set({ showPointConnection: true })` is set!
 
-For an example see [example/connected-points.js](example/connected-points.js).
+[Code Example](example/connected-points.js) | [Demo](https://flekschas.github.io/regl-scatterplot/connected-points.html)
 
 ### Synchronize D3 x and y scales with the scatterplot view
 
@@ -190,7 +190,7 @@ const scatterplot = createScatterplot({
 
 Now whenever you pan or zoom, the domains of `xScale` and `yScale` will be updated according to your current view. Note, the ranges are automatically set to the width and height of your `canvas` object.
 
-For a complete example with D3 axes see [example/axes.js](example/axes.js).
+[Code Example](example/axes.js) | [Demo](https://flekschas.github.io/regl-scatterplot/axes.html)
 
 ### Translating Point Coordinates to Screen Coordinates
 
@@ -211,7 +211,45 @@ scatterplot.subscribe('view', ({ xScale, yScale }) => {
 });
 ```
 
-For a complete example see [example/text-labels.js](example/text-labels.js).
+[Code Example](example/text-labels.js) | [Demo](https://flekschas.github.io/regl-scatterplot/text-labels.html)
+
+### Transition Points
+
+To make sense of two different states of points, it can help to show an animation by transitioning the points from their first to their second location. To do so, simple `draw()` the new points as follows:
+
+```javascript
+const initialPoints = Array.from({ length: 100 }, () => [Math.random() * 42, Math.random()]);
+const finalPoints = Array.from({ length: 100 }, () => [Math.random() * 42, Math.random()]);
+
+const scatterplot = createScatterplot({ ... });
+scatterplot.draw(initialPoints).then(() => {
+  scatterplot.draw(finalPoints, { transition: true });
+})
+```
+
+It's important that the number of points is the same for the two `draw()` calls. Also note that the point correspondence is determined by their index.
+
+[Code Example](example/transition.js) | [Demo](https://flekschas.github.io/regl-scatterplot/transition.html)
+
+### Zoom to Points
+
+Sometimes it can be useful to programmatically zoom to a set of points. In regl-scatterplot you can do this with the `zoomToPoints()` method as follows:
+
+```javascript
+const points = Array.from({ length: 100 }, () => [Math.random() * 42, Math.random()]);
+
+const scatterplot = createScatterplot({ ... });
+scatterplot.draw(initialPoints).then(() => {
+  // We'll select the first five points...
+  scatterplot.select([0, 1, 2, 3, 4]);
+  // ...and zoom into them
+  scatterplot.zoomToPoints([0, 1, 2, 3, 4], { transition: true })
+})
+```
+
+Note that the zooming can be smoothly transitioned when `{ transition: true }` is passed to the function.
+
+[Code Example](example/multiple-instances.js) | [Demo](https://flekschas.github.io/regl-scatterplot/multiple-instances.html)
 
 ## API
 
@@ -378,7 +416,87 @@ scatterplot.hover(1); // To hover the second point
 **Arguments:**
 
 - `options` [optional] is an object with the following properties:
-  - `preventEvent`: if `true` the `deselect` will not be published.
+- `preventEvent`: if `true` the `deselect` will not be published.
+
+<a name="scatterplot.zoomToPoints" href="#scatterplot.zoomToPoints">#</a> scatterplot.<b>zoomToPoints</b>(<i>points</i>, <i>options = {}</i>)
+
+Zoom to a set of points
+
+**Arguments:**
+
+- `points` is an array of point indices.
+- `options` [optional] is an object with the following properties:
+  - `padding`: [default: `0`]: relative padding around the bounding box of the points to zoom to
+  - `transition` [default: `false`]: if `true`, the camera will smoothly transition to its new position
+  - `transitionDuration` [default: `500`]: the duration in milliseconds over which the transition should occur
+  - `transitionEasing` [default: `cubicInOut`]: the easing function, which determines how intermediate values of the transition are calculated
+
+**Examples:**
+
+```javascript
+// Let's say we have three points
+scatterplot.draw([
+  [0.1, 0.1],
+  [0.2, 0.2],
+  [0.3, 0.3],
+]);
+
+// To zoom to the first and second point we have to do
+scatterplot.zoomToPoints([0, 1]);
+```
+
+<a name="scatterplot.zoomToOrigin" href="#scatterplot.zoomToOrigin">#</a> scatterplot.<b>zoomToOrigin</b>(<i>options = {}</i>)
+
+Zoom to the original camera position. This is similar to resetting the view
+
+**Arguments:**
+
+- `options` [optional] is an object with the following properties:
+  - `transition` [default: `false`]: if `true`, the camera will smoothly transition to its new position
+  - `transitionDuration` [default: `500`]: the duration in milliseconds over which the transition should occur
+  - `transitionEasing` [default: `cubicInOut`]: the easing function, which determines how intermediate values of the transition are calculated
+
+<a name="scatterplot.zoomToLocation" href="#scatterplot.zoomToLocation">#</a> scatterplot.<b>zoomToLocation</b>(<i>target</i>, <i>distance</i>, <i>options = {}</i>)
+
+Zoom to a specific location, specified in normalized device coordinates. This function is similar to [`scatterplot.lookAt()`](#scatterplot.lookAt), however, it allows to smoothly transition the camera position.
+
+**Arguments:**
+
+- `target` the camera target given as a `[x, y]` tuple.
+- `distance` the camera distance to the target given as a number between `]0, Infinity]`. The smaller the number the closer moves the camera, i.e., the more the view is zoomed in.
+- `options` [optional] is an object with the following properties:
+  - `transition` [default: `false`]: if `true`, the camera will smoothly transition to its new position
+  - `transitionDuration` [default: `500`]: the duration in milliseconds over which the transition should occur
+  - `transitionEasing` [default: `cubicInOut`]: the easing function, which determines how intermediate values of the transition are calculated
+
+**Examples:**
+
+```javascript
+scatterplot.zoomToLocation([0.5, 0.5], 0.5, { transition: true });
+// => This will make the camera zoom into the top-right corner of the scatter plot
+```
+
+<a name="scatterplot.zoomToArea" href="#scatterplot.zoomToArea">#</a> scatterplot.<b>zoomToArea</b>(<i>rectangle</i>, <i>options = {}</i>)
+
+Zoom to a specific area specified by a recangle in normalized device coordinates.
+
+**Arguments:**
+
+- `rectangle` the rectangle must come in the form of `{ x, y, width, height }`.
+- `options` [optional] is an object with the following properties:
+  - `transition` [default: `false`]: if `true`, the camera will smoothly transition to its new position
+  - `transitionDuration` [default: `500`]: the duration in milliseconds over which the transition should occur
+  - `transitionEasing` [default: `cubicInOut`]: the easing function, which determines how intermediate values of the transition are calculated
+
+**Examples:**
+
+```javascript
+scatterplot.zoomToArea(
+  { x: 0, y: 0, width: 1, height: 1 },
+  { transition: true }
+);
+// => This will make the camera zoom into the top-right corner of the scatter plot
+```
 
 <a name="scatterplot.lookAt" href="#scatterplot.lookAt">#</a> scatterplot.<b>lookAt</b>(<i>view</i>, <i>options = {}</i>)
 

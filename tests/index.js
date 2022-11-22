@@ -1866,6 +1866,105 @@ test('hover() with columnar data', async (t) => {
   scatterplot.destroy();
 });
 
+test('zooming with transition', async (t) => {
+  const scatterplot = createScatterplot({ canvas: createCanvas() });
+  const camera = scatterplot.get('camera');
+
+  let numDrawCalls = 0;
+  let numTransitionStartCalls = 0;
+  let numTransitionEndCalls = 0;
+
+  scatterplot.subscribe('draw', () => numDrawCalls++);
+  scatterplot.subscribe('transitionStart', () => numTransitionStartCalls++);
+  scatterplot.subscribe('transitionEnd', () => numTransitionEndCalls++);
+
+  await scatterplot.draw([
+    [-1, 1],
+    [1, 1],
+    [0, 0],
+    [-1, -1],
+    [1, -1],
+  ]);
+
+  t.equal(numDrawCalls, 1, 'should have one draw call');
+
+  const t0 = performance.now();
+  const transitionDuration = 50;
+
+  await scatterplot.zoomToPoints([1, 2], {
+    transition: true,
+    transitionDuration,
+  });
+
+  t.equal(numTransitionStartCalls, 1, 'transition should have started once');
+  t.equal(numTransitionEndCalls, 1, 'transition should have ended once');
+  t.ok(
+    performance.now() - t0 >= transitionDuration,
+    `transition should have taken ${transitionDuration}msec or a bit longer`
+  );
+  t.ok(
+    camera.target[0] - 0.5 <= 1e-8,
+    'camera should target the top-right corner'
+  );
+  t.ok(
+    camera.target[1] - 0.5 <= 1e-8,
+    'camera should target the top-right corner'
+  );
+
+  await scatterplot.zoomToOrigin({ transition: true, transitionDuration });
+
+  t.equal(numTransitionStartCalls, 2, 'transition should have started twice');
+  t.equal(numTransitionEndCalls, 2, 'transition should have ended twice');
+  t.ok(camera.target[0] <= 1e-8, 'camera should target the origin');
+  t.ok(camera.target[1] <= 1e-8, 'camera should target the origin');
+
+  await scatterplot.zoomToLocation([-0.5, -0.5], 0.1, {
+    transition: true,
+    transitionDuration,
+  });
+
+  t.equal(
+    numTransitionStartCalls,
+    3,
+    'transition should have started three times'
+  );
+  t.equal(numTransitionEndCalls, 3, 'transition should have ended three times');
+  t.ok(
+    camera.target[0] + 0.1 <= 1e-8,
+    'camera should target the bottom-left corner'
+  );
+  t.ok(
+    camera.target[1] + 0.1 <= 1e-8,
+    'camera should target the bottom-left corner'
+  );
+  t.ok(
+    camera.distance[0] - 0.1 <= 1e-8,
+    'camera distance should be close to 0.1'
+  );
+
+  await scatterplot.zoomToArea(
+    { x: 0, y: -1, width: 1, height: 1 },
+    { transition: true, transitionDuration }
+  );
+
+  t.equal(
+    numTransitionStartCalls,
+    4,
+    'transition should have started four times'
+  );
+  t.equal(numTransitionEndCalls, 4, 'transition should have ended four times');
+  t.ok(
+    camera.target[0] - 0.5 <= 1e-8,
+    'camera should target the bottom-right corner'
+  );
+  t.ok(
+    camera.target[1] + 0.5 <= 1e-8,
+    'camera should target the bottom-right corner'
+  );
+
+  scatterplot.destroy();
+});
+
 test('isSupported', (t) => {
   const scatterplot = createScatterplot({ canvas: createCanvas() });
   const renderer = scatterplot.get('renderer');

@@ -358,3 +358,13 @@ export const flipObj = (obj) =>
 
 export const rgbBrightness = (rgb) =>
   0.21 * rgb[0] + 0.72 * rgb[1] + 0.07 * rgb[2];
+
+/**
+ * Clip a number between min and max
+ * @param   {number}  value  The value to be clipped
+ * @param   {number}  minValue  The minimum value
+ * @param   {number}  maxValue  The maximum value
+ * @return  {number}  The clipped value
+ */
+export const clip = (value, minValue, maxValue) =>
+  Math.min(maxValue, Math.max(minValue, value));

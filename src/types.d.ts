@@ -71,6 +71,13 @@ type CameraOptions = {
   view: Float32Array;
 };
 
+type Rect = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
 interface BaseOptions {
   backgroundColor: Color;
   deselectOnDblClick: boolean;
@@ -146,6 +153,12 @@ export interface ScatterplotMethodOptions {
   }>;
   preventEvent: Partial<{
     preventEvent: boolean;
+  }>;
+  zoomToPoints: Partial<{
+    padding: number;
+    transition: boolean;
+    transitionDuration: number;
+    transitionEasing: (t: number) => number;
   }>;
 }
 
