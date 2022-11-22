@@ -41,7 +41,6 @@ const pointoverHandler = (pointId) => {
 };
 
 const pointoutHandler = (pointId) => {
-  console.log('Out point:', pointId);
   const x = points.x[pointId];
   const y = points.y[pointId];
   const category = points.z[pointId];
