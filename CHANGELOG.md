@@ -1,5 +1,9 @@
 ## Next
 
+## v1.4.1
+
+- Bump `dom-2d-camera` to publish view updates on camera tweens ([#95](https://github.com/flekschas/regl-scatterplot/issues/95))
+
 ## v1.4.0
 
 - Add zooming via the following four methods. All four methods supported animated transition just like `draw()`.

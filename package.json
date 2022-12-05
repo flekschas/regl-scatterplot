@@ -33,7 +33,7 @@
   },
   "dependencies": {
     "@flekschas/utils": "^0.29.0",
-    "dom-2d-camera": "~2.2.3",
+    "dom-2d-camera": "~2.2.5",
     "gl-matrix": "~3.3.0",
     "kdbush": "~3.0.0",
     "lodash-es": "~4.17.21",
