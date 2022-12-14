@@ -42,6 +42,8 @@ import {
   KEY_ACTION_ROTATE,
   SINGLE_CLICK_DELAY,
   DEFAULT_OPACITY,
+  DEFAULT_IMAGE_LOAD_TIMEOUT,
+  IMAGE_LOAD_ERROR,
 } from '../src/constants';
 
 import { toRgba, isNormFloatArray } from '../src/utils';
@@ -196,17 +198,25 @@ test('createScatterplot({ cameraTarget, cameraDistance, cameraRotation, cameraVi
 test('createTextureFromUrl()', async (t) => {
   const regl = createRegl(createCanvas());
 
-  const texture = await createTextureFromUrl(
-    regl,
-    'https://picsum.photos/300/200/',
-    true
-  );
+  try {
+    const texture = await createTextureFromUrl(
+      regl,
+      'https://picsum.photos/300/200/',
+      true
+    );
 
-  t.equal(
-    texture._reglType, // eslint-disable-line no-underscore-dangle
-    'texture2d',
-    'texture should be a Regl texture object'
-  );
+    t.equal(
+      texture._reglType, // eslint-disable-line no-underscore-dangle
+      'texture2d',
+      'texture should be a Regl texture object'
+    );
+  } catch (e) {
+    if (e.message === IMAGE_LOAD_ERROR) {
+      t.skip('Skipping because image loading timed out');
+    } else {
+      t.fail('Failed to load image from URL');
+    }
+  }
 });
 
 test('createRenderer()', (t) => {
@@ -362,50 +372,76 @@ test('set({ backgroundImage })', async (t) => {
   const regl = createRegl(canvas);
   const scatterplot = createScatterplot({ canvas, regl });
 
-  let backgroundImage = await createTextureFromUrl(
-    regl,
-    'https://picsum.photos/300/200/'
-  );
+  try {
+    const backgroundImage = await createTextureFromUrl(
+      regl,
+      'https://picsum.photos/300/200/'
+    );
 
-  scatterplot.set({ backgroundImage });
+    scatterplot.set({ backgroundImage });
 
-  t.equal(
-    scatterplot.get('backgroundImage'),
-    backgroundImage,
-    'background image should be a Regl texture'
-  );
+    t.equal(
+      scatterplot.get('backgroundImage'),
+      backgroundImage,
+      'background image should be a Regl texture'
+    );
+  } catch (e) {
+    if (e.message === IMAGE_LOAD_ERROR) {
+      t.skip(`Failed to load image from URL: ${e.message}`);
+    } else {
+      t.fail('Could not create background image from URL');
+    }
+  }
 
-  backgroundImage = await scatterplot.createTextureFromUrl(
-    'https://picsum.photos/300/200/'
-  );
+  try {
+    const backgroundImage = await scatterplot.createTextureFromUrl(
+      'https://picsum.photos/300/200/'
+    );
 
-  scatterplot.set({ backgroundImage });
+    scatterplot.set({ backgroundImage });
 
-  t.equal(
-    scatterplot.get('backgroundImage'),
-    backgroundImage,
-    'background image should be a Regl texture'
-  );
+    t.equal(
+      scatterplot.get('backgroundImage'),
+      backgroundImage,
+      'background image should be a Regl texture'
+    );
 
-  scatterplot.set({ backgroundImage: null });
+    scatterplot.set({ backgroundImage: null });
 
-  t.equal(
-    scatterplot.get('backgroundImage'),
-    null,
-    'background image should be nullifyable'
-  );
+    t.equal(
+      scatterplot.get('backgroundImage'),
+      null,
+      'background image should be nullifyable'
+    );
+  } catch (e) {
+    if (e.message === IMAGE_LOAD_ERROR) {
+      t.skip(`Failed to load image from URL: ${e.message}`);
+    } else {
+      t.fail('Could not create background image from URL');
+    }
+  }
 
-  scatterplot.set({ backgroundImage: 'https://picsum.photos/300/200/' });
+  try {
+    await new Promise((resolve, reject) => {
+      scatterplot.subscribe('backgroundImageReady', resolve, 1);
+      scatterplot.set({ backgroundImage: 'https://picsum.photos/300/200/' });
+      setTimeout(() => {
+        reject(new Error(IMAGE_LOAD_ERROR));
+      }, DEFAULT_IMAGE_LOAD_TIMEOUT);
+    });
 
-  await new Promise((resolve) => {
-    scatterplot.subscribe('backgroundImageReady', resolve, 1);
-  });
-
-  t.equal(
-    scatterplot.get('backgroundImage').width,
-    300,
-    'background image should be loaded by scatterplot'
-  );
+    t.equal(
+      scatterplot.get('backgroundImage').width,
+      300,
+      'background image should be loaded by scatterplot'
+    );
+  } catch (e) {
+    if (e.message === IMAGE_LOAD_ERROR) {
+      t.skip(`Failed to load image from URL: ${e.message}`);
+    } else {
+      t.fail('Could not create background image from URL');
+    }
+  }
 
   // Base64 image
   scatterplot.set({

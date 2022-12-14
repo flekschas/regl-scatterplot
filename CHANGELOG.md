@@ -1,5 +1,9 @@
 ## Next
 
+## v1.4.2
+
+- Enforce the canvas width and height to be at least 1px to prevent view operations from breaking.
+
 ## v1.4.1
 
 - Bump `dom-2d-camera` to publish view updates on camera tweens ([#95](https://github.com/flekschas/regl-scatterplot/issues/95))

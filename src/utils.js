@@ -1,6 +1,10 @@
 import createOriginalRegl from 'regl';
 
-import { GL_EXTENSIONS } from './constants';
+import {
+  GL_EXTENSIONS,
+  DEFAULT_IMAGE_LOAD_TIMEOUT,
+  IMAGE_LOAD_ERROR,
+} from './constants';
 
 /**
  * Get the max value of an array. helper method to be used with `Array.reduce()`.
@@ -130,17 +134,23 @@ export const limit = (choices, defaultChoice) => (choice) =>
  * @param {boolean} isCrossOrigin If `true` allow loading image from a source of another origin.
  * @return  {Promise<HTMLImageElement>}  Promise resolving to the image once its loaded
  */
-export const loadImage = (src, isCrossOrigin = false) =>
-  new Promise((accept, reject) => {
+export const loadImage = (
+  src,
+  isCrossOrigin = false,
+  timeout = DEFAULT_IMAGE_LOAD_TIMEOUT
+) =>
+  new Promise((resolve, reject) => {
     const image = new Image();
     if (isCrossOrigin) image.crossOrigin = 'anonymous';
     image.src = src;
     image.onload = () => {
-      accept(image);
+      resolve(image);
     };
-    image.onerror = (error) => {
-      reject(error);
+    const rejectPromise = () => {
+      reject(new Error(IMAGE_LOAD_ERROR));
     };
+    image.onerror = rejectPromise;
+    setTimeout(rejectPromise, timeout);
   });
 
 /**
@@ -151,11 +161,16 @@ export const loadImage = (src, isCrossOrigin = false) =>
  * @param   {string}  url  Source URL of the image.
  * @return  {Promise<import('regl').Texture2D>}  Promise resolving to the texture object.
  */
-export const createTextureFromUrl = (regl, url) =>
+export const createTextureFromUrl = (
+  regl,
+  url,
+  timeout = DEFAULT_IMAGE_LOAD_TIMEOUT
+) =>
   new Promise((resolve, reject) => {
     loadImage(
       url,
-      url.indexOf(window.location.origin) !== 0 && url.indexOf('base64') === -1
+      url.indexOf(window.location.origin) !== 0 && url.indexOf('base64') === -1,
+      timeout
     )
       .then((image) => {
         resolve(regl.texture(image));

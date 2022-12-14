@@ -104,6 +104,7 @@ import {
   DEFAULT_OPACITY_INACTIVE_SCALE,
   Z_NAMES,
   W_NAMES,
+  DEFAULT_IMAGE_LOAD_TIMEOUT,
 } from './constants';
 
 import {
@@ -1028,7 +1029,7 @@ const createScatterplot = (
   };
 
   const setCurrentHeight = (newCurrentHeight) => {
-    currentHeight = newCurrentHeight;
+    currentHeight = Math.max(1, newCurrentHeight);
     canvas.height = Math.floor(currentHeight * window.devicePixelRatio);
     if (yScale) {
       yScale.range([currentHeight, 0]);
@@ -1085,7 +1086,7 @@ const createScatterplot = (
   };
 
   const setCurrentWidth = (newCurrentWidth) => {
-    currentWidth = newCurrentWidth;
+    currentWidth = Math.max(1, newCurrentWidth);
     canvas.width = Math.floor(currentWidth * window.devicePixelRatio);
     if (xScale) {
       xScale.range([0, currentWidth]);
@@ -2205,13 +2206,16 @@ const createScatterplot = (
     if (!newBackgroundImage) {
       backgroundImage = null;
     } else if (isString(newBackgroundImage)) {
-      createTextureFromUrl(renderer.regl, newBackgroundImage).then(
-        (texture) => {
+      createTextureFromUrl(renderer.regl, newBackgroundImage)
+        .then((texture) => {
           backgroundImage = texture;
           draw = true;
           pubSub.publish('backgroundImageReady');
-        }
-      );
+        })
+        .catch(() => {
+          console.error(`Count not create texture from ${newBackgroundImage}`);
+          backgroundImage = null;
+        });
       // eslint-disable-next-line no-underscore-dangle
     } else if (newBackgroundImage._reglType === 'texture2d') {
       backgroundImage = newBackgroundImage;
@@ -3170,8 +3174,10 @@ const createScatterplot = (
       return renderer.isSupported;
     },
     clear: withDraw(clear),
-    createTextureFromUrl: (/** @type {string} */ url) =>
-      createTextureFromUrl(renderer.regl, url),
+    createTextureFromUrl: (
+      /** @type {string} */ url,
+      /** @type {number} */ timeout = DEFAULT_IMAGE_LOAD_TIMEOUT
+    ) => createTextureFromUrl(renderer.regl, url, timeout),
     deselect,
     destroy,
     draw: publicDraw,

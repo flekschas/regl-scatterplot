@@ -131,6 +131,9 @@ export const DEFAULT_VIEW = new Float32Array([
   0, 0, 0, 1
 ]);
 
+// Error codes
+export const IMAGE_LOAD_ERROR = 'IMAGE_LOAD_ERROR';
+
 // Default misc
 export const DEFAULT_BACKGROUND_IMAGE = null;
 export const DEFAULT_SHOW_RETICLE = false;
@@ -146,3 +149,4 @@ export const SINGLE_CLICK_DELAY = 200;
 export const LONG_CLICK_TIME = 500;
 export const Z_NAMES = new Set(['z', 'valueZ', 'valueA', 'value1', 'category']);
 export const W_NAMES = new Set(['w', 'valueW', 'valueB', 'value2', 'value']);
+export const DEFAULT_IMAGE_LOAD_TIMEOUT = 15000;
