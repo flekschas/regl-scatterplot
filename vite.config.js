@@ -4,6 +4,7 @@ import virtualHtmlTemplate from 'vite-plugin-virtual-html-template';
 const chunks = [
   'index',
   'axes',
+  'text-labels',
   'connected-points-by-segments',
   'connected-points',
   'dynamic-opacity',
@@ -12,7 +13,7 @@ const chunks = [
   'size-encoding',
   'texture-background',
   'transition',
-  'two-instances',
+  'multiple-instances',
 ];
 
 const chunkMapping = (fn) => Object.fromEntries(chunks.map((c) => [c, fn(c)]));
@@ -28,28 +29,29 @@ const chunkMapping = (fn) => Object.fromEntries(chunks.map((c) => [c, fn(c)]));
  */
 const viteModule = '<script type="module" src="/@vite/client"></script>';
 
-export default ({ command }) =>
-  defineConfig({
-    base: './',
-    plugins: [
-      virtualHtmlTemplate({
-        pages: chunkMapping((c) => ({ entry: `example/${c}.js` })),
-        data: { vite: command === 'build' ? '' : viteModule },
-      }),
-      {
-        name: 'simple-reload-template',
-        handleHotUpdate({ file, server }) {
-          if (file.includes('index.html')) {
-            server.ws.send({ type: 'full-reload' });
-          }
-        },
+export default ({ command }) => defineConfig({
+  base: './',
+  plugins: [
+    virtualHtmlTemplate({
+      pages: chunkMapping((c) => ({ entry: `example/${c}.js` })),
+      data: { vite: command === 'build' ? '' : viteModule },
+    }),
+    {
+      name: 'simple-reload-template',
+      handleHotUpdate({ file, server }) {
+        if (file.includes('index.html')) {
+          server.ws.send({ type: 'full-reload' });
+        }
       },
-    ],
-    build: {
-      outDir: 'docs',
-      rollupOptions: {
-        input: chunkMapping((c) => `${c}.html`),
-      },
+    },
+  ],
+  build: {
+    outDir: 'docs',
+    rollupOptions: {
+      input: Object.fromEntries(
+        chunks.map((chunk) => [chunk, `${chunk}.html`])
+      ),
+      output: { manualChunks },
     },
     resolve: {
       alias: {

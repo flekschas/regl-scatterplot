@@ -48,12 +48,14 @@ Note, you can remap `rotate` and `lasso` to other modifier keys via the `keyMap`
 ## Install
 
 ```
-npm i regl-scatterplot
+npm i regl-scatterplot regl pub-sub-es
 ```
+
+_FYI, regl-scatterplot doesn't bundle regl and pub-sub-es, which is why you have to install them separately._
 
 ## Getting started
 
-#### Basic Example
+### Basic Example
 
 ```javascript
 import createScatterplot from 'regl-scatterplot';
@@ -76,7 +78,9 @@ const points = new Array(10000)
 scatterplot.draw(points);
 ```
 
-#### Color, Opacity, and Size Encoding
+**IMPORTANT:** Your points positions need to be normalized to `[-1, 1]` (normalized device coordinates). Why? Regl-scatterplot is designed to be a lower-level library, whose primary purpose is speed. As such it expects you to normalize the data upfront.
+
+### Color, Opacity, and Size Encoding
 
 In regl-scatterplot, points can be associated with two data values. These two values are defined as the third and forth component of the point quadruples (`[x, y, value, value]`). For instance:
 
@@ -118,9 +122,9 @@ You can encode a point data value in multiple ways. For instance, as you can see
 
 **Why can't I specify a range function instead of a map?** Until we have implemented enough scale functions in the shader it's easier to let _you_ pre-compute the map. For instance, if you wanted to encode a continuous values on a log scale of point size, you can simply do `pointSize: Array(100).fill().map((v, i) => Math.log(i + 1) + 1)`.
 
-For a complete example see [example/index.js](example/index.js) and [example/size-encoding.js](example/size-encoding.js).
+[Code Example](example/index.js) | [Demo](https://flekschas.github.io/regl-scatterplot/index.html)
 
-#### Connecting points
+### Connecting points
 
 You can connect points visually using spline curves by adding a 5th component to your point data and setting `showPointConnections: true`.
 
@@ -166,16 +170,15 @@ would lead tp the following line segment ordering:
 
 Note, to visualize the point connections, make sure `scatterplot.set({ showPointConnection: true })` is set!
 
-For an example see [example/connected-points.js](example/connected-points.js).
+[Code Example](example/connected-points.js) | [Demo](https://flekschas.github.io/regl-scatterplot/connected-points.html)
 
-#### Synchronize D3 x and y scales with the scatterplot view
+### Synchronize D3 x and y scales with the scatterplot view
 
 Under the hood regl-scatterplot uses a [2D camera](https://github.com/flekschas/dom-2d-camera), which you can either get via `scatterplot.get('camera')` or `scatterplot.subscribe('view', ({ camera }) => {})`. You can use the camera's `view` matrix to compute the x and y scale domains. However, since this is tedious, regl-scatterplot allows you to specify D3 x and y scales that will automatically be synchronized. For example:
 
 ```javascript
 const xScale = scaleLinear().domain([0, 42]);
 const yScale = scaleLinear().domain([-5, 5]);
-
 const scatterplot = createScatterplot({
   canvas,
   width,
@@ -187,7 +190,66 @@ const scatterplot = createScatterplot({
 
 Now whenever you pan or zoom, the domains of `xScale` and `yScale` will be updated according to your current view. Note, the ranges are automatically set to the width and height of your `canvas` object.
 
-For a complete example with D3 axes see [example/axes.js](example/axes.js).
+[Code Example](example/axes.js) | [Demo](https://flekschas.github.io/regl-scatterplot/axes.html)
+
+### Translating Point Coordinates to Screen Coordinates
+
+Imagine you want to render additional features on top of points points, for which you need to know where on the canvas points are drawn. To determine the screen coordinates of points you can use [D3 scales](#synchronize-d3-x-and-y-scales-with-the-scatterplot-view) and `scatterplot.get('pointsInView')` as follows:
+
+```javascript
+const points = Array.from({ length: 100 }, () => [Math.random() * 42, Math.random()]);
+const [xScale, yScale] = [scaleLinear().domain([0, 42]), scaleLinear().domain([0, 1])];
+
+const scatterplot = createScatterplot({ ..., xScale, yScale });
+scatterplot.draw(points);
+
+scatterplot.subscribe('view', ({ xScale, yScale }) => {
+  console.log('pointsInScreenCoords', scatterplot.get('pointsInView').map((pointIndex) => [
+    xScale(points[pointIndex][0]),
+    yScale(points[pointIndex][1])
+  ]));
+});
+```
+
+[Code Example](example/text-labels.js) | [Demo](https://flekschas.github.io/regl-scatterplot/text-labels.html)
+
+### Transition Points
+
+To make sense of two different states of points, it can help to show an animation by transitioning the points from their first to their second location. To do so, simple `draw()` the new points as follows:
+
+```javascript
+const initialPoints = Array.from({ length: 100 }, () => [Math.random() * 42, Math.random()]);
+const finalPoints = Array.from({ length: 100 }, () => [Math.random() * 42, Math.random()]);
+
+const scatterplot = createScatterplot({ ... });
+scatterplot.draw(initialPoints).then(() => {
+  scatterplot.draw(finalPoints, { transition: true });
+})
+```
+
+It's important that the number of points is the same for the two `draw()` calls. Also note that the point correspondence is determined by their index.
+
+[Code Example](example/transition.js) | [Demo](https://flekschas.github.io/regl-scatterplot/transition.html)
+
+### Zoom to Points
+
+Sometimes it can be useful to programmatically zoom to a set of points. In regl-scatterplot you can do this with the `zoomToPoints()` method as follows:
+
+```javascript
+const points = Array.from({ length: 100 }, () => [Math.random() * 42, Math.random()]);
+
+const scatterplot = createScatterplot({ ... });
+scatterplot.draw(initialPoints).then(() => {
+  // We'll select the first five points...
+  scatterplot.select([0, 1, 2, 3, 4]);
+  // ...and zoom into them
+  scatterplot.zoomToPoints([0, 1, 2, 3, 4], { transition: true })
+})
+```
+
+Note that the zooming can be smoothly transitioned when `{ transition: true }` is passed to the function.
+
+[Code Example](example/multiple-instances.js) | [Demo](https://flekschas.github.io/regl-scatterplot/multiple-instances.html)
 
 ## API
 
@@ -197,14 +259,21 @@ For a complete example with D3 axes see [example/axes.js](example/axes.js).
 
 **Returns:** a new scatterplot instance.
 
-**Options:** is an object that accepts any of the [settable properties](scatterplot.set). Additionally, you can set the following properties:
+**Options:** is an object that accepts any of the [properties](#properties).
 
-- `regl` a Regl instance to be used for rendering.
-- `canvas` background color of the scatterplot.
+<a name="createRenderer" href="#createRenderer">#</a> <b>createRenderer</b>(<i>options = {}</i>)
+
+**Returns:** a new [Renderer](#renderer) instance with appropriate extensions being enabled.
+
+**Options:** is an object that accepts any of the following optional properties:
+
+- `regl`: a Regl instance to be used for rendering.
+- `canvas`: background color of the scatterplot.
+- `gamma`: the gamma value for alpha blending.
 
 <a name="createRegl" href="#createRegl">#</a> <b>createRegl</b>(<i>canvas</i>)
 
-**Returns:** a new Regl instance with appropriate extensions being enabled.
+**Returns:** a new [Regl](https://github.com/regl-project/regl) instance with appropriate extensions being enabled.
 
 **Canvas:** the canvas object on which the scatterplot will be rendered on.
 
@@ -216,7 +285,9 @@ _DEPRECATED! Use [`scatterplot.createTextureFromUrl()`](#scatterplot.createTextu
 
 <a name="scatterplot.draw" href="#scatterplot.draw">#</a> scatterplot.<b>draw</b>(<i>points</i>, <i>options</i>)
 
-Sets and draws `points`. Note that repeatedly calling this method without specifying `points` will not clear previously set points. To clear points use [`scatterplot.clear()`](#scatterplot.clear)
+Sets and draws `points`. Importantly, the `points`' x and y coordinates need to have been normalized to `[-1, 1]` (normalized device coordinates). The two additional values (`valueA` and `valueB`) need to be normalized to `[0, 1]` (if they represent continuous data) or `[0, >1]` (if they represent categorical data).
+
+Note that repeatedly calling this method without specifying `points` will not clear previously set points. To clear points use [`scatterplot.clear()`](#scatterplot.clear).
 
 **Arguments:**
 
@@ -236,9 +307,9 @@ Sets and draws `points`. Note that repeatedly calling this method without specif
 ```javascript
 const points = [
   [
-    // The relative X position in normalized device coordinates
+    // The relative X position in [-1,1] (normalized device coordinates)
     0.9,
-    // The relative Y position in normalized device coordinates
+    // The relative Y position in [-1,1] (normalized device coordinates)
     0.3,
     // The category, which defaults to `0` if `undefined`
     0,
@@ -345,7 +416,93 @@ scatterplot.hover(1); // To hover the second point
 **Arguments:**
 
 - `options` [optional] is an object with the following properties:
-  - `preventEvent`: if `true` the `deselect` will not be published.
+- `preventEvent`: if `true` the `deselect` will not be published.
+
+<a name="scatterplot.zoomToPoints" href="#scatterplot.zoomToPoints">#</a> scatterplot.<b>zoomToPoints</b>(<i>points</i>, <i>options = {}</i>)
+
+Zoom to a set of points
+
+**Arguments:**
+
+- `points` is an array of point indices.
+- `options` [optional] is an object with the following properties:
+  - `padding`: [default: `0`]: relative padding around the bounding box of the points to zoom to
+  - `transition` [default: `false`]: if `true`, the camera will smoothly transition to its new position
+  - `transitionDuration` [default: `500`]: the duration in milliseconds over which the transition should occur
+  - `transitionEasing` [default: `cubicInOut`]: the easing function, which determines how intermediate values of the transition are calculated
+
+**Examples:**
+
+```javascript
+// Let's say we have three points
+scatterplot.draw([
+  [0.1, 0.1],
+  [0.2, 0.2],
+  [0.3, 0.3],
+]);
+
+// To zoom to the first and second point we have to do
+scatterplot.zoomToPoints([0, 1]);
+```
+
+<a name="scatterplot.zoomToOrigin" href="#scatterplot.zoomToOrigin">#</a> scatterplot.<b>zoomToOrigin</b>(<i>options = {}</i>)
+
+Zoom to the original camera position. This is similar to resetting the view
+
+**Arguments:**
+
+- `options` [optional] is an object with the following properties:
+  - `transition` [default: `false`]: if `true`, the camera will smoothly transition to its new position
+  - `transitionDuration` [default: `500`]: the duration in milliseconds over which the transition should occur
+  - `transitionEasing` [default: `cubicInOut`]: the easing function, which determines how intermediate values of the transition are calculated
+
+<a name="scatterplot.zoomToLocation" href="#scatterplot.zoomToLocation">#</a> scatterplot.<b>zoomToLocation</b>(<i>target</i>, <i>distance</i>, <i>options = {}</i>)
+
+Zoom to a specific location, specified in normalized device coordinates. This function is similar to [`scatterplot.lookAt()`](#scatterplot.lookAt), however, it allows to smoothly transition the camera position.
+
+**Arguments:**
+
+- `target` the camera target given as a `[x, y]` tuple.
+- `distance` the camera distance to the target given as a number between `]0, Infinity]`. The smaller the number the closer moves the camera, i.e., the more the view is zoomed in.
+- `options` [optional] is an object with the following properties:
+  - `transition` [default: `false`]: if `true`, the camera will smoothly transition to its new position
+  - `transitionDuration` [default: `500`]: the duration in milliseconds over which the transition should occur
+  - `transitionEasing` [default: `cubicInOut`]: the easing function, which determines how intermediate values of the transition are calculated
+
+**Examples:**
+
+```javascript
+scatterplot.zoomToLocation([0.5, 0.5], 0.5, { transition: true });
+// => This will make the camera zoom into the top-right corner of the scatter plot
+```
+
+<a name="scatterplot.zoomToArea" href="#scatterplot.zoomToArea">#</a> scatterplot.<b>zoomToArea</b>(<i>rectangle</i>, <i>options = {}</i>)
+
+Zoom to a specific area specified by a recangle in normalized device coordinates.
+
+**Arguments:**
+
+- `rectangle` the rectangle must come in the form of `{ x, y, width, height }`.
+- `options` [optional] is an object with the following properties:
+  - `transition` [default: `false`]: if `true`, the camera will smoothly transition to its new position
+  - `transitionDuration` [default: `500`]: the duration in milliseconds over which the transition should occur
+  - `transitionEasing` [default: `cubicInOut`]: the easing function, which determines how intermediate values of the transition are calculated
+
+**Examples:**
+
+```javascript
+scatterplot.zoomToArea(
+  { x: 0, y: 0, width: 1, height: 1 },
+  { transition: true }
+);
+// => This will make the camera zoom into the top-right corner of the scatter plot
+```
+
+<a name="scatterplot.lookAt" href="#scatterplot.lookAt">#</a> scatterplot.<b>lookAt</b>(<i>view</i>, <i>options = {}</i>)
+
+Update the camera's view matrix to change the viewport. This will trigger a `view` event unless `options.preventEvent === true`.
+
+_Note, this API is a shorthand to `scatterplot.set({ 'cameraView': view })` with the additional features of allowing to prevent `view` events._
 
 <a name="scatterplot.destroy" href="#scatterplot.destroy">#</a> scatterplot.<b>destroy</b>()
 
@@ -356,9 +513,9 @@ instance, regl, and the camera.
 
 Refreshes the viewport of the scatterplot's regl instance.
 
-<a name="scatterplot.reset" href="#scatterplot.reset">#</a> scatterplot.<b>reset</b>()
+<a name="scatterplot.reset" href="#scatterplot.reset">#</a> scatterplot.<b>reset</b>(<i>options</i>)
 
-Sets the view back to the initially defined view.
+Sets the view back to the initially defined view. This will trigger a `view` event unless `options.preventEvent === true`.
 
 <a name="scatterplot.export" href="#scatterplot.export">#</a> scatterplot.<b>export</b>(<i>options</i>)
 
@@ -395,63 +552,68 @@ events.
 You can customize the scatter plot according to the following properties that
 can be read and written via [`scatterplot.get()`](#scatterplot.get) and [`scatterplot.set()`](#scatterplot.set).
 
-| Name                                  | Type            | Default                             | Constraints                                                     | Settable | Nullifiable |
-| ------------------------------------- | --------------- | ----------------------------------- | --------------------------------------------------------------- | -------- | ----------- |
-| canvas                                | object          | `document.createElement('canvas')`  |                                                                 | `false`  | `false`     |
-| regl                                  | object          | `createRegl(canvas)`                |                                                                 | `false`  | `false`     |
-| syncEvents                            | boolean         | `false`                             |                                                                 | `false`  | `false`     |
-| version                               | string          |                                     |                                                                 | `false`  | `false`     |
-| width                                 | int or str      | `'auto'`                            | `'auto'` or > 0                                                 | `true`   | `false`     |
-| height                                | int or str      | `'auto'`                            | `'auto'` or > 0                                                 | `true`   | `false`     |
-| aspectRatio                           | float           | `1.0`                               | > 0                                                             | `true`   | `false`     |
-| backgroundColor                       | string or array | rgba(0, 0, 0, 1)                    | hex, rgb, rgba                                                  | `true`   | `false`     |
-| backgroundImage                       | function        | `null`                              | Regl texture                                                    | `true`   | `true`      |
-| camera                                | object          |                                     | See [dom-2d-camera](https://github.com/flekschas/dom-2d-camera) | `false`  | `false`     |
-| cameraTarget                          | tuple           | `[0, 0]`                            |                                                                 | `true`   | `false`     |
-| cameraDistance                        | float           | `1`                                 | > 0                                                             | `true`   | `false`     |
-| cameraRotation                        | float           | `0`                                 |                                                                 | `true`   | `false`     |
-| cameraView                            | Float32Array    | `[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1`] |                                                                 | `true`   | `false`     |
-| colorBy                               | string          | `null`                              | See [data encoding](#property-by)                               | `true`   | `true`      |
-| sizeBy                                | string          | `null`                              | See [data encoding](#property-by)                               | `true`   | `true`      |
-| opacityBy                             | string          | `null`                              | See [data encoding](#property-by)                               | `true`   | `true`      |
-| deselectOnDblClick                    | boolean         | `true`                              |                                                                 | `true`   | `false`     |
-| deselectOnEscape                      | boolean         | `true`                              |                                                                 | `true`   | `false`     |
-| opacity                               | float           | `1`                                 | > 0                                                             | `true`   | `false`     |
-| pointColor                            | quadruple       | `[0.66, 0.66, 0.66, 1]`             | single value or list of hex, rgb, rgba                          | `true`   | `false`     |
-| pointColorActive                      | quadruple       | `[0, 0.55, 1, 1]`                   | single value or list of hex, rgb, rgba                          | `true`   | `false`     |
-| pointColorHover                       | quadruple       | `[1, 1, 1, 1]`                      | single value or list of hex, rgb, rgba                          | `true`   | `false`     |
-| pointOutlineWidth                     | int             | `2`                                 | >= 0                                                            | `true`   | `false`     |
-| pointSize                             | int             | `6`                                 | > 0                                                             | `true`   | `false`     |
-| pointSizeSelected                     | int             | `2`                                 | >= 0                                                            | `true`   | `false`     |
-| showPointConnection                   | boolean         | `false`                             |                                                                 | `true`   | `false`     |
-| pointConnectionColor                  | quadruple       | `[0.66, 0.66, 0.66, 0.2]`           |                                                                 | `true`   | `false`     |
-| pointConnectionColorActive            | quadruple       | `[0, 0.55, 1, 1]`                   |                                                                 | `true`   | `false`     |
-| pointConnectionColorHover             | quadruple       | `[1, 1, 1, 1]`                      |                                                                 | `true`   | `false`     |
-| pointConnectionColorBy                | string          | `null`                              | See [data encoding](#property-point-conntection-by)             | `true`   | `false`     |
-| pointConnectionOpacity                | float           | `0.1`                               |                                                                 | `true`   | `false`     |
-| pointConnectionOpacityActive          | float           | `0.66`                              |                                                                 | `true`   | `false`     |
-| pointConnectionOpacityBy              | string          | `null`                              | See [data encoding](#property-point-conntection-by)             | `true`   | `false`     |
-| pointConnectionSize                   | float           | `2`                                 |                                                                 | `true`   | `false`     |
-| pointConnectionSizeActive             | float           | `2`                                 |                                                                 | `true`   | `false`     |
-| pointConnectionSizeBy                 | string          | `null`                              | See [data encoding](#property-point-conntection-by)             | `true`   | `false`     |
-| pointConnectionMaxIntPointsPerSegment | int             | `100`                               |                                                                 | `true`   | `false`     |
-| pointConnectionTolerance              | float           | `0.002`                             |                                                                 | `true`   | `false`     |
-| lassoColor                            | quadruple       | rgba(0, 0.667, 1, 1)                | hex, rgb, rgba                                                  | `true`   | `false`     |
-| lassoLineWidth                        | float           | 2                                   | >= 1                                                            | `true`   | `false`     |
-| lassoMinDelay                         | int             | 15                                  | >= 0                                                            | `true`   | `false`     |
-| lassoMinDist                          | int             | 4                                   | >= 0                                                            | `true`   | `false`     |
-| lassoClearEvent                       | string          | `'lassoEnd'`                        | `'lassoEnd'` or `'deselect'`                                    | `true`   | `false`     |
-| lassoInitiator                        | boolean         | `false`                             |                                                                 | `true`   | `false`     |
-| lassoInitiatorElement                 | object          | the lasso dom element               |                                                                 | `false`  | `false`     |
-| lassoInitiatorParentElement           | object          | `document.body`                     |                                                                 | `true`   | `false`     |
-| showReticle                           | boolean         | `false`                             | `true` or `false`                                               | `true`   | `false`     |
-| reticleColor                          | quadruple       | rgba(1, 1, 1, .5)                   | hex, rgb, rgba                                                  | `true`   | `false`     |
-| xScale                                | function        | `null`                              | must follow the D3 scale API                                    | `true`   | `true`      |
-| yScale                                | function        | `null`                              | must follow the D3 scale API                                    | `true`   | `true`      |
-| keyMap                                | object          | `{ alt: 'rotate', shift: 'lasso' }` | See the notes below                                             | `true`   | `false`     |
-| mouseMode                             | string          | `'panZoom'`                         | `'panZoom'`, `'lasso'`, or `'rotate'`                           | `true`   | `false`     |
-| performanceMode                       | boolean         | `false`                             | can only be set during initialization!                          | `true`   | `false`     |
-| gamma                                 | float           | `1`                                 | to control the opacity blending                                 | `true`   | `false`     |
+| Name                                  | Type                                         | Default                             | Constraints                                                     | Settable | Nullifiable |
+| ------------------------------------- | -------------------------------------------- | ----------------------------------- | --------------------------------------------------------------- | -------- | ----------- |
+| canvas                                | object                                       | `document.createElement('canvas')`  |                                                                 | `false`  | `false`     |
+| regl                                  | [Regl](https://github.com/regl-project/regl) | `createRegl(canvas)`                |                                                                 | `false`  | `false`     |
+| renderer                              | [Renderer](#renderer)                        | `createRenderer()`                  |                                                                 | `false`  | `false`     |
+| syncEvents                            | boolean                                      | `false`                             |                                                                 | `false`  | `false`     |
+| version                               | string                                       |                                     |                                                                 | `false`  | `false`     |
+| width                                 | int or str                                   | `'auto'`                            | `'auto'` or > 0                                                 | `true`   | `false`     |
+| height                                | int or str                                   | `'auto'`                            | `'auto'` or > 0                                                 | `true`   | `false`     |
+| aspectRatio                           | float                                        | `1.0`                               | > 0                                                             | `true`   | `false`     |
+| backgroundColor                       | string or array                              | rgba(0, 0, 0, 1)                    | hex, rgb, rgba                                                  | `true`   | `false`     |
+| backgroundImage                       | function                                     | `null`                              | Regl texture                                                    | `true`   | `true`      |
+| camera                                | object                                       |                                     | See [dom-2d-camera](https://github.com/flekschas/dom-2d-camera) | `false`  | `false`     |
+| cameraTarget                          | tuple                                        | `[0, 0]`                            |                                                                 | `true`   | `false`     |
+| cameraDistance                        | float                                        | `1`                                 | > 0                                                             | `true`   | `false`     |
+| cameraRotation                        | float                                        | `0`                                 |                                                                 | `true`   | `false`     |
+| cameraView                            | Float32Array                                 | `[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1`] |                                                                 | `true`   | `false`     |
+| colorBy                               | string                                       | `null`                              | See [data encoding](#property-by)                               | `true`   | `true`      |
+| sizeBy                                | string                                       | `null`                              | See [data encoding](#property-by)                               | `true`   | `true`      |
+| opacityBy                             | string                                       | `null`                              | See [data encoding](#property-by)                               | `true`   | `true`      |
+| deselectOnDblClick                    | boolean                                      | `true`                              |                                                                 | `true`   | `false`     |
+| deselectOnEscape                      | boolean                                      | `true`                              |                                                                 | `true`   | `false`     |
+| opacity                               | float                                        | `1`                                 | Must be in ]0, 1]                                               | `true`   | `false`     |
+| opacityInactiveMax                    | float                                        | `1`                                 | Must be in [0, 1]                                               | `true`   | `false`     |
+| opacityInactiveScale                  | float                                        | `1`                                 | Must be in [0, 1]                                               | `true`   | `false`     |
+| points                                | tuple                                        | `[0.5, 2.3]`                        |                                                                 | `false`  | `false`     |
+| pointsInView                          | int[]                                        | `[1, 2, 12]`                        |                                                                 | `false`  | `false`     |
+| pointColor                            | quadruple                                    | `[0.66, 0.66, 0.66, 1]`             | single value or list of hex, rgb, rgba                          | `true`   | `false`     |
+| pointColorActive                      | quadruple                                    | `[0, 0.55, 1, 1]`                   | single value or list of hex, rgb, rgba                          | `true`   | `false`     |
+| pointColorHover                       | quadruple                                    | `[1, 1, 1, 1]`                      | single value or list of hex, rgb, rgba                          | `true`   | `false`     |
+| pointOutlineWidth                     | int                                          | `2`                                 | >= 0                                                            | `true`   | `false`     |
+| pointSize                             | int                                          | `6`                                 | > 0                                                             | `true`   | `false`     |
+| pointSizeSelected                     | int                                          | `2`                                 | >= 0                                                            | `true`   | `false`     |
+| showPointConnection                   | boolean                                      | `false`                             |                                                                 | `true`   | `false`     |
+| pointConnectionColor                  | quadruple                                    | `[0.66, 0.66, 0.66, 0.2]`           |                                                                 | `true`   | `false`     |
+| pointConnectionColorActive            | quadruple                                    | `[0, 0.55, 1, 1]`                   |                                                                 | `true`   | `false`     |
+| pointConnectionColorHover             | quadruple                                    | `[1, 1, 1, 1]`                      |                                                                 | `true`   | `false`     |
+| pointConnectionColorBy                | string                                       | `null`                              | See [data encoding](#property-point-conntection-by)             | `true`   | `false`     |
+| pointConnectionOpacity                | float                                        | `0.1`                               |                                                                 | `true`   | `false`     |
+| pointConnectionOpacityActive          | float                                        | `0.66`                              |                                                                 | `true`   | `false`     |
+| pointConnectionOpacityBy              | string                                       | `null`                              | See [data encoding](#property-point-conntection-by)             | `true`   | `false`     |
+| pointConnectionSize                   | float                                        | `2`                                 |                                                                 | `true`   | `false`     |
+| pointConnectionSizeActive             | float                                        | `2`                                 |                                                                 | `true`   | `false`     |
+| pointConnectionSizeBy                 | string                                       | `null`                              | See [data encoding](#property-point-conntection-by)             | `true`   | `false`     |
+| pointConnectionMaxIntPointsPerSegment | int                                          | `100`                               |                                                                 | `true`   | `false`     |
+| pointConnectionTolerance              | float                                        | `0.002`                             |                                                                 | `true`   | `false`     |
+| lassoColor                            | quadruple                                    | rgba(0, 0.667, 1, 1)                | hex, rgb, rgba                                                  | `true`   | `false`     |
+| lassoLineWidth                        | float                                        | 2                                   | >= 1                                                            | `true`   | `false`     |
+| lassoMinDelay                         | int                                          | 15                                  | >= 0                                                            | `true`   | `false`     |
+| lassoMinDist                          | int                                          | 4                                   | >= 0                                                            | `true`   | `false`     |
+| lassoClearEvent                       | string                                       | `'lassoEnd'`                        | `'lassoEnd'` or `'deselect'`                                    | `true`   | `false`     |
+| lassoInitiator                        | boolean                                      | `false`                             |                                                                 | `true`   | `false`     |
+| lassoInitiatorElement                 | object                                       | the lasso dom element               |                                                                 | `false`  | `false`     |
+| lassoInitiatorParentElement           | object                                       | `document.body`                     |                                                                 | `true`   | `false`     |
+| showReticle                           | boolean                                      | `false`                             | `true` or `false`                                               | `true`   | `false`     |
+| reticleColor                          | quadruple                                    | rgba(1, 1, 1, .5)                   | hex, rgb, rgba                                                  | `true`   | `false`     |
+| xScale                                | function                                     | `null`                              | must follow the D3 scale API                                    | `true`   | `true`      |
+| yScale                                | function                                     | `null`                              | must follow the D3 scale API                                    | `true`   | `true`      |
+| keyMap                                | object                                       | `{ alt: 'rotate', shift: 'lasso' }` | See the notes below                                             | `true`   | `false`     |
+| mouseMode                             | string                                       | `'panZoom'`                         | `'panZoom'`, `'lasso'`, or `'rotate'`                           | `true`   | `false`     |
+| performanceMode                       | boolean                                      | `false`                             | can only be set during initialization!                          | `true`   | `false`     |
+| gamma                                 | float                                        | `1`                                 | to control the opacity blending                                 | `true`   | `false`     |
 
 <a name="property-notes" href="#property-notes">#</a> <b>Notes:</b>
 
@@ -599,6 +761,10 @@ scatterplot.set({
 // Set base opacity
 scatterplot.set({ opacity: 0.5 });
 
+// If you want to deemphasize unselected points (when some points are selected)
+// you can rescale the unselected points' opacity as follows
+scatterplot.set({ opacityInactiveScale: 0.5 });
+
 // Set the width of the outline of selected points
 scatterplot.set({ pointOutlineWidth: 2 });
 
@@ -622,6 +788,50 @@ scatterplot.set({
 // Activate reticle and set reticle color to red
 scatterplot.set({ showReticle: true, reticleColor: [1, 0, 0, 0.66] });
 ```
+
+### Renderer
+
+The renderer class is responsible for rendering pixels onto the scatter plot's
+canvas using WebGL via Regl. It's created automatically internally but you can
+also create it yourself, which can be useful when you want to instantiate
+multiple scatter plot instances as they can share one renderer.
+
+#### Renderer API
+
+<a name="renderer.canvas" href="#renderer.canvas">#</a> renderer.<b>canvas</b>
+
+The renderer's canvas instance. (Read-only)
+
+<a name="renderer.gamma" href="#renderer.gamma">#</a> renderer.<b>gamma</b>
+
+The renderer's gamma value. This value influences the alpha blending.
+
+<a name="renderer.regl" href="#renderer.regl">#</a> renderer.<b>regl</b>
+
+The renderer's regl instance. (Read-only)
+
+<a name="renderer.onFrame" href="#renderer.onFrame">#</a> renderer.<b>onFrame</b>(<i>function</i>)
+
+Add a function to be called on every animation frame.
+
+**Arguments:**
+
+- `function`: The function to be called on every animation frame.
+
+**Returns:** A function to remove the added function from the animation frame cycle.
+
+<a name="renderer.refresh" href="#renderer.refresh">#</a> renderer.<b>refresh</b>()
+
+Updates Regl's viewport, drawingBufferWidth, and drawingBufferHeight.
+
+<a name="renderer.render" href="#renderer.render">#</a> renderer.<b>render</b>(<i>drawFunction</i>, <i>targetCanvas</i>)
+
+Render Regl draw instructions into a target canvas using the renderer.
+
+**Arguments:**
+
+- `drawFunction`: The draw function that triggers Regl draw instructions
+- `targetCanvas`: The canvas to rendering the final pixels into.
 
 ### Events
 
@@ -657,3 +867,66 @@ scatterplot.set({ width, height });
 #### Using regl-scatterplot with Vue
 
 Related to the resizing, when conditionally displaying regl-scatterplot in Vue you might have to update the `width` and `height` when the visibility is changed. See [issue #20](https://github.com/flekschas/regl-scatterplot/issues/20#issuecomment-639377810) for an example.
+
+| Name                       | Type                                                                                     | Default                                        |
+| -------------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| `data`                     | pandas.DataFrame                                                                         | `None`                                         |
+| `x`                        | str \| list[float] \| ndarray                                                            | `None`                                         |
+| `x_scale`                  | 'linear' \| 'log' \| 'pow' \| tuple[float] \| [LogNorm][lognorm] \| [PowerNorm][pownorm] | `linear`                                       |
+| `y`                        | str \| list[float] \| ndarray                                                            | `None`                                         |
+| `y_scale`                  | 'linear' \| 'log' \| 'pow' \| tuple[float] \| [LogNorm][lognorm] \| [PowerNorm][pownorm] | `linear`                                       |
+| `selection`                | list[int]                                                                                | `[]`                                           |
+| `width`                    | int \| 'auto'                                                                            | `'auto'`                                       |
+| `height`                   | int                                                                                      | `240`                                          |
+| `color`                    | str \| tuple[float] \| list[float]                                                       | `(0, 0, 0, 0.66)`                              |
+| `color_active`             | str \| tuple[float] \| list[float]                                                       | `(0, 0.55, 1, 1)`                              |
+| `color_hover`              | str \| tuple[float] \| list[float]                                                       | `(0, 0, 0, 1)`                                 |
+| `color_by`                 | str \| list[float \| str]                                                                | `None`                                         |
+| `color_map`                | str \| list[str] \| [Colormap][colormap] \| dict \| 'auto'                               | `None`                                         |
+| `color_norm`               | tuple[float] \| [Normalize][linnorm]                                                     | `matplotlib.colors.Normalize(0, 1, clip=True)` |
+| `color_order`              | list[str \| int] \| 'reverse'                                                            | `None`                                         |
+| `opacity`                  | float                                                                                    | `0.66`                                         |
+| `opacity_by`               | str \| list[float]                                                                       | `'density'`                                    |
+| `opacity_map`              | triple[float] \| list[float] \| dict \| 'auto'                                           | `None`                                         |
+| `opacity_norm`             | tuple[float] \| [Normalize][linnorm]                                                     | `matplotlib.colors.Normalize(0, 1, clip=True)` |
+| `opacity_order`            | list[str \| int] \| 'reverse'                                                            | `None`                                         |
+| `size`                     | int                                                                                      | `3`                                            |
+| `size_by`                  | str \| list[int]                                                                         | `None`                                         |
+| `size_map`                 | triple[float] \| list[int] \| dict \| 'auto'                                             | `None`                                         |
+| `size_norm`                | tuple[float] \| [Normalize][linnorm]                                                     | `matplotlib.colors.Normalize(0, 1, clip=True)` |
+| `size_order`               | list[str \| int] \| 'reverse'                                                            | `None`                                         |
+| `connect_by`               | str \| list[int]                                                                         | `None`                                         |
+| `connect_order`            | str \| list[int]                                                                         | `None`                                         |
+| `connection_color`         | str \| tuple[float] \| list[float]                                                       | `(0, 0, 0, 0.1)`                               |
+| `connection_color_active`  | str \| tuple[float] \| list[float]                                                       | `(0, 0.55, 1, 1)`                              |
+| `connection_color_hover`   | str \| tuple[float] \| list[float]                                                       | `(0, 0, 0, 0.66)`                              |
+| `connection_color_by`      | str \| list[float \| str]                                                                | `None`                                         |
+| `connection_color_map`     | str \| list[str] \| [Colormap][colormap] \| dict \| 'auto'                               | `None`                                         |
+| `connection_color_norm`    | tuple[float] \| [Normalize][linnorm]                                                     | `matplotlib.colors.Normalize(0, 1, clip=True)` |
+| `connection_color_order`   | list[str \| int] \| 'reverse'                                                            | `None`                                         |
+| `connection_opacity`       | float                                                                                    | `0.1`                                          |
+| `connection_opacity_by`    | str \| list[float]                                                                       | `None`                                         |
+| `connection_opacity_map`   | triple[float] \| list[float] \| dict \| 'auto'                                           | `None`                                         |
+| `connection_opacity_norm`  | tuple[float] \| [Normalize][linnorm]                                                     | `matplotlib.colors.Normalize(0, 1, clip=True)` |
+| `connection_opacity_order` | list[str \| int] \| 'reverse'                                                            | `None`                                         |
+| `connection_size`          | int                                                                                      | `2`                                            |
+| `connection_size_by`       | str \| list[int]                                                                         | `None`                                         |
+| `connection_size_map`      | triple[float] \| list[int] \| dict \| 'auto'                                             | `None`                                         |
+| `connection_size_norm`     | tuple[float] \| [Normalize][linnorm]                                                     | `matplotlib.colors.Normalize(0, 1, clip=True)` |
+| `connection_size_order`    | list[str \| int] \| 'reverse'                                                            | `None`                                         |
+| `axes`                     | bool                                                                                     | `True`                                         |
+| `axes_grid`                | bool                                                                                     | `False`                                        |
+| `lasso_color`              | str \| tuple[float] \| list[float]                                                       | `(0, 0.666666667, 1, 1)`                       |
+| `lasso_initiator`          | bool                                                                                     | `True`                                         |
+| `lasso_min_delay`          | int                                                                                      | `10`                                           |
+| `lasso_min_dist`           | int                                                                                      | `3`                                            |
+| `reticle`                  | bool                                                                                     | `True`                                         |
+| `reticle_color`            | str \| 'auto'                                                                            | `'auto'`                                       |
+| `background_color`         | str                                                                                      | `'white'`                                      |
+| `background_image`         | str \| array-like or PIL image                                                           | `None`                                         |
+| `mouse_mode`               | 'panZoom' \| 'lasso' \| 'rotate'                                                         | `'panZoom'`                                    |
+| `camera_target`            | tuple[float]                                                                             | `[0, 0]`                                       |
+| `camera_distance`          | float                                                                                    | `1`                                            |
+| `camera_rotation`          | float                                                                                    | `0`                                            |
+| `camera_view`              | list[float]                                                                              | `None`                                         |
+| `options`                  | dict                                                                                     | `{}`                                           |

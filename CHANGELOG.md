@@ -1,5 +1,67 @@
 ## Next
 
+## v1.4.2
+
+- Enforce the canvas width and height to be at least 1px to prevent view operations from breaking.
+
+## v1.4.1
+
+- Bump `dom-2d-camera` to publish view updates on camera tweens ([#95](https://github.com/flekschas/regl-scatterplot/issues/95))
+
+## v1.4.0
+
+- Add zooming via the following four methods. All four methods supported animated transition just like `draw()`.
+  1. `scatterplot.zoomToLocation(target, distance)` for zooming to a specific point location
+  2. `scatterplot.zoomToArea(rectangle)` for zooming to an area specified by a rectangular bounding box
+  3. `scatterplot.zoomToPoints(pointIndices)` for zooming to a set of points
+  4. `scatterplot.zoomToOrigin()` for zooming to the origin
+
+## v1.3.2
+
+- Add `scatterplot.isSupported` and `renderer.isSupported` as read-only properties to expose if all GL extensions are supported and enabled in the user's browser (#90)
+- Add `checkSupport()` as a globally exported function for users to check if their browser supports and has enabled all required GL extensions (#90)
+
+## v1.3.1
+
+- Add a missing `select` event name to the type definition (#87)
+
+## v1.3.0
+
+- Add properties `opacityInactiveScale` and `opacityInactiveMax` to enable de-emphasizing unselected points and highlight selected points. The final point opacity is now set to `min(opacityInactiveMax, currentOpacity) * opacityInactiveScale` when at least one point is selected. By default `opacityInactiveScale` and `opacityInactiveMax` are set to `1`. I.e., the default behavior did not change.
+
+## v1.2.3
+
+- Properly initialize new x/y scales upon calling `set()`
+
+## v1.2.2
+
+- Fix a minor issue in `destroy()` that prevented disconnecting resize listeners
+
+## v1.2.1
+
+- Update dom-2d-camera to fix internal tests
+
+## v1.2.0
+
+- Outsource WebGL renderer to improve instancing: You can now use a single shared WebGL renderer (via `createRenderer()`) to power multiple scatter plot instances. See https://flekschas.github.io/regl-scatterplot/multiple-instances.html.
+- Add `scatterplot.redraw()` to enforce a redrawing of the scene. This can be necessary when you manually updated the camera.
+- Add `scatterplot.view(cameraView, { preventEvent })` as a shorthand for setting the scatter plot's camera view. The `preventEvent` option enables synchronizing multiple scatter plot instances. See https://flekschas.github.io/regl-scatterplot/multiple-instances.html.
+- Allow passing typed arrays to `scatterplot.draw({ x, y, z, w })`.
+
+**Breaking changes:**
+
+- `scatterplot.export()` is now returning an [ImageData](https://developer.mozilla.org/en-US/docs/Web/API/ImageData) object for better utility.
+
+## v1.1.1
+
+- Fix incorrect opacity handling (#74)
+
+## v1.1.0
+
+- Add `scatterplot.get('pointsInView')` to retrieve the indices of the points currently visible within the view (#72). Shoutout to [@dulex123](https://github.com/dulex123) for his PR!
+- Add `scatterplot.get('points')` to retrieve all currently drawn points.
+- Add an example for demonstrating how labels can be rendered. The demo using `scatterplot.get('pointsInView')` to determine when to render text labels. See https://flekschas.github.io/regl-scatterplot/text-labels.html
+
 ## v1.0.0
 
 Woohoo 🥳 It's time to release v1! Nothing dramatic changed in this release but I felt that the library/API is now stable enough. Also, a big shoutout to [@manzt](https://github.com/manzt) and [@japrescott](https://github.com/japrescott) for their PRs.

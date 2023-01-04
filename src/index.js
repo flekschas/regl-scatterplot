@@ -10,19 +10,21 @@ import {
   throttleAndDebounce,
 } from '@flekschas/utils';
 
+import createRenderer from './renderer';
 import createLassoManager from './lasso-manager';
 
 import BG_FS from './bg.fs';
 import BG_VS from './bg.vs';
 import POINT_FS from './point.fs';
 import POINT_SIMPLE_FS from './point-simple.fs';
-import POINT_VS from './point.vs';
+import createVertexShader from './point.vs';
 import POINT_UPDATE_FS from './point-update.fs';
 import POINT_UPDATE_VS from './point-update.vs';
 
 import createSplineCurve from './spline-curve';
 
 import {
+  AUTO,
   COLOR_ACTIVE_IDX,
   COLOR_BG_IDX,
   COLOR_HOVER_IDX,
@@ -95,17 +97,17 @@ import {
   DEFAULT_MOUSE_MODE,
   SINGLE_CLICK_DELAY,
   LONG_CLICK_TIME,
-  DEFAULT_OPACITY,
   DEFAULT_OPACITY_BY,
   DEFAULT_OPACITY_BY_DENSITY_FILL,
   DEFAULT_OPACITY_BY_DENSITY_DEBOUNCE_TIME,
-  DEFAULT_GAMMA,
+  DEFAULT_OPACITY_INACTIVE_MAX,
+  DEFAULT_OPACITY_INACTIVE_SCALE,
   Z_NAMES,
   W_NAMES,
+  DEFAULT_IMAGE_LOAD_TIMEOUT,
 } from './constants';
 
 import {
-  checkReglExtensions,
   createRegl,
   createTextureFromUrl,
   dist,
@@ -122,6 +124,7 @@ import {
   min,
   flipObj,
   rgbBrightness,
+  clip,
 } from './utils';
 
 import { version } from '../package.json';
@@ -189,7 +192,7 @@ const createScatterplot = (
   checkDeprecations(initialProperties);
 
   let {
-    regl,
+    renderer,
     backgroundColor = DEFAULT_COLOR_BG,
     backgroundImage = DEFAULT_BACKGROUND_IMAGE,
     canvas = document.createElement('canvas'),
@@ -227,17 +230,18 @@ const createScatterplot = (
     pointSizeSelected = DEFAULT_POINT_SIZE_SELECTED,
     pointSizeMouseDetection = DEFAULT_POINT_SIZE_MOUSE_DETECTION,
     pointOutlineWidth = DEFAULT_POINT_OUTLINE_WIDTH,
-    opacity = DEFAULT_OPACITY,
+    opacity = AUTO,
     opacityBy = DEFAULT_OPACITY_BY,
     opacityByDensityFill = DEFAULT_OPACITY_BY_DENSITY_FILL,
+    opacityInactiveMax = DEFAULT_OPACITY_INACTIVE_MAX,
+    opacityInactiveScale = DEFAULT_OPACITY_INACTIVE_SCALE,
     sizeBy = DEFAULT_SIZE_BY,
     height = DEFAULT_HEIGHT,
     width = DEFAULT_WIDTH,
-    gamma = DEFAULT_GAMMA,
   } = initialProperties;
 
-  let currentWidth = width === 'auto' ? 1 : width;
-  let currentHeight = height === 'auto' ? 1 : height;
+  let currentWidth = width === AUTO ? 1 : width;
+  let currentHeight = height === AUTO ? 1 : height;
 
   // The following properties cannot be changed after the initialization
   const {
@@ -245,24 +249,19 @@ const createScatterplot = (
     opacityByDensityDebounceTime = DEFAULT_OPACITY_BY_DENSITY_DEBOUNCE_TIME,
   } = initialProperties;
 
-  checkReglExtensions(regl);
-
-  // Same as regl ||= createRegl(canvas) but avoids having to rely on
+  // Same as renderer ||= createRenderer({ ... }) but avoids having to rely on
   // https://babeljs.io/docs/en/babel-plugin-proposal-logical-assignment-operators
   // eslint-disable-next-line no-unused-expressions
-  regl || (regl = createRegl(canvas));
+  renderer ||
+    (renderer = createRenderer({
+      regl: initialProperties.regl,
+      gamma: initialProperties.gamma,
+    }));
 
   backgroundColor = toRgba(backgroundColor, true);
   lassoColor = toRgba(lassoColor, true);
   reticleColor = toRgba(reticleColor, true);
 
-  const fboRes = [512, 512];
-  const fbo = regl.framebuffer({
-    width: fboRes[0],
-    height: fboRes[1],
-    colorFormat: 'rgba',
-    colorType: 'float',
-  });
   let backgroundColorBrightness = rgbBrightness(backgroundColor);
   let camera;
   let lasso;
@@ -279,6 +278,7 @@ const createScatterplot = (
   let searchIndex;
   let viewAspectRatio;
   let dataAspectRatio = DEFAULT_DATA_ASPECT_RATIO;
+  let projectionLocal;
   let projection;
   let model;
   let pointConnections;
@@ -291,9 +291,10 @@ const createScatterplot = (
   let lassoInitiatorTimeout;
   let topRightNdc;
   let bottomLeftNdc;
-
+  let preventEventView = false;
   let draw = true;
   let drawReticleOnce = false;
+  let canvasObserver;
 
   pointColor = isMultipleColors(pointColor) ? [...pointColor] : [pointColor];
   pointColorActive = isMultipleColors(pointColorActive)
@@ -418,6 +419,11 @@ const createScatterplot = (
   let selectedPointsIndexBuffer; // Used for pointing to the selected texels
   let hoveredPointIndexBuffer; // Used for pointing to the hovered texels
 
+  let cameraZoomTargetStart; // Stores the start (i.e., current) camera target for zooming
+  let cameraZoomTargetEnd; // Stores the end camera target for zooming
+  let cameraZoomDistanceStart; // Stores the start camera distance for zooming
+  let cameraZoomDistanceEnd; // Stores the end camera distance for zooming
+
   let isTransitioning = false;
   let transitionStartTime = null;
   let transitionDuration;
@@ -474,7 +480,7 @@ const createScatterplot = (
       scratch,
       mat4.multiply(
         scratch,
-        projection,
+        projectionLocal,
         mat4.multiply(scratch, camera.view, model)
       )
     );
@@ -485,10 +491,7 @@ const createScatterplot = (
     return v.slice(0, 2);
   };
 
-  const raycast = () => {
-    const [xGl, yGl] = getMouseGlPos();
-    const [xNdc, yNdc] = getScatterGlPos(xGl, yGl);
-
+  const getPointSizeNdc = () => {
     // eslint-disable-next-line no-use-before-define
     const pointScale = getPointScale();
 
@@ -497,8 +500,14 @@ const createScatterplot = (
     // The size of a pixel in the current view in normalized device coordinates
     const pxNdc = heightNdc / currentHeight;
     // The scaled point size in normalized device coordinates
-    const pointSizeNdc =
-      computedPointSizeMouseDetection * pointScale * pxNdc * 0.66;
+    return computedPointSizeMouseDetection * pointScale * pxNdc * 0.66;
+  };
+
+  const raycast = () => {
+    const [xGl, yGl] = getMouseGlPos();
+    const [xNdc, yNdc] = getScatterGlPos(xGl, yGl);
+
+    const pointSizeNdc = getPointSizeNdc();
 
     // Get all points within a close range
     const pointsInBBox = searchIndex.range(
@@ -539,7 +548,7 @@ const createScatterplot = (
     // next we test each point in the bounding box if it is in the polygon too
     const pointsInPolygon = [];
     pointsInBBox.forEach((pointIdx) => {
-      if (isPointInPolygon(searchIndex.points[pointIdx], lassoPolygon))
+      if (isPointInPolygon(lassoPolygon, searchIndex.points[pointIdx]))
         pointsInPolygon.push(pointIdx);
     });
 
@@ -630,6 +639,7 @@ const createScatterplot = (
   };
 
   /**
+   * Select and highlight a set of points
    * @param {number | number[]} pointIdxs
    * @param {import('./types').ScatterplotMethodOptions['select']}
    */
@@ -698,9 +708,7 @@ const createScatterplot = (
   const lassoEnd = (lassoPoints, lassoPointsFlat, { merge = false } = {}) => {
     camera.config({ isFixed: false });
     lassoPointsCurr = [...lassoPoints];
-    // const t0 = performance.now();
     const pointsInLasso = findPointsInLasso(lassoPointsFlat);
-    // console.log(`found ${pointsInLasso.length} in ${performance.now() - t0} msec`);
     select(pointsInLasso, { merge });
     pubSub.publish('lassoEnd', {
       coordinates: lassoPointsCurr,
@@ -853,10 +861,16 @@ const createScatterplot = (
 
     for (let i = 0; i < maxEncoding; i++) {
       rgba[i * 4] = pointSize[i] || 0;
-      rgba[i * 4 + 1] = opacity[i] || 0;
+      rgba[i * 4 + 1] = Math.min(1, opacity[i] || 0);
+
+      const active = Number((pointColorActive[i] || pointColorActive[0])[3]);
+      rgba[i * 4 + 2] = Math.min(1, Number.isNaN(active) ? 1 : active);
+
+      const hover = Number((pointColorHover[i] || pointColorHover[0])[3]);
+      rgba[i * 4 + 3] = Math.min(1, Number.isNaN(hover) ? 1 : hover);
     }
 
-    return regl.texture({
+    return renderer.regl.texture({
       data: rgba,
       shape: [encodingTexRes, encodingTexRes, 4],
       type: 'float',
@@ -911,24 +925,31 @@ const createScatterplot = (
       rgba[i * 4 + 3] = color[3]; // a
     });
 
-    return regl.texture({
+    return renderer.regl.texture({
       data: rgba,
       shape: [colorTexRes, colorTexRes, 4],
       type: 'float',
     });
   };
 
-  const updateFbo = () => {
-    fboRes[0] = Math.floor(currentWidth * window.devicePixelRatio);
-    fboRes[1] = Math.floor(currentHeight * window.devicePixelRatio);
-    fbo.resize(...fboRes);
+  /**
+   * Since we're using an external renderer whose canvas' width and height
+   * might differ from this instance's width and height, we have to adjust the
+   * projection of camera spaces into clip space accordingly.
+   *
+   * The `widthRatio` is rendererCanvas.width / thisCanvas.width
+   * The `heightRatio` is rendererCanvas.height / thisCanvas.height
+   */
+  const updateProjectionMatrix = (widthRatio, heightRatio) => {
+    projection[0] = widthRatio / viewAspectRatio;
+    projection[5] = heightRatio;
   };
 
   const updateViewAspectRatio = () => {
     viewAspectRatio = currentWidth / currentHeight;
+    projectionLocal = mat4.fromScaling([], [1 / viewAspectRatio, 1, 1]);
     projection = mat4.fromScaling([], [1 / viewAspectRatio, 1, 1]);
     model = mat4.fromScaling([], [dataAspectRatio, 1, 1]);
-    updateFbo();
   };
 
   const setDataAspectRatio = (newDataAspectRatio) => {
@@ -1008,7 +1029,7 @@ const createScatterplot = (
   };
 
   const setCurrentHeight = (newCurrentHeight) => {
-    currentHeight = newCurrentHeight;
+    currentHeight = Math.max(1, newCurrentHeight);
     canvas.height = Math.floor(currentHeight * window.devicePixelRatio);
     if (yScale) {
       yScale.range([currentHeight, 0]);
@@ -1017,7 +1038,7 @@ const createScatterplot = (
   };
 
   const setHeight = (newHeight) => {
-    if (newHeight === 'auto') {
+    if (newHeight === AUTO) {
       height = newHeight;
       canvas.style.height = '100%';
       window.requestAnimationFrame(() => {
@@ -1036,7 +1057,7 @@ const createScatterplot = (
   const computePointSizeMouseDetection = () => {
     computedPointSizeMouseDetection = pointSizeMouseDetection;
 
-    if (pointSizeMouseDetection === 'auto') {
+    if (pointSizeMouseDetection === AUTO) {
       computedPointSizeMouseDetection = Array.isArray(pointSize)
         ? pointSize[Math.floor(pointSize.length / 2)]
         : pointSize;
@@ -1065,7 +1086,7 @@ const createScatterplot = (
   };
 
   const setCurrentWidth = (newCurrentWidth) => {
-    currentWidth = newCurrentWidth;
+    currentWidth = Math.max(1, newCurrentWidth);
     canvas.width = Math.floor(currentWidth * window.devicePixelRatio);
     if (xScale) {
       xScale.range([0, currentWidth]);
@@ -1074,7 +1095,7 @@ const createScatterplot = (
   };
 
   const setWidth = (newWidth) => {
-    if (newWidth === 'auto') {
+    if (newWidth === AUTO) {
       width = newWidth;
       canvas.style.width = '100%';
       window.requestAnimationFrame(() => {
@@ -1114,12 +1135,12 @@ const createScatterplot = (
 
   const getEncodingValueToIdx = (type, rangeValues) => {
     switch (type) {
-      default:
-      case 'categorical':
-        return identity;
-
       case 'continuous':
         return (value) => Math.round(value * (rangeValues.length - 1));
+
+      case 'categorical':
+      default:
+        return identity;
     }
   };
 
@@ -1156,6 +1177,7 @@ const createScatterplot = (
     );
   };
 
+  const getResolution = () => [canvas.width, canvas.height];
   const getBackgroundImage = () => backgroundImage;
   const getColorTex = () => colorTex;
   const getColorTexRes = () => colorTexRes;
@@ -1173,19 +1195,23 @@ const createScatterplot = (
   const getProjection = () => projection;
   const getView = () => camera.view;
   const getModel = () => model;
-  const getProjectionViewModel = () =>
+  const getModelViewProjection = () =>
     mat4.multiply(pvm, projection, mat4.multiply(pvm, camera.view, model));
   const getPointScale = () => {
-    if (camera.scaling > 1)
+    if (camera.scaling[0] > 1)
       return (
-        (Math.asinh(max(1.0, camera.scaling)) / Math.asinh(1)) *
+        (Math.asinh(max(1.0, camera.scaling[0])) / Math.asinh(1)) *
         window.devicePixelRatio
       );
 
-    return max(minPointScale, camera.scaling) * window.devicePixelRatio;
+    return max(minPointScale, camera.scaling[0]) * window.devicePixelRatio;
   };
-  // 1 + Math.log2(max(1.0, camera.scaling)) * window.devicePixelRatio;
   const getNormalNumPoints = () => numPoints;
+  const getSelectedNumPoints = () => selection.length;
+  const getPointOpacityMaxBase = () =>
+    getSelectedNumPoints() > 0 ? opacityInactiveMax : 1;
+  const getPointOpacityScaleBase = () =>
+    getSelectedNumPoints() > 0 ? opacityInactiveScale : 1;
   const getIsColoredByZ = () => +(colorBy === 'valueZ');
   const getIsColoredByW = () => +(colorBy === 'valueW');
   const getIsOpacityByZ = () => +(opacityBy === 'valueZ');
@@ -1239,14 +1265,14 @@ const createScatterplot = (
 
     // We square this since we're concerned with the ratio of *areas*.
     // eslint-disable-next-line no-restricted-properties
-    alpha *= Math.pow(p / clampedPointDeviceSize, 2);
+    alpha *= (p / clampedPointDeviceSize) ** 2;
 
     // And finally, we clamp to the range [0, 1]. We should really clamp this to 1 / precision
     // on the low end, depending on the data type of the destination so that we never render *nothing*.
     return min(1, max(0, alpha));
   };
 
-  const updatePoints = regl({
+  const updatePoints = renderer.regl({
     framebuffer: () => tmpStateBuffer,
 
     vert: POINT_UPDATE_VS,
@@ -1265,58 +1291,17 @@ const createScatterplot = (
     count: 3,
   });
 
-  // From https://observablehq.com/@rreusser/selecting-the-right-opacity-for-2d-point-clouds
-  const copyToScreen = regl({
-    vert: `
-      precision highp float;
-      attribute vec2 xy;
-      void main () {
-        gl_Position = vec4(xy, 0, 1);
-      }`,
-    frag: `
-      precision highp float;
-      uniform vec2 srcRes;
-      uniform sampler2D src;
-      uniform float gamma;
-
-      vec3 approxLinearToSRGB (vec3 rgb, float gamma) {
-        return pow(clamp(rgb, vec3(0), vec3(1)), vec3(1.0 / gamma));
-      }
-
-      void main () {
-        vec4 color = texture2D(src, gl_FragCoord.xy / srcRes);
-        gl_FragColor = vec4(approxLinearToSRGB(color.rgb, gamma), color.a);
-      }`,
-    attributes: {
-      xy: [-4, -4, 4, -4, 0, 4],
-    },
-    uniforms: {
-      src: () => fbo,
-      srcRes: () => fboRes,
-      gamma: () => gamma,
-    },
-    count: 3,
-    depth: { enable: false },
-    blend: {
-      enable: true,
-      func: {
-        srcRGB: 'one',
-        srcAlpha: 'one',
-        dstRGB: 'one minus src alpha',
-        dstAlpha: 'one minus src alpha',
-      },
-    },
-  });
-
   const drawPoints = (
     getPointSizeExtra,
     getNumPoints,
     getStateIndexBuffer,
-    globalState = COLOR_NORMAL_IDX
+    globalState = COLOR_NORMAL_IDX,
+    getPointOpacityMax = getPointOpacityMaxBase,
+    getPointOpacityScale = getPointOpacityScaleBase
   ) =>
-    regl({
+    renderer.regl({
       frag: performanceMode ? POINT_SIMPLE_FS : POINT_FS,
-      vert: POINT_VS,
+      vert: createVertexShader(globalState),
 
       blend: {
         enable: !performanceMode,
@@ -1338,12 +1323,15 @@ const createScatterplot = (
       },
 
       uniforms: {
-        projectionViewModel: getProjectionViewModel,
+        resolution: getResolution,
+        modelViewProjection: getModelViewProjection,
         devicePixelRatio: getDevicePixelRatio,
         pointScale: getPointScale,
         encodingTex: getEncodingTex,
         encodingTexRes: getEncodingTexRes,
         encodingTexEps: getEncodingTexEps,
+        pointOpacityMax: getPointOpacityMax,
+        pointOpacityScale: getPointOpacityScale,
         pointSizeExtra: getPointSizeExtra,
         globalState,
         colorTex: getColorTex,
@@ -1381,39 +1369,45 @@ const createScatterplot = (
     getNormalPointSizeExtra,
     () => 1,
     () => hoveredPointIndexBuffer,
-    COLOR_HOVER_IDX
+    COLOR_HOVER_IDX,
+    () => 1,
+    () => 1
   );
 
-  const drawSelectedPoint = () => {
-    const numOutlinedPoints = selection.length;
+  const drawSelectedPointOutlines = drawPoints(
+    () => (pointSizeSelected + pointOutlineWidth * 2) * window.devicePixelRatio,
+    getSelectedNumPoints,
+    getSelectedPointsIndexBuffer,
+    COLOR_ACTIVE_IDX,
+    () => 1,
+    () => 1
+  );
 
-    // Draw outer outline
-    drawPoints(
-      () =>
-        (pointSizeSelected + pointOutlineWidth * 2) * window.devicePixelRatio,
-      () => numOutlinedPoints,
-      getSelectedPointsIndexBuffer,
-      COLOR_ACTIVE_IDX
-    )();
+  const drawSelectedPointInnerBorder = drawPoints(
+    () => (pointSizeSelected + pointOutlineWidth) * window.devicePixelRatio,
+    getSelectedNumPoints,
+    getSelectedPointsIndexBuffer,
+    COLOR_BG_IDX,
+    () => 1,
+    () => 1
+  );
 
-    // Draw inner outline
-    drawPoints(
-      () => (pointSizeSelected + pointOutlineWidth) * window.devicePixelRatio,
-      () => numOutlinedPoints,
-      getSelectedPointsIndexBuffer,
-      COLOR_BG_IDX
-    )();
+  const drawSelectedPointBodies = drawPoints(
+    () => pointSizeSelected * window.devicePixelRatio,
+    getSelectedNumPoints,
+    getSelectedPointsIndexBuffer,
+    COLOR_ACTIVE_IDX,
+    () => 1,
+    () => 1
+  );
 
-    // Draw body
-    drawPoints(
-      () => pointSizeSelected,
-      () => numOutlinedPoints,
-      getSelectedPointsIndexBuffer,
-      COLOR_ACTIVE_IDX
-    )();
+  const drawSelectedPoints = () => {
+    drawSelectedPointOutlines();
+    drawSelectedPointInnerBorder();
+    drawSelectedPointBodies();
   };
 
-  const drawBackgroundImage = regl({
+  const drawBackgroundImage = renderer.regl({
     frag: BG_FS,
     vert: BG_VS,
 
@@ -1422,20 +1416,20 @@ const createScatterplot = (
     },
 
     uniforms: {
-      projectionViewModel: getProjectionViewModel,
+      modelViewProjection: getModelViewProjection,
       texture: getBackgroundImage,
     },
 
     count: 6,
   });
 
-  const drawPolygon2d = regl({
+  const drawPolygon2d = renderer.regl({
     vert: `
       precision mediump float;
-      uniform mat4 projectionViewModel;
+      uniform mat4 modelViewProjection;
       attribute vec2 position;
       void main () {
-        gl_Position = projectionViewModel * vec4(position, 0, 1);
+        gl_Position = modelViewProjection * vec4(position, 0, 1);
       }`,
 
     frag: `
@@ -1462,14 +1456,16 @@ const createScatterplot = (
     },
 
     uniforms: {
-      projectionViewModel: getProjectionViewModel,
+      modelViewProjection: getModelViewProjection,
       color: () => lassoColor,
     },
 
     elements: () =>
-      Array(lassoPointsCurr.length - 2)
-        .fill()
-        .map((_, i) => [0, i + 1, i + 2]),
+      Array.from({ length: lassoPointsCurr.length - 2 }, (_, i) => [
+        0,
+        i + 1,
+        i + 2,
+      ]),
   });
 
   const drawReticle = () => {
@@ -1481,7 +1477,7 @@ const createScatterplot = (
     const v = [x, y, 0, 1];
 
     // We have to calculate the model-view-projection matrix outside of the
-    // shader as we actually don't want the mode, view, or projection of the
+    // shader as we actually don't want the model, view, or projection of the
     // line view space to change such that the reticle is visualized across the
     // entire view container and not within the view of the scatterplot
     mat4.multiply(
@@ -1549,7 +1545,7 @@ const createScatterplot = (
       maxValueW = Math.max(maxValueW, data[i * 4 + 3]);
     }
 
-    return regl.texture({
+    return renderer.regl.texture({
       data,
       shape: [stateTexRes, stateTexRes, 4],
       type: 'float',
@@ -1568,7 +1564,7 @@ const createScatterplot = (
     }
 
     tmpStateTex = createStateTexture(newPoints);
-    tmpStateBuffer = regl.framebuffer({
+    tmpStateBuffer = renderer.regl.framebuffer({
       color: tmpStateTex,
       depth: false,
       stencil: false,
@@ -1577,6 +1573,8 @@ const createScatterplot = (
 
     return true;
   };
+
+  const hasCachedPoints = () => Boolean(prevStateTex && tmpStateTex);
 
   const clearCachedPoints = () => {
     if (prevStateTex) {
@@ -1613,6 +1611,28 @@ const createScatterplot = (
     );
 
     isInit = true;
+  };
+
+  const cacheCamera = (newTarget, newDistance) => {
+    cameraZoomTargetStart = camera.target;
+    cameraZoomTargetEnd = newTarget;
+    cameraZoomDistanceStart = camera.distance[0];
+    cameraZoomDistanceEnd = newDistance;
+  };
+
+  const hasCachedCamera = () =>
+    Boolean(
+      cameraZoomTargetStart !== undefined &&
+        cameraZoomTargetEnd !== undefined &&
+        cameraZoomDistanceStart !== undefined &&
+        cameraZoomDistanceEnd !== undefined
+    );
+
+  const clearCachedCamera = () => {
+    cameraZoomTargetStart = undefined;
+    cameraZoomTargetEnd = undefined;
+    cameraZoomDistanceStart = undefined;
+    cameraZoomDistanceEnd = undefined;
   };
 
   const getPointConnectionColorIndices = (curvePoints) => {
@@ -1800,28 +1820,53 @@ const createScatterplot = (
       }
     });
 
-  const computeNumPointsInView = () => {
-    numPointsInView =
-      camera.scaling <= 1
-        ? numPoints
-        : searchIndex.range(
-            bottomLeftNdc[0],
-            bottomLeftNdc[1],
-            topRightNdc[0],
-            topRightNdc[1]
-          ).length;
+  const getPointsInView = () =>
+    searchIndex.range(
+      bottomLeftNdc[0],
+      bottomLeftNdc[1],
+      topRightNdc[0],
+      topRightNdc[1]
+    );
+
+  const getNumPointsInView = () => {
+    numPointsInView = getPointsInView().length;
   };
-  const computeNumPointsInViewDb = throttleAndDebounce(
-    computeNumPointsInView,
+
+  const getNumPointsInViewDb = throttleAndDebounce(
+    getNumPointsInView,
     opacityByDensityDebounceTime
   );
+
+  const tweenCamera = (t) => {
+    const [xStart, yStart] = cameraZoomTargetStart;
+    const [xEnd, yEnd] = cameraZoomTargetEnd;
+
+    const ti = 1.0 - t;
+
+    const targetX = xStart * ti + xEnd * t;
+    const targetY = yStart * ti + yEnd * t;
+    const distance = cameraZoomDistanceStart * ti + cameraZoomDistanceEnd * t;
+
+    camera.lookAt([targetX, targetY], distance);
+  };
+
+  const isTransitioningPoints = () => hasCachedPoints();
+
+  const isTransitioningCamera = () => hasCachedCamera();
 
   const tween = (duration, easing) => {
     if (!transitionStartTime) transitionStartTime = performance.now();
 
     const dt = performance.now() - transitionStartTime;
+    const t = clip(easing(dt / duration), 0, 1);
 
-    updatePoints({ t: Math.min(1, Math.max(0, easing(dt / duration))) });
+    if (isTransitioningPoints()) {
+      updatePoints({ t });
+    }
+
+    if (isTransitioningCamera()) {
+      tweenCamera(t);
+    }
 
     return dt < duration;
   };
@@ -1834,6 +1879,7 @@ const createScatterplot = (
     showReticle = preTransitionShowReticle;
 
     clearCachedPoints();
+    clearCachedCamera();
 
     pubSub.publish('transitionEnd');
   };
@@ -1858,20 +1904,41 @@ const createScatterplot = (
       if (!points || Array.isArray(points)) {
         resolve(points);
       } else {
-        const getX = Array.isArray(points.x) && ((i) => points.x[i]);
-        const getY = Array.isArray(points.y) && ((i) => points.y[i]);
-        const getL = Array.isArray(points.line) && ((i) => points.line[i]);
+        const length =
+          Array.isArray(points.x) || ArrayBuffer.isView(points.x)
+            ? points.x.length
+            : 0;
+
+        const getX =
+          (Array.isArray(points.x) || ArrayBuffer.isView(points.x)) &&
+          ((i) => points.x[i]);
+        const getY =
+          (Array.isArray(points.y) || ArrayBuffer.isView(points.y)) &&
+          ((i) => points.y[i]);
+        const getL =
+          (Array.isArray(points.line) || ArrayBuffer.isView(points.line)) &&
+          ((i) => points.line[i]);
         const getLO =
-          Array.isArray(points.lineOrder) && ((i) => points.lineOrder[i]);
+          (Array.isArray(points.lineOrder) ||
+            ArrayBuffer.isView(points.lineOrder)) &&
+          ((i) => points.lineOrder[i]);
 
         const components = Object.keys(points);
         const getZ = (() => {
           const z = components.find((c) => Z_NAMES.has(c));
-          return z && ((i) => points[z][i]);
+          return (
+            z &&
+            (Array.isArray(points[z]) || ArrayBuffer.isView(points[z])) &&
+            ((i) => points[z][i])
+          );
         })();
         const getW = (() => {
           const w = components.find((c) => W_NAMES.has(c));
-          return w && ((i) => points[w][i]);
+          return (
+            w &&
+            (Array.isArray(points[w]) || ArrayBuffer.isView(points[w])) &&
+            ((i) => points[w][i])
+          );
         })();
 
         if (getX && getY && getZ && getW && getL && getLO) {
@@ -1887,14 +1954,29 @@ const createScatterplot = (
           );
         } else if (getX && getY && getZ && getW && getL) {
           resolve(
-            points.x.map((x, i) => [x, getY(i), getZ(i), getW(i), getL(i)])
+            Array.from({ length }, (_, i) => [
+              getX(i),
+              getY(i),
+              getZ(i),
+              getW(i),
+              getL(i),
+            ])
           );
         } else if (getX && getY && getZ && getW) {
-          resolve(points.x.map((x, i) => [x, getY(i), getZ(i), getW(i)]));
+          resolve(
+            Array.from({ length }, (_, i) => [
+              getX(i),
+              getY(i),
+              getZ(i),
+              getW(i),
+            ])
+          );
         } else if (getX && getY && getZ) {
-          resolve(points.x.map((x, i) => [x, getY(i), getZ(i)]));
+          resolve(
+            Array.from({ length }, (_, i) => [getX(i), getY(i), getZ(i)])
+          );
         } else if (getX && getY) {
-          resolve(points.x.map((x, i) => [x, getY(i)]));
+          resolve(Array.from({ length }, (_, i) => [getX(i), getY(i)]));
         } else {
           reject(new Error('You need to specify at least x and y'));
         }
@@ -1961,11 +2043,137 @@ const createScatterplot = (
     );
 
   /** @type {<F extends Function>(f: F) => (...args: Parameters<F>) => ReturnType<F>} */
-  const withDraw = (f) => (...args) => {
-    const out = f(...args);
-    draw = true;
-    return out;
+  const withDraw =
+    (f) =>
+    (...args) => {
+      const out = f(...args);
+      draw = true;
+      return out;
+    };
+
+  /**
+   * Get the bounding box of a set of points.
+   * @param {number[]} pointIdxs - A list of point indices
+   * @returns {import('./types').Rect} The bounding box
+   */
+  const getBBoxOfPoints = (pointIdxs) => {
+    let xMin = Infinity;
+    let xMax = -Infinity;
+    let yMin = Infinity;
+    let yMax = -Infinity;
+
+    for (let i = 0; i < pointIdxs.length; i++) {
+      const [x, y] = searchIndex.points[pointIdxs[i]];
+      xMin = Math.min(xMin, x);
+      xMax = Math.max(xMax, x);
+      yMin = Math.min(yMin, y);
+      yMax = Math.max(yMax, y);
+    }
+
+    return { x: xMin, y: yMin, width: xMax - xMin, height: yMax - yMin };
   };
+
+  /**
+   * Zoom to an area specified as a rectangle
+   * @param {import('./types').Rect} rect - The rectangle to zoom to
+   * @param {import('./types').ScatterplotMethodOptions['draw']} options
+   * @returns {Promise<void>}
+   */
+  const zoomToArea = (rect, options = {}) =>
+    new Promise((resolve) => {
+      const target = [rect.x + rect.width / 2, rect.y + rect.height / 2];
+
+      // Vertical field of view
+      const vFOV = 2 * Math.atan(1 / camera.view[5]);
+
+      const distance =
+        rect.height * viewAspectRatio > rect.width
+          ? // Distance is based on the height of the bounding box
+            rect.height / 2 / Math.tan(vFOV / 2)
+          : // Distance is based on the width of the bounding box
+            rect.width / 2 / Math.tan((vFOV * viewAspectRatio) / 2);
+
+      if (options.transition) {
+        camera.config({ isFixed: true });
+        cacheCamera(target, distance);
+        pubSub.subscribe(
+          'transitionEnd',
+          () => {
+            resolve();
+            camera.config({ isFixed: false });
+          },
+          1
+        );
+        startTransition({
+          duration: options.transitionDuration,
+          easing: options.transitionEasing,
+        });
+      } else {
+        camera.lookAt(target, distance);
+        pubSub.subscribe('draw', resolve, 1);
+        draw = true;
+      }
+    });
+
+  /**
+   * Zoom to a set of points
+   * @param {number[]} pointIdxs - A list of point indices
+   * @param {import('./types').ScatterplotMethodOptions['zoomToPoints']} options
+   * @returns {Promise<void>}
+   */
+  const zoomToPoints = (pointIdxs, options = {}) => {
+    const rect = getBBoxOfPoints(pointIdxs);
+    const cX = rect.x + rect.width / 2;
+    const cY = rect.y + rect.height / 2;
+
+    const pointSizeNdc = getPointSizeNdc();
+    const scale = 1 + (options.padding || 0);
+
+    const w = Math.max(rect.width, pointSizeNdc) * scale;
+    const h = Math.max(rect.height, pointSizeNdc) * scale;
+    const x = cX - w / 2;
+    const y = cY - h / 2;
+
+    return zoomToArea({ x, y, width: w, height: h }, options);
+  };
+
+  /**
+   * Zoom to a location specified in normalized devide coordinates.
+   * @param {number[]} target - The camera target
+   * @param {number} distance - The camera distance
+   * @param {import('./types').ScatterplotMethodOptions['draw']} options
+   * @returns {Promise<void>}
+   */
+  const zoomToLocation = (target, distance, options = {}) =>
+    new Promise((resolve) => {
+      if (options.transition) {
+        camera.config({ isFixed: true });
+        cacheCamera(target, distance);
+        pubSub.subscribe(
+          'transitionEnd',
+          () => {
+            resolve();
+            camera.config({ isFixed: false });
+          },
+          1
+        );
+        startTransition({
+          duration: options.transitionDuration,
+          easing: options.transitionEasing,
+        });
+      } else {
+        camera.lookAt(target, distance);
+        pubSub.subscribe('draw', resolve, 1);
+        draw = true;
+      }
+    });
+
+  /**
+   * Zoom to the origin
+   * @param {import('./types').ScatterplotMethodOptions['draw']} options
+   * @returns {Promise<void>}
+   */
+  const zoomToOrigin = (options = {}) => zoomToLocation([0, 0], 1, options);
 
   const updatePointConnectionStyle = () => {
     pointConnections.setStyle({
@@ -1998,11 +2206,16 @@ const createScatterplot = (
     if (!newBackgroundImage) {
       backgroundImage = null;
     } else if (isString(newBackgroundImage)) {
-      createTextureFromUrl(regl, newBackgroundImage).then((texture) => {
-        backgroundImage = texture;
-        draw = true;
-        pubSub.publish('backgroundImageReady');
-      });
+      createTextureFromUrl(renderer.regl, newBackgroundImage)
+        .then((texture) => {
+          backgroundImage = texture;
+          draw = true;
+          pubSub.publish('backgroundImageReady');
+        })
+        .catch(() => {
+          console.error(`Count not create texture from ${newBackgroundImage}`);
+          backgroundImage = null;
+        });
       // eslint-disable-next-line no-underscore-dangle
     } else if (newBackgroundImage._reglType === 'texture2d') {
       backgroundImage = newBackgroundImage;
@@ -2017,11 +2230,11 @@ const createScatterplot = (
 
   const setCameraRotation = (rotation) => {
     if (rotation !== null)
-      camera.lookAt(camera.target, camera.distance, rotation);
+      camera.lookAt(camera.target, camera.distance[0], rotation);
   };
 
   const setCameraTarget = (target) => {
-    if (target) camera.lookAt(target, camera.distance, camera.rotation);
+    if (target) camera.lookAt(target, camera.distance[0], camera.rotation);
   };
 
   const setCameraView = (view) => {
@@ -2138,6 +2351,8 @@ const createScatterplot = (
     xScale = newXScale;
     xDomainStart = newXScale.domain()[0];
     xDomainSize = newXScale ? newXScale.domain()[1] - newXScale.domain()[0] : 0;
+    xScale.range([0, currentWidth]);
+    updateScales();
   };
 
   const setYScale = (newYScale) => {
@@ -2146,6 +2361,8 @@ const createScatterplot = (
     yScale = newYScale;
     yDomainStart = yScale.domain()[0];
     yDomainSize = yScale ? yScale.domain()[1] - yScale.domain()[0] : 0;
+    yScale.range([currentHeight, 0]);
+    updateScales();
   };
 
   const setDeselectOnDblClick = (newDeselectOnDblClick) => {
@@ -2267,18 +2484,16 @@ const createScatterplot = (
     opacityByDensityFill = +newOpacityByDensityFill;
   };
 
-  const setGamma = (newGamma) => {
-    gamma = +newGamma;
+  const setOpacityInactiveMax = (newOpacityInactiveMax) => {
+    opacityInactiveMax = +newOpacityInactiveMax;
   };
 
-  /**
-   * Update Regl's viewport, drawingBufferWidth, and drawingBufferHeight
-   *
-   * @description Call this method after the viewport has changed, e.g., width
-   * or height have been altered
-   */
-  const refresh = () => {
-    regl.poll();
+  const setOpacityInactiveScale = (newOpacityInactiveScale) => {
+    opacityInactiveScale = +newOpacityInactiveScale;
+  };
+
+  const setGamma = (newGamma) => {
+    renderer.gamma = newGamma;
   };
 
   /** @type {<Key extends keyof import('./types').Properties>(property: Key) => import('./types').Properties[Key] } */
@@ -2291,7 +2506,7 @@ const createScatterplot = (
     if (property === 'backgroundImage') return backgroundImage;
     if (property === 'camera') return camera;
     if (property === 'cameraTarget') return camera.target;
-    if (property === 'cameraDistance') return camera.distance;
+    if (property === 'cameraDistance') return camera.distance[0];
     if (property === 'cameraRotation') return camera.rotation;
     if (property === 'cameraView') return camera.view;
     if (property === 'canvas') return canvas;
@@ -2317,6 +2532,10 @@ const createScatterplot = (
     if (property === 'opacityByDensityFill') return opacityByDensityFill;
     if (property === 'opacityByDensityDebounceTime')
       return opacityByDensityDebounceTime;
+    if (property === 'opacityInactiveMax') return opacityInactiveMax;
+    if (property === 'opacityInactiveScale') return opacityInactiveScale;
+    if (property === 'points') return searchIndex.points;
+    if (property === 'pointsInView') return getPointsInView();
     if (property === 'pointColor')
       return pointColor.length === 1 ? pointColor[0] : pointColor;
     if (property === 'pointColorActive')
@@ -2366,14 +2585,15 @@ const createScatterplot = (
     if (property === 'pointConnectionTolerance')
       return pointConnectionTolerance;
     if (property === 'reticleColor') return reticleColor;
-    if (property === 'regl') return regl;
+    if (property === 'regl') return renderer.regl;
     if (property === 'showReticle') return showReticle;
     if (property === 'version') return version;
     if (property === 'width') return width;
     if (property === 'xScale') return xScale;
     if (property === 'yScale') return yScale;
     if (property === 'performanceMode') return performanceMode;
-    if (property === 'gamma') return gamma;
+    if (property === 'gamma') return renderer.gamma;
+    if (property === 'renderer') return renderer;
 
     return undefined;
   };
@@ -2583,6 +2803,14 @@ const createScatterplot = (
       setOpacityByDensityFill(properties.opacityByDensityFill);
     }
 
+    if (properties.opacityInactiveMax !== undefined) {
+      setOpacityInactiveMax(properties.opacityInactiveMax);
+    }
+
+    if (properties.opacityInactiveScale !== undefined) {
+      setOpacityInactiveScale(properties.opacityInactiveScale);
+    }
+
     if (properties.gamma !== undefined) {
       setGamma(properties.gamma);
     }
@@ -2590,15 +2818,26 @@ const createScatterplot = (
     // setWidth and setHeight can be async when width or height are set to
     // 'auto'. And since draw() would have anyway been async we can just make
     // all calls async.
-    return new Promise((resolve) =>
+    return new Promise((resolve) => {
       window.requestAnimationFrame(() => {
         if (!canvas) return; // Instance was destroyed in between
         updateViewAspectRatio();
-        refresh();
+        camera.refresh();
+        renderer.refresh();
         draw = true;
         resolve();
-      })
-    );
+      });
+    });
+  };
+
+  /**
+   * @param {number[]} cameraView
+   * @param {import('./types').ScatterplotMethodOptions['preventEvent']} options
+   */
+  const view = (cameraView, { preventEvent = false } = {}) => {
+    setCameraView(cameraView);
+    draw = true;
+    preventEventView = preventEvent;
   };
 
   /**
@@ -2647,7 +2886,8 @@ const createScatterplot = (
   };
 
   const initCamera = () => {
-    if (!camera) camera = createDom2dCamera(canvas);
+    if (!camera)
+      camera = createDom2dCamera(canvas, { isPanInverted: [false, true] });
 
     if (initialProperties.cameraView) {
       camera.setView(mat4.clone(initialProperties.cameraView));
@@ -2669,9 +2909,14 @@ const createScatterplot = (
     bottomLeftNdc = getScatterGlPos(-1, -1);
   };
 
-  const reset = () => {
+  /**
+   * @param {import('./types').ScatterplotMethodOptions['preventEvent']} options
+   */
+  const reset = ({ preventEvent = false } = {}) => {
     initCamera();
     updateScales();
+
+    if (preventEvent) return;
 
     pubSub.publish('view', {
       view: camera.view,
@@ -2705,19 +2950,19 @@ const createScatterplot = (
     draw = true;
   };
 
+  /** @type {() => void} */
   const clear = () => {
     setPoints([]);
     pointConnections.clear();
   };
 
   const resizeHandler = () => {
-    const autoWidth = width === 'auto';
-    const autoHeight = height === 'auto';
+    camera.refresh();
+    const autoWidth = width === AUTO;
+    const autoHeight = height === AUTO;
     if (autoWidth || autoHeight) {
-      const {
-        width: newWidth,
-        height: newHeight,
-      } = canvas.getBoundingClientRect();
+      const { width: newWidth, height: newHeight } =
+        canvas.getBoundingClientRect();
 
       if (autoWidth) setCurrentWidth(newWidth);
       if (autoHeight) setCurrentHeight(newHeight);
@@ -2727,24 +2972,21 @@ const createScatterplot = (
     }
   };
 
-  /** @param {import('regl').ReadOptions<Uint8Array>} options */
-  const exportFn = (options = {}) => ({
-    pixels: Uint8ClampedArray.from(regl.read(options)),
-    width: currentWidth * window.devicePixelRatio,
-    height: currentHeight * window.devicePixelRatio,
-  });
+  /** @type {() => ImageData} */
+  const exportFn = () =>
+    canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
 
   const init = () => {
     updateViewAspectRatio();
     initCamera();
     updateScales();
 
-    lasso = createLine(regl, {
+    lasso = createLine(renderer.regl, {
       color: lassoColor,
       width: lassoLineWidth,
       is2d: true,
     });
-    pointConnections = createLine(regl, {
+    pointConnections = createLine(renderer.regl, {
       color: pointConnectionColor,
       colorHover: pointConnectionColorHover,
       colorActive: pointConnectionColorActive,
@@ -2754,12 +2996,12 @@ const createScatterplot = (
       widthActive: pointConnectionSizeActive,
       is2d: true,
     });
-    reticleHLine = createLine(regl, {
+    reticleHLine = createLine(renderer.regl, {
       color: reticleColor,
       width: 1,
       is2d: true,
     });
-    reticleVLine = createLine(regl, {
+    reticleVLine = createLine(renderer.regl, {
       color: reticleColor,
       width: 1,
       is2d: true,
@@ -2770,9 +3012,9 @@ const createScatterplot = (
     canvas.addEventListener('wheel', wheelHandler);
 
     // Buffers
-    normalPointsIndexBuffer = regl.buffer();
-    selectedPointsIndexBuffer = regl.buffer();
-    hoveredPointIndexBuffer = regl.buffer({
+    normalPointsIndexBuffer = renderer.regl.buffer();
+    selectedPointsIndexBuffer = renderer.regl.buffer();
+    hoveredPointIndexBuffer = renderer.regl.buffer({
       usage: 'dynamic',
       type: 'float',
       length: FLOAT_BYTES * 2, // This buffer is fixed to exactly 1 point consisting of 2 coordinates
@@ -2795,86 +3037,85 @@ const createScatterplot = (
     window.addEventListener('blur', blurHandler, false);
     window.addEventListener('mouseup', mouseUpHandler, false);
     window.addEventListener('mousemove', mouseMoveHandler, false);
-    window.addEventListener('resize', resizeHandler);
-    window.addEventListener('orientationchange', resizeHandler);
     canvas.addEventListener('mousedown', mouseDownHandler, false);
     canvas.addEventListener('mouseenter', mouseEnterCanvasHandler, false);
     canvas.addEventListener('mouseleave', mouseLeaveCanvasHandler, false);
     canvas.addEventListener('click', mouseClickHandler, false);
     canvas.addEventListener('dblclick', mouseDblClickHandler, false);
 
+    if ('ResizeObserver' in window) {
+      canvasObserver = new ResizeObserver(resizeHandler);
+      canvasObserver.observe(canvas);
+    } else {
+      window.addEventListener('resize', resizeHandler);
+      window.addEventListener('orientationchange', resizeHandler);
+    }
+
     whenSet.then(() => {
       pubSub.publish('init');
     });
   };
 
-  const frame = regl.frame(() => {
+  const cancelFrameListener = renderer.onFrame(() => {
+    // Update camera: this needs to happen on every
+    isViewChanged = camera.tick();
+
     if (!isInit || !(draw || isTransitioning)) return;
 
     if (isTransitioning && !tween(transitionDuration, transitionEasing))
       endTransition();
 
-    // Update camera
-    isViewChanged = camera.tick();
-
     if (isViewChanged) {
       topRightNdc = getScatterGlPos(1, 1);
       bottomLeftNdc = getScatterGlPos(-1, -1);
-      computeNumPointsInViewDb();
+      if (opacityBy === 'density') getNumPointsInViewDb();
     }
 
-    regl.clear({
-      // background color (transparent)
-      color: [0, 0, 0, 0],
-      depth: 1,
-    });
+    renderer.render((widthRatio, heightRatio) => {
+      updateProjectionMatrix(widthRatio, heightRatio);
 
-    // eslint-disable-next-line no-underscore-dangle
-    if (backgroundImage && backgroundImage._reglType) {
-      drawBackgroundImage();
-    }
+      // eslint-disable-next-line no-underscore-dangle
+      if (backgroundImage && backgroundImage._reglType) {
+        drawBackgroundImage();
+      }
 
-    if (lassoPointsCurr.length > 2) drawPolygon2d();
+      if (lassoPointsCurr.length > 2) drawPolygon2d();
 
-    // The draw order of the following calls is important!
-    if (!isTransitioning)
-      pointConnections.draw({
-        projection: getProjection(),
-        model: getModel(),
-        view: getView(),
-      });
-
-    fbo.use(() => {
-      regl.clear({
-        // background color (transparent)
-        color: [0, 0, 0, 0],
-        depth: 1,
-      });
+      // The draw order of the following calls is important!
+      if (!isTransitioning) {
+        pointConnections.draw({
+          projection: getProjection(),
+          model: getModel(),
+          view: getView(),
+        });
+      }
 
       drawPointBodies();
       if (!mouseDown && (showReticle || drawReticleOnce)) drawReticle();
       if (hoveredPoint >= 0) drawHoveredPoint();
-      if (selection.length) drawSelectedPoint();
-    });
+      if (selection.length) drawSelectedPoints();
 
-    copyToScreen();
-
-    lasso.draw({
-      projection: getProjection(),
-      model: getModel(),
-      view: getView(),
-    });
+      lasso.draw({
+        projection: getProjection(),
+        model: getModel(),
+        view: getView(),
+      });
+    }, canvas);
 
     // Publish camera change
     if (isViewChanged) {
       updateScales();
 
-      pubSub.publish('view', {
-        view: camera.view,
-        camera,
-        xScale,
-        yScale,
-      });
+      if (preventEventView) {
+        preventEventView = false;
+      } else {
+        pubSub.publish('view', {
+          view: camera.view,
+          camera,
+          xScale,
+          yScale,
+        });
+      }
     }
 
     draw = false;
@@ -2883,52 +3124,83 @@ const createScatterplot = (
     pubSub.publish('draw');
   });
 
+  const redraw = () => {
+    draw = true;
+  };
+
   const destroy = () => {
-    frame.cancel();
+    cancelFrameListener();
     window.removeEventListener('keyup', keyUpHandler, false);
     window.removeEventListener('blur', blurHandler, false);
     window.removeEventListener('mouseup', mouseUpHandler, false);
     window.removeEventListener('mousemove', mouseMoveHandler, false);
-    window.removeEventListener('resize', resizeHandler);
-    window.removeEventListener('orientationchange', resizeHandler);
     canvas.removeEventListener('mousedown', mouseDownHandler, false);
     canvas.removeEventListener('mouseenter', mouseEnterCanvasHandler, false);
     canvas.removeEventListener('mouseleave', mouseLeaveCanvasHandler, false);
     canvas.removeEventListener('click', mouseClickHandler, false);
     canvas.removeEventListener('dblclick', mouseDblClickHandler, false);
+    if (canvasObserver) {
+      canvasObserver.disconnect();
+    } else {
+      window.removeEventListener('resize', resizeHandler);
+      window.removeEventListener('orientationchange', resizeHandler);
+    }
     canvas = undefined;
     camera.dispose();
     camera = undefined;
-    regl = undefined;
     lasso.destroy();
     pointConnections.destroy();
     reticleHLine.destroy();
     reticleVLine.destroy();
     pubSub.publish('destroy');
     pubSub.clear();
+    if (!initialProperties.renderer) {
+      // Since the user did not pass in an externally created renderer we can
+      // assume that the renderer is only used by this scatter plot instance.
+      // Therefore it's save to destroy it when this scatter plot instance is
+      // destroyed.
+      renderer.destroy();
+    }
   };
 
   init();
 
   return {
+    /**
+     * Get whether the browser supports all necessary WebGL features
+     * @return {boolean} If `true` the browser supports all necessary WebGL features
+     */
+    get isSupported() {
+      return renderer.isSupported;
+    },
     clear: withDraw(clear),
-    createTextureFromUrl: (/** @type {string} */ url) =>
-      createTextureFromUrl(regl, url),
+    createTextureFromUrl: (
+      /** @type {string} */ url,
+      /** @type {number} */ timeout = DEFAULT_IMAGE_LOAD_TIMEOUT
+    ) => createTextureFromUrl(renderer.regl, url, timeout),
     deselect,
     destroy,
     draw: publicDraw,
     get,
     hover,
-    refresh,
+    redraw,
+    refresh: renderer.refresh,
     reset: withDraw(reset),
     select,
     set,
     export: exportFn,
     subscribe: pubSub.subscribe,
     unsubscribe: pubSub.unsubscribe,
+    view,
+    zoomToLocation,
+    zoomToArea,
+    zoomToPoints,
+    zoomToOrigin,
   };
 };
 
 export default createScatterplot;
 
-export { createRegl, createTextureFromUrl };
+export { createRegl, createRenderer, createTextureFromUrl };
+
+export { checkReglExtensions as checkSupport } from './utils';

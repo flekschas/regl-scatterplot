@@ -1,7 +1,7 @@
 /* eslint no-console: 0 */
 
 import createScatterplot from '../src';
-import { saveAsPng } from './utils';
+import { saveAsPng, checkSupport } from './utils';
 
 const canvas = document.querySelector('#canvas');
 const numPointsEl = document.querySelector('#num-points');
@@ -52,6 +52,8 @@ const scatterplot = createScatterplot({
   )}/?random`,
   lassoInitiator: true,
 });
+
+checkSupport(scatterplot);
 
 exportEl.addEventListener('click', () => saveAsPng(scatterplot));
 

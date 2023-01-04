@@ -1,4 +1,4 @@
-const VERTEX_SHADER = `
+const createVertexShader = (globalState) => `
 precision highp float;
 
 uniform sampler2D colorTex;
@@ -12,6 +12,8 @@ uniform sampler2D encodingTex;
 uniform float encodingTexRes;
 uniform float encodingTexEps;
 uniform float pointSizeExtra;
+uniform float pointOpacityMax;
+uniform float pointOpacityScale;
 uniform float numPoints;
 uniform float globalState;
 uniform float isColoredByZ;
@@ -27,18 +29,17 @@ uniform float opacityDensity;
 uniform float sizeMultiplicator;
 uniform float numColorStates;
 uniform float pointScale;
-uniform mat4 projectionViewModel;
+uniform mat4 modelViewProjection;
 
 attribute vec2 stateIndex;
 
-// variables to send to the fragment shader
 varying vec4 color;
 varying float finalPointSize;
 
 void main() {
   vec4 state = texture2D(stateTex, stateIndex);
 
-  gl_Position = projectionViewModel * vec4(state.x, state.y, 0.0, 1.0);
+  gl_Position = modelViewProjection * vec4(state.x, state.y, 0.0, 1.0);
 
   // Determine color index
   float colorIndexZ =  isColoredByZ * floor(state.z * colorMultiplicator);
@@ -76,24 +77,35 @@ void main() {
   float pointSize = texture2D(encodingTex, pointSizeTexIndex).x;
 
   // Retrieve opacity
-  if (isOpacityByDensity < 0.5) {
-    float opacityIndexZ = isOpacityByZ * floor(state.z * opacityMultiplicator);
-    float opacityIndexW = isOpacityByW * floor(state.w * opacityMultiplicator);
-    float opacityIndex = opacityIndexZ + opacityIndexW;
+  ${
+    (() => {
+      // Drawing the inner border of selected points
+      if (globalState === 3) return '';
 
-    float opacityRowIndex = floor((opacityIndex + encodingTexEps) / encodingTexRes);
-    vec2 opacityTexIndex = vec2(
-      (opacityIndex / encodingTexRes) - opacityRowIndex + encodingTexEps,
-      opacityRowIndex / encodingTexRes + encodingTexEps
-    );
-    color.a = min(1.0, texture2D(encodingTex, opacityTexIndex).y + globalState);
-  } else {
-    color.a = min(1.0, opacityDensity + globalState);
+      // Draw points with opacity encoding or dynamic opacity
+      return `
+        if (isOpacityByDensity < 0.5) {
+          float opacityIndexZ = isOpacityByZ * floor(state.z * opacityMultiplicator);
+          float opacityIndexW = isOpacityByW * floor(state.w * opacityMultiplicator);
+          float opacityIndex = opacityIndexZ + opacityIndexW;
+
+          float opacityRowIndex = floor((opacityIndex + encodingTexEps) / encodingTexRes);
+          vec2 opacityTexIndex = vec2(
+            (opacityIndex / encodingTexRes) - opacityRowIndex + encodingTexEps,
+            opacityRowIndex / encodingTexRes + encodingTexEps
+          );
+          color.a = texture2D(encodingTex, opacityTexIndex)[${1 + globalState}];
+        } else {
+          color.a = min(1.0, opacityDensity + globalState);
+        }
+      `;
+    })()
   }
 
+  color.a = min(pointOpacityMax, color.a) * pointOpacityScale;
   finalPointSize = (pointSize * pointScale) + pointSizeExtra;
   gl_PointSize = finalPointSize;
 }
 `;
 
-export default VERTEX_SHADER;
+export default createVertexShader;

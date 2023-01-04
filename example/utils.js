@@ -17,26 +17,46 @@ export function downloadBlob(blob, name = 'file.txt') {
 }
 
 export function saveAsPng(scatterplot) {
-  const { pixels, width, height } = scatterplot.export();
-
-  const c = document.createElement('canvas');
-  c.width = width;
-  c.height = height;
-
-  const ctx = c.getContext('2d');
-  ctx.putImageData(new ImageData(pixels, width, height), 0, 0);
-
-  // The following is only needed to flip the image vertically. Since `ctx.scale`
-  // only affects `draw*()` calls and not `put*()` calls we have to draw the
-  // image twice...
   const imageObject = new Image();
   imageObject.onload = () => {
-    ctx.clearRect(0, 0, width, height);
-    ctx.scale(1, -1);
-    ctx.drawImage(imageObject, 0, -height);
-    c.toBlob((blob) => {
+    scatterplot.get('canvas').toBlob((blob) => {
       downloadBlob(blob, 'scatter.png');
     });
   };
-  imageObject.src = c.toDataURL();
+  imageObject.src = scatterplot.get('canvas').toDataURL();
+}
+
+export function closeModal() {
+  const modal = document.querySelector('#modal');
+  const modalText = document.querySelector('#modal-text');
+  modal.style.display = 'none';
+  modalText.textContent = '';
+}
+
+export function showModal(text, isError, isClosable) {
+  const modal = document.querySelector('#modal');
+  modal.style.display = 'flex';
+
+  const modalText = document.querySelector('#modal-text');
+  modalText.style.color = isError ? '#cc79A7' : '#bbb';
+  modalText.textContent = text;
+
+  const modalClose = document.querySelector('#modal-close');
+  if (isClosable) {
+    modalClose.style.display = 'block';
+    modalClose.style.background = isError ? '#cc79A7' : '#bbb';
+    modalClose.addEventListener('click', closeModal, { once: true });
+  } else {
+    modalClose.style.display = 'none';
+  }
+}
+
+export function checkSupport(scatterplot) {
+  if (!scatterplot.isSupported) {
+    showModal(
+      'Your browser does not support all necessary WebGL features. The scatter plot might not render properly.',
+      true,
+      true
+    );
+  }
 }

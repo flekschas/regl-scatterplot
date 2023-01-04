@@ -8,6 +8,8 @@ import {
   quadOut,
 } from '@flekschas/utils';
 
+export const AUTO = 'auto';
+
 export const COLOR_NORMAL_IDX = 0;
 export const COLOR_ACTIVE_IDX = 1;
 export const COLOR_HOVER_IDX = 2;
@@ -20,6 +22,10 @@ export const GL_EXTENSIONS = [
   'WEBGL_color_buffer_float',
   'EXT_float_blend',
 ];
+export const CLEAR_OPTIONS = {
+  color: [0, 0, 0, 0], // Transparent background color
+  depth: 1,
+};
 
 export const MOUSE_MODE_PANZOOM = 'panZoom';
 export const MOUSE_MODE_LASSO = 'lasso';
@@ -78,8 +84,8 @@ export const DEFAULT_KEY_MAP = {
 
 // Default attribute
 export const DEFAULT_DATA_ASPECT_RATIO = 1;
-export const DEFAULT_WIDTH = 'auto';
-export const DEFAULT_HEIGHT = 'auto';
+export const DEFAULT_WIDTH = AUTO;
+export const DEFAULT_HEIGHT = AUTO;
 export const DEFAULT_GAMMA = 1;
 
 // Default styles
@@ -98,11 +104,13 @@ export const DEFAULT_OPACITY = 1;
 export const DEFAULT_OPACITY_BY = null;
 export const DEFAULT_OPACITY_BY_DENSITY_FILL = 0.15;
 export const DEFAULT_OPACITY_BY_DENSITY_DEBOUNCE_TIME = 25;
+export const DEFAULT_OPACITY_INACTIVE_MAX = 1;
+export const DEFAULT_OPACITY_INACTIVE_SCALE = 1;
 
 // Default colors
 export const DEFAULT_COLORMAP = [];
 export const DEFAULT_COLOR_BY = null;
-export const DEFAULT_COLOR_NORMAL = [0.66, 0.66, 0.66, 1];
+export const DEFAULT_COLOR_NORMAL = [0.66, 0.66, 0.66, DEFAULT_OPACITY];
 export const DEFAULT_COLOR_ACTIVE = [0, 0.55, 1, 1];
 export const DEFAULT_COLOR_HOVER = [1, 1, 1, 1];
 export const DEFAULT_COLOR_BG = [0, 0, 0, 1];
@@ -123,6 +131,9 @@ export const DEFAULT_VIEW = new Float32Array([
   0, 0, 0, 1
 ]);
 
+// Error codes
+export const IMAGE_LOAD_ERROR = 'IMAGE_LOAD_ERROR';
+
 // Default misc
 export const DEFAULT_BACKGROUND_IMAGE = null;
 export const DEFAULT_SHOW_RETICLE = false;
@@ -138,3 +149,4 @@ export const SINGLE_CLICK_DELAY = 200;
 export const LONG_CLICK_TIME = 500;
 export const Z_NAMES = new Set(['z', 'valueZ', 'valueA', 'value1', 'category']);
 export const W_NAMES = new Set(['w', 'valueW', 'valueB', 'value2', 'value']);
+export const DEFAULT_IMAGE_LOAD_TIMEOUT = 15000;

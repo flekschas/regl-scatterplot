@@ -1,12 +1,12 @@
 /* eslint no-console: 0 */
 
-import { scaleLog } from 'd3-scale';
-import { randomExponential } from 'd3-random';
+import { scaleLinear, scaleLog } from 'd3-scale';
 
 import createScatterplot from '../src';
 import { saveAsPng, checkSupport } from './utils';
 
 const canvas = document.querySelector('#canvas');
+const canvasWrapper = document.querySelector('#canvas-wrapper');
 const numPointsEl = document.querySelector('#num-points');
 const numPointsValEl = document.querySelector('#num-points-value');
 const pointSizeEl = document.querySelector('#point-size');
@@ -16,37 +16,56 @@ const opacityValEl = document.querySelector('#opacity-value');
 const clickLassoInitiatorEl = document.querySelector('#click-lasso-initiator');
 const resetEl = document.querySelector('#reset');
 const exportEl = document.querySelector('#export');
-const exampleEl = document.querySelector('#example-size-encoding');
+const exampleEl = document.querySelector('#example-text-overlay');
 
 exampleEl.setAttribute('class', 'active');
 exampleEl.removeAttribute('href');
 
+const noteEl = document.createElement('div');
+noteEl.id = 'note';
+noteEl.textContent = 'Zoom in to see labels!';
+canvasWrapper.appendChild(noteEl);
+
+const textOverlayEl = document.createElement('canvas');
+textOverlayEl.id = '#text-overlay';
+textOverlayEl.style.position = 'absolute';
+textOverlayEl.style.top = 0;
+textOverlayEl.style.right = 0;
+textOverlayEl.style.bottom = 0;
+textOverlayEl.style.left = 0;
+textOverlayEl.style.pointerEvents = 'none';
+
+canvasWrapper.appendChild(textOverlayEl);
+
+const resizeTextOverlay = () => {
+  const { width, height } = canvasWrapper.getBoundingClientRect();
+  textOverlayEl.width = width * window.devicePixelRatio;
+  textOverlayEl.height = height * window.devicePixelRatio;
+  textOverlayEl.style.width = `${width}px`;
+  textOverlayEl.style.height = `${height}px`;
+};
+resizeTextOverlay();
+
+window.addEventListener('resize', resizeTextOverlay);
+
+const overlayFontSize = 12;
+const textOverlayCtx = textOverlayEl.getContext('2d');
+textOverlayCtx.font = `${
+  overlayFontSize * window.devicePixelRatio
+}px sans-serif`;
+textOverlayCtx.textAlign = 'center';
+
 let points = [];
-let numPoints = 100000;
-let pointSize = 2;
+let numPoints = 10000;
+let pointSize = 4;
 let opacity = 1.0;
 let selection = [];
 
+const maxPointLabels = 200;
 const lassoMinDelay = 10;
 const lassoMinDist = 2;
 const showReticle = true;
 const reticleColor = [1, 1, 0.878431373, 0.33];
-
-const selectHandler = ({ points: selectedPoints }) => {
-  console.log('Selected:', selectedPoints);
-  selection = selectedPoints;
-  if (selection.length === 1) {
-    const point = points[selection[0]];
-    console.log(
-      `X: ${point[0]}\nY: ${point[1]}\nCategory: ${point[2]}\nValue: ${point[3]}`
-    );
-  }
-};
-
-const deselectHandler = () => {
-  console.log('Deselected:', selection);
-  selection = [];
-};
 
 const scatterplot = createScatterplot({
   canvas,
@@ -55,8 +74,11 @@ const scatterplot = createScatterplot({
   pointSize,
   showReticle,
   reticleColor,
+  xScale: scaleLinear().domain([-1, 1]),
+  yScale: scaleLinear().domain([-1, 1]),
+  pointColor: '#fff',
+  opacityBy: 'density',
   lassoInitiator: true,
-  opacityInactiveScale: 0.66,
 });
 
 checkSupport(scatterplot);
@@ -65,48 +87,53 @@ exportEl.addEventListener('click', () => saveAsPng(scatterplot));
 
 console.log(`Scatterplot v${scatterplot.get('version')}`);
 
-scatterplot.subscribe('select', selectHandler);
-scatterplot.subscribe('deselect', deselectHandler);
+scatterplot.subscribe('select', ({ points: selectedPoints }) => {
+  console.log('Selected:', selectedPoints);
+  selection = selectedPoints;
+  if (selection.length === 1) {
+    const point = points[selection[0]];
+    console.log(
+      `X: ${point[0]}\nY: ${point[1]}\nCategory: ${point[2]}\nValue: ${point[3]}`
+    );
+  }
+});
 
-const rndA = randomExponential(2);
-const rndB = randomExponential(4);
-const rndC = randomExponential(5);
+scatterplot.subscribe('deselect', () => {
+  selection = [];
+});
 
-const generatePoints = (num) => {
-  const newPoints = [
-    ...new Array(Math.round((num * 2) / 12)).fill().map(() => [
-      -1 + (Math.random() * 2 * 1) / 3, // x
-      -1 + Math.random() * 2, // y
-      0, // category
-      rndA(), // value
-    ]),
-    ...new Array(Math.round((num * 4) / 12)).fill().map(() => [
-      -1 + 2 / 3 + (Math.random() * 2 * 1) / 3, // x
-      -1 + Math.random() * 2, // y
-      1, // category
-      rndB(), // value
-    ]),
-    ...new Array(Math.round((num * 6) / 12)).fill().map(() => [
-      -1 + 4 / 3 + (Math.random() * 2 * 1) / 3, // x
-      -1 + Math.random() * 2, // y
-      2, // category
-      rndC(), // value
-    ]),
-  ];
+const showPointLabels = (pointsInView, xScale, yScale) => {
+  textOverlayCtx.clearRect(0, 0, canvas.width, canvas.height);
+  textOverlayCtx.fillStyle = 'rgb(255, 255, 255)';
 
-  const [minVal, maxVal] = newPoints.reduce(
-    ([min, max], point) => [Math.min(min, point[3]), Math.max(max, point[3])],
-    [Infinity, -Infinity]
-  );
-
-  const valRange = maxVal - minVal;
-
-  newPoints.forEach((point) => {
-    point[3] = (point[3] - minVal) / valRange;
-  });
-
-  return newPoints;
+  for (let i = 0; i < pointsInView.length; i++) {
+    textOverlayCtx.fillText(
+      pointsInView[i],
+      xScale(points[pointsInView[i]][0]) * window.devicePixelRatio,
+      yScale(points[pointsInView[i]][1]) * window.devicePixelRatio -
+        overlayFontSize * 1.2 * window.devicePixelRatio
+    );
+  }
 };
+
+const hidePointLabels = () => {
+  textOverlayCtx.clearRect(0, 0, canvas.width, canvas.height);
+};
+
+scatterplot.subscribe('view', ({ xScale, yScale }) => {
+  const pointsInView = scatterplot.get('pointsInView');
+  if (pointsInView.length <= maxPointLabels) {
+    showPointLabels(pointsInView, xScale, yScale);
+  } else {
+    hidePointLabels();
+  }
+});
+
+const generatePoints = (num) =>
+  Array.from({ length: num }, () => [
+    -1 + Math.random() * 2,
+    -1 + Math.random() * 2,
+  ]);
 
 const setNumPoint = (newNumPoints) => {
   numPoints = newNumPoints;
@@ -181,13 +208,6 @@ const resetClickHandler = () => {
 };
 
 resetEl.addEventListener('click', resetClickHandler);
-
-scatterplot.set({
-  colorBy: 'category',
-  pointColor: ['#ff80cb', '#57c7ff', '#eee462'],
-  sizeBy: 'w',
-  opacityBy: 'w',
-});
 
 setPointSize(pointSize);
 setOpacity(opacity);

@@ -71,6 +71,13 @@ type CameraOptions = {
   view: Float32Array;
 };
 
+type Rect = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+};
+
 interface BaseOptions {
   backgroundColor: Color;
   deselectOnDblClick: boolean;
@@ -82,6 +89,8 @@ interface BaseOptions {
   reticleColor: Color;
   opacity: number;
   opacityByDensityFill: number;
+  opacityInactiveMax: number;
+  opacityInactiveScale: number;
   height: 'auto' | number;
   width: 'auto' | number;
   gamma: number;
@@ -114,6 +123,7 @@ export type Settable = BaseOptions &
   WithPrefix<'camera', CameraOptions>;
 
 export type Properties = {
+  renderer: ReturnType<typeof import('./renderer').createRenderer>;
   canvas: HTMLCanvasElement;
   regl: import('regl').Regl;
   syncEvents: boolean;
@@ -122,8 +132,9 @@ export type Properties = {
   camera: Camera2D;
   performanceMode: boolean;
   opacityByDensityDebounceTime: number;
+  points: [number, number][];
+  pointsInView: number[];
 } & Settable;
-
 
 // Options for plot.{draw, select, hover}
 export interface ScatterplotMethodOptions {
@@ -140,8 +151,16 @@ export interface ScatterplotMethodOptions {
     merge: boolean;
     preventEvent: boolean;
   }>;
+  preventEvent: Partial<{
+    preventEvent: boolean;
+  }>;
+  zoomToPoints: Partial<{
+    padding: number;
+    transition: boolean;
+    transitionDuration: number;
+    transitionEasing: (t: number) => number;
+  }>;
 }
-
 
 // PubSub definitions
 type PubSubEvent<EventName extends string, Payload extends unknown> = {
@@ -152,6 +171,7 @@ type EventMap = PubSubEvent<
   | 'init'
   | 'destroy'
   | 'backgroundImageReady'
+  | 'select'
   | 'deselect'
   | 'lassoStart'
   | 'transitionStart'

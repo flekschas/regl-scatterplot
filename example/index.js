@@ -1,7 +1,7 @@
 /* eslint no-console: 0 */
 
 import createScatterplot from '../src';
-import { saveAsPng } from './utils';
+import { saveAsPng, checkSupport } from './utils';
 
 const canvas = document.querySelector('#canvas');
 const numPointsEl = document.querySelector('#num-points');
@@ -18,7 +18,7 @@ const exampleEl = document.querySelector('#example-basic');
 exampleEl.setAttribute('class', 'active');
 exampleEl.removeAttribute('href');
 
-let points = [];
+let points = { x: [], y: [], z: [], w: [] };
 let numPoints = 100000;
 let pointSize = 2;
 let opacity = 0.33;
@@ -41,7 +41,6 @@ const pointoverHandler = (pointId) => {
 };
 
 const pointoutHandler = (pointId) => {
-  console.log('Out point:', pointId);
   const x = points.x[pointId];
   const y = points.y[pointId];
   const category = points.z[pointId];
@@ -55,10 +54,13 @@ const pointoutHandler = (pointId) => {
 const selectHandler = ({ points: selectedPoints }) => {
   selection = selectedPoints;
   if (selection.length === 1) {
-    const point = points[selection[0]];
+    const x = points.x[selection[0]];
+    const y = points.y[selection[0]];
+    const category = points.z[selection[0]];
+    const value = points.w[selection[0]];
     console.log(
       `Selected: ${selectedPoints}`,
-      `X: ${point[0]}\nY: ${point[1]}\nCategory: ${point[2]}\nValue: ${point[3]}`
+      `X: ${x}\nY: ${y}\nCategory: ${category}\nValue: ${value}`
     );
   }
 };
@@ -77,6 +79,8 @@ const scatterplot = createScatterplot({
   reticleColor,
   lassoInitiator: true,
 });
+
+checkSupport(scatterplot);
 
 exportEl.addEventListener('click', () => saveAsPng(scatterplot));
 

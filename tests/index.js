@@ -4,10 +4,17 @@ import '@babel/polyfill';
 import { test } from 'zora';
 import { scaleLinear } from 'd3-scale';
 import { mat4 } from 'gl-matrix';
+import { isFunction } from '@flekschas/utils';
 
 import { version } from '../package.json';
 
-import createScatterplot, { createRegl, createTextureFromUrl } from '../src';
+import createScatterplot, {
+  createRegl,
+  createRenderer,
+  createTextureFromUrl,
+  checkSupport,
+} from '../src';
+
 import {
   DEFAULT_COLOR_NORMAL,
   DEFAULT_COLOR_ACTIVE,
@@ -20,6 +27,8 @@ import {
   DEFAULT_POINT_OUTLINE_WIDTH,
   DEFAULT_POINT_SIZE,
   DEFAULT_POINT_SIZE_SELECTED,
+  DEFAULT_OPACITY_INACTIVE_MAX,
+  DEFAULT_OPACITY_INACTIVE_SCALE,
   DEFAULT_WIDTH,
   DEFAULT_LASSO_MIN_DELAY,
   DEFAULT_LASSO_MIN_DIST,
@@ -28,10 +37,13 @@ import {
   DEFAULT_POINT_CONNECTION_OPACITY_ACTIVE,
   DEFAULT_POINT_CONNECTION_SIZE,
   DEFAULT_POINT_CONNECTION_SIZE_ACTIVE,
+  DEFAULT_GAMMA,
   KEY_ACTION_LASSO,
   KEY_ACTION_ROTATE,
   SINGLE_CLICK_DELAY,
   DEFAULT_OPACITY,
+  DEFAULT_IMAGE_LOAD_TIMEOUT,
+  IMAGE_LOAD_ERROR,
 } from '../src/constants';
 
 import { toRgba, isNormFloatArray } from '../src/utils';
@@ -116,6 +128,16 @@ test('createScatterplot()', (t) => {
     'scatterplot should have default point opacity'
   );
   t.equal(
+    scatterplot.get('opacityInactiveMax'),
+    DEFAULT_OPACITY_INACTIVE_MAX,
+    'scatterplot should have default inactive point max opacity'
+  );
+  t.equal(
+    scatterplot.get('opacityInactiveScale'),
+    DEFAULT_OPACITY_INACTIVE_SCALE,
+    'scatterplot should have default inactive point opacity scaling'
+  );
+  t.equal(
     scatterplot.get('width'),
     DEFAULT_WIDTH,
     'scatterplot should have default width'
@@ -176,17 +198,74 @@ test('createScatterplot({ cameraTarget, cameraDistance, cameraRotation, cameraVi
 test('createTextureFromUrl()', async (t) => {
   const regl = createRegl(createCanvas());
 
-  const texture = await createTextureFromUrl(
-    regl,
-    'https://picsum.photos/300/200/',
-    true
+  try {
+    const texture = await createTextureFromUrl(
+      regl,
+      'https://picsum.photos/300/200/',
+      true
+    );
+
+    t.equal(
+      texture._reglType, // eslint-disable-line no-underscore-dangle
+      'texture2d',
+      'texture should be a Regl texture object'
+    );
+  } catch (e) {
+    if (e.message === IMAGE_LOAD_ERROR) {
+      t.skip('Skipping because image loading timed out');
+    } else {
+      t.fail('Failed to load image from URL');
+    }
+  }
+});
+
+test('createRenderer()', (t) => {
+  const canvas = createCanvas();
+  const regl = createRegl(canvas);
+  const renderer = createRenderer({ canvas, regl });
+
+  t.ok(!!renderer, 'renderer should be instanciated');
+  t.equal(renderer.canvas, canvas, 'canvas should be a canvas element');
+  t.equal(renderer.regl, regl, 'regl should be a regl instance');
+  t.equal(
+    renderer.gamma,
+    DEFAULT_GAMMA,
+    `renderer should have gamma set to ${DEFAULT_GAMMA}`
+  );
+  t.ok(isFunction(renderer.render), 'renderer should have render function');
+  t.ok(isFunction(renderer.onFrame), 'renderer should have onFrame function');
+  t.ok(isFunction(renderer.refresh), 'renderer should have refresh function');
+  t.ok(isFunction(renderer.destroy), 'renderer should have destroy function');
+
+  const sp1 = createScatterplot({ renderer });
+  const sp2 = createScatterplot({ renderer });
+
+  t.equal(sp1.get('renderer'), renderer, 'sp1.renderer should be renderer');
+  t.equal(
+    sp2.get('renderer'),
+    sp1.get('renderer'),
+    'sp1.renderer should be the same as sp1.renderer'
   );
 
-  t.equal(
-    texture._reglType, // eslint-disable-line no-underscore-dangle
-    'texture2d',
-    'texture should be a Regl texture object'
-  );
+  sp1.destroy();
+  sp2.destroy();
+
+  // Renderer should have not been destroyed
+  t.equal(renderer.canvas, canvas, 'canvas should still be a canvas element');
+  t.equal(renderer.regl, regl, 'regl should still  be a regl instance');
+
+  const sp3 = createScatterplot({ renderer });
+  t.equal(sp3.get('renderer'), renderer, 'sp3.renderer should be renderer');
+
+  renderer.gamma = 10;
+  t.equal(renderer.gamma, 10, 'gamma should be 10');
+
+  sp3.destroy();
+  renderer.destroy();
+
+  // Now the renderer should have been destroyed
+  t.equal(renderer.canvas, undefined, 'canvas should be undefined');
+  t.equal(renderer.regl, undefined, 'regl should be undefined');
 });
 
 /* ---------------------------- get() and set() ----------------------------- */
@@ -194,7 +273,8 @@ test('createTextureFromUrl()', async (t) => {
 test('get("canvas"), get("regl"), and get("version")', async (t) => {
   const canvas = createCanvas();
   const regl = createRegl(canvas);
-  const scatterplot = createScatterplot({ canvas, regl });
+  const renderer = createRenderer({ regl });
+  const scatterplot = createScatterplot({ canvas, renderer });
 
   t.equal(
     scatterplot.get('canvas'),
@@ -292,50 +372,76 @@ test('set({ backgroundImage })', async (t) => {
   const regl = createRegl(canvas);
   const scatterplot = createScatterplot({ canvas, regl });
 
-  let backgroundImage = await createTextureFromUrl(
-    regl,
-    'https://picsum.photos/300/200/'
-  );
+  try {
+    const backgroundImage = await createTextureFromUrl(
+      regl,
+      'https://picsum.photos/300/200/'
+    );
 
-  scatterplot.set({ backgroundImage });
+    scatterplot.set({ backgroundImage });
 
-  t.equal(
-    scatterplot.get('backgroundImage'),
-    backgroundImage,
-    'background image should be a Regl texture'
-  );
+    t.equal(
+      scatterplot.get('backgroundImage'),
+      backgroundImage,
+      'background image should be a Regl texture'
+    );
+  } catch (e) {
+    if (e.message === IMAGE_LOAD_ERROR) {
+      t.skip(`Failed to load image from URL: ${e.message}`);
+    } else {
+      t.fail('Could not create background image from URL');
+    }
+  }
 
-  backgroundImage = await scatterplot.createTextureFromUrl(
-    'https://picsum.photos/300/200/'
-  );
+  try {
+    const backgroundImage = await scatterplot.createTextureFromUrl(
+      'https://picsum.photos/300/200/'
+    );
 
-  scatterplot.set({ backgroundImage });
+    scatterplot.set({ backgroundImage });
 
-  t.equal(
-    scatterplot.get('backgroundImage'),
-    backgroundImage,
-    'background image should be a Regl texture'
-  );
+    t.equal(
+      scatterplot.get('backgroundImage'),
+      backgroundImage,
+      'background image should be a Regl texture'
+    );
 
-  scatterplot.set({ backgroundImage: null });
+    scatterplot.set({ backgroundImage: null });
 
-  t.equal(
-    scatterplot.get('backgroundImage'),
-    null,
-    'background image should be nullifyable'
-  );
+    t.equal(
+      scatterplot.get('backgroundImage'),
+      null,
+      'background image should be nullifyable'
+    );
+  } catch (e) {
+    if (e.message === IMAGE_LOAD_ERROR) {
+      t.skip(`Failed to load image from URL: ${e.message}`);
+    } else {
+      t.fail('Could not create background image from URL');
+    }
+  }
 
-  scatterplot.set({ backgroundImage: 'https://picsum.photos/300/200/' });
+  try {
+    await new Promise((resolve, reject) => {
+      scatterplot.subscribe('backgroundImageReady', resolve, 1);
+      scatterplot.set({ backgroundImage: 'https://picsum.photos/300/200/' });
+      setTimeout(() => {
+        reject(new Error(IMAGE_LOAD_ERROR));
+      }, DEFAULT_IMAGE_LOAD_TIMEOUT);
+    });
 
-  await new Promise((resolve) =>
-    scatterplot.subscribe('backgroundImageReady', resolve, 1)
-  );
-
-  t.equal(
-    scatterplot.get('backgroundImage').width,
-    300,
-    'background image should be loaded by scatterplot'
-  );
+    t.equal(
+      scatterplot.get('backgroundImage').width,
+      300,
+      'background image should be loaded by scatterplot'
+    );
+  } catch (e) {
+    if (e.message === IMAGE_LOAD_ERROR) {
+      t.skip(`Failed to load image from URL: ${e.message}`);
+    } else {
+      t.fail('Could not create background image from URL');
+    }
+  }
 
   // Base64 image
   scatterplot.set({
@@ -343,9 +449,9 @@ test('set({ backgroundImage })', async (t) => {
       'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4QDeRXhpZgAASUkqAAgAAAAGABIBAwABAAAAAQAAABoBBQABAAAAVgAAABsBBQABAAAAXgAAACgBAwABAAAAAgAAABMCAwABAAAAAQAAAGmHBAABAAAAZgAAAAAAAAA4YwAA6AMAADhjAADoAwAABwAAkAcABAAAADAyMTABkQcABAAAAAECAwCGkgcAFQAAAMAAAAAAoAcABAAAADAxMDABoAMAAQAAAP//AAACoAQAAQAAABAAAAADoAQAAQAAABAAAAAAAAAAQVNDSUkAAABQaWNzdW0gSUQ6IDM1AP/bAEMACAYGBwYFCAcHBwkJCAoMFA0MCwsMGRITDxQdGh8eHRocHCAkLicgIiwjHBwoNyksMDE0NDQfJzk9ODI8LjM0Mv/bAEMBCQkJDAsMGA0NGDIhHCEyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMv/CABEIABAAEAMBIgACEQEDEQH/xAAVAAEBAAAAAAAAAAAAAAAAAAAEBf/EABQBAQAAAAAAAAAAAAAAAAAAAAT/2gAMAwEAAhADEAAAAXqhhMj/xAAZEAADAAMAAAAAAAAAAAAAAAABAgMFERP/2gAIAQEAAQUClkNit1EkQol3PT//xAAYEQACAwAAAAAAAAAAAAAAAAABAwACIf/aAAgBAwEBPwFa6jTP/8QAGBEAAgMAAAAAAAAAAAAAAAAAAAIBAyH/2gAIAQIBAT8Be12yD//EABsQAAIDAAMAAAAAAAAAAAAAAAABAhExIzKR/9oACAEBAAY/AuSHhJraOo1Wo//EABkQAAMBAQEAAAAAAAAAAAAAAAABESFBUf/aAAgBAQABPyHK09GZVWkzrMZfGL//2gAMAwEAAgADAAAAEG//xAAVEQEBAAAAAAAAAAAAAAAAAAAAAf/aAAgBAwEBPxCsP//EABURAQEAAAAAAAAAAAAAAAAAAABR/9oACAECAQE/EJG//8QAGxABAAMAAwEAAAAAAAAAAAAAAQARITFBcZH/2gAIAQEAAT8QLFXq/H7McnD32o87LUuUMEBVpM48n//Z',
   });
 
-  await new Promise((resolve) =>
-    scatterplot.subscribe('backgroundImageReady', resolve, 1)
-  );
+  await new Promise((resolve) => {
+    scatterplot.subscribe('backgroundImageReady', resolve, 1);
+  });
 
   t.equal(
     scatterplot.get('backgroundImage').width,
@@ -965,12 +1071,12 @@ test('init and destroy events', async (t) => {
   const canvas = createCanvas(200, 200);
   const scatterplot = createScatterplot({ canvas, width: 200, height: 200 });
 
-  const whenInit = new Promise((resolve) =>
-    scatterplot.subscribe('init', resolve, 1)
-  );
-  const whenDestroy = new Promise((resolve) =>
-    scatterplot.subscribe('destroy', resolve, 1)
-  );
+  const whenInit = new Promise((resolve) => {
+    scatterplot.subscribe('init', resolve, 1);
+  });
+  const whenDestroy = new Promise((resolve) => {
+    scatterplot.subscribe('destroy', resolve, 1);
+  });
 
   await whenInit;
 
@@ -1358,7 +1464,7 @@ test('tests involving mouse events', async (t2) => {
       (mapping) => mapping[1] === KEY_ACTION_ROTATE
     );
 
-    // Test multi selections via mousedown + mousemove
+    // Test rotation via mousedown + mousemove + keydown
     window.dispatchEvent(
       createKeyboardEvent('keydown', capitalize(rotateKey), {
         [`${rotateKey}Key`]: true,
@@ -1366,7 +1472,7 @@ test('tests involving mouse events', async (t2) => {
     );
     window.dispatchEvent(createMouseEvent('mousemove', dim * 0.75, hdim));
 
-    await wait(0);
+    await wait(10);
 
     canvas.dispatchEvent(
       createMouseEvent('mousedown', dim * 0.75, hdim, {
@@ -1375,16 +1481,16 @@ test('tests involving mouse events', async (t2) => {
       })
     );
 
-    await wait(0);
+    await wait(10);
 
     const mousePositions = [
       [dim * 0.75, hdim],
       [dim * 0.75, hdim * 0.5],
     ];
 
-    let whenDrawn = new Promise((resolve) =>
-      scatterplot.subscribe('draw', resolve, 1)
-    );
+    let whenDrawn = new Promise((resolve) => {
+      scatterplot.subscribe('draw', resolve, 1);
+    });
 
     await asyncForEach(mousePositions, async (mousePosition) => {
       window.dispatchEvent(createMouseEvent('mousemove', ...mousePosition));
@@ -1399,11 +1505,11 @@ test('tests involving mouse events', async (t2) => {
     );
 
     await whenDrawn;
-    await wait(0);
+    await wait(10);
 
     t.ok(
-      initialRotation !== rotation && !Number.isNaN(+rotation),
-      'view should be have been rotated'
+      initialRotation !== rotation && Number.isFinite(rotation),
+      'view should have been rotated'
     );
 
     const lastRotation = rotation;
@@ -1413,9 +1519,9 @@ test('tests involving mouse events', async (t2) => {
     scatterplot.set({ keyMap: { [rotateKey]: 'rotate' } });
 
     // Needed to first digest the keyMap change
-    await wait(0);
+    await wait(10);
 
-    // Test multi selections via mousedown + mousemove
+    // Test rotation via mousedown + mousemove + keydown
     window.dispatchEvent(
       createKeyboardEvent('keydown', capitalize(oldRotateKey), {
         [`${oldRotateKey}Key`]: true,
@@ -1433,11 +1539,11 @@ test('tests involving mouse events', async (t2) => {
     );
 
     // Needed to first digest the mousedown event
-    await wait(0);
+    await wait(10);
 
-    whenDrawn = new Promise((resolve) =>
-      scatterplot.subscribe('draw', resolve, 1)
-    );
+    whenDrawn = new Promise((resolve) => {
+      scatterplot.subscribe('draw', resolve, 1);
+    });
 
     await asyncForEach(mousePositions, async (mousePosition) => {
       window.dispatchEvent(createMouseEvent('mousemove', ...mousePosition));
@@ -1452,7 +1558,7 @@ test('tests involving mouse events', async (t2) => {
     );
 
     await whenDrawn;
-    await wait(0);
+    await wait(10);
 
     t.equal(
       lastRotation,
@@ -1462,7 +1568,7 @@ test('tests involving mouse events', async (t2) => {
 
     await wait(2);
 
-    // Test multi selections via mousedown + mousemove
+    // Test rotation via mousedown + mousemove + keydown
     window.dispatchEvent(
       createKeyboardEvent('keydown', capitalize(rotateKey), {
         [`${rotateKey}Key`]: true,
@@ -1470,7 +1576,7 @@ test('tests involving mouse events', async (t2) => {
     );
     window.dispatchEvent(createMouseEvent('mousemove', dim * 0.75, hdim));
 
-    await wait(0);
+    await wait(10);
 
     canvas.dispatchEvent(
       createMouseEvent('mousedown', dim * 0.75, hdim, {
@@ -1482,9 +1588,9 @@ test('tests involving mouse events', async (t2) => {
     // Needed to first digest the mousedown event
     await wait(10);
 
-    whenDrawn = new Promise((resolve) =>
-      scatterplot.subscribe('draw', resolve, 1)
-    );
+    whenDrawn = new Promise((resolve) => {
+      scatterplot.subscribe('draw', resolve, 1);
+    });
 
     await asyncForEach(mousePositions, async (mousePosition) => {
       window.dispatchEvent(createMouseEvent('mousemove', ...mousePosition));
@@ -1576,7 +1682,7 @@ test('tests involving mouse events', async (t2) => {
     });
     await scatterplot.draw([[0, 0]]);
 
-    const predictedView = mat4.fromTranslation([], [0, -1, 0]);
+    const predictedView = mat4.fromTranslation([], [-1, 0, 0]);
 
     let currentView;
     let currentCamera;
@@ -1586,8 +1692,8 @@ test('tests involving mouse events', async (t2) => {
     };
     scatterplot.subscribe('view', viewHandler);
 
-    // window.dispatchEvent(createMouseEvent('mouseup', hdim, hdim));
-    // window.dispatchEvent(createMouseEvent('mousemove', hdim, hdim));
+    window.dispatchEvent(createMouseEvent('mouseup', hdim, hdim));
+    window.dispatchEvent(createMouseEvent('mousemove', hdim, hdim));
     await wait(50);
 
     canvas.dispatchEvent(
@@ -1605,13 +1711,9 @@ test('tests involving mouse events', async (t2) => {
 
     t.ok(currentCamera, 'should have published the camera');
 
-    t.deepEqual(xScale.domain(), [-5, 5], 'should have published the camera');
+    t.deepEqual(xScale.domain(), [0, 10], 'should have updated the xScale');
 
-    t.deepEqual(
-      yScale.domain(),
-      [0.25, 0.75],
-      'should have published the camera'
-    );
+    t.deepEqual(yScale.domain(), [0, 0.5], 'should have updated the yScale');
 
     scatterplot.destroy();
   });
@@ -1800,6 +1902,130 @@ test('hover() with columnar data', async (t) => {
   scatterplot.destroy();
 });
 
+test('zooming with transition', async (t) => {
+  const scatterplot = createScatterplot({ canvas: createCanvas() });
+  const camera = scatterplot.get('camera');
+
+  let numDrawCalls = 0;
+  let numTransitionStartCalls = 0;
+  let numTransitionEndCalls = 0;
+
+  scatterplot.subscribe('draw', () => numDrawCalls++);
+  scatterplot.subscribe('transitionStart', () => numTransitionStartCalls++);
+  scatterplot.subscribe('transitionEnd', () => numTransitionEndCalls++);
+
+  await scatterplot.draw([
+    [-1, 1],
+    [1, 1],
+    [0, 0],
+    [-1, -1],
+    [1, -1],
+  ]);
+
+  t.equal(numDrawCalls, 1, 'should have one draw call');
+
+  const t0 = performance.now();
+  const transitionDuration = 50;
+
+  await scatterplot.zoomToPoints([1, 2], {
+    transition: true,
+    transitionDuration,
+  });
+
+  t.equal(numTransitionStartCalls, 1, 'transition should have started once');
+  t.equal(numTransitionEndCalls, 1, 'transition should have ended once');
+  t.ok(
+    performance.now() - t0 >= transitionDuration,
+    `transition should have taken ${transitionDuration}msec or a bit longer`
+  );
+  t.ok(
+    camera.target[0] - 0.5 <= 1e-8,
+    'camera should target the top-right corner'
+  );
+  t.ok(
+    camera.target[1] - 0.5 <= 1e-8,
+    'camera should target the top-right corner'
+  );
+
+  await scatterplot.zoomToOrigin({ transition: true, transitionDuration });
+
+  t.equal(numTransitionStartCalls, 2, 'transition should have started twice');
+  t.equal(numTransitionEndCalls, 2, 'transition should have ended twice');
+  t.ok(camera.target[0] <= 1e-8, 'camera should target the origin');
+  t.ok(camera.target[1] <= 1e-8, 'camera should target the origin');
+
+  await scatterplot.zoomToLocation([-0.5, -0.5], 0.1, {
+    transition: true,
+    transitionDuration,
+  });
+
+  t.equal(
+    numTransitionStartCalls,
+    3,
+    'transition should have started three times'
+  );
+  t.equal(numTransitionEndCalls, 3, 'transition should have ended three times');
+  t.ok(
+    camera.target[0] + 0.1 <= 1e-8,
+    'camera should target the bottom-left corner'
+  );
+  t.ok(
+    camera.target[1] + 0.1 <= 1e-8,
+    'camera should target the bottom-left corner'
+  );
+  t.ok(
+    camera.distance[0] - 0.1 <= 1e-8,
+    'camera distance should be close to 0.1'
+  );
+
+  await scatterplot.zoomToArea(
+    { x: 0, y: -1, width: 1, height: 1 },
+    { transition: true, transitionDuration }
+  );
+
+  t.equal(
+    numTransitionStartCalls,
+    4,
+    'transition should have started four times'
+  );
+  t.equal(numTransitionEndCalls, 4, 'transition should have ended four times');
+  t.ok(
+    camera.target[0] - 0.5 <= 1e-8,
+    'camera should target the bottom-right corner'
+  );
+  t.ok(
+    camera.target[1] + 0.5 <= 1e-8,
+    'camera should target the bottom-right corner'
+  );
+
+  scatterplot.destroy();
+});
+
+test('isSupported', (t) => {
+  const scatterplot = createScatterplot({ canvas: createCanvas() });
+  const renderer = scatterplot.get('renderer');
+
+  t.ok(
+    Object.prototype.hasOwnProperty.call(scatterplot, 'isSupported'),
+    'scatter plot instance should have `isSupported` property'
+  );
+
+  t.ok(
+    Object.prototype.hasOwnProperty.call(renderer, 'isSupported'),
+    'renderer instance should have `isSupported` property'
+  );
+
+  t.ok(
+    scatterplot.isSupported === true || scatterplot.isSupported === false,
+    '`isSupported` should return a Boolean value'
+  );
+
+  t.ok(
+    renderer.isSupported === true || renderer.isSupported === false,
+    '`isSupported` should return a Boolean value'
+  );
+});
+
 /* --------------------------------- Utils ---------------------------------- */
 
 test('isNormFloatArray()', async (t) => {
@@ -1883,5 +2109,12 @@ test('toRgba()', async (t) => {
     toRgba([0, 0, 0, 0.1], true),
     [0, 0, 0, 0.1],
     'should leave normalized RGBA unchanged'
+  );
+});
+
+test('checkSupport()', (t) => {
+  t.ok(
+    checkSupport() === true || checkSupport() === false,
+    'should return a Boolean value'
   );
 });

@@ -5,7 +5,7 @@ import { scaleLinear } from 'd3-scale';
 import { select } from 'd3-selection';
 
 import createScatterplot from '../src';
-import { saveAsPng } from './utils';
+import { saveAsPng, checkSupport } from './utils';
 
 const parentWrapper = document.querySelector('#parent-wrapper');
 const canvasWrapper = document.querySelector('#canvas-wrapper');
@@ -48,8 +48,6 @@ canvasWrapper.style.bottom = `${xAxisPadding}px`;
 
 let { width, height } = canvasWrapper.getBoundingClientRect();
 
-console.log(width, height);
-
 xAxisContainer.attr('transform', `translate(0, ${height})`).call(xAxis);
 yAxisContainer.attr('transform', `translate(${width}, 0)`).call(yAxis);
 
@@ -87,6 +85,8 @@ const scatterplot = createScatterplot({
   showReticle: true,
   lassoInitiator: true,
 });
+
+checkSupport(scatterplot);
 
 exportEl.addEventListener('click', () => saveAsPng(scatterplot));
 

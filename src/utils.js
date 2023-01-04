@@ -1,6 +1,10 @@
 import createOriginalRegl from 'regl';
 
-import { GL_EXTENSIONS } from './constants';
+import {
+  GL_EXTENSIONS,
+  DEFAULT_IMAGE_LOAD_TIMEOUT,
+  IMAGE_LOAD_ERROR,
+} from './constants';
 
 /**
  * Get the max value of an array. helper method to be used with `Array.reduce()`.
@@ -11,17 +15,20 @@ import { GL_EXTENSIONS } from './constants';
 export const arrayMax = (max, x) => (max > x ? max : x);
 
 /**
- * Check if all GL extensions are enabled and warn otherwise
+ * Check if all GL extensions are supported and enabled and warn otherwise
  * @param   {import('regl').Regl}  regl  Regl instance to be tested
- * @return  {function}  Returns the Regl instance itself
+ * @param   {boolean}  silent  If `true` the function will not print `console.warn` statements
+ * @return  {boolean}  If `true` all required GL extensions are supported
  */
-export const checkReglExtensions = (regl) => {
+export const checkReglExtensions = (regl, silent) => {
   if (!regl) return false;
   return GL_EXTENSIONS.reduce((every, EXTENSION) => {
     if (!regl.hasExtension(EXTENSION)) {
-      console.warn(
-        `WebGL: ${EXTENSION} extension not supported. Scatterplot might not render properly`
-      );
+      if (!silent) {
+        console.warn(
+          `WebGL: ${EXTENSION} extension not supported. Scatterplot might not render properly`
+        );
+      }
       return false;
     }
     return every;
@@ -127,17 +134,23 @@ export const limit = (choices, defaultChoice) => (choice) =>
  * @param {boolean} isCrossOrigin If `true` allow loading image from a source of another origin.
  * @return  {Promise<HTMLImageElement>}  Promise resolving to the image once its loaded
  */
-export const loadImage = (src, isCrossOrigin = false) =>
-  new Promise((accept, reject) => {
+export const loadImage = (
+  src,
+  isCrossOrigin = false,
+  timeout = DEFAULT_IMAGE_LOAD_TIMEOUT
+) =>
+  new Promise((resolve, reject) => {
     const image = new Image();
     if (isCrossOrigin) image.crossOrigin = 'anonymous';
     image.src = src;
     image.onload = () => {
-      accept(image);
+      resolve(image);
     };
-    image.onerror = (error) => {
-      reject(error);
+    const rejectPromise = () => {
+      reject(new Error(IMAGE_LOAD_ERROR));
     };
+    image.onerror = rejectPromise;
+    setTimeout(rejectPromise, timeout);
   });
 
 /**
@@ -148,11 +161,16 @@ export const loadImage = (src, isCrossOrigin = false) =>
  * @param   {string}  url  Source URL of the image.
  * @return  {Promise<import('regl').Texture2D>}  Promise resolving to the texture object.
  */
-export const createTextureFromUrl = (regl, url) =>
+export const createTextureFromUrl = (
+  regl,
+  url,
+  timeout = DEFAULT_IMAGE_LOAD_TIMEOUT
+) =>
   new Promise((resolve, reject) => {
     loadImage(
       url,
-      url.indexOf(window.location.origin) !== 0 && url.indexOf('base64') === -1
+      url.indexOf(window.location.origin) !== 0 && url.indexOf('base64') === -1,
+      timeout
     )
       .then((image) => {
         resolve(regl.texture(image));
@@ -201,7 +219,7 @@ export const isNormFloatArray = (a) => Array.isArray(a) && a.every(isNormFloat);
  * @param   {Array}  polygon  1D list of vertices defining the polygon.
  * @return  {boolean}  If `true` point lies within the polygon.
  */
-export const isPointInPolygon = ([px, py] = [], polygon) => {
+export const isPointInPolygon = (polygon, [px, py] = []) => {
   let x1;
   let y1;
   let x2;
@@ -355,3 +373,13 @@ export const flipObj = (obj) =>
 
 export const rgbBrightness = (rgb) =>
   0.21 * rgb[0] + 0.72 * rgb[1] + 0.07 * rgb[2];
+
+/**
+ * Clip a number between min and max
+ * @param   {number}  value  The value to be clipped
+ * @param   {number}  minValue  The minimum value
+ * @param   {number}  maxValue  The maximum value
+ * @return  {number}  The clipped value
+ */
+export const clip = (value, minValue, maxValue) =>
+  Math.min(maxValue, Math.max(minValue, value));
