@@ -1,4 +1,7 @@
-## Next
+## v1.5.0
+
+- Add the ability to lasso select point upon long press via `scatterplot.set('lassoOnLongPress', true)`.
+- Fix type issues ([#98](https://github.com/flekschas/regl-scatterplot/issues/98))
 
 ## v1.4.2
 

@@ -15,7 +15,7 @@ type KeyMap = Record<'alt' | 'cmd' | 'ctrl' | 'meta' | 'shift', KeyAction>;
 
 type MouseMode = 'panZoom' | 'lasso' | 'rotate';
 
-type Camera2D = ReturnType<import('camera-2d-simple')>;
+type Camera2D = any; // Needs to be typed at some point
 type Scale = import('d3-scale').ScaleContinuousNumeric<number, number>;
 
 type PointsObject = {
@@ -62,6 +62,11 @@ type LassoOptions = {
   clearEvent: 'lassoEnd' | 'deselect';
   initiator: boolean;
   initiatorParentElement: HTMLElement;
+  onLongPress: boolean;
+  longPressTime: number;
+  longPressAfterEffectTime: number;
+  longPressEffectDelay: number;
+  longPressRevertEffectTime: number;
 };
 
 type CameraOptions = {
@@ -121,6 +126,12 @@ export type Settable = BaseOptions &
   WithPrefix<'pointConnection', PointConnectionOptions> &
   WithPrefix<'lasso', LassoOptions> &
   WithPrefix<'camera', CameraOptions>;
+
+export type RendererOptions = {
+  regl: import('regl').Regl;
+  canvas: HTMLCanvasElement;
+  gamma: number;
+};
 
 export type Properties = {
   renderer: ReturnType<typeof import('./renderer').createRenderer>;

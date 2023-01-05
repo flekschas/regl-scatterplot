@@ -1,7 +1,9 @@
 import { checkReglExtensions, createRegl } from './utils';
 import { CLEAR_OPTIONS, DEFAULT_GAMMA } from './constants';
 
-export const createRenderer = (options = {}) => {
+export const createRenderer = (
+  /** @type {Partial<import('./types').RendererOptions>} */ options = {}
+) => {
   let {
     regl,
     canvas = document.createElement('canvas'),
@@ -91,19 +93,17 @@ export const createRenderer = (options = {}) => {
 
   /**
    * The render function
-   * @param {function} draw - The function for drawing
-   * @param {HTMLCanvasElement} targetCanvas - The canvas element that should received the rendered pixels.
    */
-  const render = (draw, targetCanvas) => {
+  const render = (
+    /** @type {(): void} */ draw,
+    /** @type {HTMLCanvasElement} */ targetCanvas
+  ) => {
     // Clear internal canvas
     regl.clear(CLEAR_OPTIONS);
     fbo.use(() => {
       // Clear framebuffer
       regl.clear(CLEAR_OPTIONS);
-      draw(
-        targetCanvas.width / canvas.width,
-        targetCanvas.height / canvas.height
-      );
+      draw();
     });
     renderToCanvas();
     copyTo(targetCanvas);
@@ -124,9 +124,8 @@ export const createRenderer = (options = {}) => {
   /**
    * Register an draw function that is going to be invoked on every animation
    * frame.
-   * @param {function} draw - The callback function
    */
-  const onFrame = (draw) => {
+  const onFrame = (/** @type {(): void} */ draw) => {
     drawFns.add(draw);
     return () => {
       drawFns.delete(draw);

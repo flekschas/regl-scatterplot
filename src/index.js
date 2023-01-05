@@ -47,6 +47,11 @@ import {
   DEFAULT_LASSO_MIN_DELAY,
   DEFAULT_LASSO_MIN_DIST,
   DEFAULT_LASSO_CLEAR_EVENT,
+  DEFAULT_LASSO_ON_LONG_PRESS,
+  DEFAULT_LASSO_LONG_PRESS_TIME,
+  DEFAULT_LASSO_LONG_PRESS_AFTER_EFFECT_TIME,
+  DEFAULT_LASSO_LONG_PRESS_EFFECT_DELAY,
+  DEFAULT_LASSO_LONG_PRESS_REVERT_EFFECT_TIME,
   DEFAULT_SHOW_RETICLE,
   DEFAULT_RETICLE_COLOR,
   DEFAULT_POINT_CONNECTION_COLOR_NORMAL,
@@ -206,6 +211,11 @@ const createScatterplot = (
     lassoClearEvent = DEFAULT_LASSO_CLEAR_EVENT,
     lassoInitiator = DEFAULT_LASSO_INITIATOR,
     lassoInitiatorParentElement = document.body,
+    lassoOnLongPress = DEFAULT_LASSO_ON_LONG_PRESS,
+    lassoLongPressTime = DEFAULT_LASSO_LONG_PRESS_TIME,
+    lassoLongPressAfterEffectTime = DEFAULT_LASSO_LONG_PRESS_AFTER_EFFECT_TIME,
+    lassoLongPressEffectDelay = DEFAULT_LASSO_LONG_PRESS_EFFECT_DELAY,
+    lassoLongPressRevertEffectTime = DEFAULT_LASSO_LONG_PRESS_REVERT_EFFECT_TIME,
     keyMap = DEFAULT_KEY_MAP,
     mouseMode = DEFAULT_MOUSE_MODE,
     showReticle = DEFAULT_SHOW_RETICLE,
@@ -266,11 +276,12 @@ const createScatterplot = (
   let camera;
   let lasso;
   let mouseDown = false;
+  let mouseDownTime = null;
+  let mouseDownPosition = [0, 0];
+  let mouseDownTimeout = -1;
   let selection = [];
   const selectionSet = new Set();
   const selectionConnecionSet = new Set();
-  let mouseDownTime = null;
-  let mouseDownPosition = [0, 0];
   let numPoints = 0;
   let numPointsInView = 0;
   let lassoActive = false;
@@ -702,6 +713,10 @@ const createScatterplot = (
     mouseDown = true;
     lassoActive = true;
     lassoClear();
+    if (mouseDownTimeout >= 0) {
+      clearTimeout(mouseDownTimeout);
+      mouseDownTimeout = -1;
+    }
     pubSub.publish('lassoStart');
   };
 
@@ -710,6 +725,7 @@ const createScatterplot = (
     lassoPointsCurr = [...lassoPoints];
     const pointsInLasso = findPointsInLasso(lassoPointsFlat);
     select(pointsInLasso, { merge });
+
     pubSub.publish('lassoEnd', {
       coordinates: lassoPointsCurr,
     });
@@ -750,25 +766,47 @@ const createScatterplot = (
   };
 
   const mouseDownHandler = (event) => {
-    if (!isInit) return;
+    if (!isInit || event.buttons !== 1) return;
 
     mouseDown = true;
     mouseDownTime = performance.now();
 
     mouseDownPosition = getRelativeMousePosition(event);
     lassoActive = checkLassoMode() || checkModKey(event, KEY_ACTION_LASSO);
+
+    if (!lassoActive && lassoOnLongPress) {
+      lassoManager.showLongPressIndicator(event.clientX, event.clientY, {
+        time: lassoLongPressTime,
+        extraTime: lassoLongPressAfterEffectTime,
+        delay: lassoLongPressEffectDelay,
+      });
+      mouseDownTimeout = setTimeout(() => {
+        mouseDownTimeout = -1;
+        lassoActive = true;
+      }, lassoLongPressTime);
+    }
   };
 
   const mouseUpHandler = (event) => {
     if (!isInit) return;
 
     mouseDown = false;
+    if (mouseDownTimeout >= 0) {
+      clearTimeout(mouseDownTimeout);
+      mouseDownTimeout = -1;
+    }
 
     if (lassoActive) {
       event.preventDefault();
       lassoActive = false;
       lassoManager.end({
         merge: checkModKey(event, KEY_ACTION_MERGE),
+      });
+    }
+
+    if (lassoOnLongPress) {
+      lassoManager.hideLongPressIndicator({
+        time: lassoLongPressRevertEffectTime,
       });
     }
   };
@@ -785,10 +823,7 @@ const createScatterplot = (
 
     const clickTime = performance.now() - mouseDownTime;
 
-    if (lassoInitiator && clickTime > LONG_CLICK_TIME) {
-      // Show lasso initiator on long click immideately
-      lassoManager.showInitiator(event);
-    } else {
+    if (!lassoInitiator || clickTime < LONG_CLICK_TIME) {
       // If the user clicked normally (i.e., fast) we'll only show the lasso
       // initiator if the use click into the void
       const clostestPoint = raycast();
@@ -836,6 +871,15 @@ const createScatterplot = (
     if (lassoActive) {
       event.preventDefault();
       lassoManager.extend(event, true);
+    } else if (lassoOnLongPress) {
+      lassoManager.hideLongPressIndicator({
+        time: lassoLongPressRevertEffectTime,
+      });
+    }
+
+    if (mouseDownTimeout >= 0) {
+      clearTimeout(mouseDownTimeout);
+      mouseDownTimeout = -1;
     }
 
     // Always redraw when mousedown as the user might have panned or lassoed
@@ -2189,9 +2233,22 @@ const createScatterplot = (
   };
 
   const updateLassoInitiatorStyle = () => {
-    const v = Math.round(backgroundColorBrightness) > 0 ? 0 : 255;
+    const v = Math.round(backgroundColorBrightness) > 0.5 ? 0 : 255;
     lassoManager.initiator.style.border = `1px dashed rgba(${v}, ${v}, ${v}, 0.33)`;
     lassoManager.initiator.style.background = `rgba(${v}, ${v}, ${v}, 0.1)`;
+  };
+
+  const updateLassoLongPressIndicatorStyle = () => {
+    const v =
+      Math.round(backgroundColorBrightness) > 0.5
+        ? Math.round(backgroundColorBrightness * 255) - 85
+        : Math.round(backgroundColorBrightness * 255) + 85;
+
+    lassoManager.longPressIndicator.style.color = `rgb(${v}, ${v}, ${v})`;
+    lassoManager.longPressIndicator.dataset.color = `rgb(${v}, ${v}, ${v})`;
+
+    const rgb = lassoColor.map((c) => Math.round(c * 255));
+    lassoManager.longPressIndicator.dataset.activeColor = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
   };
 
   const setBackgroundColor = (newBackgroundColor) => {
@@ -2200,6 +2257,7 @@ const createScatterplot = (
     backgroundColor = toRgba(newBackgroundColor, true);
     backgroundColorBrightness = rgbBrightness(backgroundColor);
     updateLassoInitiatorStyle();
+    updateLassoLongPressIndicatorStyle();
   };
 
   const setBackgroundImage = (newBackgroundImage) => {
@@ -2247,6 +2305,9 @@ const createScatterplot = (
     lassoColor = toRgba(newLassoColor, true);
 
     lasso.setStyle({ color: lassoColor });
+
+    const rgb = lassoColor.map((c) => Math.round(c * 255));
+    lassoManager.longPressIndicator.dataset.activeColor = `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})`;
   };
 
   const setLassoLineWidth = (newLassoLineWidth) => {
@@ -2298,6 +2359,26 @@ const createScatterplot = (
     lassoManager.set({
       startInitiatorParentElement: lassoInitiatorParentElement,
     });
+  };
+
+  const setLassoOnLongPress = (newLassoOnLongPress) => {
+    lassoOnLongPress = Boolean(newLassoOnLongPress);
+  };
+
+  const setLassoLongPressTime = (newLassoOnLongPressTime) => {
+    lassoLongPressTime = Number(newLassoOnLongPressTime);
+  };
+
+  const setLassoLongPressAfterEffectTime = (newTime) => {
+    lassoLongPressAfterEffectTime = Number(newTime);
+  };
+
+  const setLassoLongPressEffectDelay = (newDelay) => {
+    lassoLongPressEffectDelay = Number(newDelay);
+  };
+
+  const setLassoLongPressRevertEffectTime = (newTime) => {
+    lassoLongPressRevertEffectTime = Number(newTime);
   };
 
   const setKeyMap = (newKeyMap) => {
@@ -2751,6 +2832,30 @@ const createScatterplot = (
       setLassoInitiatorParentElement(properties.lassoInitiatorParentElement);
     }
 
+    if (properties.lassoOnLongPress !== undefined) {
+      setLassoOnLongPress(properties.lassoOnLongPress);
+    }
+
+    if (properties.lassoLongPressTime !== undefined) {
+      setLassoLongPressTime(properties.lassoLongPressTime);
+    }
+
+    if (properties.lassoLongPressAfterEffectTime !== undefined) {
+      setLassoLongPressAfterEffectTime(
+        properties.lassoLongPressAfterEffectTime
+      );
+    }
+
+    if (properties.lassoLongPressEffectDelay !== undefined) {
+      setLassoLongPressEffectDelay(properties.lassoLongPressEffectDelay);
+    }
+
+    if (properties.lassoLongPressRevertEffectTime !== undefined) {
+      setLassoLongPressRevertEffectTime(
+        properties.lassoLongPressRevertEffectTime
+      );
+    }
+
     if (properties.keyMap !== undefined) {
       setKeyMap(properties.keyMap);
     }
@@ -3031,6 +3136,7 @@ const createScatterplot = (
       keyMap,
     });
     updateLassoInitiatorStyle();
+    updateLassoLongPressIndicatorStyle();
 
     // Setup event handler
     window.addEventListener('keyup', keyUpHandler, false);
@@ -3071,7 +3177,10 @@ const createScatterplot = (
       if (opacityBy === 'density') getNumPointsInViewDb();
     }
 
-    renderer.render((widthRatio, heightRatio) => {
+    renderer.render(() => {
+      const widthRatio = canvas.width / renderer.canvas.width;
+      const heightRatio = canvas.height / renderer.canvas.height;
+
       updateProjectionMatrix(widthRatio, heightRatio);
 
       // eslint-disable-next-line no-underscore-dangle
