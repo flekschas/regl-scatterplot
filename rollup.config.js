@@ -26,6 +26,10 @@ const configurator = (file, format, plugins = []) => ({
   },
   plugins: [...basePlugins(), ...plugins],
   external: ['pub-sub-es', 'regl'],
+  onwarn: (warning, warn) => {
+    if (warning.code === 'CIRCULAR_DEPENDENCY') return;
+    warn(warning);
+  },
 });
 
 const devConfig = configurator('dist/regl-scatterplot.js', 'umd', [
