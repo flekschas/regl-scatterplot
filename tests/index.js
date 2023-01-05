@@ -201,8 +201,7 @@ test('createTextureFromUrl()', async (t) => {
   try {
     const texture = await createTextureFromUrl(
       regl,
-      'https://picsum.photos/300/200/',
-      true
+      'https://picsum.photos/300/200/'
     );
 
     t.equal(
