@@ -1120,7 +1120,9 @@ test('tests involving mouse events', async (t2) => {
     scatterplot.subscribe('deselect', deselectHandler);
 
     // Test single selection via mouse clicks
-    canvas.dispatchEvent(createMouseEvent('mousedown', hdim, hdim));
+    canvas.dispatchEvent(
+      createMouseEvent('mousedown', hdim, hdim, { buttons: 1 })
+    );
     canvas.dispatchEvent(createMouseEvent('click', hdim, hdim));
 
     await wait(0);
@@ -1139,7 +1141,9 @@ test('tests involving mouse events', async (t2) => {
     // the cursor moved more than `DEFAULT_LASSO_MIN_DIST` in between mousedown and
     // mouseup
     canvas.dispatchEvent(
-      createMouseEvent('mousedown', hdim - DEFAULT_LASSO_MIN_DIST, hdim)
+      createMouseEvent('mousedown', hdim - DEFAULT_LASSO_MIN_DIST, hdim, {
+        buttons: 1,
+      })
     );
     canvas.dispatchEvent(createMouseEvent('click', hdim, hdim));
 
@@ -1150,7 +1154,9 @@ test('tests involving mouse events', async (t2) => {
     // Test that clearing the points works. The selection that worked previously
     // should not work anymore
     scatterplot.clear();
-    window.dispatchEvent(createMouseEvent('mousedown', hdim, hdim));
+    window.dispatchEvent(
+      createMouseEvent('mousedown', hdim, hdim, { buttons: 1 })
+    );
     canvas.dispatchEvent(createMouseEvent('click', hdim, hdim));
 
     await wait(0);
@@ -1210,6 +1216,7 @@ test('tests involving mouse events', async (t2) => {
       canvas.dispatchEvent(
         createMouseEvent('mousedown', dim * 1.125, hdim, {
           [`${lassoKey}Key`]: true,
+          buttons: 1,
         })
       );
 
@@ -1290,6 +1297,7 @@ test('tests involving mouse events', async (t2) => {
     // Test multi selections via mousedown + mousemove
     canvas.dispatchEvent(
       createMouseEvent('mousedown', dim * 1.125, hdim, {
+        buttons: 1,
         altKey: true,
         ctrlKey: true,
         metaKey: true,
@@ -1367,8 +1375,6 @@ test('tests involving mouse events', async (t2) => {
       'lasso initiator parent element should be the document body'
     );
 
-    canvas.dispatchEvent(createMouseEvent('mousedown', dim * 1.125, hdim));
-    await wait(0);
     canvas.dispatchEvent(createMouseEvent('click', dim * 1.125, hdim));
 
     // We need to wait for the click delay and some extra milliseconds for
@@ -1376,7 +1382,7 @@ test('tests involving mouse events', async (t2) => {
     await wait(SINGLE_CLICK_DELAY + 50);
 
     lassoIniatorElement.dispatchEvent(
-      createMouseEvent('mousedown', dim * 1.125, hdim)
+      createMouseEvent('mousedown', dim * 1.125, hdim, { buttons: 1 })
     );
     await wait(0);
 
@@ -1408,7 +1414,9 @@ test('tests involving mouse events', async (t2) => {
 
     t.ok(scatterplot.get('lassoInitiator'), 'lasso initiator should be active');
 
-    canvas.dispatchEvent(createMouseEvent('mousedown', dim * 1.125, hdim));
+    canvas.dispatchEvent(
+      createMouseEvent('mousedown', dim * 1.125, hdim, { buttons: 1 })
+    );
     await wait(0);
     canvas.dispatchEvent(createMouseEvent('click', dim * 1.125, hdim));
 
@@ -1417,7 +1425,7 @@ test('tests involving mouse events', async (t2) => {
     await wait(SINGLE_CLICK_DELAY + 50);
 
     lassoIniatorElement.dispatchEvent(
-      createMouseEvent('mousedown', dim * 1.125, hdim)
+      createMouseEvent('mousedown', dim * 1.125, hdim, { buttons: 1 })
     );
     await wait(0);
 
