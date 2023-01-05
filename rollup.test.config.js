@@ -8,7 +8,11 @@ export default {
   output: {
     name: 'test',
     format: 'iife',
-    sourcemap: 'inline'
+    sourcemap: 'inline',
   },
-  plugins: [resolve(), commonjs(), babel(), json()]
+  plugins: [resolve(), commonjs(), babel(), json()],
+  onwarn: (warning, warn) => {
+    if (warning.code === 'CIRCULAR_DEPENDENCY') return;
+    warn(warning);
+  },
 };
