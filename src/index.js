@@ -272,6 +272,7 @@ const createScatterplot = (
   lassoColor = toRgba(lassoColor, true);
   reticleColor = toRgba(reticleColor, true);
 
+  let isDestroyed = false;
   let backgroundColorBrightness = rgbBrightness(backgroundColor);
   let camera;
   let lasso;
@@ -2032,10 +2033,22 @@ const createScatterplot = (
    * @param {import('./types').ScatterplotMethodOptions['draw']} options
    * @returns {Promise<void>}
    */
-  const publicDraw = (newPoints, options = {}) =>
-    toArrayOrientedPoints(newPoints).then(
+  const publicDraw = (newPoints, options = {}) => {
+    if (isDestroyed) {
+      return Promise.reject(new Error('The instance was already destroyed'));
+    }
+    return toArrayOrientedPoints(newPoints).then(
       (points) =>
         new Promise((resolve) => {
+          if (isDestroyed) {
+            // In the special case where the instance was destroyed after
+            // scatterplot.draw() was called but before toArrayOrientedPoints()
+            // resolved, we will _not_ reject the promise as this would be
+            // confusing. Instead we will immediately resolve and return.
+            resolve();
+            return;
+          }
+
           let pointsCached = false;
           if (points) {
             if (options.transition) {
@@ -2085,6 +2098,7 @@ const createScatterplot = (
           }
         })
     );
+  };
 
   /** @type {<F extends Function>(f: F) => (...args: Parameters<F>) => ReturnType<F>} */
   const withDraw =
@@ -3238,6 +3252,7 @@ const createScatterplot = (
   };
 
   const destroy = () => {
+    isDestroyed = true;
     cancelFrameListener();
     window.removeEventListener('keyup', keyUpHandler, false);
     window.removeEventListener('blur', blurHandler, false);
@@ -3261,8 +3276,6 @@ const createScatterplot = (
     pointConnections.destroy();
     reticleHLine.destroy();
     reticleVLine.destroy();
-    pubSub.publish('destroy');
-    pubSub.clear();
     if (!initialProperties.renderer) {
       // Since the user did not pass in an externally created renderer we can
       // assume that the renderer is only used by this scatter plot instance.
@@ -3270,6 +3283,8 @@ const createScatterplot = (
       // destroyed.
       renderer.destroy();
     }
+    pubSub.publish('destroy');
+    pubSub.clear();
   };
 
   init();

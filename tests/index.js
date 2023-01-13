@@ -1163,6 +1163,47 @@ test(
   })
 );
 
+test(
+  'throw an error when calling draw() after destroy()',
+  catchError(async (t) => {
+    const canvas = createCanvas(200, 200);
+    const scatterplot = createScatterplot({ canvas, width: 200, height: 200 });
+
+    await scatterplot.draw([[0, 0]]);
+
+    scatterplot.destroy();
+
+    try {
+      await scatterplot.draw([[0, 0]]);
+      t.fail(
+        'should have thrown an error because the scatterplot instance is destroyed'
+      );
+    } catch (e) {
+      t.eq(e.message, 'The instance was already destroyed');
+    }
+  })
+);
+
+test(
+  'do _not_ throw an error when calling draw() _before_ destroy()',
+  catchError(async (t) => {
+    const canvas = createCanvas(200, 200);
+    const scatterplot = createScatterplot({ canvas, width: 200, height: 200 });
+
+    let numDraws = 0;
+    scatterplot.subscribe('draw', () => ++numDraws);
+
+    scatterplot.draw([[0, 0]]);
+    scatterplot.destroy();
+
+    t.equal(
+      numDraws,
+      0,
+      'draw call should have been canceled due to the destroy call'
+    );
+  })
+);
+
 test('tests involving mouse events', async (t2) => {
   await t2.test(
     'draw(), clear(), publish("select")',
