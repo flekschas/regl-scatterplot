@@ -1,3 +1,8 @@
+## v1.5.1
+
+- Refactor lasso manager to support SSR ([#101](https://github.com/flekschas/regl-scatterplot/issues/101))
+- Fix a glitch where the scatterplot instance is destroyed after a `scatterplot.draw()` was called but before `scatterplot.draw()` finished. ([#101](https://github.com/flekschas/regl-scatterplot/issues/101))
+
 ## v1.5.0
 
 - Add the ability to lasso select point upon long press via `scatterplot.set('lassoOnLongPress', true)`.
