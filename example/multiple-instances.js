@@ -173,7 +173,7 @@ const scatterplots = canvases.map((canvas) =>
     canvas,
     pointSize: POINT_SIZE,
     opacity: OPACITY,
-    lassoInitiator: LASSO_INITIATOR,
+    lassoOnLongPress: true,
   })
 );
 
