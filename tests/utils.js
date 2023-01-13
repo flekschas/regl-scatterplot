@@ -57,3 +57,11 @@ export const wait = (milliSeconds) =>
   });
 
 export const capitalize = (s) => `${s[0].toUpperCase}${s.slice(1)}`;
+
+export const catchError = (testFn) => (t) => {
+  try {
+    testFn(t);
+  } catch (e) {
+    t.fail(e.message);
+  }
+};
