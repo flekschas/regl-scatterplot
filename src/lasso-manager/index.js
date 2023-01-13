@@ -32,19 +32,26 @@ import {
 
 const ifNotNull = (v, alternative = null) => (v === null ? alternative : v);
 
-const lassoStyleEl = document.createElement('style');
-document.head.appendChild(lassoStyleEl);
+let cachedLassoStylesheets;
 
-const lassoStylesheets = lassoStyleEl.sheet;
+const getLassoStylesheets = () => {
+  if (!cachedLassoStylesheets) {
+    const lassoStyleEl = document.createElement('style');
+    document.head.appendChild(lassoStyleEl);
+    cachedLassoStylesheets = lassoStyleEl.sheet;
+  }
+  return cachedLassoStylesheets;
+};
 
 const addRule = (rule) => {
+  const lassoStylesheets = getLassoStylesheets();
   const currentNumRules = lassoStylesheets.rules.length;
   lassoStylesheets.insertRule(rule, currentNumRules);
   return currentNumRules;
 };
 
 const removeRule = (index) => {
-  lassoStylesheets.deleteRule(index);
+  getLassoStylesheets().deleteRule(index);
 };
 
 const inAnimation = `${LASSO_SHOW_START_INITIATOR_TIME}ms ease scaleInFadeOut 0s 1 normal backwards`;
