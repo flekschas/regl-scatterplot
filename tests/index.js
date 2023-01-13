@@ -4,7 +4,7 @@ import '@babel/polyfill';
 import { test } from 'zora';
 import { scaleLinear } from 'd3-scale';
 import { mat4 } from 'gl-matrix';
-import { isFunction } from '@flekschas/utils';
+import { isFunction, nextAnimationFrame } from '@flekschas/utils';
 
 import { version } from '../package.json';
 
@@ -1613,6 +1613,7 @@ test('tests involving mouse events', async (t2) => {
 
       // Test rotation via keydown + mousedown + mousemove + keydown
       window.dispatchEvent(createMouseEvent('mousemove', dim * 0.75, hdim));
+      await nextAnimationFrame();
       await wait(0);
 
       window.dispatchEvent(
@@ -1645,6 +1646,11 @@ test('tests involving mouse events', async (t2) => {
         await wait(DEFAULT_LASSO_MIN_DELAY + 5);
       });
 
+      // We need to ensure that the camera's tick() function was called before
+      // we release the mouse via the mouseup event
+      await nextAnimationFrame();
+      await wait(0);
+
       window.dispatchEvent(createMouseEvent('mouseup'));
       window.dispatchEvent(
         createKeyboardEvent('keyup', capitalize(rotateKey), {
@@ -1671,6 +1677,7 @@ test('tests involving mouse events', async (t2) => {
 
       // Test rotation via mousedown + mousemove + keydown
       window.dispatchEvent(createMouseEvent('mousemove', dim * 0.75, hdim));
+      await nextAnimationFrame();
       await wait(0);
 
       window.dispatchEvent(
@@ -1699,6 +1706,11 @@ test('tests involving mouse events', async (t2) => {
         await wait(DEFAULT_LASSO_MIN_DELAY + 5);
       });
 
+      // We need to ensure that the camera's tick() function was called before
+      // we release the mouse via the mouseup event
+      await nextAnimationFrame();
+      await wait(0);
+
       window.dispatchEvent(createMouseEvent('mouseup'));
       window.dispatchEvent(
         createKeyboardEvent('keyup', capitalize(oldRotateKey), {
@@ -1717,6 +1729,7 @@ test('tests involving mouse events', async (t2) => {
 
       // Test rotation via mousedown + mousemove + keydown
       window.dispatchEvent(createMouseEvent('mousemove', dim * 0.75, hdim));
+      await nextAnimationFrame();
       await wait(0);
 
       window.dispatchEvent(
@@ -1745,8 +1758,12 @@ test('tests involving mouse events', async (t2) => {
         await wait(DEFAULT_LASSO_MIN_DELAY + 5);
       });
 
+      // We need to ensure that the camera's tick() function was called before
+      // we release the mouse via the mouseup event
+      await nextAnimationFrame();
+      await wait(0);
+
       window.dispatchEvent(createMouseEvent('mouseup'));
-      await wait(10);
       window.dispatchEvent(
         createKeyboardEvent('keyup', capitalize(rotateKey), {
           [`${rotateKey}Key`]: true,
@@ -1845,13 +1862,16 @@ test('tests involving mouse events', async (t2) => {
 
       window.dispatchEvent(createMouseEvent('mouseup', hdim, hdim));
       window.dispatchEvent(createMouseEvent('mousemove', hdim, hdim));
+      await nextAnimationFrame();
       await wait(50);
 
       canvas.dispatchEvent(
         createMouseEvent('mousedown', hdim, hdim, { buttons: 1 })
       );
+      await nextAnimationFrame();
       await wait(50);
       window.dispatchEvent(createMouseEvent('mousemove', 0, hdim));
+      await nextAnimationFrame();
       await wait(50);
 
       t.deepEqual(
