@@ -1611,15 +1611,16 @@ test('tests involving mouse events', async (t2) => {
         (mapping) => mapping[1] === KEY_ACTION_ROTATE
       );
 
-      // Test rotation via mousedown + mousemove + keydown
+      // Test rotation via keydown + mousedown + mousemove + keydown
+      window.dispatchEvent(createMouseEvent('mousemove', dim * 0.75, hdim));
+      await wait(0);
+
       window.dispatchEvent(
         createKeyboardEvent('keydown', capitalize(rotateKey), {
           [`${rotateKey}Key`]: true,
         })
       );
-      window.dispatchEvent(createMouseEvent('mousemove', dim * 0.75, hdim));
-
-      await wait(10);
+      await wait(0);
 
       canvas.dispatchEvent(
         createMouseEvent('mousedown', dim * 0.75, hdim, {
@@ -1628,7 +1629,7 @@ test('tests involving mouse events', async (t2) => {
         })
       );
 
-      await wait(10);
+      await wait(0);
 
       const mousePositions = [
         [dim * 0.75, hdim],
@@ -1669,13 +1670,14 @@ test('tests involving mouse events', async (t2) => {
       await wait(10);
 
       // Test rotation via mousedown + mousemove + keydown
+      window.dispatchEvent(createMouseEvent('mousemove', dim * 0.75, hdim));
+      await wait(0);
+
       window.dispatchEvent(
         createKeyboardEvent('keydown', capitalize(oldRotateKey), {
           [`${oldRotateKey}Key`]: true,
         })
       );
-      window.dispatchEvent(createMouseEvent('mousemove', dim * 0.75, hdim));
-
       await wait(0);
 
       canvas.dispatchEvent(
@@ -1713,17 +1715,16 @@ test('tests involving mouse events', async (t2) => {
         'view should have not been rotated via the old modifier key'
       );
 
-      await wait(2);
-
       // Test rotation via mousedown + mousemove + keydown
+      window.dispatchEvent(createMouseEvent('mousemove', dim * 0.75, hdim));
+      await wait(0);
+
       window.dispatchEvent(
         createKeyboardEvent('keydown', capitalize(rotateKey), {
           [`${rotateKey}Key`]: true,
         })
       );
-      window.dispatchEvent(createMouseEvent('mousemove', dim * 0.75, hdim));
-
-      await wait(10);
+      await wait(0);
 
       canvas.dispatchEvent(
         createMouseEvent('mousedown', dim * 0.75, hdim, {
@@ -1741,7 +1742,7 @@ test('tests involving mouse events', async (t2) => {
 
       await asyncForEach(mousePositions, async (mousePosition) => {
         window.dispatchEvent(createMouseEvent('mousemove', ...mousePosition));
-        await wait(DEFAULT_LASSO_MIN_DELAY + 10);
+        await wait(DEFAULT_LASSO_MIN_DELAY + 5);
       });
 
       window.dispatchEvent(createMouseEvent('mouseup'));
