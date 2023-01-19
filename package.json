@@ -28,6 +28,7 @@
     "prerelease": "rm -rf dist/*; npm run build; zip -r dist.zip dist",
     "pretest": "npm run lint",
     "start": "vite",
+    "preview": "vite preview",
     "test": "rollup -c ./rollup.test.config.js | tape-run --render='tap-spec'",
     "watch": "rollup -cw"
   },
