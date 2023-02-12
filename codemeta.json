@@ -1,0 +1,22 @@
+{
+  "@context": "https://raw.githubusercontent.com/codemeta/codemeta/master/codemeta.jsonld",
+  "@type": "Code",
+  "author": [
+    {
+      "@id": "http://orcid.org/0000-0001-8432-4835",
+      "@type": "Person",
+      "name": "Fritz Lekschas",
+      "affiliation": "Independent Researcher, USA"
+    }
+  ],
+  "identifier": "",
+  "codeRepository": "https://github.com/flekschas/regl-scatterplot",
+  "datePublished": "2023-02-12",
+  "dateModified": "2023-02-12",
+  "dateCreated": "2023-02-12",
+  "description": "A Scalable Interactive JavaScript-based Scatter Plot",
+  "keywords": "scatter plot, 2D scatter, interactive data visualization, JavaScript, embedding plot, WebGL",
+  "license": "MIT",
+  "title": "regl-scatterplot",
+  "version": "v1.5.1"
+}
