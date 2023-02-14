@@ -1,7 +1,34 @@
 /* eslint no-console: 0 */
 
+import { tableFromIPC } from 'apache-arrow';
+
 import createScatterplot from '../src';
-import { saveAsPng, checkSupport } from './utils';
+import { saveAsPng, checkSupport, showModal, closeModal } from './utils';
+
+const CLASS_COLORS = [
+  '#FFFF00', // bright yellow
+  '#1CFFD9', // turrtoise
+  '#FF34FF', // pink/purple
+  '#FF4A46', // pale red
+  '#008941', // forrest green
+  '#1966FF', // dark blue
+  '#C00069', // violette
+  '#FFDBE5', // almost white
+  '#FF9900', // yellow
+  '#8148D5', // grass green
+];
+
+/**
+ * Load Embedding Example
+ */
+const whenData = fetch(
+  'https://storage.googleapis.com/flekschas/regl-scatterplot/cities.arrow'
+);
+
+/**
+ * Modal
+ */
+showModal('Loading...');
 
 const canvas = document.querySelector('#canvas');
 const numPointsEl = document.querySelector('#num-points');
@@ -18,41 +45,11 @@ const exampleEl = document.querySelector('#example-transition');
 exampleEl.setAttribute('class', 'active');
 exampleEl.removeAttribute('href');
 
-let points = [];
-let pointStates = [];
-let numPoints = 100000;
-let pointSize = 2;
-let opacity = 0.33;
-let selection = [];
-
-const lassoMinDelay = 10;
-const lassoMinDist = 2;
-const showReticle = true;
-const reticleColor = [1, 1, 0.878431373, 0.33];
-
-const selectHandler = ({ points: selectedPoints }) => {
-  console.log('Selected:', selectedPoints);
-  selection = selectedPoints;
-  if (selection.length === 1) {
-    const point = points[selection[0]];
-    console.log(
-      `X: ${point[0]}\nY: ${point[1]}\nCategory: ${point[2]}\nValue: ${point[3]}`
-    );
-  }
-};
-
-const deselectHandler = () => {
-  console.log('Deselected:', selection);
-  selection = [];
-};
+let pointSize = 1.5;
 
 const scatterplot = createScatterplot({
   canvas,
-  lassoMinDelay,
-  lassoMinDist,
   pointSize,
-  showReticle,
-  reticleColor,
   lassoInitiator: true,
 });
 
@@ -62,50 +59,11 @@ exportEl.addEventListener('click', () => saveAsPng(scatterplot));
 
 console.log(`Scatterplot v${scatterplot.get('version')}`);
 
-scatterplot.subscribe('select', selectHandler);
-scatterplot.subscribe('deselect', deselectHandler);
-
-const generatePoints = (num) => [
-  ...new Array(Math.round(num / 2)).fill().map(() => [
-    -1 + Math.random(), // x
-    -1 + (Math.random() * 2) / 3, // y
-    0, // category
-    Math.random() * 0.33, // value
-  ]),
-  ...new Array(Math.round(num / 2)).fill().map(() => [
-    Math.random(), // x
-    -1 + Math.random() * 2, // y
-    1, // category
-    0.66 + Math.random() * 0.33, // value
-  ]),
-];
-
-const setNumPoint = (newNumPoints) => {
-  numPoints = newNumPoints;
-  numPointsEl.value = numPoints;
-  numPointsValEl.innerHTML = numPoints;
-  points = generatePoints(numPoints);
-  pointStates = [
-    points,
-    points.map(([x, y, c, v], j) =>
-      j < points.length / 2
-        ? [x, (y + 1) * 3 - 1, c, v + 0.66]
-        : [x, (y + 1) / 3 - 1, c, v - 0.66]
-    ),
-  ];
-  scatterplot.draw(points);
-};
-
-const numPointsInputHandler = (event) => {
-  numPointsValEl.innerHTML = `${+event.target
-    .value} <em>release to redraw</em>`;
-};
-
-numPointsEl.addEventListener('input', numPointsInputHandler);
-
-const numPointsChangeHandler = (event) => setNumPoint(+event.target.value);
-
-numPointsEl.addEventListener('change', numPointsChangeHandler);
+/**
+ * Disable num points and opacity setter because we work with fixed data
+ */
+numPointsEl.disabled = true;
+opacityEl.disabled = true;
 
 const setPointSize = (newPointSize) => {
   pointSize = newPointSize;
@@ -117,17 +75,6 @@ const setPointSize = (newPointSize) => {
 const pointSizeInputHandler = (event) => setPointSize(+event.target.value);
 
 pointSizeEl.addEventListener('input', pointSizeInputHandler);
-
-const setOpacity = (newOpacity) => {
-  opacity = newOpacity;
-  opacityEl.value = opacity;
-  opacityValEl.innerHTML = opacity;
-  scatterplot.set({ opacity });
-};
-
-const opacityInputHandler = (event) => setOpacity(+event.target.value);
-
-opacityEl.addEventListener('input', opacityInputHandler);
 
 const clickLassoInitiatorChangeHandler = (event) => {
   scatterplot.set({
@@ -147,38 +94,62 @@ const resetClickHandler = () => {
 
 resetEl.addEventListener('click', resetClickHandler);
 
-const colorsCat = ['#3a78aa', '#aa3a99'];
-scatterplot.set({ colorBy: 'category', pointColor: colorsCat });
+setPointSize(1.5);
 
-const colorsScale = [
-  '#ff80cb', // bright pink
-  '#df80b8',
-  '#bf80a5',
-  '#9f8092',
-  '#808080',
-  '#75919f',
-  '#6ba3bf',
-  '#61b5df',
-  '#57c7ff', // bright blue
-];
-scatterplot.set({ colorBy: 'value', pointColor: colorsScale });
+whenData
+  .then((data) => tableFromIPC(data))
+  .then((table) => {
+    closeModal();
+    const columnValues = table.data[0].children.map((data) => data.values);
 
-setPointSize(pointSize);
-setOpacity(opacity);
-setNumPoint(numPoints);
+    const population = columnValues[columnValues.length - 2];
+    const continents = columnValues[columnValues.length - 1];
 
-let i = 0;
-const transitionPoints = () => {
-  i++;
-  scatterplot
-    .draw(pointStates[i % pointStates.length], {
-      transition: true,
-      transitionDuration: 1000 - ((i - 1) % 5) * 150,
-      transitionEasing: 'quadInOut',
-    })
-    .then(() => {
-      setTimeout(transitionPoints, +!(i % 5) * 3000);
+    const staticOpacity = new Float32Array(population.length);
+    for (let i = 0; i < population.length; i++) {
+      staticOpacity[i] = 1;
+    }
+
+    numPointsValEl.innerHTML = table.numRows;
+    opacityValEl.innerHTML = 'Automatic';
+
+    scatterplot.draw({
+      x: columnValues[0],
+      y: columnValues[1],
+      z: continents,
+      w: population,
     });
-};
+    scatterplot.set({
+      colorBy: 'z',
+      pointColor: CLASS_COLORS,
+      opacityBy: 'w',
+      opacity: Array.from({ length: 10 }, (_, i) => 0.33 + (i / 9) * 0.33),
+    });
 
-transitionPoints();
+    let i = 0;
+    const transitionPoints = () => {
+      i++;
+
+      const startCol = (i % 3) * 2;
+
+      scatterplot
+        .draw(
+          {
+            x: columnValues[startCol],
+            y: columnValues[startCol + 1],
+            z: continents,
+            w: [population, staticOpacity, staticOpacity][i % 3],
+          },
+          {
+            transition: true,
+            transitionDuration: 750,
+            transitionEasing: 'quadInOut',
+          }
+        )
+        .then(() => {
+          setTimeout(transitionPoints, 2500);
+        });
+    };
+
+    setTimeout(transitionPoints, 2500);
+  });
