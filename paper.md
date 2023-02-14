@@ -21,27 +21,28 @@ bibliography: paper/refs.bib
 
 # Summary
 
-Scatter plots are an one of the most popular method to visualize bivariate data.
-They can effectively surface correlations like trends or clusters and are used
-across all scientific domains. With datasets ever increasing in size, there is a
-need for scalable and interactive plotting libraries.
+Scatter plots are an one of the most popular visualization methods to surface correlations (like trends or clusters) in bivariate data. They are used
+across all scientific domains. With datasets ever increasing in size, it can become challenging to effectively render and explore scatter plots. Hence, there is a
+need for scalable and interactive scatter plot libraries.
 
 ![Examples of `regl-scatterplot`. The top row visualizes the Rössler attractor
-and demonstrates the dynamic point opacity. As one zooms in and number of points
-in the view decreases, the point opacity increases. The bottom row shows four
-embeddings of the Fashion MNIST dataset created with PCA, t-SNE, UMAP, and a
-variational autoencoder. The embeddings are visualized using four
-`regl-scatterplot` instances that synchronize and zoom to their point
-selections. For instance, upon selecting the sky blue cluster of points in the
-top-right instance (see the white bounding box), the same points are selected in
-the other instances. Also, all four instances zoom to the selected points
-(right side of the second row).\label{fig:teaser}](paper/teaser.jpg)
+and demonstrates the dynamic point opacity. As one zooms in (see the white
+bounding box) and number of points in the view decreases, the point opacity
+increases. The bottom row shows four embeddings of the Fashion MNIST dataset
+[@xiao2017fashion] created with PCA [@xiao2017fashion], t-SNE
+[@vandermaaten2008visualizing], UMAP [@leland2018umap], and a variational
+autoencoder [@kingma2013auto]. The embeddings are visualized using four
+`regl-scatterplot` instances that synchronize and zoom to the selected points.
+For instance, upon selecting the sky blue cluster of points in the top-right
+instance (see the white bounding box), the same points are selected in the other
+instances. Also, all four instances zoom to the selected points (right side of
+the second row).\label{fig:teaser}](paper/teaser.jpg)
 
 `regl-scatterplot` is a general-purpose data visualization library written in
 JavaScript for rendering large-scale scatter plots on the web
 (\autoref{fig:teaser}). Every aspect of the library focuses on performance.
-Thanks to it's WebGL-based renderer, which is written with `regl` [@regl], the
-library allows to render up to twenty million points while offering free pan and
+Thanks to its WebGL-based renderer, which is written with `regl` [@regl], the
+library can draw up to twenty million points while offering smooth pan and
 zoom. To interact with the data points, `regl-scatterplot` implements fast lasso
 selections using a spacial index [@kdbush]. Beyond the rendering and interaction
 performance, visualizing large datasets as scatter plots also poses perceptual
@@ -51,15 +52,18 @@ outliers are perceivable. To simplify this aspect of the scatter plot design,
 `regl-scatterplot` implements a density-based point opacity that extends an
 approach by @reusser2022selecting. In addition to the original approach, the
 opacity dynamically adjusts to the points within the field of view as the user
-pans and zooms. Finally, `regl-scatterplot` to draw spline-interpolated point
-connections that allow data-driven visual encoding and animated point
-transitions between datasets with point correspondences
+pans and zooms. Finally, `regl-scatterplot` supports drawing spline-interpolated point
+connections and animated transitions of the point location and color encoding
+when drawing a new dataset with point correspondences
 (\autoref{fig:additional}).
 
-![Left: `regl-scatterplot` supports rendering point connections. Connections of
-selected points are highlighted. Right: Nine key frames of an animated
-transition of the point the locations from a geographical to a bar chart
-representation. The points visualize cities across the globe [@geonames].
+![Additional features of `regl-scatterplot`. On the left side, we show an
+example of point connections rendered as spline-interpolated lines. Note that
+connections of selected points are highlighted as well. On the right side, we
+show nine key frames of an animated transition of the point locations from a
+geographical to a bar chart representation. The points visualize cities across
+the globe [@geonames]. The animation example was inspired by
+@beshai2017beautiful.
 \label{fig:additional}](paper/additional.jpg)
 
 # Statement of Need
@@ -78,7 +82,7 @@ exploration of the ever-increasing number of large-scale datasets.
 
 # Related & Future Work
 
-There are a number of related JavaScript packages for rendering scatter plots on
+There are several related JavaScript packages for rendering scatter plots on
 the web. General-purpose visualization libraries like `d3` [@bostock2011d3] or
 `vega-lite` [@satyanarayan2016vegalite] are broadly useful, but they cannot
 render datasets with millions of data points due to their reliance on SVG.
@@ -101,7 +105,7 @@ selections or the ability to synchronize multiple scatter plot instances.
 
 In the future, we plan to add built-in support for streaming tiled Apache Arrow
 files in `regl-scatterplot` to further improve the performance. We also plan to
-move as much or ideally all of `regl-scatterplot` code to web workers, which
+move as much or ideally all of `regl-scatterplot`'s code to web workers, which
 would help to avoid any performance impact on the main thread.
 
 # Acknowledgements
