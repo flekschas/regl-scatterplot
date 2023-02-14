@@ -29,7 +29,7 @@ need for scalable and interactive scatter plot libraries.
 and demonstrates the dynamic point opacity. As one zooms in (see the white
 bounding box) and number of points in the view decreases, the point opacity
 increases. The bottom row shows four embeddings of the Fashion MNIST dataset
-[@xiao2017fashion] created with PCA [@xiao2017fashion], t-SNE
+[@xiao2017fashion] created with PCA [@pearson1901], t-SNE
 [@vandermaaten2008visualizing], UMAP [@leland2018umap], and a variational
 autoencoder [@kingma2013auto]. The embeddings are visualized using four
 `regl-scatterplot` instances that synchronize and zoom to the selected points.
