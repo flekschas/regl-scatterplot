@@ -1,6 +1,5 @@
 ---
-title:
-  'Regl-Scatterplot: A Scalable Interactive JavaScript-based Scatter Plot
+title: 'Regl-Scatterplot: A Scalable Interactive JavaScript-based Scatter Plot
   Library'
 tags:
   - scatter plot
@@ -52,7 +51,16 @@ outliers are perceivable. To simplify this aspect of the scatter plot design,
 `regl-scatterplot` implements a density-based point opacity that extends an
 approach by @reusser2022selecting. In addition to the original approach, the
 opacity dynamically adjusts to the points within the field of view as the user
-pans and zooms.
+pans and zooms. Finally, `regl-scatterplot` to draw spline-interpolated point
+connections that allow data-driven visual encoding and animated point
+transitions between datasets with point correspondences
+(\autoref{fig:additional}).
+
+![Left: `regl-scatterplot` supports rendering point connections. Connections of
+selected points are highlighted. Right: Nine key frames of an animated
+transition of the point the locations from a geographical to a bar chart
+representation. The points visualize cities across the globe [@geonames].
+\label{fig:additional}](paper/additional.jpg)
 
 # Statement of Need
 
