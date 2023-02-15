@@ -50,7 +50,7 @@ let pointSize = 1.5;
 const scatterplot = createScatterplot({
   canvas,
   pointSize,
-  lassoInitiator: true,
+  lassoOnLongPress: true,
 });
 
 checkSupport(scatterplot);
