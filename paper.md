@@ -21,8 +21,10 @@ bibliography: paper/refs.bib
 
 # Summary
 
-Scatter plots are an one of the most popular visualization methods to surface correlations (like trends or clusters) in bivariate data. They are used
-across all scientific domains. With datasets ever increasing in size, it can become challenging to effectively render and explore scatter plots. Hence, there is a
+Scatter plots are one of the most popular visualization methods to surface
+correlations (like trends or clusters) in bivariate data. They are used across
+all scientific domains. With datasets ever increasing in size, it can become
+challenging to effectively render and explore scatter plots. Hence, there is a
 need for scalable and interactive scatter plot libraries.
 
 ![Examples of `regl-scatterplot`. The top row visualizes the Rössler attractor
@@ -42,20 +44,21 @@ the second row).\label{fig:teaser}](paper/teaser.jpg)
 JavaScript for rendering large-scale scatter plots on the web
 (\autoref{fig:teaser}). Every aspect of the library focuses on performance.
 Thanks to its WebGL-based renderer, which is written with `regl` [@regl], the
-library can draw up to twenty million points while offering smooth pan and
-zoom. To interact with the data points, `regl-scatterplot` implements fast lasso
-selections using a spacial index [@kdbush]. Beyond the rendering and interaction
-performance, visualizing large datasets as scatter plots also poses perceptual
-challenges [@micallef2017towards]. In particular, the right level of opacity is
-critical to faithfully represent the data distribution while ensuring that
-outliers are perceivable. To simplify this aspect of the scatter plot design,
-`regl-scatterplot` implements a density-based point opacity that extends an
-approach by @reusser2022selecting. In addition to the original approach, the
-opacity dynamically adjusts to the points within the field of view as the user
-pans and zooms. Finally, `regl-scatterplot` supports drawing spline-interpolated point
-connections and animated transitions of the point location and color encoding
-when drawing a new dataset with point correspondences
-(\autoref{fig:additional}).
+library can draw up to twenty million points while offering smooth pan and zoom.
+To interact with the data points, `regl-scatterplot` implements fast lasso
+selections using a spacial index [@kdbush].
+
+Beyond the rendering and interaction performance, visualizing large datasets as
+scatter plots also poses perceptual challenges [@micallef2017towards]. In
+particular, the right level of opacity is critical to faithfully represent the
+data distribution while ensuring that outliers are perceivable. To simplify this
+aspect of the scatter plot design, `regl-scatterplot` implements a density-based
+point opacity that extends an approach by @reusser2022selecting. In addition to
+the original approach, the opacity dynamically adjusts to the points within the
+field of view as the user pans and zooms. Finally, `regl-scatterplot` supports
+drawing spline-interpolated point connections and animated transitions of the
+point location and color encoding when drawing a new dataset with point
+correspondences (\autoref{fig:additional}).
 
 ![Additional features of `regl-scatterplot`. On the left side, we show an
 example of point connections rendered as spline-interpolated lines. Note that
@@ -72,7 +75,7 @@ the globe [@geonames]. The animation example was inspired by
 It has already been cited in a number of scientific publications
 [@lekschas2020peax; @santala2020fast; @narechania2022vitality;
 @bauerle2022symphony; @warchol2023visinity], it formed the software foundation
-for a computer science master thesis [@hindersson2021scatterplot], and is
+for a computer science master thesis [@hindersson2021scatterplot], and it is
 actively used in scientific software tools [@peax; @histocat; @eodash;
 @gotreescape; @jscatter; @visinity; @zeno]. The focus on scalable rendering and
 interactions in combinations with a wide variety of design customizations in
@@ -82,14 +85,14 @@ exploration of the ever-increasing number of large-scale datasets.
 
 # Related & Future Work
 
-There are several related JavaScript packages for rendering scatter plots on
-the web. General-purpose visualization libraries like `d3` [@bostock2011d3] or
+There are several related JavaScript packages for rendering scatter plots on the
+web. General-purpose visualization libraries like `d3` [@bostock2011d3] or
 `vega-lite` [@satyanarayan2016vegalite] are broadly useful, but they cannot
-render datasets with millions of data points due to their reliance on SVG.
-`CandyGraph` [@candygraph] overcomes this limitation by using WebGL for the
-rendering like `regl-scatterplot`. However, being a general-purpose plotting
-library means that it does not offer critical features for exploring scatter
-plots interactively like pan-and-zoom, lasso selections, etc. The visualization
+render datasets with millions of data points due to their reliance on SVG. Like
+`regl-scatterplot`, `CandyGraph` [@candygraph] overcomes this limitation by
+using WebGL for the rendering. However, being a general-purpose plotting library
+means that it does not offer critical features for exploring scatter plots
+interactively like pan-and-zoom, lasso selections, etc. The visualization
 charting library `plotly.js` [@plotlyjs] has support for WebGL rendering and
 offers interactive pan-or-zoom and lasso selection, but is lacking other
 features like animated transitions, dynamic point opacity, or synchronization of
@@ -98,8 +101,8 @@ multiple scatter plot instances. Similarly, the bespoke `regl-scatter2d`
 and allows customizing the point shape. However, it does not support data-driven
 visual encodings or interactive point selections. Finally, `deepscatter`
 [@deepscatter] is another scalable scatter plot library that offers data-driven
-visual encodings. It's reliance on tile-based data enables even greater
-scalability compared to `regl-scatterplot` at the expense of having to
+visual encodings. Its reliance on tile-based data enables even greater
+scalability compared to `regl-scatterplot` but at the expense of having to
 preprocess data. Also, as of today, the library is lacking support for lasso
 selections or the ability to synchronize multiple scatter plot instances.
 
