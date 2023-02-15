@@ -30,6 +30,16 @@ const whenData = fetch(
  */
 showModal('Loading...');
 
+/**
+ * Add info to footer
+ */
+const footer = document.querySelector('#footer');
+footer.classList.remove('hidden');
+const infoContent = document.querySelector('#info-content');
+infoContent.innerHTML = `
+<p><a href="https://www.geonames.org/about.html" target="_blank">GeoNames – Cities Dataset</a> visualized in three: by the cities' geographic location, by the total population across contintents, and by the citie's latitude distribution.</p>
+`;
+
 const canvas = document.querySelector('#canvas');
 const numPointsEl = document.querySelector('#num-points');
 const numPointsValEl = document.querySelector('#num-points-value');
