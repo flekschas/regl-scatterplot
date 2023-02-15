@@ -1,13 +1,15 @@
 {
   "name": "regl-scatterplot",
   "version": "1.5.1",
-  "description": "WebGL-based 2D Scatterplot in Regl",
+  "description": "A WebGL-Powered Scalable Interactive Scatter Plot Library",
   "author": "Fritz Lekschas",
   "keywords": [
     "scatterplot",
-    "2d",
+    "2d scatter",
+    "interactive data visualization",
     "regl",
-    "webgl"
+    "WebGL",
+    "embedding plot"
   ],
   "license": "MIT",
   "main": "dist/regl-scatterplot.js",
