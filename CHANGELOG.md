@@ -4,6 +4,8 @@
 
   To reset the filter call `scatterplot.unfilter()` or `scatterplot.filter([])`.
 
+  https://user-images.githubusercontent.com/932103/222810324-3e048176-fd1d-4ede-a836-511c548f09ff.mp4
+
 ## v1.5.1
 
 - Refactor lasso manager to support SSR ([#101](https://github.com/flekschas/regl-scatterplot/issues/101))
