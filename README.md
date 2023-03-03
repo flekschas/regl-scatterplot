@@ -390,6 +390,36 @@ scatterplot.select([0, 1]);
 
 Deselect all selected points. This will trigger a `deselect` event unless `options.preventEvent === true`.
 
+<a name="scatterplot.filter" href="#scatterplot.filter">#</a> scatterplot.<b>filter</b>(<i>points</i>, <i>options = {}</i>)
+
+Filter down the currently drawn points, such that all points that are not included in the filter are visually and interactivelly hidden. This will trigger a `filter` event unless `options.preventEvent === true`.
+
+Note: filtering down points can affect previously selected points. Selected points that are filtered out are also deselected.
+
+**Arguments:**
+
+- `points` is an array of indices referencing the points that you want to filter down to.
+- `options` [optional] is an object with the following properties:
+  - `preventEvent`: if `true` the `select` will not be published.
+
+**Examples:**
+
+```javascript
+// Let's say we have three points
+scatterplot.draw([
+  [0.1, 0.1],
+  [0.2, 0.2],
+  [0.3, 0.3],
+]);
+
+// To only show the first and second point we have to do
+scatterplot.filter([0, 1]);
+```
+
+<a name="scatterplot.unfilter" href="#scatterplot.unfilter">#</a> scatterplot.<b>unfilter</b>(<i>options = {}</i>)
+
+Reset previously filtered out points. This will trigger an `unfilter` event unless `options.preventEvent === true`.
+
 <a name="scatterplot.hover" href="#scatterplot.hover">#</a> scatterplot.<b>hover</b>(<i>point</i>, <i>options = {}</i>)
 
 Programmatically hover a point, such that it gets visually highlighted. This will trigger a `pointover` or `pointout` event unless `options.preventEvent === true`.
@@ -844,6 +874,8 @@ Render Regl draw instructions into a target canvas using the renderer.
 | pointOut             | when the mouse cursor moves out of a point | pointIndex                         |
 | select               | when points are selected                   | `{ points }`                       |
 | deselect             | when points are deselected                 | `undefined`                        |
+| filter               | when points are filtered                   | `{ points }`                       |
+| unfilter             | when the point filter is reset             | `undefined`                        |
 | view                 | when the view has changes                  | `{ camera, view, xScale, yScale }` |
 | draw                 | when the plot was drawn                    | `{ camera, view, xScale, yScale }` |
 | lassoStart           | when the lasso selection has started       | `undefined`                        |
