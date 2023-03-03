@@ -1961,6 +1961,12 @@ test(
       'should have selected point 0, 2, and 4'
     );
 
+    t.deepEqual(
+      scatterplot.get('selectedPoints'),
+      [0, 2, 4],
+      'should be able to retrieve the selected points'
+    );
+
     scatterplot.deselect();
 
     await wait(0);
@@ -2125,6 +2131,12 @@ test(
       scatterplot.get('pointsInView'),
       [1, 3],
       'should have two points (1 and 3) in view'
+    );
+
+    t.deepEqual(
+      scatterplot.get('filteredPoints'),
+      [1, 3],
+      'should be able to retrieve the filtered points'
     );
 
     let selectedPoints = [];

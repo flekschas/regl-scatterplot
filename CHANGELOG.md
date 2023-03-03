@@ -6,6 +6,8 @@
 
   https://user-images.githubusercontent.com/932103/222810324-3e048176-fd1d-4ede-a836-511c548f09ff.mp4
 
+- Add the ability to retrieve selected and filtered point indices via `scatterplot.get('selectedPoints')` and `scatterplot.get('filteredPoints')` respectively.
+
 ## v1.5.1
 
 - Refactor lasso manager to support SSR ([#101](https://github.com/flekschas/regl-scatterplot/issues/101))
