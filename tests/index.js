@@ -2088,6 +2088,132 @@ test(
 );
 
 test(
+  'filter()',
+  catchError(async (t) => {
+    const scatterplot = createScatterplot({ canvas: createCanvas() });
+
+    const points = [
+      [0, 0],
+      [1, 1],
+      [1, -1],
+      [-1, -1],
+      [-1, 1],
+    ];
+
+    await scatterplot.draw(points);
+
+    let filteredPoints = [];
+    const filterHandler = ({ points: newFilteredPoints }) => {
+      filteredPoints = [...newFilteredPoints];
+    };
+    const unfilterHandler = () => {
+      filteredPoints = [];
+    };
+    scatterplot.subscribe('filter', filterHandler);
+    scatterplot.subscribe('unfilter', unfilterHandler);
+
+    await scatterplot.filter([1, 3]);
+    await wait(0);
+
+    t.deepEqual(
+      filteredPoints,
+      [1, 3],
+      'should have filtered down to points 1 and 3'
+    );
+
+    t.deepEqual(
+      scatterplot.get('pointsInView'),
+      [1, 3],
+      'should have two points (1 and 3) in view'
+    );
+
+    let selectedPoints = [];
+    const selectHandler = ({ points: newSelectedPoints }) => {
+      selectedPoints = [...newSelectedPoints];
+    };
+    const deselectHandler = () => {
+      selectedPoints = [];
+    };
+    scatterplot.subscribe('select', selectHandler);
+    scatterplot.subscribe('deselect', deselectHandler);
+
+    scatterplot.select([0, 2, 4]);
+
+    await wait(0);
+
+    t.deepEqual(
+      selectedPoints,
+      [],
+      'should not have selected points 0, 2, and 4 because they are filtered out'
+    );
+
+    await scatterplot.unfilter();
+    await wait(0);
+
+    t.deepEqual(filteredPoints, [], 'should have unfiltered the points');
+
+    scatterplot.select([0, 2, 4]);
+
+    await wait(0);
+
+    t.deepEqual(
+      selectedPoints,
+      [0, 2, 4],
+      'should have selected points 0, 2, and 4 because we unfiltered points first'
+    );
+
+    await scatterplot.filter([1, 3], { preventEvent: true });
+    await wait(0);
+
+    t.ok(
+      filteredPoints.length === 0 &&
+        scatterplot.get('pointsInView').length === 2,
+      'should have silently filtered down to two points'
+    );
+
+    await scatterplot.filter([0, 1, 3]);
+    await scatterplot.unfilter({ preventEvent: true });
+    await wait(0);
+
+    t.ok(
+      filteredPoints.length === 3 &&
+        scatterplot.get('pointsInView').length === 5,
+      'should have silently unfiltered points'
+    );
+
+    await scatterplot.filter(2);
+    await wait(0);
+
+    t.ok(
+      filteredPoints.length === 1 &&
+        filteredPoints[0] === 2 &&
+        scatterplot.get('pointsInView').length === 1,
+      'should allow filtering down to a single point'
+    );
+
+    await scatterplot.filter(-1);
+    await wait(0);
+
+    t.deepEqual(
+      filteredPoints,
+      [],
+      'should have not filter down to any point because -1 is an invalid point index'
+    );
+
+    await scatterplot.filter([0, -1, 2, 4, 6]);
+    await wait(0);
+
+    t.deepEqual(
+      filteredPoints,
+      [0, 2, 4],
+      'should have filtered down to valid points (0, 2, and 4) only'
+    );
+
+    scatterplot.destroy();
+  })
+);
+
+test(
   'zooming with transition',
   catchError(async (t) => {
     const scatterplot = createScatterplot({ canvas: createCanvas() });

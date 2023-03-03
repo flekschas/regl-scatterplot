@@ -1,3 +1,9 @@
+## v1.6.0
+
+- Add the ability to filter down points via `scatterplot.filter(pointIdxs)`. This can be useful if you need to temporarily need to hide points without having to re-instantiate the regl-scatterplot instance. E.g., when calling `scatterplot.filter([0, 1, 2])`, only the first, second, and third point will remain visible. All other points (and their related point connections) will be visually and interactively hidden.
+
+  To reset the filter call `scatterplot.unfilter()` or `scatterplot.filter([])`.
+
 ## v1.5.1
 
 - Refactor lasso manager to support SSR ([#101](https://github.com/flekschas/regl-scatterplot/issues/101))

@@ -162,6 +162,9 @@ export interface ScatterplotMethodOptions {
     merge: boolean;
     preventEvent: boolean;
   }>;
+  filter: Partial<{
+    preventEvent: boolean;
+  }>;
   preventEvent: Partial<{
     preventEvent: boolean;
   }>;

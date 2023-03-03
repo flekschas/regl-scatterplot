@@ -283,6 +283,8 @@ const createScatterplot = (
   let selection = [];
   const selectionSet = new Set();
   const selectionConnecionSet = new Set();
+  let filteredPoints = [];
+  const filteredPointSet = new Set();
   let numPoints = 0;
   let numPointsInView = 0;
   let lassoActive = false;
@@ -515,6 +517,19 @@ const createScatterplot = (
     return computedPointSizeMouseDetection * pointScale * pxNdc * 0.66;
   };
 
+  const getPoints = () => {
+    if (filteredPointSet.size > 0)
+      return searchIndex.points.filter((_, i) => filteredPointSet.has(i));
+    return searchIndex.points;
+  };
+
+  const getPointsInBBox = (x0, y0, x1, y1) => {
+    const pointsInBBox = searchIndex.range(x0, y0, x1, y1);
+    if (filteredPointSet.size > 0)
+      return pointsInBBox.filter((i) => filteredPointSet.has(i));
+    return pointsInBBox;
+  };
+
   const raycast = () => {
     const [xGl, yGl] = getMouseGlPos();
     const [xNdc, yNdc] = getScatterGlPos(xGl, yGl);
@@ -522,7 +537,7 @@ const createScatterplot = (
     const pointSizeNdc = getPointSizeNdc();
 
     // Get all points within a close range
-    const pointsInBBox = searchIndex.range(
+    const pointsInBBox = getPointsInBBox(
       xNdc - pointSizeNdc,
       yNdc - pointSizeNdc,
       xNdc + pointSizeNdc,
@@ -556,7 +571,7 @@ const createScatterplot = (
     // get the bounding box of the lasso selection...
     const bBox = getBBox(lassoPolygon);
     // ...to efficiently preselect potentially selected points
-    const pointsInBBox = searchIndex.range(...bBox);
+    const pointsInBBox = getPointsInBBox(...bBox);
     // next we test each point in the bounding box if it is in the polygon too
     const pointsInPolygon = [];
     pointsInBBox.forEach((pointIdx) => {
@@ -638,6 +653,9 @@ const createScatterplot = (
     Math.floor(index / stateTexRes) / stateTexRes + stateTexEps,
   ];
 
+  const isPointFilteredOut = (pointIdx) =>
+    filteredPointSet.size > 0 && !filteredPointSet.has(pointIdx);
+
   const deselect = ({ preventEvent = false } = {}) => {
     if (lassoClearEvent === LASSO_CLEAR_ON_DESELECT) lassoClear();
     if (selection.length) {
@@ -675,15 +693,21 @@ const createScatterplot = (
     for (let i = selection.length - 1; i >= 0; i--) {
       const pointIdx = selection[i];
 
-      if (pointIdx < 0 || pointIdx >= numPoints) {
+      if (
+        pointIdx < 0 ||
+        pointIdx >= numPoints ||
+        isPointFilteredOut(pointIdx)
+      ) {
         // Remove invalid selection
         selection.splice(i, 1);
-      } else {
-        selectionSet.add(pointIdx);
-        const texCoords = indexToStateTexCoord(pointIdx);
-        selectionBuffer.push(texCoords[0]);
-        selectionBuffer.push(texCoords[1]);
+        continue;
       }
+
+      selectionSet.add(pointIdx);
+      selectionBuffer.push.apply(
+        selectionBuffer,
+        indexToStateTexCoord(pointIdx)
+      );
     }
 
     selectedPointsIndexBuffer({
@@ -697,6 +721,51 @@ const createScatterplot = (
     if (!preventEvent) pubSub.publish('select', { points: selection });
 
     draw = true;
+  };
+
+  /**
+   * @param {number | number[]} point
+   * @param {import('./types').ScatterplotMethodOptions['hover']} options
+   */
+  const hover = (
+    point,
+    { showReticleOnce = false, preventEvent = false } = {}
+  ) => {
+    let needsRedraw = false;
+
+    if (point >= 0 && point < numPoints) {
+      needsRedraw = true;
+      const oldHoveredPoint = hoveredPoint;
+      const newHoveredPoint = point !== hoveredPoint;
+      if (
+        +oldHoveredPoint >= 0 &&
+        newHoveredPoint &&
+        !selectionSet.has(oldHoveredPoint)
+      ) {
+        setPointConnectionColorState([oldHoveredPoint], 0);
+      }
+      hoveredPoint = point;
+      hoveredPointIndexBuffer.subdata(indexToStateTexCoord(point));
+      if (!selectionSet.has(point)) setPointConnectionColorState([point], 2);
+      if (newHoveredPoint && !preventEvent)
+        pubSub.publish('pointover', hoveredPoint);
+    } else {
+      needsRedraw = +hoveredPoint >= 0;
+      if (needsRedraw) {
+        if (!selectionSet.has(hoveredPoint)) {
+          setPointConnectionColorState([hoveredPoint], 0);
+        }
+        if (!preventEvent) {
+          pubSub.publish('pointout', hoveredPoint);
+        }
+      }
+      hoveredPoint = undefined;
+    }
+
+    if (needsRedraw) {
+      draw = true;
+      drawReticleOnce = showReticleOnce;
+    }
   };
 
   const getRelativeMousePosition = (event) => {
@@ -908,11 +977,21 @@ const createScatterplot = (
       rgba[i * 4] = pointSize[i] || 0;
       rgba[i * 4 + 1] = Math.min(1, opacity[i] || 0);
 
-      const active = Number((pointColorActive[i] || pointColorActive[0])[3]);
-      rgba[i * 4 + 2] = Math.min(1, Number.isNaN(active) ? 1 : active);
+      const activeOpacity = Number(
+        (pointColorActive[i] || pointColorActive[0])[3]
+      );
+      rgba[i * 4 + 2] = Math.min(
+        1,
+        Number.isNaN(activeOpacity) ? 1 : activeOpacity
+      );
 
-      const hover = Number((pointColorHover[i] || pointColorHover[0])[3]);
-      rgba[i * 4 + 3] = Math.min(1, Number.isNaN(hover) ? 1 : hover);
+      const hoverOpacity = Number(
+        (pointColorHover[i] || pointColorHover[0])[3]
+      );
+      rgba[i * 4 + 3] = Math.min(
+        1,
+        Number.isNaN(hoverOpacity) ? 1 : hoverOpacity
+      );
     }
 
     return renderer.regl.texture({
@@ -1251,7 +1330,8 @@ const createScatterplot = (
 
     return max(minPointScale, camera.scaling[0]) * window.devicePixelRatio;
   };
-  const getNormalNumPoints = () => numPoints;
+  const getNormalNumPoints = () =>
+    filteredPoints && filteredPoints.length ? filteredPoints.length : numPoints;
   const getSelectedNumPoints = () => selection.length;
   const getPointOpacityMaxBase = () =>
     getSelectedNumPoints() > 0 ? opacityInactiveMax : 1;
@@ -1865,8 +1945,113 @@ const createScatterplot = (
       }
     });
 
+  /**
+   * Reset the point filter
+   * @param {import('./types').ScatterplotMethodOptions['filter']}
+   */
+  const unfilter = ({ preventEvent = false } = {}) => {
+    filteredPoints = [];
+    filteredPointSet.clear();
+    normalPointsIndexBuffer.subdata(createPointIndex(numPoints));
+
+    return new Promise((resolve) => {
+      const finish = () => {
+        pubSub.subscribe(
+          'draw',
+          () => {
+            if (!preventEvent) pubSub.publish('unfilter');
+            resolve();
+          },
+          1
+        );
+        draw = true;
+      };
+
+      // Update point connections
+      if (showPointConnections || hasPointConnections(searchIndex.points[0])) {
+        setPointConnections(getPoints()).then(() => {
+          if (!preventEvent) pubSub.publish('pointConnectionsDraw');
+          finish();
+        });
+      } else {
+        finish();
+      }
+    });
+  };
+
+  /**
+   * Filter down to a set of points
+   * @param {number | number[]} pointIdxs
+   * @param {import('./types').ScatterplotMethodOptions['filter']}
+   */
+  const filter = (pointIdxs, { preventEvent = false } = {}) => {
+    filteredPoints = Array.isArray(pointIdxs) ? pointIdxs : [pointIdxs];
+
+    if (filteredPoints.length === 0) return unfilter({ preventEvent });
+
+    filteredPointSet.clear();
+
+    const filteredPointsBuffer = [];
+    const filteredSelection = [];
+
+    for (let i = filteredPoints.length - 1; i >= 0; i--) {
+      const pointIdx = filteredPoints[i];
+
+      if (pointIdx < 0 || pointIdx >= numPoints) {
+        // Remove invalid filtered points
+        filteredPoints.splice(i, 1);
+        continue;
+      }
+
+      filteredPointSet.add(pointIdx);
+      filteredPointsBuffer.push.apply(
+        filteredPointsBuffer,
+        indexToStateTexCoord(pointIdx)
+      );
+
+      if (selectionSet.has(pointIdx)) filteredSelection.push(pointIdx);
+    }
+
+    // Update the normal points index buffers
+    normalPointsIndexBuffer.subdata(filteredPointsBuffer);
+
+    // Update selection
+    select(filteredSelection, { preventEvent });
+
+    // Unset any potentially hovered point
+    hover(-1, { preventEvent });
+
+    return new Promise((resolve) => {
+      const finish = () => {
+        pubSub.subscribe(
+          'draw',
+          () => {
+            if (!preventEvent)
+              pubSub.publish('filter', { points: filteredPoints });
+            resolve();
+          },
+          1
+        );
+        draw = true;
+      };
+
+      // Update point connections
+      if (showPointConnections || hasPointConnections(searchIndex.points[0])) {
+        setPointConnections(getPoints()).then(() => {
+          if (!preventEvent) pubSub.publish('pointConnectionsDraw');
+          // We have to re-apply the selection because the connections might
+          // have changed
+          select(filteredSelection, { preventEvent });
+          finish();
+        });
+      } else {
+        finish();
+      }
+    });
+  };
+
   const getPointsInView = () =>
-    searchIndex.range(
+    getPointsInBBox(
       bottomLeftNdc[0],
       bottomLeftNdc[1],
       topRightNdc[0],
@@ -2048,6 +2233,10 @@ const createScatterplot = (
             resolve();
             return;
           }
+
+          // Reset filter
+          filteredPoints = [];
+          filteredPointSet.clear();
 
           let pointsCached = false;
           if (points) {
@@ -2472,7 +2661,7 @@ const createScatterplot = (
     showPointConnections = !!newShowPointConnections;
     if (showPointConnections) {
       if (hasPointConnections(searchIndex.points[0])) {
-        setPointConnections(searchIndex.points).then(() => {
+        setPointConnections(getPoints()).then(() => {
           pubSub.publish('pointConnectionsDraw');
           draw = true;
         });
@@ -2959,51 +3148,6 @@ const createScatterplot = (
     preventEventView = preventEvent;
   };
 
-  /**
-   * @param {number | number[]} point
-   * @param {import('./types').ScatterplotMethodOptions['hover']} options
-   */
-  const hover = (
-    point,
-    { showReticleOnce = false, preventEvent = false } = {}
-  ) => {
-    let needsRedraw = false;
-
-    if (point >= 0 && point < numPoints) {
-      needsRedraw = true;
-      const oldHoveredPoint = hoveredPoint;
-      const newHoveredPoint = point !== hoveredPoint;
-      if (
-        +oldHoveredPoint >= 0 &&
-        newHoveredPoint &&
-        !selectionSet.has(oldHoveredPoint)
-      ) {
-        setPointConnectionColorState([oldHoveredPoint], 0);
-      }
-      hoveredPoint = point;
-      hoveredPointIndexBuffer.subdata(indexToStateTexCoord(point));
-      if (!selectionSet.has(point)) setPointConnectionColorState([point], 2);
-      if (newHoveredPoint && !preventEvent)
-        pubSub.publish('pointover', hoveredPoint);
-    } else {
-      needsRedraw = +hoveredPoint >= 0;
-      if (needsRedraw) {
-        if (!selectionSet.has(hoveredPoint)) {
-          setPointConnectionColorState([hoveredPoint], 0);
-        }
-        if (!preventEvent) {
-          pubSub.publish('pointout', hoveredPoint);
-        }
-      }
-      hoveredPoint = undefined;
-    }
-
-    if (needsRedraw) {
-      draw = true;
-      drawReticleOnce = showReticleOnce;
-    }
-  };
-
   const initCamera = () => {
     if (!camera)
       camera = createDom2dCamera(canvas, { isPanInverted: [false, true] });
@@ -3305,6 +3449,7 @@ const createScatterplot = (
     deselect,
     destroy,
     draw: publicDraw,
+    filter,
     get,
     hover,
     redraw,
@@ -3314,6 +3459,7 @@ const createScatterplot = (
     set,
     export: exportFn,
     subscribe: pubSub.subscribe,
+    unfilter,
     unsubscribe: pubSub.unsubscribe,
     view,
     zoomToLocation,
