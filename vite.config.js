@@ -48,14 +48,7 @@ export default defineConfig({
       output: { manualChunks },
     },
   },
-  resolve: {
-    alias: {
-      /**
-       * vite pre-bundling (esbuild) can't be configured to
-       * resolve .fs/.vs in regl-line. This alias forces
-       * resolution with rollup, which avoids this error.
-       */
-      'regl-line': '/node_modules/regl-line/src/index.js',
-    },
+  optimizeDeps: {
+    exclude: ['regl-line'],
   },
 });

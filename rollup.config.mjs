@@ -1,9 +1,8 @@
-import babel from 'rollup-plugin-babel';
-import filesize from 'rollup-plugin-filesize';
-import resolve from '@rollup/plugin-node-resolve';
-import { terser } from 'rollup-plugin-terser';
-import visualizer from 'rollup-plugin-visualizer';
+import babel from '@rollup/plugin-babel';
 import json from '@rollup/plugin-json';
+import resolve from '@rollup/plugin-node-resolve';
+import terser from '@rollup/plugin-terser';
+import filesize from 'rollup-plugin-filesize';
 
 const basePlugins = () => [
   json(),
@@ -17,6 +16,7 @@ const configurator = (file, format, plugins = []) => ({
   input: 'src/index.js',
   output: {
     name: 'createScatterplot',
+    exports: 'named',
     format,
     file,
     globals: {
@@ -33,13 +33,12 @@ const configurator = (file, format, plugins = []) => ({
 });
 
 const devConfig = configurator('dist/regl-scatterplot.js', 'umd', [
-  babel(),
+  babel({ babelHelpers: 'bundled' }),
   filesize(),
-  visualizer(),
 ]);
 
 const prodConfig = configurator('dist/regl-scatterplot.min.js', 'umd', [
-  babel(),
+  babel({ babelHelpers: 'bundled' }),
   terser(),
 ]);
 
