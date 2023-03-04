@@ -2358,7 +2358,9 @@ const createScatterplot = (
       const target = [rect.x + rect.width / 2, rect.y + rect.height / 2];
 
       // Vertical field of view
-      const vFOV = 2 * Math.atan(1 / camera.view[5]);
+      // The Arc Tangent is based on the original camera position. Otherwise
+      // we would have to do `Math.atan(1 / camera.view[5])`
+      const vFOV = 2 * Math.atan(1);
 
       const distance =
         rect.height * viewAspectRatio > rect.width

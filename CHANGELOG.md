@@ -1,3 +1,7 @@
+## v1.6.3
+
+- Fix an issue with repeated zooming to points
+
 ## v1.6.2
 
 - Fix a build regression from updating to Rollup v3
