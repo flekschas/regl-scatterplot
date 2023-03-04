@@ -1,6 +1,7 @@
 ## v1.6.3
 
 - Fix an issue with repeated zooming to points
+- Improve lasso on long press start
 
 ## v1.6.2
 

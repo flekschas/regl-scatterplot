@@ -955,6 +955,8 @@ const createScatterplot = (
     if (!isInit || (!isMouseInCanvas && !mouseDown)) return;
 
     const currentMousePosition = getRelativeMousePosition(event);
+    const mouseMoveDist = dist(...currentMousePosition, ...mouseDownPosition);
+    const mouseMovedMin = mouseMoveDist >= lassoMinDist;
 
     // Only ray cast if the mouse cursor is inside
     if (isMouseInCanvas && !lassoActive) {
@@ -964,16 +966,13 @@ const createScatterplot = (
     if (lassoActive) {
       event.preventDefault();
       lassoManager.extend(event, true);
-    } else {
-      const mouseMoveDist = dist(...currentMousePosition, ...mouseDownPosition);
-      if (mouseDown && lassoOnLongPress && mouseMoveDist >= lassoMinDist) {
-        lassoManager.hideLongPressIndicator({
-          time: lassoLongPressRevertEffectTime,
-        });
-      }
+    } else if (mouseDown && lassoOnLongPress && mouseMovedMin) {
+      lassoManager.hideLongPressIndicator({
+        time: lassoLongPressRevertEffectTime,
+      });
     }
 
-    if (mouseDownTimeout >= 0) {
+    if (mouseDownTimeout >= 0 && mouseMovedMin) {
       clearTimeout(mouseDownTimeout);
       mouseDownTimeout = -1;
     }
