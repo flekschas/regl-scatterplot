@@ -23,6 +23,7 @@ const configurator = (file, format, plugins = []) => ({
       'pub-sub-es': 'createPubSub',
       regl: 'createREGL',
     },
+    interop: 'compat',
   },
   plugins: [...basePlugins(), ...plugins],
   external: ['pub-sub-es', 'regl'],

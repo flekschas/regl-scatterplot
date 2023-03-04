@@ -1,3 +1,7 @@
+## v1.6.2
+
+- Fix a build regression from updating to Rollup v3
+
 ## v1.6.1
 
 - Update third party libraries
