@@ -46,7 +46,7 @@ import {
   IMAGE_LOAD_ERROR,
 } from '../src/constants';
 
-import { toRgba, isNormFloatArray } from '../src/utils';
+import { toRgba, isNormFloatArray, isValidBBox } from '../src/utils';
 
 import {
   asyncForEach,
@@ -1983,6 +1983,7 @@ test(
       'should have silently selected three points'
     );
 
+    scatterplot.deselect();
     scatterplot.select([0, 2, 4]);
     scatterplot.deselect({ preventEvent: true });
 
@@ -2364,6 +2365,42 @@ test(
 );
 
 /* --------------------------------- Utils ---------------------------------- */
+
+test(
+  'isValidBBox()',
+  catchError(async (t) => {
+    t.equal(
+      isValidBBox([1, 2, 3, 4]),
+      true,
+      'should recognize valid bounding box'
+    );
+    t.equal(
+      isValidBBox([1, 2, 1, 4]),
+      false,
+      'should recognize invalid bounding box (x range is zero)'
+    );
+    t.equal(
+      isValidBBox([1, 2, 3, 2]),
+      false,
+      'should recognize invalid bounding box (y range is zero)'
+    );
+    t.equal(
+      isValidBBox([1, Infinity, 3, 2]),
+      false,
+      'should recognize invalid bounding box (infinity is not allowed)'
+    );
+    t.equal(
+      isValidBBox([1, -Infinity, 3, 2]),
+      false,
+      'should recognize invalid bounding box (-infinity is not allowed)'
+    );
+    t.equal(
+      isValidBBox([1, Number.NaN, 3, 2]),
+      false,
+      'should recognize invalid bounding box (NaN is not allowed)'
+    );
+  })
+);
 
 test(
   'isNormFloatArray()',

@@ -96,6 +96,19 @@ export const getBBox = (positions2d) => {
 };
 
 /**
+ * Test whether a bounding box is actually specifying an area
+ * @param   {array}  bBox  The bounding box to be checked
+ * @return  {array}  `true` if the bounding box is valid
+ */
+export const isValidBBox = ([xMin, yMin, xMax, yMax]) =>
+  Number.isFinite(xMin) &&
+  Number.isFinite(yMin) &&
+  Number.isFinite(xMax) &&
+  Number.isFinite(yMax) &&
+  xMax - xMin > 0 &&
+  yMax - yMin > 0;
+
+/**
  * Convert a HEX-encoded color to an RGB-encoded color
  * @param   {string}  hex  HEX-encoded color string.
  * @param   {boolean}  isNormalize  If `true` the returned RGB values will be

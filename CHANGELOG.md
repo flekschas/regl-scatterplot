@@ -1,3 +1,9 @@
+## v1.6.1
+
+- Update third party libraries
+- Improve lasso long press indicator styling
+- Fix an issue where a lasso with less than three control points
+
 ## v1.6.0
 
 - Add the ability to filter down points via `scatterplot.filter(pointIdxs)`. This can be useful if you need to temporarily need to hide points without having to re-instantiate the regl-scatterplot instance. E.g., when calling `scatterplot.filter([0, 1, 2])`, only the first, second, and third point will remain visible. All other points (and their related point connections) will be visually and interactively hidden.

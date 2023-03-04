@@ -29,12 +29,12 @@
     "prepublishOnly": "npm run test; rm -rf dist/*; npm run build;",
     "prerelease": "rm -rf dist/*; npm run build; zip -r dist.zip dist",
     "pretest": "npm run lint",
-    "start": "vite",
+    "start": "vite --port=3000",
     "test": "rollup -c ./rollup.test.config.mjs | tape-run --render='tap-spec'",
     "watch": "rollup -cw"
   },
   "dependencies": {
-    "@flekschas/utils": "^0.29.0",
+    "@flekschas/utils": "^0.30.1",
     "dom-2d-camera": "~2.2.5",
     "gl-matrix": "~3.4.3",
     "kdbush": "~3.0.0",

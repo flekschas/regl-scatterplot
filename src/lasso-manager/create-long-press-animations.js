@@ -24,11 +24,17 @@ const getCircleInAnimation = (t, d) =>
 
 const getMainIn = (mainEffectPercent, currentColor, targetColor) => `
   @keyframes mainIn {
+    0% {
+      color: ${currentColor};
+      opacity: 0;
+    }
     0%, ${mainEffectPercent}% {
       color: ${currentColor};
+      opacity: 1;
     }
     100% {
       color: ${targetColor};
+      opacity: 0.8;
     }
   }
 `;

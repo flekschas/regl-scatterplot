@@ -4,6 +4,7 @@ import createPubSub from 'pub-sub-es';
 import { mat4, vec4 } from 'gl-matrix';
 import createLine from 'regl-line';
 import {
+  hasSameElements,
   identity,
   rangeMap,
   unionIntegers,
@@ -117,6 +118,7 @@ import {
   createTextureFromUrl,
   dist,
   getBBox,
+  isValidBBox,
   isConditionalArray,
   isPositiveNumber,
   isStrictlyPositiveNumber,
@@ -570,6 +572,9 @@ const createScatterplot = (
   const findPointsInLasso = (lassoPolygon) => {
     // get the bounding box of the lasso selection...
     const bBox = getBBox(lassoPolygon);
+
+    if (!isValidBBox(bBox)) return [];
+
     // ...to efficiently preselect potentially selected points
     const pointsInBBox = getPointsInBBox(...bBox);
     // next we test each point in the bounding box if it is in the polygon too
@@ -675,14 +680,28 @@ const createScatterplot = (
    */
   const select = (pointIdxs, { merge = false, preventEvent = false } = {}) => {
     const pointIdxsArr = Array.isArray(pointIdxs) ? pointIdxs : [pointIdxs];
+    const currSelectedPoints = [...selectedPoints];
 
     if (merge) {
       selectedPoints = unionIntegers(selectedPoints, pointIdxsArr);
+      if (currSelectedPoints.length === selectedPoints.length) {
+        draw = true;
+        return;
+      }
     } else {
       // Unset previously highlight point connections
       if (selectedPoints && selectedPoints.length)
         setPointConnectionColorState(selectedPoints, 0);
       selectedPoints = pointIdxsArr;
+      if (currSelectedPoints.length > 0 && selectedPoints.length === 0) {
+        deselect({ preventEvent });
+        return;
+      }
+    }
+
+    if (hasSameElements(currSelectedPoints, selectedPoints)) {
+      draw = true;
+      return;
     }
 
     const selectedPointsBuffer = [];
@@ -935,7 +954,7 @@ const createScatterplot = (
   const mouseMoveHandler = (event) => {
     if (!isInit || (!isMouseInCanvas && !mouseDown)) return;
 
-    getRelativeMousePosition(event);
+    const currentMousePosition = getRelativeMousePosition(event);
 
     // Only ray cast if the mouse cursor is inside
     if (isMouseInCanvas && !lassoActive) {
@@ -945,10 +964,13 @@ const createScatterplot = (
     if (lassoActive) {
       event.preventDefault();
       lassoManager.extend(event, true);
-    } else if (lassoOnLongPress) {
-      lassoManager.hideLongPressIndicator({
-        time: lassoLongPressRevertEffectTime,
-      });
+    } else {
+      const mouseMoveDist = dist(...currentMousePosition, ...mouseDownPosition);
+      if (mouseDown && lassoOnLongPress && mouseMoveDist >= lassoMinDist) {
+        lassoManager.hideLongPressIndicator({
+          time: lassoLongPressRevertEffectTime,
+        });
+      }
     }
 
     if (mouseDownTimeout >= 0) {
@@ -2447,10 +2469,7 @@ const createScatterplot = (
   };
 
   const updateLassoLongPressIndicatorStyle = () => {
-    const v =
-      Math.round(backgroundColorBrightness) > 0.5
-        ? Math.round(backgroundColorBrightness * 255) - 85
-        : Math.round(backgroundColorBrightness * 255) + 85;
+    const v = Math.round(backgroundColorBrightness) > 0.5 ? 0 : 255;
 
     lassoManager.longPressIndicator.style.color = `rgb(${v}, ${v}, ${v})`;
     lassoManager.longPressIndicator.dataset.color = `rgb(${v}, ${v}, ${v})`;
