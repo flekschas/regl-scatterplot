@@ -46,7 +46,7 @@ JavaScript for rendering large-scale scatter plots on the web
 Thanks to its WebGL-based renderer, which is written with `regl` [@regl], the
 library can draw up to twenty million points while offering smooth pan and zoom.
 To interact with the data points, `regl-scatterplot` implements fast lasso
-selections using a spacial index [@kdbush].
+selections using a spatial index [@kdbush].
 
 Beyond the rendering and interaction performance, visualizing large datasets as
 scatter plots also poses perceptual challenges [@micallef2017towards]. In
@@ -80,7 +80,7 @@ actively used in scientific software tools [@peax; @histocat; @eodash;
 @gotreescape; @jscatter; @visinity; @zeno]. The focus on scalable rendering and
 interactions in combinations with a wide variety of design customizations in
 `regl-scatterplot` enables visualization researchers and practitioners to build,
-study, end test new visualization tools and applications for scalable
+study, and test new visualization tools and applications for scalable
 exploration of the ever-increasing number of large-scale datasets.
 
 # Related & Future Work
