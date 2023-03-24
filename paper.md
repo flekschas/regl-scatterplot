@@ -87,24 +87,25 @@ exploration of the ever-increasing number of large-scale datasets.
 
 There are several related JavaScript packages for rendering scatter plots on the
 web. General-purpose visualization libraries like `d3` [@bostock2011d3] or
-`vega-lite` [@satyanarayan2016vegalite] are broadly useful, but they cannot
-render datasets with millions of data points due to their reliance on SVG. Like
-`regl-scatterplot`, `CandyGraph` [@candygraph] overcomes this limitation by
-using WebGL for the rendering. However, being a general-purpose plotting library
-means that it does not offer critical features for exploring scatter plots
-interactively like pan-and-zoom, lasso selections, etc. The visualization
-charting library `plotly.js` [@plotlyjs] has support for WebGL rendering and
-offers interactive pan-or-zoom and lasso selection, but is lacking other
-features like animated transitions, dynamic point opacity, or synchronization of
-multiple scatter plot instances. Similarly, the bespoke `regl-scatter2d`
-[@reglscatter2d] library offers scalable WebGL-based rendering of scatter plots
-and allows customizing the point shape. However, it does not support data-driven
-visual encodings or interactive point selections. Finally, `deepscatter`
-[@deepscatter] is another scalable scatter plot library that offers data-driven
-visual encodings. Its reliance on tile-based data enables even greater
-scalability compared to `regl-scatterplot` but at the expense of having to
-preprocess data. Also, as of today, the library is lacking support for lasso
-selections or the ability to synchronize multiple scatter plot instances.
+`vega-lite` [@satyanarayan2016vegalite] are broadly useful, but are not well
+suited to render datasets with millions of data points due to the reliance on a
+Document Object Model (in the case of `d3`) and limited support for GPU-based
+rendering. Like `regl-scatterplot`, `CandyGraph` [@candygraph] overcomes this
+limitation by using WebGL for the rendering. However, being a general-purpose
+plotting library means that `CandyGraph` does not offer critical features for
+exploring scatter plots interactively like pan-and-zoom, lasso selections, etc.
+The visualization charting library `plotly.js` [@plotlyjs] has support for WebGL
+rendering and offers interactive pan-or-zoom and lasso selection, but is lacking
+other features like animated transitions, dynamic point opacity, or
+synchronization of multiple scatter plot instances. Similarly, the bespoke
+`regl-scatter2d` [@reglscatter2d] library offers scalable WebGL-based rendering
+of scatter plots and allows customizing the point shape. However, it does not
+support data-driven visual encodings or interactive point selections. Finally,
+`deepscatter` [@deepscatter] is another scalable scatter plot library that
+offers data-driven visual encodings. Its reliance on tile-based data enables
+even greater scalability compared to `regl-scatterplot` but at the expense of
+having to preprocess data. Also, as of today, the library is lacking support for
+lasso selections or the ability to synchronize multiple scatter plot instances.
 
 In the future, we plan to add built-in support for streaming tiled Apache Arrow
 files in `regl-scatterplot` to further improve the performance. We also plan to
