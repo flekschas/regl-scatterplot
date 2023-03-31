@@ -1,5 +1,6 @@
 ---
-title: 'Regl-Scatterplot: A Scalable Interactive JavaScript-based Scatter Plot
+title:
+  'Regl-Scatterplot: A Scalable Interactive JavaScript-based Scatter Plot
   Library'
 tags:
   - scatter plot
@@ -77,11 +78,12 @@ It has already been cited in a number of scientific publications
 @bauerle2022symphony; @warchol2023visinity], it formed the software foundation
 for a computer science master thesis [@hindersson2021scatterplot], and it is
 actively used in scientific software tools [@peax; @histocat; @eodash;
-@gotreescape; @jscatter; @visinity; @zeno]. The focus on scalable rendering and
-interactions in combinations with a wide variety of design customizations in
-`regl-scatterplot` enables visualization researchers and practitioners to build,
-study, and test new visualization tools and applications for scalable
-exploration of the ever-increasing number of large-scale datasets.
+@gotreescape; @jscatter; @warchol2023visinity; @cabrera23zeno]. The focus on
+scalable rendering and interactions in combinations with a wide variety of
+design customizations in `regl-scatterplot` enables visualization researchers
+and practitioners to build, study, and test new visualization tools and
+applications for scalable exploration of the ever-increasing number of
+large-scale datasets.
 
 # Related & Future Work
 
