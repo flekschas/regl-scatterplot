@@ -458,7 +458,7 @@ const createScatterplot = (
   let maxValueW = 0;
 
   let hoveredPoint;
-  let isMouseInCanvas = false;
+  let isMouseInCanvas = true;
 
   let xScale = initialProperties.xScale || null;
   let yScale = initialProperties.yScale || null;
