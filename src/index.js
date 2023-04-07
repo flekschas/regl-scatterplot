@@ -452,7 +452,8 @@ const createScatterplot = (
   let encodingTexRes = 0; // Width and height of the texture
 
   let isViewChanged = false;
-  let isInit = false;
+  let isPointsDrawn = false;
+  let isMouseOverCanvasChecked = false;
 
   let maxValueZ = 0;
   let maxValueW = 0;
@@ -855,8 +856,13 @@ const createScatterplot = (
     }
   };
 
+  const checkIfMouseIsOverCanvas = (event) =>
+    document
+      .elementsFromPoint(event.clientX, event.clientY)
+      .some((element) => element === canvas);
+
   const mouseDownHandler = (event) => {
-    if (!isInit || event.buttons !== 1) return;
+    if (!isPointsDrawn || event.buttons !== 1) return;
 
     mouseDown = true;
     mouseDownTime = performance.now();
@@ -878,7 +884,7 @@ const createScatterplot = (
   };
 
   const mouseUpHandler = (event) => {
-    if (!isInit) return;
+    if (!isPointsDrawn) return;
 
     mouseDown = false;
     if (mouseDownTimeout >= 0) {
@@ -902,7 +908,7 @@ const createScatterplot = (
   };
 
   const mouseClickHandler = (event) => {
-    if (!isInit) return;
+    if (!isPointsDrawn) return;
 
     event.preventDefault();
 
@@ -952,7 +958,11 @@ const createScatterplot = (
   };
 
   const mouseMoveHandler = (event) => {
-    if (!isInit || (!isMouseInCanvas && !mouseDown)) return;
+    if (!isMouseOverCanvasChecked) {
+      isMouseInCanvas = checkIfMouseIsOverCanvas(event);
+      isMouseOverCanvasChecked = true;
+    }
+    if (!isPointsDrawn || (!isMouseInCanvas && !mouseDown)) return;
 
     const currentMousePosition = getRelativeMousePosition(event);
     const mouseMoveDist = dist(...currentMousePosition, ...mouseDownPosition);
@@ -982,12 +992,14 @@ const createScatterplot = (
   };
 
   const blurHandler = () => {
-    if (!isInit) return;
+    hoveredPoint = undefined;
+    isMouseInCanvas = false;
+    isMouseOverCanvasChecked = false;
+
+    if (!isPointsDrawn) return;
 
     if (+hoveredPoint >= 0 && !selectedPointsSet.has(hoveredPoint))
       setPointConnectionColorState([hoveredPoint], 0);
-    hoveredPoint = undefined;
-    isMouseInCanvas = false;
     mouseUpHandler();
     draw = true;
   };
@@ -1739,7 +1751,7 @@ const createScatterplot = (
   };
 
   const setPoints = (newPoints) => {
-    isInit = false;
+    isPointsDrawn = false;
 
     numPoints = newPoints.length;
     numPointsInView = numPoints;
@@ -1760,7 +1772,7 @@ const createScatterplot = (
       16
     );
 
-    isInit = true;
+    isPointsDrawn = true;
   };
 
   const cacheCamera = (newTarget, newDistance) => {
@@ -3228,11 +3240,13 @@ const createScatterplot = (
 
   const mouseEnterCanvasHandler = () => {
     isMouseInCanvas = true;
+    isMouseOverCanvasChecked = true;
   };
 
   const mouseLeaveCanvasHandler = () => {
     hover();
     isMouseInCanvas = false;
+    isMouseOverCanvasChecked = true;
     draw = true;
   };
 
@@ -3351,7 +3365,7 @@ const createScatterplot = (
     // Update camera: this needs to happen on every
     isViewChanged = camera.tick();
 
-    if (!isInit || !(draw || isTransitioning)) return;
+    if (!isPointsDrawn || !(draw || isTransitioning)) return;
 
     if (isTransitioning && !tween(transitionDuration, transitionEasing))
       endTransition();
