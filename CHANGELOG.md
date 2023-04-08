@@ -1,3 +1,7 @@
+## v1.6.4
+
+- Fix a point hovering issue ([#112](https://github.com/flekschas/regl-scatterplot/issues/112))
+
 ## v1.6.3
 
 - Fix an issue with repeated zooming to points
