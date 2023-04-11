@@ -118,3 +118,5 @@ would help to avoid any performance impact on the main thread.
 
 We acknowledge contributions from Jeremy A. Prescott, Trevor Manz, and Emlyn
 Clay, and Dušan Josipović.
+
+# References
