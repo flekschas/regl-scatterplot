@@ -3,7 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/regl-scatterplot.svg?color=1a8cff&style=flat-square)](https://www.npmjs.com/package/regl-scatterplot)
 [![build status](https://img.shields.io/github/actions/workflow/status/flekschas/regl-scatterplot/build.yml?branch=master&color=139ce9&style=flat-square)](https://github.com/flekschas/regl-scatterplot/actions?query=workflow%3Abuild)
 [![file size](http://img.badgesize.io/https://unpkg.com/regl-scatterplot/dist/regl-scatterplot.min.js?compression=gzip&color=0dacd4&style=flat-square)](https://bundlephobia.com/result?p=regl-scatterplot)
-[![code style prettier](https://img.shields.io/badge/code_style-prettier-06bcbe.svg?style=flat-square)](https://github.com/prettier/prettier)
+[![DOI](https://img.shields.io/badge/JOSS-10.21105/joss.05275-06bcbe.svg?style=flat-square)](https://doi.org/10.21105/joss.05275)
 [![regl-scatterplot demo](https://img.shields.io/badge/demo-online-00cca9.svg?style=flat-square)](https://flekschas.github.io/regl-scatterplot/)
 
 A highly-scalable pan-and-zoomable scatter plot library that uses WebGL through [Regl](https://github.com/regl-project/regl). This library sacrifices feature richness for speed to allow rendering up to **20 million points** (depending on your hardware of course) including fast lasso selection. Further, the [footprint of regl-scatterplot](https://bundlephobia.com/result?p=regl-scatterplot) is kept small. **NEW:** Python lovers please see [jscatter](https://github.com/flekschas/jupyter-scatter): a Jupyter Notebook/Lab widget that uses regl-scatterplot.
@@ -14,7 +14,7 @@ A highly-scalable pan-and-zoomable scatter plot library that uses WebGL through 
 
 **Demo:** https://flekschas.github.io/regl-scatterplot/
 
-**Live playground:** https://observablehq.com/@flekschas/regl-scatterplot
+**Live Playground:** https://observablehq.com/@flekschas/regl-scatterplot
 
 **Default Interactions:**
 
@@ -902,65 +902,21 @@ scatterplot.set({ width, height });
 
 Related to the resizing, when conditionally displaying regl-scatterplot in Vue you might have to update the `width` and `height` when the visibility is changed. See [issue #20](https://github.com/flekschas/regl-scatterplot/issues/20#issuecomment-639377810) for an example.
 
-| Name                       | Type                                                                                     | Default                                        |
-| -------------------------- | ---------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| `data`                     | pandas.DataFrame                                                                         | `None`                                         |
-| `x`                        | str \| list[float] \| ndarray                                                            | `None`                                         |
-| `x_scale`                  | 'linear' \| 'log' \| 'pow' \| tuple[float] \| [LogNorm][lognorm] \| [PowerNorm][pownorm] | `linear`                                       |
-| `y`                        | str \| list[float] \| ndarray                                                            | `None`                                         |
-| `y_scale`                  | 'linear' \| 'log' \| 'pow' \| tuple[float] \| [LogNorm][lognorm] \| [PowerNorm][pownorm] | `linear`                                       |
-| `selection`                | list[int]                                                                                | `[]`                                           |
-| `width`                    | int \| 'auto'                                                                            | `'auto'`                                       |
-| `height`                   | int                                                                                      | `240`                                          |
-| `color`                    | str \| tuple[float] \| list[float]                                                       | `(0, 0, 0, 0.66)`                              |
-| `color_active`             | str \| tuple[float] \| list[float]                                                       | `(0, 0.55, 1, 1)`                              |
-| `color_hover`              | str \| tuple[float] \| list[float]                                                       | `(0, 0, 0, 1)`                                 |
-| `color_by`                 | str \| list[float \| str]                                                                | `None`                                         |
-| `color_map`                | str \| list[str] \| [Colormap][colormap] \| dict \| 'auto'                               | `None`                                         |
-| `color_norm`               | tuple[float] \| [Normalize][linnorm]                                                     | `matplotlib.colors.Normalize(0, 1, clip=True)` |
-| `color_order`              | list[str \| int] \| 'reverse'                                                            | `None`                                         |
-| `opacity`                  | float                                                                                    | `0.66`                                         |
-| `opacity_by`               | str \| list[float]                                                                       | `'density'`                                    |
-| `opacity_map`              | triple[float] \| list[float] \| dict \| 'auto'                                           | `None`                                         |
-| `opacity_norm`             | tuple[float] \| [Normalize][linnorm]                                                     | `matplotlib.colors.Normalize(0, 1, clip=True)` |
-| `opacity_order`            | list[str \| int] \| 'reverse'                                                            | `None`                                         |
-| `size`                     | int                                                                                      | `3`                                            |
-| `size_by`                  | str \| list[int]                                                                         | `None`                                         |
-| `size_map`                 | triple[float] \| list[int] \| dict \| 'auto'                                             | `None`                                         |
-| `size_norm`                | tuple[float] \| [Normalize][linnorm]                                                     | `matplotlib.colors.Normalize(0, 1, clip=True)` |
-| `size_order`               | list[str \| int] \| 'reverse'                                                            | `None`                                         |
-| `connect_by`               | str \| list[int]                                                                         | `None`                                         |
-| `connect_order`            | str \| list[int]                                                                         | `None`                                         |
-| `connection_color`         | str \| tuple[float] \| list[float]                                                       | `(0, 0, 0, 0.1)`                               |
-| `connection_color_active`  | str \| tuple[float] \| list[float]                                                       | `(0, 0.55, 1, 1)`                              |
-| `connection_color_hover`   | str \| tuple[float] \| list[float]                                                       | `(0, 0, 0, 0.66)`                              |
-| `connection_color_by`      | str \| list[float \| str]                                                                | `None`                                         |
-| `connection_color_map`     | str \| list[str] \| [Colormap][colormap] \| dict \| 'auto'                               | `None`                                         |
-| `connection_color_norm`    | tuple[float] \| [Normalize][linnorm]                                                     | `matplotlib.colors.Normalize(0, 1, clip=True)` |
-| `connection_color_order`   | list[str \| int] \| 'reverse'                                                            | `None`                                         |
-| `connection_opacity`       | float                                                                                    | `0.1`                                          |
-| `connection_opacity_by`    | str \| list[float]                                                                       | `None`                                         |
-| `connection_opacity_map`   | triple[float] \| list[float] \| dict \| 'auto'                                           | `None`                                         |
-| `connection_opacity_norm`  | tuple[float] \| [Normalize][linnorm]                                                     | `matplotlib.colors.Normalize(0, 1, clip=True)` |
-| `connection_opacity_order` | list[str \| int] \| 'reverse'                                                            | `None`                                         |
-| `connection_size`          | int                                                                                      | `2`                                            |
-| `connection_size_by`       | str \| list[int]                                                                         | `None`                                         |
-| `connection_size_map`      | triple[float] \| list[int] \| dict \| 'auto'                                             | `None`                                         |
-| `connection_size_norm`     | tuple[float] \| [Normalize][linnorm]                                                     | `matplotlib.colors.Normalize(0, 1, clip=True)` |
-| `connection_size_order`    | list[str \| int] \| 'reverse'                                                            | `None`                                         |
-| `axes`                     | bool                                                                                     | `True`                                         |
-| `axes_grid`                | bool                                                                                     | `False`                                        |
-| `lasso_color`              | str \| tuple[float] \| list[float]                                                       | `(0, 0.666666667, 1, 1)`                       |
-| `lasso_initiator`          | bool                                                                                     | `True`                                         |
-| `lasso_min_delay`          | int                                                                                      | `10`                                           |
-| `lasso_min_dist`           | int                                                                                      | `3`                                            |
-| `reticle`                  | bool                                                                                     | `True`                                         |
-| `reticle_color`            | str \| 'auto'                                                                            | `'auto'`                                       |
-| `background_color`         | str                                                                                      | `'white'`                                      |
-| `background_image`         | str \| array-like or PIL image                                                           | `None`                                         |
-| `mouse_mode`               | 'panZoom' \| 'lasso' \| 'rotate'                                                         | `'panZoom'`                                    |
-| `camera_target`            | tuple[float]                                                                             | `[0, 0]`                                       |
-| `camera_distance`          | float                                                                                    | `1`                                            |
-| `camera_rotation`          | float                                                                                    | `0`                                            |
-| `camera_view`              | list[float]                                                                              | `None`                                         |
-| `options`                  | dict                                                                                     | `{}`                                           |
+## Citation
+
+If you like `regl-scatterplot` and are using it in your research, we'd appreciate if you could cite our paper:
+
+```bibtex
+@article {lekschas2023reglscatterplot,
+  author = {Lekschas, Fritz},
+  title = {Regl-Scatterplot: A Scalable Interactive JavaScript-based Scatter Plot Library},
+  journal = {Journal of Open Source Software},
+  volume = {8},
+  number = {84},
+  pages = {5275},
+  year = {2023},
+  month = {4},
+  doi = {10.21105/joss.05275},
+  url = {https://doi.org/10.21105/joss.05275},
+}
+```
