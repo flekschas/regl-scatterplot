@@ -1,3 +1,7 @@
+## v1.6.5
+
+- Fix typing issue related to `subscribe()` ([#117](https://github.com/flekschas/regl-scatterplot/issues/117))
+
 ## v1.6.4
 
 - Fix a point hovering issue ([#112](https://github.com/flekschas/regl-scatterplot/issues/112))

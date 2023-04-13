@@ -207,7 +207,7 @@ export interface PubSub {
   subscribe<EventName extends keyof EventMap>(
     eventName: EventName,
     eventHandler: (payload: EventMap[EventName]) => void,
-    times: number
+    times?: number
   ): void;
   unsubscribe(eventName: keyof EventMap): void;
   publish<EventName extends keyof EventMap>(
