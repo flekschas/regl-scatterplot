@@ -1,6 +1,8 @@
-## Latest
+## v1.6.6
 
-- Added typing support for `EventMap['select']` event ([#119](https://github.com/flekschas/regl-scatterplot/issues/119))
+- Improve type annotations of the `select` event ([#119](https://github.com/flekschas/regl-scatterplot/issues/119))
+- Add type annotations for the `filter` and `unfilter` events
+
 ## v1.6.5
 
 - Fix typing issue related to `subscribe()` ([#117](https://github.com/flekschas/regl-scatterplot/issues/117))
