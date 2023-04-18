@@ -1,3 +1,6 @@
+## Latest
+
+- Added typing support for `EventMap['select']` event ([#119](https://github.com/flekschas/regl-scatterplot/issues/119))
 ## v1.6.5
 
 - Fix typing issue related to `subscribe()` ([#117](https://github.com/flekschas/regl-scatterplot/issues/117))
