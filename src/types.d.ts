@@ -185,7 +185,6 @@ type EventMap = PubSubEvent<
   | 'init'
   | 'destroy'
   | 'backgroundImageReady'
-  | 'select'
   | 'deselect'
   | 'lassoStart'
   | 'transitionStart'
@@ -194,6 +193,7 @@ type EventMap = PubSubEvent<
 > &
   PubSubEvent<'lassoEnd' | 'lassoExtend', { coordinates: number[] }> &
   PubSubEvent<'pointOver' | 'pointOut', number> &
+  PubSubEvent<'select', { points: Array<number> }> &
   PubSubEvent<'points', { points: Array<Array<number>> }> &
   PubSubEvent<'transitionEnd', import('regl').Regl> &
   PubSubEvent<
