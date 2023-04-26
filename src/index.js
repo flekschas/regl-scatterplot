@@ -2410,7 +2410,7 @@ const createScatterplot = (
    */
   const zoomToPoints = (pointIdxs, options = {}) => {
     if(!searchIndex){
-      return
+      return false;
     }
     const rect = getBBoxOfPoints(pointIdxs);
     const cX = rect.x + rect.width / 2;
