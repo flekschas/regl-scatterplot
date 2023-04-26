@@ -2409,6 +2409,9 @@ const createScatterplot = (
    * @returns {Promise<void>}
    */
   const zoomToPoints = (pointIdxs, options = {}) => {
+    if(!searchIndex){
+      return
+    }
     const rect = getBBoxOfPoints(pointIdxs);
     const cX = rect.x + rect.width / 2;
     const cY = rect.y + rect.height / 2;
