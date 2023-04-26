@@ -2337,6 +2337,15 @@ test(
 );
 
 test(
+  'zooming before point initialization',
+  catchError(async () => {
+    const scatterplot = createScatterplot({ canvas: createCanvas() });
+    await scatterplot.zoomToPoints([1, 2]);
+    scatterplot.destroy();
+  })
+);
+
+test(
   'isSupported',
   catchError((t) => {
     const scatterplot = createScatterplot({ canvas: createCanvas() });

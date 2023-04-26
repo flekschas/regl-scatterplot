@@ -1,3 +1,7 @@
+## LATEST
+
+- Fix `zoomToPoints` behavior when points are not initialized [#123](https://github.com/flekschas/regl-scatterplot/issues/123)
+
 ## v1.6.6
 
 - Improve type annotations of the `select` event ([#119](https://github.com/flekschas/regl-scatterplot/issues/119))
