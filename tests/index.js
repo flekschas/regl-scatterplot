@@ -2341,6 +2341,12 @@ test(
   catchError(async () => {
     const scatterplot = createScatterplot({ canvas: createCanvas() });
     await scatterplot.zoomToPoints([1, 2]);
+    try{
+      await scatterplot.zoomToPoints([1, 2]);
+      t.fail('zoomToPoints should have thrown an error');
+    } catch(e) {
+      t.equal(e.message, ERROR_NOT_INITIALIZED);
+    }
     scatterplot.destroy();
   })
 );
