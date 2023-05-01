@@ -23,23 +23,26 @@ uniform float isOpacityByW;
 uniform float isOpacityByDensity;
 uniform float isSizedByZ;
 uniform float isSizedByW;
+uniform float isSizeByDensity;
 uniform float colorMultiplicator;
 uniform float opacityMultiplicator;
 uniform float opacityDensity;
 uniform float sizeMultiplicator;
+uniform float pointSizeDensity;
 uniform float numColorStates;
 uniform float pointScale;
 uniform mat4 modelViewProjection;
+uniform float minHalfResolution;
 
 attribute vec2 stateIndex;
+attribute vec2 position;
 
-varying vec4 color;
-varying float finalPointSize;
+varying vec4 vColor;
+varying vec2 vPosition;
+varying float vRadiusSquared;
 
 void main() {
   vec4 state = texture2D(stateTex, stateIndex);
-
-  gl_Position = modelViewProjection * vec4(state.x, state.y, 0.0, 1.0);
 
   // Determine color index
   float colorIndexZ =  isColoredByZ * floor(state.z * colorMultiplicator);
@@ -62,19 +65,26 @@ void main() {
     colorRowIndex / colorTexRes + colorTexEps
   );
 
-  color = texture2D(colorTex, colorTexIndex);
+  vColor = texture2D(colorTex, colorTexIndex);
 
-  // Retrieve point size
-  float pointSizeIndexZ = isSizedByZ * floor(state.z * sizeMultiplicator);
-  float pointSizeIndexW = isSizedByW * floor(state.w * sizeMultiplicator);
-  float pointSizeIndex = pointSizeIndexZ + pointSizeIndexW;
+  float radius = 1.0;
 
-  float pointSizeRowIndex = floor((pointSizeIndex + encodingTexEps) / encodingTexRes);
-  vec2 pointSizeTexIndex = vec2(
-    (pointSizeIndex / encodingTexRes) - pointSizeRowIndex + encodingTexEps,
-    pointSizeRowIndex / encodingTexRes + encodingTexEps
-  );
-  float pointSize = texture2D(encodingTex, pointSizeTexIndex).x;
+  if (isSizeByDensity < 0.5) {
+    // Retrieve point size from texture
+    float pointSizeIndexZ = isSizedByZ * floor(state.z * sizeMultiplicator);
+    float pointSizeIndexW = isSizedByW * floor(state.w * sizeMultiplicator);
+    float pointSizeIndex = pointSizeIndexZ + pointSizeIndexW;
+
+    float pointSizeRowIndex = floor((pointSizeIndex + encodingTexEps) / encodingTexRes);
+    vec2 pointSizeTexIndex = vec2(
+      (pointSizeIndex / encodingTexRes) - pointSizeRowIndex + encodingTexEps,
+      pointSizeRowIndex / encodingTexRes + encodingTexEps
+    );
+    radius = texture2D(encodingTex, pointSizeTexIndex).x + pointSizeExtra;
+  } else {
+    // Determine density based-point size
+    radius = pointSizeDensity + pointSizeExtra;
+  }
 
   // Retrieve opacity
   ${
@@ -94,17 +104,24 @@ void main() {
             (opacityIndex / encodingTexRes) - opacityRowIndex + encodingTexEps,
             opacityRowIndex / encodingTexRes + encodingTexEps
           );
-          color.a = texture2D(encodingTex, opacityTexIndex)[${1 + globalState}];
+          vColor.a = texture2D(encodingTex, opacityTexIndex)[${1 + globalState}];
         } else {
-          color.a = min(1.0, opacityDensity + globalState);
+          vColor.a = min(1.0, opacityDensity + globalState);
         }
       `;
     })()
   }
 
-  color.a = min(pointOpacityMax, color.a) * pointOpacityScale;
-  finalPointSize = (pointSize * pointScale) + pointSizeExtra;
-  gl_PointSize = finalPointSize;
+  vColor.a = min(pointOpacityMax, vColor.a) * pointOpacityScale;
+
+  // To clip coordinats
+  radius = radius / minHalfResolution;
+  vPosition = position * radius;
+
+  vRadiusSquared = radius * radius;
+
+  // The point center
+  gl_Position = modelViewProjection * vec4(state.x + vPosition.x, state.y + vPosition.y, 0.0, 1.0);
 }
 `;
 

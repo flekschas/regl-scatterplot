@@ -17,6 +17,7 @@ export const COLOR_BG_IDX = 3;
 export const COLOR_NUM_STATES = 4;
 export const FLOAT_BYTES = Float32Array.BYTES_PER_ELEMENT;
 export const GL_EXTENSIONS = [
+  'angle_instanced_arrays',
   'OES_texture_float',
   'OES_element_index_uint',
   'WEBGL_color_buffer_float',

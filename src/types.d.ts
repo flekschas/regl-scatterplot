@@ -102,8 +102,8 @@ interface BaseOptions {
   // Nullifiable
   backgroundImage: null | import('regl').Texture2D | string;
   colorBy: null | DataEncoding;
-  sizeBy: null | DataEncoding;
-  opacityBy: null | DataEncoding;
+  sizeBy: null | DataEncoding | 'density';
+  opacityBy: null | DataEncoding | 'density';
   xScale: null | Scale;
   yScale: null | Scale;
 }
