@@ -2920,6 +2920,7 @@ const createScatterplot = (
     if (property === 'performanceMode') return performanceMode;
     if (property === 'gamma') return renderer.gamma;
     if (property === 'renderer') return renderer;
+    if (property === 'isPointsDrawn') return isPointsDrawn;
 
     return undefined;
   };

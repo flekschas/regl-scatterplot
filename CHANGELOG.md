@@ -1,6 +1,7 @@
 ## LATEST
 
 - Fix `zoomToPoints` behavior when points are not initialized [#123](https://github.com/flekschas/regl-scatterplot/issues/123)
+- Add `isPointsDrawn` to `get()` to allow checking if some points have been drawn
 
 ## v1.6.6
 
