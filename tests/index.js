@@ -44,6 +44,7 @@ import {
   DEFAULT_OPACITY,
   DEFAULT_IMAGE_LOAD_TIMEOUT,
   IMAGE_LOAD_ERROR,
+  ERROR_POINTS_NOT_DRAWN,
 } from '../src/constants';
 
 import { toRgba, isNormFloatArray, isValidBBox } from '../src/utils';
@@ -2337,15 +2338,14 @@ test(
 );
 
 test(
-  'zooming before point initialization',
-  catchError(async () => {
+  'zoomToPoints() before point were drawn should fail',
+  catchError(async (t) => {
     const scatterplot = createScatterplot({ canvas: createCanvas() });
-    await scatterplot.zoomToPoints([1, 2]);
-    try{
+    try {
       await scatterplot.zoomToPoints([1, 2]);
-      t.fail('zoomToPoints should have thrown an error');
-    } catch(e) {
-      t.equal(e.message, ERROR_NOT_INITIALIZED);
+      t.fail('zoomToPoints() should have thrown an error');
+    } catch (e) {
+      t.equal(e.message, ERROR_POINTS_NOT_DRAWN);
     }
     scatterplot.destroy();
   })

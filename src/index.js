@@ -111,6 +111,7 @@ import {
   Z_NAMES,
   W_NAMES,
   DEFAULT_IMAGE_LOAD_TIMEOUT,
+  ERROR_POINTS_NOT_DRAWN,
 } from './constants';
 
 import {
@@ -2409,7 +2410,8 @@ const createScatterplot = (
    * @returns {Promise<void>}
    */
   const zoomToPoints = (pointIdxs, options = {}) => {
-    if (!isInit) return Promise.reject(new Error(ERROR_NOT_INITIALIZED))
+    if (!isPointsDrawn)
+      return Promise.reject(new Error(ERROR_POINTS_NOT_DRAWN));
     const rect = getBBoxOfPoints(pointIdxs);
     const cX = rect.x + rect.width / 2;
     const cY = rect.y + rect.height / 2;
