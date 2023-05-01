@@ -44,6 +44,7 @@ import {
   DEFAULT_OPACITY,
   DEFAULT_IMAGE_LOAD_TIMEOUT,
   IMAGE_LOAD_ERROR,
+  ERROR_POINTS_NOT_DRAWN,
 } from '../src/constants';
 
 import { toRgba, isNormFloatArray, isValidBBox } from '../src/utils';
@@ -1181,6 +1182,26 @@ test(
     } catch (e) {
       t.eq(e.message, 'The instance was already destroyed');
     }
+  })
+);
+
+test(
+  'test that `isPointsDrawn` is set correctly',
+  catchError(async (t) => {
+    const canvas = createCanvas(200, 200);
+    const scatterplot = createScatterplot({ canvas, width: 200, height: 200 });
+
+    t.equal(scatterplot.get('isPointsDrawn'), false);
+    t.equal(scatterplot.get('isDestroyed'), false);
+
+    await scatterplot.draw([[0, 0]]);
+
+    t.equal(scatterplot.get('isPointsDrawn'), true);
+
+    scatterplot.destroy();
+
+    t.equal(scatterplot.get('isDestroyed'), true);
+    t.equal(scatterplot.get('isPointsDrawn'), false);
   })
 );
 
@@ -2332,6 +2353,20 @@ test(
       'camera should target the bottom-right corner'
     );
 
+    scatterplot.destroy();
+  })
+);
+
+test(
+  'zoomToPoints() before point were drawn should fail',
+  catchError(async (t) => {
+    const scatterplot = createScatterplot({ canvas: createCanvas() });
+    try {
+      await scatterplot.zoomToPoints([1, 2]);
+      t.fail('zoomToPoints() should have thrown an error');
+    } catch (e) {
+      t.equal(e.message, ERROR_POINTS_NOT_DRAWN);
+    }
     scatterplot.destroy();
   })
 );

@@ -145,6 +145,8 @@ export type Properties = {
   opacityByDensityDebounceTime: number;
   points: [number, number][];
   pointsInView: number[];
+  isDestroyed: boolean;
+  isPointsDrawn: boolean;
 } & Settable;
 
 // Options for plot.{draw, select, hover}

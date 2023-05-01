@@ -111,6 +111,7 @@ import {
   Z_NAMES,
   W_NAMES,
   DEFAULT_IMAGE_LOAD_TIMEOUT,
+  ERROR_POINTS_NOT_DRAWN,
 } from './constants';
 
 import {
@@ -2409,6 +2410,8 @@ const createScatterplot = (
    * @returns {Promise<void>}
    */
   const zoomToPoints = (pointIdxs, options = {}) => {
+    if (!isPointsDrawn)
+      return Promise.reject(new Error(ERROR_POINTS_NOT_DRAWN));
     const rect = getBBoxOfPoints(pointIdxs);
     const cX = rect.x + rect.width / 2;
     const cY = rect.y + rect.height / 2;
@@ -2917,6 +2920,8 @@ const createScatterplot = (
     if (property === 'performanceMode') return performanceMode;
     if (property === 'gamma') return renderer.gamma;
     if (property === 'renderer') return renderer;
+    if (property === 'isDestroyed') return isDestroyed;
+    if (property === 'isPointsDrawn') return isPointsDrawn;
 
     return undefined;
   };
@@ -3437,6 +3442,7 @@ const createScatterplot = (
   };
 
   const destroy = () => {
+    isPointsDrawn = false;
     isDestroyed = true;
     cancelFrameListener();
     window.removeEventListener('keyup', keyUpHandler, false);
