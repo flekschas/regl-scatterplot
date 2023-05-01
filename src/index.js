@@ -2920,6 +2920,7 @@ const createScatterplot = (
     if (property === 'performanceMode') return performanceMode;
     if (property === 'gamma') return renderer.gamma;
     if (property === 'renderer') return renderer;
+    if (property === 'isDestroyed') return isDestroyed;
     if (property === 'isPointsDrawn') return isPointsDrawn;
 
     return undefined;
@@ -3441,6 +3442,7 @@ const createScatterplot = (
   };
 
   const destroy = () => {
+    isPointsDrawn = false;
     isDestroyed = true;
     cancelFrameListener();
     window.removeEventListener('keyup', keyUpHandler, false);

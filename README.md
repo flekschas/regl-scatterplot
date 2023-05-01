@@ -646,6 +646,7 @@ can be read and written via [`scatterplot.get()`](#scatterplot.get) and [`scatte
 | mouseMode                             | string                                       | `'panZoom'`                         | `'panZoom'`, `'lasso'`, or `'rotate'`                           | `true`   | `false`     |
 | performanceMode                       | boolean                                      | `false`                             | can only be set during initialization!                          | `true`   | `false`     |
 | gamma                                 | float                                        | `1`                                 | to control the opacity blending                                 | `true`   | `false`     |
+| isDestroyed                           | boolean                                      | `false`                             |                                                                 | `false`  | `false`     |
 | isPointsDrawn                         | boolean                                      | `false`                             |                                                                 | `false`  | `false`     |
 
 <a name="property-notes" href="#property-notes">#</a> <b>Notes:</b>

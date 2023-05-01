@@ -1186,6 +1186,26 @@ test(
 );
 
 test(
+  'test that `isPointsDrawn` is set correctly',
+  catchError(async (t) => {
+    const canvas = createCanvas(200, 200);
+    const scatterplot = createScatterplot({ canvas, width: 200, height: 200 });
+
+    t.equal(scatterplot.get('isPointsDrawn'), false);
+    t.equal(scatterplot.get('isDestroyed'), false);
+
+    await scatterplot.draw([[0, 0]]);
+
+    t.equal(scatterplot.get('isPointsDrawn'), true);
+
+    scatterplot.destroy();
+
+    t.equal(scatterplot.get('isDestroyed'), true);
+    t.equal(scatterplot.get('isPointsDrawn'), false);
+  })
+);
+
+test(
   'do _not_ throw an error when calling draw() _before_ destroy()',
   catchError(async (t) => {
     const canvas = createCanvas(200, 200);

@@ -145,6 +145,7 @@ export type Properties = {
   opacityByDensityDebounceTime: number;
   points: [number, number][];
   pointsInView: number[];
+  isDestroyed: boolean;
   isPointsDrawn: boolean;
 } & Settable;
 
