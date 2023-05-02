@@ -1,3 +1,8 @@
+## v1.6.8
+
+- Fix `filter()` to allow filtering out all points [#122](https://github.com/flekschas/regl-scatterplot/issues/122)
+- Add `isPointsFiltered` to `get()` to allow determining if any points have been filtered out
+
 ## v1.6.7
 
 - Fix `zoomToPoints` behavior when points are not initialized [#123](https://github.com/flekschas/regl-scatterplot/issues/123)
