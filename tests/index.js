@@ -58,6 +58,7 @@ import {
   wait,
   capitalize,
   catchError,
+  isSameElements,
 } from './utils';
 
 const EPS = 1e-7;
@@ -2130,12 +2131,23 @@ test(
 
     await scatterplot.draw(points);
 
+    t.deepEqual(
+      scatterplot.get('isPointsFiltered'),
+      false,
+      '`isPointsFiltered` should be `false` as points have not been filtered'
+    );
+
+    t.ok(
+      isSameElements(scatterplot.get('filteredPoints'), [0, 1, 2, 3, 4]),
+      'all points should be filtered in'
+    );
+
     let filteredPoints = [];
     const filterHandler = ({ points: newFilteredPoints }) => {
       filteredPoints = [...newFilteredPoints];
     };
     const unfilterHandler = () => {
-      filteredPoints = [];
+      filteredPoints = scatterplot.get('filteredPoints');
     };
     scatterplot.subscribe('filter', filterHandler);
     scatterplot.subscribe('unfilter', unfilterHandler);
@@ -2143,21 +2155,24 @@ test(
     await scatterplot.filter([1, 3]);
     await wait(0);
 
-    t.deepEqual(
-      filteredPoints,
-      [1, 3],
+    t.ok(
+      isSameElements(filteredPoints, [1, 3]),
       'should have filtered down to points 1 and 3'
     );
 
     t.deepEqual(
-      scatterplot.get('pointsInView'),
-      [1, 3],
+      scatterplot.get('isPointsFiltered'),
+      true,
+      '`isPointsFiltered` should be `true` as points have been filtered'
+    );
+
+    t.ok(
+      isSameElements(scatterplot.get('pointsInView'), [1, 3]),
       'should have two points (1 and 3) in view'
     );
 
-    t.deepEqual(
-      scatterplot.get('filteredPoints'),
-      [1, 3],
+    t.ok(
+      isSameElements(scatterplot.get('filteredPoints'), [1, 3]),
       'should be able to retrieve the filtered points'
     );
 
@@ -2175,16 +2190,52 @@ test(
 
     await wait(0);
 
-    t.deepEqual(
-      selectedPoints,
-      [],
+    t.equal(
+      selectedPoints.length,
+      0,
       'should not have selected points 0, 2, and 4 because they are filtered out'
+    );
+
+    await scatterplot.filter([]);
+
+    await wait(0);
+
+    t.deepEqual(filteredPoints, [], 'should have filtered out all points');
+
+    t.equal(
+      scatterplot.get('filteredPoints').length,
+      0,
+      'should retrieve an empty array of filtered points'
+    );
+
+    scatterplot.select([0, 1, 2, 3, 4]);
+
+    await wait(0);
+
+    t.equal(
+      selectedPoints.length,
+      0,
+      'should not be able to selected any points because all are filtered out'
     );
 
     await scatterplot.unfilter();
     await wait(0);
 
-    t.deepEqual(filteredPoints, [], 'should have unfiltered the points');
+    t.ok(
+      isSameElements(filteredPoints, [0, 1, 2, 3, 4]),
+      'should have unfiltered the points'
+    );
+
+    t.ok(
+      isSameElements(scatterplot.get('filteredPoints'), [0, 1, 2, 3, 4]),
+      'should be able to retrieve the filtered points'
+    );
+
+    t.deepEqual(
+      scatterplot.get('isPointsFiltered'),
+      false,
+      '`isPointsFiltered` should be `false` as we reset the point filter'
+    );
 
     scatterplot.select([0, 2, 4]);
 
@@ -2200,7 +2251,7 @@ test(
     await wait(0);
 
     t.ok(
-      filteredPoints.length === 0 &&
+      filteredPoints.length === 5 &&
         scatterplot.get('pointsInView').length === 2,
       'should have silently filtered down to two points'
     );
@@ -2228,18 +2279,17 @@ test(
     await scatterplot.filter(-1);
     await wait(0);
 
-    t.deepEqual(
-      filteredPoints,
-      [],
+    t.equal(
+      filteredPoints.length,
+      0,
       'should have not filter down to any point because -1 is an invalid point index'
     );
 
     await scatterplot.filter([0, -1, 2, 4, 6]);
     await wait(0);
 
-    t.deepEqual(
-      filteredPoints,
-      [0, 2, 4],
+    t.ok(
+      isSameElements(filteredPoints, [0, 2, 4]),
       'should have filtered down to valid points (0, 2, and 4) only'
     );
 

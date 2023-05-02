@@ -648,6 +648,7 @@ can be read and written via [`scatterplot.get()`](#scatterplot.get) and [`scatte
 | gamma                                 | float                                        | `1`                                 | to control the opacity blending                                 | `true`   | `false`     |
 | isDestroyed                           | boolean                                      | `false`                             |                                                                 | `false`  | `false`     |
 | isPointsDrawn                         | boolean                                      | `false`                             |                                                                 | `false`  | `false`     |
+| isPointsFiltered                      | boolean                                      | `false`                             |                                                                 | `false`  | `false`     |
 
 <a name="property-notes" href="#property-notes">#</a> <b>Notes:</b>
 

@@ -65,3 +65,9 @@ export const catchError = (testFn) => async (t) => {
     t.fail(e.message);
   }
 };
+
+export const isSameElements = (a, b) => {
+  if (a.length !== b.length) return false;
+  const aSet = new Set(a);
+  return b.every((value) => aSet.has(value));
+};

@@ -286,7 +286,7 @@ const createScatterplot = (
   let selectedPoints = [];
   const selectedPointsSet = new Set();
   const selectedPointsConnectionSet = new Set();
-  let filteredPoints = [];
+  let isPointsFiltered = false;
   const filteredPointsSet = new Set();
   let numPoints = 0;
   let numPointsInView = 0;
@@ -522,14 +522,14 @@ const createScatterplot = (
   };
 
   const getPoints = () => {
-    if (filteredPointsSet.size > 0)
+    if (isPointsFiltered)
       return searchIndex.points.filter((_, i) => filteredPointsSet.has(i));
     return searchIndex.points;
   };
 
   const getPointsInBBox = (x0, y0, x1, y1) => {
     const pointsInBBox = searchIndex.range(x0, y0, x1, y1);
-    if (filteredPointsSet.size > 0)
+    if (isPointsFiltered)
       return pointsInBBox.filter((i) => filteredPointsSet.has(i));
     return pointsInBBox;
   };
@@ -660,8 +660,8 @@ const createScatterplot = (
     Math.floor(index / stateTexRes) / stateTexRes + stateTexEps,
   ];
 
-  const isPointFilteredOut = (pointIdx) =>
-    filteredPointsSet.size > 0 && !filteredPointsSet.has(pointIdx);
+  const isPointsFilteredOut = (pointIdx) =>
+    isPointsFiltered && !filteredPointsSet.has(pointIdx);
 
   const deselect = ({ preventEvent = false } = {}) => {
     if (lassoClearEvent === LASSO_CLEAR_ON_DESELECT) lassoClear();
@@ -717,7 +717,7 @@ const createScatterplot = (
       if (
         pointIdx < 0 ||
         pointIdx >= numPoints ||
-        isPointFilteredOut(pointIdx)
+        isPointsFilteredOut(pointIdx)
       ) {
         // Remove invalid selected points
         selectedPoints.splice(i, 1);
@@ -1369,7 +1369,7 @@ const createScatterplot = (
     return max(minPointScale, camera.scaling[0]) * window.devicePixelRatio;
   };
   const getNormalNumPoints = () =>
-    filteredPoints && filteredPoints.length ? filteredPoints.length : numPoints;
+    isPointsFiltered ? filteredPointsSet.size : numPoints;
   const getSelectedNumPoints = () => selectedPoints.length;
   const getPointOpacityMaxBase = () =>
     getSelectedNumPoints() > 0 ? opacityInactiveMax : 1;
@@ -1988,7 +1988,7 @@ const createScatterplot = (
    * @param {import('./types').ScatterplotMethodOptions['filter']}
    */
   const unfilter = ({ preventEvent = false } = {}) => {
-    filteredPoints = [];
+    isPointsFiltered = false;
     filteredPointsSet.clear();
     normalPointsIndexBuffer.subdata(createPointIndex(numPoints));
 
@@ -2023,10 +2023,9 @@ const createScatterplot = (
    * @param {import('./types').ScatterplotMethodOptions['filter']}
    */
   const filter = (pointIdxs, { preventEvent = false } = {}) => {
-    filteredPoints = Array.isArray(pointIdxs) ? pointIdxs : [pointIdxs];
+    const filteredPoints = Array.isArray(pointIdxs) ? pointIdxs : [pointIdxs];
 
-    if (filteredPoints.length === 0) return unfilter({ preventEvent });
-
+    isPointsFiltered = true;
     filteredPointsSet.clear();
 
     const filteredPointsBuffer = [];
@@ -2274,7 +2273,7 @@ const createScatterplot = (
           }
 
           // Reset filter
-          filteredPoints = [];
+          isPointsFiltered = false;
           filteredPointsSet.clear();
 
           let pointsCached = false;
@@ -2860,7 +2859,10 @@ const createScatterplot = (
     if (property === 'opacityInactiveScale') return opacityInactiveScale;
     if (property === 'points') return searchIndex.points;
     if (property === 'selectedPoints') return [...selectedPoints];
-    if (property === 'filteredPoints') return [...filteredPoints];
+    if (property === 'filteredPoints')
+      return isPointsFiltered
+        ? Array.from(filteredPointsSet)
+        : Array.from({ length: searchIndex.points.length }, (_, i) => i);
     if (property === 'pointsInView') return getPointsInView();
     if (property === 'pointColor')
       return pointColor.length === 1 ? pointColor[0] : pointColor;
@@ -2922,6 +2924,7 @@ const createScatterplot = (
     if (property === 'renderer') return renderer;
     if (property === 'isDestroyed') return isDestroyed;
     if (property === 'isPointsDrawn') return isPointsDrawn;
+    if (property === 'isPointsFiltered') return isPointsFiltered;
 
     return undefined;
   };
