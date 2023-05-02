@@ -43,10 +43,6 @@
     "regl": "~2.1.0",
     "regl-line": "~1.0.0"
   },
-  "peerDependencies": {
-    "pub-sub-es": "~2.0.1",
-    "regl": "~2.1.0"
-  },
   "devDependencies": {
     "@babel/core": "^7.21.0",
     "@babel/plugin-transform-regenerator": "^7.20.5",
