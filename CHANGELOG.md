@@ -1,3 +1,7 @@
+## Latest
+
+- Remove duplicate peer-dependencies [#128](https://github.com/flekschas/regl-scatterplot/issues/128)
+
 ## v1.6.8
 
 - Fix `filter()` to allow filtering out all points [#122](https://github.com/flekschas/regl-scatterplot/issues/122)
