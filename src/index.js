@@ -816,8 +816,13 @@ const createScatterplot = (
     camera.config({ isFixed: false });
     lassoPointsCurr = [...lassoPoints];
     const pointsInLasso = findPointsInLasso(lassoPointsFlat);
-    select(pointsInLasso, { merge });
-
+    
+    if(pointsInLasso.length > 0){
+      select(pointsInLasso, { merge });
+    } else {
+      deselect()
+    }
+    
     pubSub.publish('lassoEnd', {
       coordinates: lassoPointsCurr,
     });
