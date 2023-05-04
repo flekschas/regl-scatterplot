@@ -681,11 +681,13 @@ const createScatterplot = (
    * @param {import('./types').ScatterplotMethodOptions['select']}
    */
   const select = (pointIdxs, { merge = false, preventEvent = false } = {}) => {
-    const pointIdxsArr = Array.isArray(pointIdxs) ? pointIdxs : [pointIdxs];
+    const newSelectedPoints = Array.isArray(pointIdxs)
+      ? pointIdxs
+      : [pointIdxs];
     const currSelectedPoints = [...selectedPoints];
 
     if (merge) {
-      selectedPoints = unionIntegers(selectedPoints, pointIdxsArr);
+      selectedPoints = unionIntegers(selectedPoints, newSelectedPoints);
       if (currSelectedPoints.length === selectedPoints.length) {
         draw = true;
         return;
@@ -694,11 +696,11 @@ const createScatterplot = (
       // Unset previously highlight point connections
       if (selectedPoints && selectedPoints.length)
         setPointConnectionColorState(selectedPoints, 0);
-      selectedPoints = pointIdxsArr;
-      if (currSelectedPoints.length > 0 && selectedPoints.length === 0) {
+      if (currSelectedPoints.length > 0 && newSelectedPoints.length === 0) {
         deselect({ preventEvent });
         return;
       }
+      selectedPoints = newSelectedPoints;
     }
 
     if (hasSameElements(currSelectedPoints, selectedPoints)) {
