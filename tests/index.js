@@ -1995,13 +1995,33 @@ test(
 
     t.equal(selectedPoints.length, 0, 'should have deselected all points');
 
-    scatterplot.select([0, 2, 4], { preventEvent: true });
+    scatterplot.select([0, 2, 4]);
+
+    await wait(0);
+
+    t.deepEqual(
+      scatterplot.get('selectedPoints'),
+      [0, 2, 4],
+      'should have selected three points again'
+    );
+
+    scatterplot.select([]);
 
     await wait(0);
 
     t.equal(
       selectedPoints.length,
       0,
+      'should have deselected all points via `select([])`'
+    );
+
+    scatterplot.select([0, 2, 4], { preventEvent: true });
+
+    await wait(0);
+
+    t.equal(
+      selectedPoints.length + scatterplot.get('selectedPoints').length,
+      3,
       'should have silently selected three points'
     );
 

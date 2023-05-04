@@ -1,3 +1,7 @@
+## v1.6.9
+
+- Fix empty `select([])` handling [#132](https://github.com/flekschas/regl-scatterplot/issues/132)
+
 ## v1.6.8
 
 - Fix `filter()` to allow filtering out all points [#122](https://github.com/flekschas/regl-scatterplot/issues/122)
