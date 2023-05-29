@@ -97,7 +97,7 @@ export const DEFAULT_GAMMA = 1;
 // Default styles
 export const MIN_POINT_SIZE = 1;
 export const DEFAULT_POINT_SIZE = 6;
-export const DEFAULT_POINT_SIZE_SELECTED = 2;
+export const DEFAULT_POINT_SIZE_SELECTED = 0;
 export const DEFAULT_POINT_OUTLINE_WIDTH = 2;
 export const DEFAULT_SIZE_BY = null;
 export const DEFAULT_POINT_CONNECTION_SIZE = 2;

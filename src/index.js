@@ -404,6 +404,7 @@ const createScatterplot = (
   let canvasObserver;
   let densityBasedOpacity = 1;
   let densityBasedPointSize = 1;
+  let hoveredPointExtraSize = 0;
 
   const positionBuffer = renderer.regl.buffer([
     -1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1,
@@ -1658,7 +1659,7 @@ const createScatterplot = (
     getNormalPointsIndexBuffer
   );
 
-  const drawHoveredPoint = drawPoints(
+  const drawHoveredPointBody = drawPoints(
     getNormalPointSizeExtra,
     () => 1,
     () => hoveredPointIndexBuffer,
@@ -1666,6 +1667,40 @@ const createScatterplot = (
     () => 1,
     () => 1
   );
+
+  // Draw outer outline
+  const drawHoveredPointOutline = drawPoints(
+    () => hoveredPointExtraSize * window.devicePixelRatio,
+    () => 1,
+    () => hoveredPointIndexBuffer,
+    COLOR_ACTIVE_IDX,
+    () => 1,
+    () => 1
+  );
+
+  // Draw inner outline
+  const drawHoveredPointInnerBorder = drawPoints(
+    () => hoveredPointExtraSize * window.devicePixelRatio,
+    () => 1,
+    () => hoveredPointIndexBuffer,
+    COLOR_BG_IDX,
+    () => 1,
+    () => 1
+  );
+
+  const drawHoveredPoint = () => {
+    const pointExtraSize = selectedPointsSet.has(hoveredPoint)
+      ? pointSizeSelected
+      : 0;
+
+    const pointOutlineWidthPx = pointOutlineWidth / camera.scaling[0];
+
+    hoveredPointExtraSize = pointExtraSize + pointOutlineWidthPx * 2;
+    drawHoveredPointOutline();
+    hoveredPointExtraSize = pointExtraSize + pointOutlineWidthPx;
+    drawHoveredPointInnerBorder();
+    drawHoveredPointBody();
+  };
 
   const drawSelectedPointOutlines = drawPoints(
     () => (pointSizeSelected + pointOutlineWidth * 2) * window.devicePixelRatio,
@@ -1786,23 +1821,6 @@ const createScatterplot = (
 
     reticleHLine.draw();
     reticleVLine.draw();
-
-    // Draw outer outline
-    drawPoints(
-      () =>
-        (pointSizeSelected + pointOutlineWidth * 2) * window.devicePixelRatio,
-      () => 1,
-      hoveredPointIndexBuffer,
-      COLOR_ACTIVE_IDX
-    )();
-
-    // Draw inner outline
-    drawPoints(
-      () => (pointSizeSelected + pointOutlineWidth) * window.devicePixelRatio,
-      () => 1,
-      hoveredPointIndexBuffer,
-      COLOR_BG_IDX
-    )();
   };
 
   const createPointIndex = (numNewPoints) => {
@@ -2993,7 +3011,7 @@ const createScatterplot = (
     if (property === 'filteredPoints')
       return isPointsFiltered
         ? Array.from(filteredPointsSet)
-        : Array.from({ length: searchIndex.points.length }, (_, i) => i);
+        : Array.from({ length: points.length }, (_, i) => i);
     if (property === 'pointsInView') return getPointsInView();
     if (property === 'pointColor')
       return pointColor.length === 1 ? pointColor[0] : pointColor;
