@@ -1703,7 +1703,9 @@ const createScatterplot = (
   };
 
   const drawSelectedPointOutlines = drawPoints(
-    () => (pointSizeSelected + pointOutlineWidth * 2) * window.devicePixelRatio,
+    () =>
+      (pointSizeSelected + (pointOutlineWidth / camera.scaling[0]) * 2) *
+      window.devicePixelRatio,
     getSelectedNumPoints,
     getSelectedPointsIndexBuffer,
     COLOR_ACTIVE_IDX,
@@ -1712,7 +1714,9 @@ const createScatterplot = (
   );
 
   const drawSelectedPointInnerBorder = drawPoints(
-    () => (pointSizeSelected + pointOutlineWidth) * window.devicePixelRatio,
+    () =>
+      (pointSizeSelected + pointOutlineWidth / camera.scaling[0]) *
+      window.devicePixelRatio,
     getSelectedNumPoints,
     getSelectedPointsIndexBuffer,
     COLOR_BG_IDX,
