@@ -1,7 +1,7 @@
 const FRAGMENT_SHADER = `
 precision highp float;
 
-uniform float pointRelMagnitude;
+uniform float relativePointOffset;
 uniform float minHalfResolution;
 
 varying vec4 vColor;
@@ -16,10 +16,10 @@ vec4 sample(float d2, float r2) {
 }
 
 void main() {
-  vec2 p1 = vPosition + vec2(-pointRelMagnitude, +pointRelMagnitude);
-  vec2 p2 = vPosition + vec2(+pointRelMagnitude, +pointRelMagnitude);
-  vec2 p3 = vPosition + vec2(+pointRelMagnitude, -pointRelMagnitude);
-  vec2 p4 = vPosition + vec2(-pointRelMagnitude, -pointRelMagnitude);
+  vec2 p1 = vPosition + vec2(-relativePointOffset, +relativePointOffset);
+  vec2 p2 = vPosition + vec2(+relativePointOffset, +relativePointOffset);
+  vec2 p3 = vPosition + vec2(+relativePointOffset, -relativePointOffset);
+  vec2 p4 = vPosition + vec2(-relativePointOffset, -relativePointOffset);
   float d1 = dot(p1, p1);
   float d2 = dot(p2, p2);
   float d3 = dot(p3, p3);

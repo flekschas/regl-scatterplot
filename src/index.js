@@ -1445,8 +1445,8 @@ const createScatterplot = (
 
   const getResolution = () => [canvas.width, canvas.height];
   const getMinHalfResolution = () => Math.min(canvas.width, canvas.height) / 2;
-  const getPointRelMagnitude = () =>
-    0.25 / Math.min(canvas.width, canvas.height) / 2;
+  const getRelativePointOffset = () =>
+    0.5 / camera.scaling[0] / Math.min(canvas.width, canvas.height);
   const getBackgroundImage = () => backgroundImage;
   const getColorTex = () => colorTex;
   const getColorTexRes = () => colorTexRes;
@@ -1615,7 +1615,7 @@ const createScatterplot = (
       uniforms: {
         resolution: getResolution,
         minHalfResolution: getMinHalfResolution,
-        pointRelMagnitude: getPointRelMagnitude,
+        relativePointOffset: getRelativePointOffset,
         modelViewProjection: getModelViewProjection,
         devicePixelRatio: getDevicePixelRatio,
         pointScale: getPointScale,
