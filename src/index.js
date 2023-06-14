@@ -3459,6 +3459,7 @@ const createScatterplot = (
     canvas.removeEventListener('mouseleave', mouseLeaveCanvasHandler, false);
     canvas.removeEventListener('click', mouseClickHandler, false);
     canvas.removeEventListener('dblclick', mouseDblClickHandler, false);
+    canvas.removeEventListener('wheel', wheelHandler, false);
     if (canvasObserver) {
       canvasObserver.disconnect();
     } else {
@@ -3469,6 +3470,7 @@ const createScatterplot = (
     camera.dispose();
     camera = undefined;
     lasso.destroy();
+    lassoManager.destroy();
     pointConnections.destroy();
     reticleHLine.destroy();
     reticleVLine.destroy();
