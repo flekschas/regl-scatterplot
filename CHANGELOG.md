@@ -1,3 +1,7 @@
+## 1.6.10
+
+- Fix `scatterplot.destroy()` to properly remove all event listeners bound during instance creation. [#135](https://github.com/flekschas/regl-scatterplot/pull/135)
+
 ## v1.6.9
 
 - Fix empty `select([])` handling [#132](https://github.com/flekschas/regl-scatterplot/issues/132)
