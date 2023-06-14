@@ -3459,6 +3459,7 @@ const createScatterplot = (
     canvas.removeEventListener('mouseleave', mouseLeaveCanvasHandler, false);
     canvas.removeEventListener('click', mouseClickHandler, false);
     canvas.removeEventListener('dblclick', mouseDblClickHandler, false);
+    canvas.removeEventListener('wheel', wheelHandler, false);
     if (canvasObserver) {
       canvasObserver.disconnect();
     } else {
