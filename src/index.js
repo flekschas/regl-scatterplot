@@ -3469,6 +3469,7 @@ const createScatterplot = (
     camera.dispose();
     camera = undefined;
     lasso.destroy();
+    lassoManager.destroy();
     pointConnections.destroy();
     reticleHLine.destroy();
     reticleVLine.destroy();
