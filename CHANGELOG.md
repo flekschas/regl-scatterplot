@@ -1,3 +1,8 @@
+## Next
+
+- Add missing `filteredPoints` type definition. [#139](https://github.com/flekschas/regl-scatterplot/pull/139)
+- Add missing `selectedPoints` type definition.
+
 ## 1.6.10
 
 - Fix `scatterplot.destroy()` to properly remove all event listeners bound during instance creation. [#135](https://github.com/flekschas/regl-scatterplot/pull/135)

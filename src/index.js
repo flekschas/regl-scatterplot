@@ -283,10 +283,14 @@ const createScatterplot = (
   let mouseDownTime = null;
   let mouseDownPosition = [0, 0];
   let mouseDownTimeout = -1;
+  /** @type{number[]} */
   let selectedPoints = [];
+  /** @type{Set<number>} */
   const selectedPointsSet = new Set();
+  /** @type{Set<number>} */
   const selectedPointsConnectionSet = new Set();
   let isPointsFiltered = false;
+  /** @type{Set<number>} */
   const filteredPointsSet = new Set();
   let numPoints = 0;
   let numPointsInView = 0;
