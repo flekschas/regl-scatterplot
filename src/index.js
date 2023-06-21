@@ -2273,7 +2273,7 @@ const createScatterplot = (
             resolve();
             return;
           }
-          const numPointsChanged = points.length !== numPoints;
+          const numPointsChanged = points.length === numPoints;
           
           if (!options.preventFilterReset || numPointsChanged) {
             // Reset filter
@@ -2284,7 +2284,7 @@ const createScatterplot = (
           let pointsCached = false;
           if (points) {
             if (options.transition) {
-              if (numPointsChanged) {
+              if (!numPointsChanged) {
                 pointsCached = cachePoints(points);
               } else {
                 console.warn(
