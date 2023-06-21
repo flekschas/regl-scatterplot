@@ -2275,8 +2275,14 @@ const createScatterplot = (
           }
 
           let pointsCached = false;
+
+          if (!options.preventFilterReset) {
+              // Reset filter
+              isPointsFiltered = false;
+              filteredPointsSet.clear();
+          }
           if (points) {
-            if (!options.preventFilterReset || points.length !== numPoints) {
+            if (points.length !== numPoints) {
               // Reset filter
               isPointsFiltered = false;
               filteredPointsSet.clear();
