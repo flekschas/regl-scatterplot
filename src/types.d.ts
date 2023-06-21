@@ -148,6 +148,7 @@ export type Properties = {
   isDestroyed: boolean;
   isPointsDrawn: boolean;
   isPointsFiltered: boolean;
+  filteredPoints: number[];
 } & Settable;
 
 // Options for plot.{draw, select, hover}
