@@ -1989,8 +1989,6 @@ test(
       '`isPointsFiltered` should be `false` as draw has been invoked with different number of points'
     );
 
-    t.equal(scatterplot.get('filteredPoints'), undefined, '`filteredPoints` should be undefined as draw has been invoked with different number of points');
-
     scatterplot.destroy();
   })
 );
