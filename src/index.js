@@ -2273,10 +2273,18 @@ const createScatterplot = (
             resolve();
             return;
           }
-
-          // Reset filter
-          isPointsFiltered = false;
-          filteredPointsSet.clear();
+          if (!options.preventFilterReset) {
+            // Reset filter
+            isPointsFiltered = false;
+            filteredPointsSet.clear();
+          } else if (
+            options.preventFilterReset &&
+            points.length !== numPoints
+          ) {
+            console.warn(
+              'Cannot preserve filter! The number of points between the previous and current draw call must be identical.'
+            );
+          }
 
           let pointsCached = false;
           if (points) {
