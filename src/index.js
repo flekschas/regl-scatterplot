@@ -2273,23 +2273,23 @@ const createScatterplot = (
             resolve();
             return;
           }
-          if (!options.preventFilterReset) {
+          const numPointsChanged = points.length !== numPoints;
+          
+          if (!options.preventFilterReset || numPointsChanged) {
             // Reset filter
             isPointsFiltered = false;
             filteredPointsSet.clear();
-          } else if (
-            options.preventFilterReset &&
-            points.length !== numPoints
-          ) {
-            console.warn(
-              'Cannot preserve filter! The number of points between the previous and current draw call must be identical.'
-            );
+            if (numPointsChanged) {
+              console.warn(
+                'Cannot preserve filter! The number of points between the previous and current draw call must be identical.'
+              );
+            }
           }
 
           let pointsCached = false;
           if (points) {
             if (options.transition) {
-              if (points.length === numPoints) {
+              if (numPointsChanged) {
                 pointsCached = cachePoints(points);
               } else {
                 console.warn(
