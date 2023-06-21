@@ -2273,16 +2273,14 @@ const createScatterplot = (
             resolve();
             return;
           }
-          const numPointsChanged = points.length === numPoints;
-          
-          if (!options.preventFilterReset || numPointsChanged) {
-            // Reset filter
-            isPointsFiltered = false;
-            filteredPointsSet.clear();
-          }
 
           let pointsCached = false;
           if (points) {
+            if (!options.preventFilterReset || points.length !== numPoints) {
+              // Reset filter
+              isPointsFiltered = false;
+              filteredPointsSet.clear();
+            }
             if (options.transition) {
               if (!numPointsChanged) {
                 pointsCached = cachePoints(points);
