@@ -2277,13 +2277,12 @@ const createScatterplot = (
           let pointsCached = false;
 
           if (!options.preventFilterReset) {
-              // Reset filter
               isPointsFiltered = false;
               filteredPointsSet.clear();
           }
           if (points) {
             if (points.length !== numPoints) {
-              // Reset filter
+              // Reset filter every time number of points changed
               isPointsFiltered = false;
               filteredPointsSet.clear();
             }
