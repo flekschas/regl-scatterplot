@@ -1968,7 +1968,7 @@ test(
     await scatterplot.filter(filteredPoints);
     await wait(0);
 
-    t.deepEqual(
+    t.equal(
       scatterplot.get('isPointsFiltered'),
       true,
       '`isPointsFiltered` should be `true` as draw has been invoked with preventFilterReset'
@@ -1978,6 +1978,18 @@ test(
       isSameElements(scatterplot.get('filteredPoints'), filteredPoints),
       'all points should be filtered in'
     );
+
+    await scatterplot.draw([...points, [0.5, 0.5]], {
+      preventFilterReset: true,
+    });
+
+    t.equal(
+      scatterplot.get('isPointsFiltered'),
+      false,
+      '`isPointsFiltered` should be `false` as draw has been invoked with different number of points'
+    );
+
+    t.equal(scatterplot.get('filteredPoints'), undefined, '`filteredPoints` should be undefined as draw has been invoked with different number of points');
 
     scatterplot.destroy();
   })
