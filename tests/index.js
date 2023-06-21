@@ -1949,6 +1949,41 @@ test(
 );
 
 test(
+  'draw() with preventFilterReset',
+  catchError(async (t) => {
+    const scatterplot = createScatterplot({ canvas: createCanvas() });
+
+    const filteredPoints = [0, 1, 2];
+
+    const points = [
+      [0, 0],
+      [1, 1],
+      [1, -1],
+      [-1, -1],
+      [-1, 1],
+    ];
+
+    await scatterplot.draw([points], { preventFilterReset: true });
+
+    await scatterplot.filter(filteredPoints);
+    await wait(0);
+
+    t.deepEqual(
+      scatterplot.get('isPointsFiltered'),
+      true,
+      '`isPointsFiltered` should be `true` as draw has been invoked with preventFilterReset'
+    );
+
+    t.ok(
+      isSameElements(scatterplot.get('filteredPoints'), filteredPoints),
+      'all points should be filtered in'
+    );
+
+    scatterplot.destroy();
+  })
+);
+
+test(
   'select()',
   catchError(async (t) => {
     const scatterplot = createScatterplot({ canvas: createCanvas() });
