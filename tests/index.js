@@ -1964,7 +1964,7 @@ test(
     ];
 
     await scatterplot.draw(points);
-    console.log(scatterplot.get('filteredPoints'));
+
     await scatterplot.filter(filteredPoints);
     await wait(0);
 
@@ -2001,7 +2001,7 @@ test(
     t.equal(
       scatterplot.get('filteredPoints').length,
       updatedPoints.length + 1,
-      'the filtered points should be the same as before'
+      'the filtered points should be reset as draw has been invoked with different number of points'
     );
 
     scatterplot.destroy();
