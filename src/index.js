@@ -2281,11 +2281,6 @@ const createScatterplot = (
               filteredPointsSet.clear();
           }
           if (points) {
-            if (points.length !== numPoints) {
-              // Reset filter every time number of points changed
-              isPointsFiltered = false;
-              filteredPointsSet.clear();
-            }
             if (options.transition) {
               if (points.length === numPoints) {
                 pointsCached = cachePoints(points);
