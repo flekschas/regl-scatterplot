@@ -1964,7 +1964,7 @@ test(
     ];
 
     await scatterplot.draw(points);
-
+    console.log(scatterplot.get('filteredPoints'));
     await scatterplot.filter(filteredPoints);
     await wait(0);
 
@@ -1985,6 +1985,22 @@ test(
 
     t.ok(
       isSameElements(scatterplot.get('filteredPoints'), filteredPoints),
+      'the filtered points should be the same as before'
+    );
+
+    await scatterplot.draw([...updatedPoints, [0.5, 0.5]], {
+      preventFilterReset: true,
+    });
+
+    t.equal(
+      scatterplot.get('isPointsFiltered'),
+      false,
+      '`isPointsFiltered` should be `false` as draw has been invoked with different number of points'
+    );
+
+    t.equal(
+      scatterplot.get('filteredPoints').length,
+      updatedPoints.length + 1,
       'the filtered points should be the same as before'
     );
 
