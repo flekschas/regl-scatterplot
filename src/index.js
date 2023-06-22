@@ -2276,7 +2276,7 @@ const createScatterplot = (
 
           let pointsCached = false;
 
-          if (!options.preventFilterReset) {
+          if (!options.preventFilterReset || points?.length !== numPoints) {
               isPointsFiltered = false;
               filteredPointsSet.clear();
           }
