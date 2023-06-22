@@ -517,7 +517,7 @@ Zoom to a specific area specified by a recangle in normalized device coordinates
   - `transition` [default: `false`]: if `true`, the camera will smoothly transition to its new position
   - `transitionDuration` [default: `500`]: the duration in milliseconds over which the transition should occur
   - `transitionEasing` [default: `cubicInOut`]: the easing function, which determines how intermediate values of the transition are calculated
-  - `preventFilterReset` [default: `true`]: if `false`, the active filteredPoints set is not being reset.
+  - `preventFilterReset` [default: `false`]: if `true` and if the number of new points equals the number of already drawn points, the point filter set is not being reset.
 
 **Examples:**
 
