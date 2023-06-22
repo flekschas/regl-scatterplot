@@ -1963,7 +1963,7 @@ test(
       [-1, 1],
     ];
 
-    await scatterplot.draw([points], { preventFilterReset: true });
+    await scatterplot.draw(points);
 
     await scatterplot.filter(filteredPoints);
     await wait(0);
