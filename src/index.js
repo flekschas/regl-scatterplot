@@ -1978,11 +1978,16 @@ const createScatterplot = (
         }).then((curvePoints) => {
           setPointConnectionMap(curvePoints);
           const curvePointValues = Object.values(curvePoints);
-          pointConnections.setPoints(curvePointValues, {
-            colorIndices: getPointConnectionColorIndices(curvePointValues),
-            opacities: getPointConnectionOpacities(curvePointValues),
-            widths: getPointConnectionWidths(curvePointValues),
-          });
+          pointConnections.setPoints(
+            curvePointValues.length === 1
+              ? curvePointValues[0]
+              : curvePointValues,
+            {
+              colorIndices: getPointConnectionColorIndices(curvePointValues),
+              opacities: getPointConnectionOpacities(curvePointValues),
+              widths: getPointConnectionWidths(curvePointValues),
+            }
+          );
           computingPointConnectionCurves = false;
           resolve();
         });
@@ -2284,6 +2289,12 @@ const createScatterplot = (
             isPointsFiltered = false;
             filteredPointsSet.clear();
           }
+
+          const drawPointConnections =
+            points &&
+            hasPointConnections(points[0]) &&
+            (showPointConnections || options.showPointConnectionsOnce);
+
           if (points) {
             if (options.transition) {
               if (points.length === numPoints) {
@@ -2294,12 +2305,10 @@ const createScatterplot = (
                 );
               }
             }
+
             setPoints(points);
-            if (
-              showPointConnections ||
-              (options.showPointConnectionsOnce &&
-                hasPointConnections(points[0]))
-            ) {
+
+            if (drawPointConnections) {
               setPointConnections(points).then(() => {
                 pubSub.publish('pointConnectionsDraw');
                 draw = true;
@@ -2309,24 +2318,57 @@ const createScatterplot = (
           }
 
           if (options.transition && pointsCached) {
-            pubSub.subscribe(
-              'transitionEnd',
-              () => {
-                // Point connects cannot be transitioned yet so we hide them during
-                // the transition. Hence, we need to make sure we call `draw()` once
-                // the transition has ended.
-                draw = true;
-                drawReticleOnce = options.showReticleOnce;
-                resolve();
-              },
-              1
-            );
+            if (drawPointConnections) {
+              Promise.all([
+                new Promise((resolveTransition) => {
+                  pubSub.subscribe(
+                    'transitionEnd',
+                    () => {
+                      // Point connects cannot be transitioned yet so we hide them during
+                      // the transition. Hence, we need to make sure we call `draw()` once
+                      // the transition has ended.
+                      draw = true;
+                      drawReticleOnce = options.showReticleOnce;
+                      resolveTransition();
+                    },
+                    1
+                  );
+                }),
+                new Promise((resolveDraw) => {
+                  pubSub.subscribe('pointConnectionsDraw', resolveDraw, 1);
+                }),
+              ]).then(resolve);
+            } else {
+              pubSub.subscribe(
+                'transitionEnd',
+                () => {
+                  // Point connects cannot be transitioned yet so we hide them during
+                  // the transition. Hence, we need to make sure we call `draw()` once
+                  // the transition has ended.
+                  draw = true;
+                  drawReticleOnce = options.showReticleOnce;
+                  resolve();
+                },
+                1
+              );
+            }
             startTransition({
               duration: options.transitionDuration,
               easing: options.transitionEasing,
             });
           } else {
-            pubSub.subscribe('draw', resolve, 1);
+            if (drawPointConnections) {
+              Promise.all([
+                new Promise((resolveDraw) => {
+                  pubSub.subscribe('draw', resolveDraw, 1);
+                }),
+                new Promise((resolveDraw) => {
+                  pubSub.subscribe('pointConnectionsDraw', resolveDraw, 1);
+                }),
+              ]).then(resolve);
+            } else {
+              pubSub.subscribe('draw', resolve, 1);
+            }
             draw = true;
             drawReticleOnce = options.showReticleOnce;
           }

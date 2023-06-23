@@ -1226,6 +1226,43 @@ test(
   })
 );
 
+test(
+  'test drawing point connections via `showLineConnections`',
+  catchError(async (t) => {
+    const scatterplot = createScatterplot({
+      canvas: createCanvas(200, 200),
+      width: 200,
+      height: 200,
+      showPointConnections: true,
+    });
+
+    let numConnectionsDraws = 0;
+    scatterplot.subscribe('pointConnectionsDraw', () => {
+      ++numConnectionsDraws;
+    });
+
+    await scatterplot.draw(
+      new Array(10)
+        .fill()
+        .map((_, i) => [-1 + (i / 6) * 2, -1 + Math.random() * 2, i, 1, 0])
+    );
+    await wait(0);
+
+    t.equal(numConnectionsDraws, 1, 'should have drawn the connections once');
+
+    await scatterplot.draw(
+      new Array(10)
+        .fill()
+        .map((e, i) => [-1 + (i / 6) * 2, -1 + Math.random() * 2, i, 1, i % 5])
+    );
+    await wait(0);
+
+    t.equal(numConnectionsDraws, 2, 'should have drawn the connections once');
+
+    scatterplot.destroy();
+  })
+);
+
 test('tests involving mouse events', async (t2) => {
   await t2.test(
     'draw(), clear(), publish("select")',

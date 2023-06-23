@@ -2,6 +2,8 @@
 
 - Add missing `filteredPoints` type definition. [#139](https://github.com/flekschas/regl-scatterplot/pull/139)
 - Add missing `selectedPoints` type definition.
+- Fix drawing a single connecting line between points [#125](https://github.com/flekschas/regl-scatterplot/issues/125)
+- Fix `draw()`'s promise resolution when `showPointConnections` is `true`. The promise is now resolved after both, the points and point connections, have been drawn.
 - Set minimum Node version to `16` and minimum npm version to `7`. You might still be able to use `regl-scatterplot` with older version but it's not advised.
 
 ## 1.6.10
