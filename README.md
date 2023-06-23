@@ -47,11 +47,11 @@ Note, you can remap `rotate` and `lasso` to other modifier keys via the `keyMap`
 
 ## Install
 
-```
-npm i regl-scatterplot regl pub-sub-es
+```sh
+npm i regl-scatterplot
 ```
 
-_FYI, regl-scatterplot doesn't bundle regl and pub-sub-es, which is why you have to install them separately._
+_FYI, if you're using `npm` version prior to 7, you have to install regl-scatterplot's peer dependencies (`regl` and `pub-sub-es`) manually._
 
 ## Getting started
 

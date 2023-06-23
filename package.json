@@ -34,17 +34,17 @@
     "watch": "rollup -cw"
   },
   "dependencies": {
-    "@flekschas/utils": "^0.30.1",
+    "@flekschas/utils": "^0.31.0",
     "dom-2d-camera": "~2.2.5",
     "gl-matrix": "~3.4.3",
     "kdbush": "~3.0.0",
     "lodash-es": "~4.17.21",
-    "pub-sub-es": "~2.0.1",
+    "pub-sub-es": "~2.0.2",
     "regl": "~2.1.0",
     "regl-line": "~1.0.0"
   },
   "peerDependencies": {
-    "pub-sub-es": "~2.0.1",
+    "pub-sub-es": "~2.0.2",
     "regl": "~2.1.0"
   },
   "devDependencies": {
@@ -85,6 +85,10 @@
     "vite": "^4.1.4",
     "vite-plugin-virtual-html-template": "^1.1.0",
     "zora": "^4.1.0"
+  },
+  "engines": {
+    "npm": ">=7.0.0",
+    "node": ">=16.0.0"
   },
   "homepage": "https://github.com/flekschas/regl-scatterplot",
   "repository": {
