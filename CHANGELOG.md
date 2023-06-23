@@ -1,5 +1,7 @@
-## Next
+## 1.7.0
 
+- Add `preventFilterReset` option to `draw()` to allow re-drawing while keeping the current point filter. [#136](https://github.com/flekschas/regl-scatterplot/pull/136)
+- Add ability to hover, select, and filter points immediately when calling `draw(points, { hover: 0, select: [1, 2], filter: [0, 2, 3] })`. Immediately hovering, selecting, or filtering points avoids a filter that can occur when first drawing points and then hovering, selecting, or filtering points subsequently.
 - Add missing `filteredPoints` type definition. [#139](https://github.com/flekschas/regl-scatterplot/pull/139)
 - Add missing `selectedPoints` type definition.
 - Fix drawing a single connecting line between points [#125](https://github.com/flekschas/regl-scatterplot/issues/125)
