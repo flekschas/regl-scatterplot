@@ -1949,6 +1949,66 @@ test(
 );
 
 test(
+  'draw() with preventFilterReset',
+  catchError(async (t) => {
+    const scatterplot = createScatterplot({ canvas: createCanvas() });
+
+    const filteredPoints = [0, 1, 2];
+
+    const points = [
+      [0, 0],
+      [1, 1],
+      [1, -1],
+      [-1, -1],
+      [-1, 1],
+    ];
+
+    await scatterplot.draw(points);
+
+    await scatterplot.filter(filteredPoints);
+    await wait(0);
+
+    t.ok(
+      isSameElements(scatterplot.get('filteredPoints'), filteredPoints),
+      `only points ${filteredPoints} should be filtered in`
+    );
+
+    const updatedPoints = points.map(([x, y]) => [x + 1, y + 1]);
+
+    await scatterplot.draw(updatedPoints, { preventFilterReset: true });
+
+    t.equal(
+      scatterplot.get('isPointsFiltered'),
+      true,
+      '`isPointsFiltered` should be `true` as draw has been invoked with preventFilterReset'
+    );
+
+    t.ok(
+      isSameElements(scatterplot.get('filteredPoints'), filteredPoints),
+      'the filtered points should be the same as before'
+    );
+
+    await scatterplot.draw([...updatedPoints, [0.5, 0.5]], {
+      preventFilterReset: true,
+    });
+
+    t.equal(
+      scatterplot.get('isPointsFiltered'),
+      false,
+      '`isPointsFiltered` should be `false` as draw has been invoked with different number of points'
+    );
+
+    t.equal(
+      scatterplot.get('filteredPoints').length,
+      updatedPoints.length + 1,
+      'the filtered points should be reset as draw has been invoked with different number of points'
+    );
+
+    scatterplot.destroy();
+  })
+);
+
+test(
   'select()',
   catchError(async (t) => {
     const scatterplot = createScatterplot({ canvas: createCanvas() });

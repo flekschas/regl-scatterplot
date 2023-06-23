@@ -2278,11 +2278,12 @@ const createScatterplot = (
             return;
           }
 
-          // Reset filter
-          isPointsFiltered = false;
-          filteredPointsSet.clear();
-
           let pointsCached = false;
+
+          if (!options.preventFilterReset || points?.length !== numPoints) {
+            isPointsFiltered = false;
+            filteredPointsSet.clear();
+          }
           if (points) {
             if (options.transition) {
               if (points.length === numPoints) {

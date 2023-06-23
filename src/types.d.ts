@@ -158,6 +158,7 @@ export interface ScatterplotMethodOptions {
     transition: boolean;
     transitionDuration: number;
     transitionEasing: (t: number) => number;
+    preventFilterReset: boolean;
   }>;
   hover: Partial<{
     showReticleOnce: boolean;
