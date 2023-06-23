@@ -2,6 +2,7 @@
 
 - Add missing `filteredPoints` type definition. [#139](https://github.com/flekschas/regl-scatterplot/pull/139)
 - Add missing `selectedPoints` type definition.
+- Set minimum Node version to `16` and minimum npm version to `7`. You might still be able to use `regl-scatterplot` with older version but it's not advised.
 
 ## 1.6.10
 
