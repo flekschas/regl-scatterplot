@@ -299,6 +299,10 @@ Note that repeatedly calling this method without specifying `points` will not cl
   - `transition` [default: `false`]: if `true` and if the current number of points equals `points.length`, the current points will be transitioned to the new points
   - `transitionDuration` [default: `500`]: the duration in milliseconds over which the transition should occur
   - `transitionEasing` [default: `cubicInOut`]: the easing function, which determines how intermediate values of the transition are calculated
+  - `preventFilterReset` [default: `false`]: if `true` and if the number of new points is the same as the current number of points, the current point filter will not be reset
+  - `hover` [default: `undefined`]: a shortcut for [`hover()`](#scatterplot.hover). This option allows to programmatically hover a point by specifying a point index
+  - `select` [default: `undefined`]: a shortcut for [`select()`](#scatterplot.select). This option allows to programmatically select points by specifying a list of point indices
+  - `filter` [default: `undefined`]: a shortcut for [`filter()`](#scatterplot.filter). This option allows to programmatically filter points by specifying a list of point indices
 
 **Returns:** a Promise object that resolves once the points have been drawn or transitioned.
 
@@ -336,12 +340,21 @@ scatterplot.draw([[0.6, 0.6, 0, 0.6]], { transition: true });
 // Alternatively, call `scatterplot.clear()`
 scatterplot.draw([]);
 
-// Finally, you can also specify the point data in a column-oriented format. The
+// You can also specify the point data in a column-oriented format. The
 // following call will draw three points: (1,3), (2,2), and (3,1)
 scatterplot.draw({
   x: [1, 2, 3],
   y: [3, 2, 1],
 });
+
+// Finally, you can also specify which point will be hovered, which points will
+// be selected, and which points will be filtered. These options are useful to
+// avoid a flicker which would occur if `hover()`, `select()`, and `filter()`
+// are called after `draw()`.
+scatterplot.draw(
+  { x: [1, 2, 3], y: [3, 2, 1] },
+  { hover: 0, selected: [0, 1], filter: [0, 2] }
+);
 ```
 
 <a name="scatterplot.clear" href="#scatterplot.clear">#</a> scatterplot.<b>clear</b>()
@@ -368,7 +381,7 @@ Select some points, such that they get visually highlighted. This will trigger a
 
 **Arguments:**
 
-- `points` is an array of point indices.
+- `points` is an array of point indices referencing the points that you want to select.
 - `options` [optional] is an object with the following properties:
   - `preventEvent`: if `true` the `select` will not be published.
 
@@ -426,7 +439,7 @@ Programmatically hover a point, such that it gets visually highlighted. This wil
 
 **Arguments:**
 
-- `points` is an array of point indices.
+- `point` is the point index referring to the point you want to hover.
 - `options` [optional] is an object with the following properties:
   - `showReticleOnce`: if `true` the reticle will be shown once, even if `showReticle === false`.
   - `preventEvent`: if `true` the `pointover` and `pointout` will not be published.
