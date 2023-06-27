@@ -463,6 +463,7 @@ const createScatterplot = (
   let maxValueZ = 0;
   let maxValueW = 0;
 
+  /** @type{number|undefined} */
   let hoveredPoint;
   let isMouseInCanvas = false;
 
@@ -751,7 +752,7 @@ const createScatterplot = (
   };
 
   /**
-   * @param {number | number[]} point
+   * @param {number} point
    * @param {import('./types').ScatterplotMethodOptions['hover']} options
    */
   const hover = (
@@ -2068,7 +2069,7 @@ const createScatterplot = (
     select(filteredSelectedPoints, { preventEvent });
 
     // Unset any potentially hovered point
-    hover(-1, { preventEvent });
+    if (!filteredPointsSet.has(hoveredPoint)) hover(-1, { preventEvent });
 
     return new Promise((resolve) => {
       const finish = () => {
@@ -2307,6 +2308,18 @@ const createScatterplot = (
             }
 
             setPoints(points);
+
+            if (options.hover !== undefined) {
+              hover(options.hover, { preventEvent: true });
+            }
+
+            if (options.select !== undefined) {
+              select(options.select, { preventEvent: true });
+            }
+
+            if (options.filter !== undefined) {
+              filter(options.filter, { preventEvent: true });
+            }
 
             if (drawPointConnections) {
               setPointConnections(points).then(() => {
@@ -2907,6 +2920,7 @@ const createScatterplot = (
     if (property === 'opacityInactiveMax') return opacityInactiveMax;
     if (property === 'opacityInactiveScale') return opacityInactiveScale;
     if (property === 'points') return searchIndex.points;
+    if (property === 'hoveredPoint') return hoveredPoint;
     if (property === 'selectedPoints') return [...selectedPoints];
     if (property === 'filteredPoints')
       return isPointsFiltered

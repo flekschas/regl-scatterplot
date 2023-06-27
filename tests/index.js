@@ -2415,6 +2415,50 @@ test(
 );
 
 test(
+  'test hover, select, and filter options of `draw()`',
+  catchError(async (t) => {
+    const scatterplot = createScatterplot({
+      canvas: createCanvas(200, 200),
+      width: 200,
+      height: 200,
+    });
+
+    const points = [
+      [0, 0],
+      [1, 1],
+      [1, -1],
+      [-1, -1],
+      [-1, 1],
+    ];
+
+    await scatterplot.draw(points, {
+      hover: 0,
+      select: [1, 2],
+      filter: [0, 2, 3],
+    });
+
+    await wait(50);
+
+    t.equal(
+      scatterplot.get('hoveredPoint'),
+      0,
+      'should be hovering the first point'
+    );
+
+    t.equal(
+      scatterplot.get('selectedPoints'),
+      [2],
+      'should have selected the third point'
+    );
+
+    t.ok(
+      isSameElements(scatterplot.get('filteredPoints'), [0, 2, 3]),
+      'should have filtered down to points 0, 2, and 3'
+    );
+  })
+);
+
+test(
   'zooming with transition',
   catchError(async (t) => {
     const scatterplot = createScatterplot({ canvas: createCanvas() });

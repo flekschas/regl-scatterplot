@@ -148,6 +148,7 @@ export type Properties = {
   isDestroyed: boolean;
   isPointsDrawn: boolean;
   isPointsFiltered: boolean;
+  hoveredPoint: number;
   filteredPoints: number[];
   selectedPoints: number[];
 } & Settable;
@@ -159,6 +160,9 @@ export interface ScatterplotMethodOptions {
     transitionDuration: number;
     transitionEasing: (t: number) => number;
     preventFilterReset: boolean;
+    hover: number;
+    select: number | number[];
+    focus: number | number[];
   }>;
   hover: Partial<{
     showReticleOnce: boolean;
