@@ -1,10 +1,11 @@
 ## 1.7.0
 
 - Add `preventFilterReset` option to `draw()` to allow re-drawing while keeping the current point filter. [#136](https://github.com/flekschas/regl-scatterplot/pull/136)
-- Add ability to hover, select, and filter points immediately when calling `draw(points, { hover: 0, select: [1, 2], filter: [0, 2, 3] })`. Immediately hovering, selecting, or filtering points avoids a filter that can occur when first drawing points and then hovering, selecting, or filtering points subsequently.
+- Add ability to hover, select, and filter points immediately when calling `draw(points, { hover: 0, select: [1, 2], filter: [0, 2, 3] })`. Immediately hovering, selecting, or filtering points avoids a filter that can occur when first drawing points and then hovering, selecting, or filtering points subsequently. [#142](https://github.com/flekschas/regl-scatterplot/pull/142)
 - Add missing `filteredPoints` type definition. [#139](https://github.com/flekschas/regl-scatterplot/pull/139)
 - Add missing `selectedPoints` type definition.
 - Fix drawing a single connecting line between points [#125](https://github.com/flekschas/regl-scatterplot/issues/125)
+- Fix drawing a single point connection [#141](https://github.com/flekschas/regl-scatterplot/pull/141)
 - Fix `draw()`'s promise resolution when `showPointConnections` is `true`. The promise is now resolved after both, the points and point connections, have been drawn.
 - Set minimum Node version to `16` and minimum npm version to `7`. You might still be able to use `regl-scatterplot` with older version but it's not advised.
 
