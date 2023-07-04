@@ -45,6 +45,8 @@ import {
   DEFAULT_IMAGE_LOAD_TIMEOUT,
   IMAGE_LOAD_ERROR,
   ERROR_POINTS_NOT_DRAWN,
+  CONTINUOUS,
+  CATEGORICAL,
 } from '../src/constants';
 
 import { toRgba, isNormFloatArray, isValidBBox } from '../src/utils';
@@ -1223,6 +1225,159 @@ test(
       0,
       'draw call should have been canceled due to the destroy call'
     );
+  })
+);
+
+test(
+  'test that draw() recognized the correct data type of z and w',
+  catchError(async (t) => {
+    const canvas = createCanvas(200, 200);
+    const scatterplot = createScatterplot({ canvas, width: 200, height: 200 });
+
+    await scatterplot.draw([[0, 0]]);
+
+    t.equal(
+      scatterplot.get('zDataType'),
+      CATEGORICAL,
+      `Default z data type should be ${CATEGORICAL}`
+    );
+
+    t.equal(
+      scatterplot.get('wDataType'),
+      CATEGORICAL,
+      `Default w data type should be ${CATEGORICAL}`
+    );
+
+    await scatterplot.draw([[0, 0, 1, 1]]);
+
+    t.equal(
+      scatterplot.get('zDataType'),
+      CATEGORICAL,
+      `Z data type should be ${CATEGORICAL} as there's only one value for z and it's an integer`
+    );
+
+    t.equal(
+      scatterplot.get('wDataType'),
+      CATEGORICAL,
+      `W data type should be ${CATEGORICAL} as there's only one value for w and it's an integer`
+    );
+
+    await scatterplot.draw([
+      [0, 0, 0, 0],
+      [0, 0, 1, 1],
+    ]);
+
+    t.equal(
+      scatterplot.get('zDataType'),
+      CATEGORICAL,
+      `Z data type should be ${CATEGORICAL} as the two z values are integers`
+    );
+
+    t.equal(
+      scatterplot.get('wDataType'),
+      CATEGORICAL,
+      `W data type should be ${CATEGORICAL} as the two w values are integers`
+    );
+
+    await scatterplot.draw([
+      [0, 0, 0, 0],
+      [0, 0, 1, 1],
+      [0, 0, 10, 10],
+    ]);
+
+    t.equal(
+      scatterplot.get('zDataType'),
+      CATEGORICAL,
+      `Z data type should be ${CATEGORICAL} as all z values are integers`
+    );
+
+    t.equal(
+      scatterplot.get('wDataType'),
+      CATEGORICAL,
+      `W data type should be ${CATEGORICAL} as all w values are integers`
+    );
+
+    await scatterplot.draw([[0, 0, 0.5, 0.5]]);
+
+    t.equal(
+      scatterplot.get('zDataType'),
+      CONTINUOUS,
+      `Z data type should be ${CONTINUOUS} as the z value is a float`
+    );
+
+    t.equal(
+      scatterplot.get('wDataType'),
+      CONTINUOUS,
+      `W data type should be ${CONTINUOUS} as the w value is a float`
+    );
+
+    await scatterplot.draw([
+      [0, 0, 0, 0],
+      [0, 0, 0.5, 0.5],
+      [0, 0, 1, 1],
+    ]);
+
+    t.equal(
+      scatterplot.get('zDataType'),
+      CONTINUOUS,
+      `Z data type should be ${CONTINUOUS} as one z value is a float`
+    );
+
+    t.equal(
+      scatterplot.get('wDataType'),
+      CONTINUOUS,
+      `W data type should be ${CONTINUOUS} as one w value is a float`
+    );
+
+    await scatterplot.draw(
+      [
+        [0, 0, 0, 0],
+        [0, 0, 1, 1],
+      ],
+      { zDataType: CONTINUOUS, wDataType: CONTINUOUS }
+    );
+
+    t.equal(
+      scatterplot.get('zDataType'),
+      CONTINUOUS,
+      `Z data type should be ${CONTINUOUS} as we manually specified the z data type`
+    );
+
+    t.equal(
+      scatterplot.get('wDataType'),
+      CONTINUOUS,
+      `W data type should be ${CONTINUOUS} as we manually specified the w data type`
+    );
+
+    await scatterplot.draw([[0, 0, 0.5, 1]]);
+
+    t.equal(
+      scatterplot.get('zDataType'),
+      CONTINUOUS,
+      `Z data type should be ${CONTINUOUS} as the z value is a float`
+    );
+
+    t.equal(
+      scatterplot.get('wDataType'),
+      CATEGORICAL,
+      `W data type should be ${CATEGORICAL} as the w value is an integer`
+    );
+
+    await scatterplot.draw([[0, 0, 1, 0.5]]);
+
+    t.equal(
+      scatterplot.get('zDataType'),
+      CATEGORICAL,
+      `Z data type should be ${CATEGORICAL} as the z value is an integer`
+    );
+
+    t.equal(
+      scatterplot.get('wDataType'),
+      CONTINUOUS,
+      `W data type should be ${CONTINUOUS} as the w value is a float`
+    );
+
+    scatterplot.destroy();
   })
 );
 

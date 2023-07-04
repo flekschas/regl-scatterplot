@@ -112,6 +112,9 @@ import {
   W_NAMES,
   DEFAULT_IMAGE_LOAD_TIMEOUT,
   ERROR_POINTS_NOT_DRAWN,
+  CONTINUOUS,
+  CATEGORICAL,
+  VALUE_ZW_DATA_TYPES,
 } from './constants';
 
 import {
@@ -460,8 +463,8 @@ const createScatterplot = (
   let isPointsDrawn = false;
   let isMouseOverCanvasChecked = false;
 
-  let maxValueZ = 0;
-  let maxValueW = 0;
+  let valueZDataType = CATEGORICAL;
+  let valueWDataType = CATEGORICAL;
 
   /** @type{number|undefined} */
   let hoveredPoint;
@@ -1292,10 +1295,10 @@ const createScatterplot = (
   const getEncodingDataType = (type) => {
     switch (type) {
       case 'valueZ':
-        return maxValueZ > 1 ? 'categorical' : 'continuous';
+        return valueZDataType;
 
       case 'valueW':
-        return maxValueW > 1 ? 'categorical' : 'continuous';
+        return valueWDataType;
 
       default:
         return null;
@@ -1304,10 +1307,10 @@ const createScatterplot = (
 
   const getEncodingValueToIdx = (type, rangeValues) => {
     switch (type) {
-      case 'continuous':
+      case CONTINUOUS:
         return (value) => Math.round(value * (rangeValues.length - 1));
 
-      case 'categorical':
+      case CATEGORICAL:
       default:
         return identity;
     }
@@ -1390,16 +1393,19 @@ const createScatterplot = (
   const getIsSizedByZ = () => +(sizeBy === 'valueZ');
   const getIsSizedByW = () => +(sizeBy === 'valueW');
   const getColorMultiplicator = () => {
-    if (colorBy === 'valueZ') return maxValueZ <= 1 ? pointColor.length - 1 : 1;
-    return maxValueW <= 1 ? pointColor.length - 1 : 1;
+    if (colorBy === 'valueZ')
+      return valueZDataType === CONTINUOUS ? pointColor.length - 1 : 1;
+    return valueWDataType === CONTINUOUS ? pointColor.length - 1 : 1;
   };
   const getOpacityMultiplicator = () => {
-    if (opacityBy === 'valueZ') return maxValueZ <= 1 ? opacity.length - 1 : 1;
-    return maxValueW <= 1 ? opacity.length - 1 : 1;
+    if (opacityBy === 'valueZ')
+      return valueZDataType === CONTINUOUS ? opacity.length - 1 : 1;
+    return valueWDataType === CONTINUOUS ? pointSize.length - 1 : 1;
   };
   const getSizeMultiplicator = () => {
-    if (sizeBy === 'valueZ') return maxValueZ <= 1 ? pointSize.length - 1 : 1;
-    return maxValueW <= 1 ? pointSize.length - 1 : 1;
+    if (sizeBy === 'valueZ')
+      return valueZDataType === CONTINUOUS ? pointSize.length - 1 : 1;
+    return valueWDataType === CONTINUOUS ? pointSize.length - 1 : 1;
   };
   const getOpacityDensity = (context) => {
     if (opacityBy !== 'density') return 1;
@@ -1696,23 +1702,43 @@ const createScatterplot = (
     return index;
   };
 
-  const createStateTexture = (newPoints) => {
+  const createStateTexture = (newPoints, dataTypes = {}) => {
     const numNewPoints = newPoints.length;
     stateTexRes = Math.max(2, Math.ceil(Math.sqrt(numNewPoints)));
     stateTexEps = 0.5 / stateTexRes;
     const data = new Float32Array(stateTexRes ** 2 * 4);
 
-    maxValueZ = 0;
-    maxValueW = 0;
+    let zIsInts = true;
+    let wIsInts = true;
 
+    let k = 0;
+    let z = 0;
+    let w = 0;
     for (let i = 0; i < numNewPoints; ++i) {
-      data[i * 4] = newPoints[i][0]; // x
-      data[i * 4 + 1] = newPoints[i][1]; // y
-      data[i * 4 + 2] = newPoints[i][2] || 0; // z: value 1
-      data[i * 4 + 3] = newPoints[i][3] || 0; // w: value 2
+      k = i * 4;
 
-      maxValueZ = Math.max(maxValueZ, data[i * 4 + 2]);
-      maxValueW = Math.max(maxValueW, data[i * 4 + 3]);
+      data[k] = newPoints[i][0]; // x
+      data[k + 1] = newPoints[i][1]; // y
+
+      z = newPoints[i][2] || 0;
+      w = newPoints[i][3] || 0;
+
+      data[k + 2] = z; // z: value 1
+      data[k + 3] = w; // w: value 2
+      zIsInts &&= Number.isInteger(z);
+      wIsInts &&= Number.isInteger(w);
+    }
+
+    if (dataTypes.z && VALUE_ZW_DATA_TYPES.includes(dataTypes.z)) {
+      valueZDataType = dataTypes.z;
+    } else {
+      valueZDataType = zIsInts ? CATEGORICAL : CONTINUOUS;
+    }
+
+    if (dataTypes.w && VALUE_ZW_DATA_TYPES.includes(dataTypes.w)) {
+      valueWDataType = dataTypes.w;
+    } else {
+      valueWDataType = wIsInts ? CATEGORICAL : CONTINUOUS;
     }
 
     return renderer.regl.texture({
@@ -1722,7 +1748,7 @@ const createScatterplot = (
     });
   };
 
-  const cachePoints = (newPoints) => {
+  const cachePoints = (newPoints, dataTypes = {}) => {
     if (!stateTex) return false;
 
     if (isTransitioning) {
@@ -1733,7 +1759,7 @@ const createScatterplot = (
       prevStateTex = stateTex;
     }
 
-    tmpStateTex = createStateTexture(newPoints);
+    tmpStateTex = createStateTexture(newPoints, dataTypes);
     tmpStateBuffer = renderer.regl.framebuffer({
       color: tmpStateTex,
       depth: false,
@@ -1758,14 +1784,14 @@ const createScatterplot = (
     }
   };
 
-  const setPoints = (newPoints) => {
+  const setPoints = (newPoints, dataTypes = {}) => {
     isPointsDrawn = false;
 
     numPoints = newPoints.length;
     numPointsInView = numPoints;
 
     if (stateTex) stateTex.destroy();
-    stateTex = createStateTexture(newPoints);
+    stateTex = createStateTexture(newPoints, dataTypes);
 
     normalPointsIndexBuffer({
       usage: 'static',
@@ -2296,10 +2322,15 @@ const createScatterplot = (
             hasPointConnections(points[0]) &&
             (showPointConnections || options.showPointConnectionsOnce);
 
+          const { zDataType, wDataType } = options;
+
           if (points) {
             if (options.transition) {
               if (points.length === numPoints) {
-                pointsCached = cachePoints(points);
+                pointsCached = cachePoints(points, {
+                  z: zDataType,
+                  w: wDataType,
+                });
               } else {
                 console.warn(
                   'Cannot transition! The number of points between the previous and current draw call must be identical.'
@@ -2307,7 +2338,7 @@ const createScatterplot = (
               }
             }
 
-            setPoints(points);
+            setPoints(points, { z: zDataType, w: wDataType });
 
             if (options.hover !== undefined) {
               hover(options.hover, { preventEvent: true });
@@ -2988,6 +3019,8 @@ const createScatterplot = (
     if (property === 'isDestroyed') return isDestroyed;
     if (property === 'isPointsDrawn') return isPointsDrawn;
     if (property === 'isPointsFiltered') return isPointsFiltered;
+    if (property === 'zDataType') return valueZDataType;
+    if (property === 'wDataType') return valueWDataType;
 
     return undefined;
   };

@@ -92,7 +92,9 @@ scatterplot.draw([
 ]);
 ```
 
-These two values can be visually encoded as the color, opacity, or the size. Values that range between [0, 1] are treated as continuous values. When the value range is in [0, >1] the data is treated as categorical data. In the example above, the first point value would be treated as categorical data and the second would be treated as continuous data.
+These two values can be visually encoded as the color, opacity, or the size. Integers are treated as categorical data and floats that range between [0, 1] are treated as continuous values. In the example above, the first point value would be treated as categorical data and the second would be treated as continuous data.
+
+In the edge case that you have continuous data but all data points are either `0` or `1` you can manually set the data type via the [`zDataType` and `wDatatype` draw options](#scatterplot.draw).
 
 To encode the two point values use the `colorBy`, `opacityBy`, and `sizeBy` property as follows:
 
@@ -303,6 +305,8 @@ Note that repeatedly calling this method without specifying `points` will not cl
   - `hover` [default: `undefined`]: a shortcut for [`hover()`](#scatterplot.hover). This option allows to programmatically hover a point by specifying a point index
   - `select` [default: `undefined`]: a shortcut for [`select()`](#scatterplot.select). This option allows to programmatically select points by specifying a list of point indices
   - `filter` [default: `undefined`]: a shortcut for [`filter()`](#scatterplot.filter). This option allows to programmatically filter points by specifying a list of point indices
+  - `zDataType` [default: `undefined`]: This option allows to manually set the data type of the z/valueA value to either `continuous` or `categorical`. By default the data type is [determined automatically](#color-opacity-and-size-encoding).
+  - `wDataType` [default: `undefined`]: This option allows to manually set the data type of the w/valyeB value to either `continuous` or `categorical`. By default the data type is [determined automatically](#color-opacity-and-size-encoding).
 
 **Returns:** a Promise object that resolves once the points have been drawn or transitioned.
 

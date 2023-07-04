@@ -15,6 +15,8 @@ type KeyMap = Record<'alt' | 'cmd' | 'ctrl' | 'meta' | 'shift', KeyAction>;
 
 type MouseMode = 'panZoom' | 'lasso' | 'rotate';
 
+type ZWDataType = 'continuous' | 'categorical';
+
 type Camera2D = any; // Needs to be typed at some point
 type Scale = import('d3-scale').ScaleContinuousNumeric<number, number>;
 
@@ -163,6 +165,8 @@ export interface ScatterplotMethodOptions {
     hover: number;
     select: number | number[];
     focus: number | number[];
+    zDataType: ZWDataType;
+    wDataType: ZWDataType;
   }>;
   hover: Partial<{
     showReticleOnce: boolean;

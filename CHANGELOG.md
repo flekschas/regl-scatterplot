@@ -1,3 +1,7 @@
+## 1.7.1
+
+- Improve data type inference of the z/w values and allow to explicitely specify their data type via `draw(newPoints, { zDataType: 'categorical', wDataType: 'continuous' })`
+
 ## 1.7.0
 
 - Add `preventFilterReset` option to `draw()` to allow re-drawing while keeping the current point filter. [#136](https://github.com/flekschas/regl-scatterplot/pull/136)

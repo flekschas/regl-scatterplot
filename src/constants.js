@@ -49,6 +49,10 @@ export const EASING_FNS = {
 };
 export const DEFAULT_EASING = cubicInOut;
 
+export const CONTINUOUS = 'continuous';
+export const CATEGORICAL = 'categorical';
+export const VALUE_ZW_DATA_TYPES = [CONTINUOUS, CATEGORICAL];
+
 // Default lasso
 export const LASSO_CLEAR_ON_DESELECT = 'deselect';
 export const LASSO_CLEAR_ON_END = 'lassoEnd';
