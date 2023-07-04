@@ -15,6 +15,8 @@ type KeyMap = Record<'alt' | 'cmd' | 'ctrl' | 'meta' | 'shift', KeyAction>;
 
 type MouseMode = 'panZoom' | 'lasso' | 'rotate';
 
+type ZWDataType = 'continuous' | 'categorical';
+
 type Camera2D = any; // Needs to be typed at some point
 type Scale = import('d3-scale').ScaleContinuousNumeric<number, number>;
 
@@ -148,6 +150,9 @@ export type Properties = {
   isDestroyed: boolean;
   isPointsDrawn: boolean;
   isPointsFiltered: boolean;
+  hoveredPoint: number;
+  filteredPoints: number[];
+  selectedPoints: number[];
 } & Settable;
 
 // Options for plot.{draw, select, hover}
@@ -156,6 +161,12 @@ export interface ScatterplotMethodOptions {
     transition: boolean;
     transitionDuration: number;
     transitionEasing: (t: number) => number;
+    preventFilterReset: boolean;
+    hover: number;
+    select: number | number[];
+    focus: number | number[];
+    zDataType: ZWDataType;
+    wDataType: ZWDataType;
   }>;
   hover: Partial<{
     showReticleOnce: boolean;

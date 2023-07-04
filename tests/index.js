@@ -45,6 +45,8 @@ import {
   DEFAULT_IMAGE_LOAD_TIMEOUT,
   IMAGE_LOAD_ERROR,
   ERROR_POINTS_NOT_DRAWN,
+  CONTINUOUS,
+  CATEGORICAL,
 } from '../src/constants';
 
 import { toRgba, isNormFloatArray, isValidBBox } from '../src/utils';
@@ -1226,6 +1228,196 @@ test(
   })
 );
 
+test(
+  'test that draw() recognized the correct data type of z and w',
+  catchError(async (t) => {
+    const canvas = createCanvas(200, 200);
+    const scatterplot = createScatterplot({ canvas, width: 200, height: 200 });
+
+    await scatterplot.draw([[0, 0]]);
+
+    t.equal(
+      scatterplot.get('zDataType'),
+      CATEGORICAL,
+      `Default z data type should be ${CATEGORICAL}`
+    );
+
+    t.equal(
+      scatterplot.get('wDataType'),
+      CATEGORICAL,
+      `Default w data type should be ${CATEGORICAL}`
+    );
+
+    await scatterplot.draw([[0, 0, 1, 1]]);
+
+    t.equal(
+      scatterplot.get('zDataType'),
+      CATEGORICAL,
+      `Z data type should be ${CATEGORICAL} as there's only one value for z and it's an integer`
+    );
+
+    t.equal(
+      scatterplot.get('wDataType'),
+      CATEGORICAL,
+      `W data type should be ${CATEGORICAL} as there's only one value for w and it's an integer`
+    );
+
+    await scatterplot.draw([
+      [0, 0, 0, 0],
+      [0, 0, 1, 1],
+    ]);
+
+    t.equal(
+      scatterplot.get('zDataType'),
+      CATEGORICAL,
+      `Z data type should be ${CATEGORICAL} as the two z values are integers`
+    );
+
+    t.equal(
+      scatterplot.get('wDataType'),
+      CATEGORICAL,
+      `W data type should be ${CATEGORICAL} as the two w values are integers`
+    );
+
+    await scatterplot.draw([
+      [0, 0, 0, 0],
+      [0, 0, 1, 1],
+      [0, 0, 10, 10],
+    ]);
+
+    t.equal(
+      scatterplot.get('zDataType'),
+      CATEGORICAL,
+      `Z data type should be ${CATEGORICAL} as all z values are integers`
+    );
+
+    t.equal(
+      scatterplot.get('wDataType'),
+      CATEGORICAL,
+      `W data type should be ${CATEGORICAL} as all w values are integers`
+    );
+
+    await scatterplot.draw([[0, 0, 0.5, 0.5]]);
+
+    t.equal(
+      scatterplot.get('zDataType'),
+      CONTINUOUS,
+      `Z data type should be ${CONTINUOUS} as the z value is a float`
+    );
+
+    t.equal(
+      scatterplot.get('wDataType'),
+      CONTINUOUS,
+      `W data type should be ${CONTINUOUS} as the w value is a float`
+    );
+
+    await scatterplot.draw([
+      [0, 0, 0, 0],
+      [0, 0, 0.5, 0.5],
+      [0, 0, 1, 1],
+    ]);
+
+    t.equal(
+      scatterplot.get('zDataType'),
+      CONTINUOUS,
+      `Z data type should be ${CONTINUOUS} as one z value is a float`
+    );
+
+    t.equal(
+      scatterplot.get('wDataType'),
+      CONTINUOUS,
+      `W data type should be ${CONTINUOUS} as one w value is a float`
+    );
+
+    await scatterplot.draw(
+      [
+        [0, 0, 0, 0],
+        [0, 0, 1, 1],
+      ],
+      { zDataType: CONTINUOUS, wDataType: CONTINUOUS }
+    );
+
+    t.equal(
+      scatterplot.get('zDataType'),
+      CONTINUOUS,
+      `Z data type should be ${CONTINUOUS} as we manually specified the z data type`
+    );
+
+    t.equal(
+      scatterplot.get('wDataType'),
+      CONTINUOUS,
+      `W data type should be ${CONTINUOUS} as we manually specified the w data type`
+    );
+
+    await scatterplot.draw([[0, 0, 0.5, 1]]);
+
+    t.equal(
+      scatterplot.get('zDataType'),
+      CONTINUOUS,
+      `Z data type should be ${CONTINUOUS} as the z value is a float`
+    );
+
+    t.equal(
+      scatterplot.get('wDataType'),
+      CATEGORICAL,
+      `W data type should be ${CATEGORICAL} as the w value is an integer`
+    );
+
+    await scatterplot.draw([[0, 0, 1, 0.5]]);
+
+    t.equal(
+      scatterplot.get('zDataType'),
+      CATEGORICAL,
+      `Z data type should be ${CATEGORICAL} as the z value is an integer`
+    );
+
+    t.equal(
+      scatterplot.get('wDataType'),
+      CONTINUOUS,
+      `W data type should be ${CONTINUOUS} as the w value is a float`
+    );
+
+    scatterplot.destroy();
+  })
+);
+
+test(
+  'test drawing point connections via `showLineConnections`',
+  catchError(async (t) => {
+    const scatterplot = createScatterplot({
+      canvas: createCanvas(200, 200),
+      width: 200,
+      height: 200,
+      showPointConnections: true,
+    });
+
+    let numConnectionsDraws = 0;
+    scatterplot.subscribe('pointConnectionsDraw', () => {
+      ++numConnectionsDraws;
+    });
+
+    await scatterplot.draw(
+      new Array(10)
+        .fill()
+        .map((_, i) => [-1 + (i / 6) * 2, -1 + Math.random() * 2, i, 1, 0])
+    );
+    await wait(0);
+
+    t.equal(numConnectionsDraws, 1, 'should have drawn the connections once');
+
+    await scatterplot.draw(
+      new Array(10)
+        .fill()
+        .map((e, i) => [-1 + (i / 6) * 2, -1 + Math.random() * 2, i, 1, i % 5])
+    );
+    await wait(0);
+
+    t.equal(numConnectionsDraws, 2, 'should have drawn the connections once');
+
+    scatterplot.destroy();
+  })
+);
+
 test('tests involving mouse events', async (t2) => {
   await t2.test(
     'draw(), clear(), publish("select")',
@@ -1949,6 +2141,66 @@ test(
 );
 
 test(
+  'draw() with preventFilterReset',
+  catchError(async (t) => {
+    const scatterplot = createScatterplot({ canvas: createCanvas() });
+
+    const filteredPoints = [0, 1, 2];
+
+    const points = [
+      [0, 0],
+      [1, 1],
+      [1, -1],
+      [-1, -1],
+      [-1, 1],
+    ];
+
+    await scatterplot.draw(points);
+
+    await scatterplot.filter(filteredPoints);
+    await wait(0);
+
+    t.ok(
+      isSameElements(scatterplot.get('filteredPoints'), filteredPoints),
+      `only points ${filteredPoints} should be filtered in`
+    );
+
+    const updatedPoints = points.map(([x, y]) => [x + 1, y + 1]);
+
+    await scatterplot.draw(updatedPoints, { preventFilterReset: true });
+
+    t.equal(
+      scatterplot.get('isPointsFiltered'),
+      true,
+      '`isPointsFiltered` should be `true` as draw has been invoked with preventFilterReset'
+    );
+
+    t.ok(
+      isSameElements(scatterplot.get('filteredPoints'), filteredPoints),
+      'the filtered points should be the same as before'
+    );
+
+    await scatterplot.draw([...updatedPoints, [0.5, 0.5]], {
+      preventFilterReset: true,
+    });
+
+    t.equal(
+      scatterplot.get('isPointsFiltered'),
+      false,
+      '`isPointsFiltered` should be `false` as draw has been invoked with different number of points'
+    );
+
+    t.equal(
+      scatterplot.get('filteredPoints').length,
+      updatedPoints.length + 1,
+      'the filtered points should be reset as draw has been invoked with different number of points'
+    );
+
+    scatterplot.destroy();
+  })
+);
+
+test(
   'select()',
   catchError(async (t) => {
     const scatterplot = createScatterplot({ canvas: createCanvas() });
@@ -2314,6 +2566,50 @@ test(
     );
 
     scatterplot.destroy();
+  })
+);
+
+test(
+  'test hover, select, and filter options of `draw()`',
+  catchError(async (t) => {
+    const scatterplot = createScatterplot({
+      canvas: createCanvas(200, 200),
+      width: 200,
+      height: 200,
+    });
+
+    const points = [
+      [0, 0],
+      [1, 1],
+      [1, -1],
+      [-1, -1],
+      [-1, 1],
+    ];
+
+    await scatterplot.draw(points, {
+      hover: 0,
+      select: [1, 2],
+      filter: [0, 2, 3],
+    });
+
+    await wait(50);
+
+    t.equal(
+      scatterplot.get('hoveredPoint'),
+      0,
+      'should be hovering the first point'
+    );
+
+    t.equal(
+      scatterplot.get('selectedPoints'),
+      [2],
+      'should have selected the third point'
+    );
+
+    t.ok(
+      isSameElements(scatterplot.get('filteredPoints'), [0, 2, 3]),
+      'should have filtered down to points 0, 2, and 3'
+    );
   })
 );
 

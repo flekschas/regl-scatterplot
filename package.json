@@ -1,6 +1,6 @@
 {
   "name": "regl-scatterplot",
-  "version": "1.6.9",
+  "version": "1.7.1",
   "description": "A WebGL-Powered Scalable Interactive Scatter Plot Library",
   "author": "Fritz Lekschas",
   "keywords": [
@@ -34,39 +34,39 @@
     "watch": "rollup -cw"
   },
   "dependencies": {
-    "@flekschas/utils": "^0.30.1",
+    "@flekschas/utils": "^0.31.0",
     "dom-2d-camera": "~2.2.5",
     "gl-matrix": "~3.4.3",
     "kdbush": "~4.0.2",
     "lodash-es": "~4.17.21",
-    "pub-sub-es": "~2.0.1",
+    "pub-sub-es": "~2.0.2",
     "regl": "~2.1.0",
     "regl-line": "~1.0.0"
   },
   "peerDependencies": {
-    "pub-sub-es": "~2.0.1",
+    "pub-sub-es": "~2.0.2",
     "regl": "~2.1.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.21.5",
-    "@babel/plugin-transform-regenerator": "^7.21.5",
+    "@babel/core": "^7.22.5",
+    "@babel/plugin-transform-regenerator": "^7.22.5",
     "@babel/polyfill": "^7.12.1",
-    "@babel/preset-env": "^7.21.5",
+    "@babel/preset-env": "^7.22.5",
     "@rollup/plugin-babel": "^6.0.3",
-    "@rollup/plugin-commonjs": "^24.1.0",
+    "@rollup/plugin-commonjs": "^25.0.2",
     "@rollup/plugin-json": "^6.0.0",
-    "@rollup/plugin-node-resolve": "^15.0.2",
-    "@rollup/plugin-terser": "^0.4.1",
-    "@types/node": "^18.16.3",
-    "acorn": "^8.8.2",
-    "apache-arrow": "^11.0.0",
+    "@rollup/plugin-node-resolve": "^15.1.0",
+    "@rollup/plugin-terser": "^0.4.3",
+    "@types/node": "^20.3.1",
+    "acorn": "^8.9.0",
+    "apache-arrow": "^12.0.1",
     "browser-env": "^3.3.0",
     "d3-axis": "^3.0.0",
     "d3-random": "^3.0.1",
     "d3-scale": "^4.0.2",
     "d3-selection": "^3.0.0",
     "electron": "^24.1.3",
-    "eslint": "^8.39.0",
+    "eslint": "^8.43.0",
     "eslint-config-airbnb": "^19.0.4",
     "eslint-config-prettier": "^8.8.0",
     "eslint-plugin-import": "^2.27.5",
@@ -82,10 +82,14 @@
     "rollup-plugin-filesize": "^10.0.0",
     "tap-spec": "^5.0.0",
     "tape-run": "^10.0.0",
-    "typescript": "~4.9.5",
-    "vite": "^4.3.3",
+    "typescript": "~5.1.3",
+    "vite": "^4.3.9",
     "vite-plugin-virtual-html-template": "^1.1.0",
     "zora": "^4.1.0"
+  },
+  "engines": {
+    "npm": ">=7.0.0",
+    "node": ">=16.0.0"
   },
   "homepage": "https://github.com/flekschas/regl-scatterplot",
   "repository": {

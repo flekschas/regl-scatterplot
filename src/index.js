@@ -112,6 +112,9 @@ import {
   W_NAMES,
   DEFAULT_IMAGE_LOAD_TIMEOUT,
   ERROR_POINTS_NOT_DRAWN,
+  CONTINUOUS,
+  CATEGORICAL,
+  VALUE_ZW_DATA_TYPES,
 } from './constants';
 
 import {
@@ -372,10 +375,14 @@ const createScatterplot = (
   let mouseDownTime = null;
   let mouseDownPosition = [0, 0];
   let mouseDownTimeout = -1;
+  /** @type{number[]} */
   let selectedPoints = [];
+  /** @type{Set<number>} */
   const selectedPointsSet = new Set();
+  /** @type{Set<number>} */
   const selectedPointsConnectionSet = new Set();
   let isPointsFiltered = false;
+  /** @type{Set<number>} */
   const filteredPointsSet = new Set();
   let points = [];
   let numPoints = 0;
@@ -555,9 +562,10 @@ const createScatterplot = (
   let isPointsDrawn = false;
   let isMouseOverCanvasChecked = false;
 
-  let maxValueZ = 0;
-  let maxValueW = 0;
+  let valueZDataType = CATEGORICAL;
+  let valueWDataType = CATEGORICAL;
 
+  /** @type{number|undefined} */
   let hoveredPoint;
   let isMouseInCanvas = false;
 
@@ -846,7 +854,7 @@ const createScatterplot = (
   };
 
   /**
-   * @param {number | number[]} point
+   * @param {number} point
    * @param {import('./types').ScatterplotMethodOptions['hover']} options
    */
   const hover = (
@@ -1387,10 +1395,10 @@ const createScatterplot = (
   const getEncodingDataType = (type) => {
     switch (type) {
       case 'valueZ':
-        return maxValueZ > 1 ? 'categorical' : 'continuous';
+        return valueZDataType;
 
       case 'valueW':
-        return maxValueW > 1 ? 'categorical' : 'continuous';
+        return valueWDataType;
 
       default:
         return null;
@@ -1399,10 +1407,10 @@ const createScatterplot = (
 
   const getEncodingValueToIdx = (type, rangeValues) => {
     switch (type) {
-      case 'continuous':
+      case CONTINUOUS:
         return (value) => Math.round(value * (rangeValues.length - 1));
 
-      case 'categorical':
+      case CATEGORICAL:
       default:
         return identity;
     }
@@ -1491,16 +1499,19 @@ const createScatterplot = (
   const getIsSizedByW = () => +(sizeBy === 'valueW');
   const getIsSizeByDensity = () => +(sizeBy === 'density');
   const getColorMultiplicator = () => {
-    if (colorBy === 'valueZ') return maxValueZ <= 1 ? pointColor.length - 1 : 1;
-    return maxValueW <= 1 ? pointColor.length - 1 : 1;
+    if (colorBy === 'valueZ')
+      return valueZDataType === CONTINUOUS ? pointColor.length - 1 : 1;
+    return valueWDataType === CONTINUOUS ? pointColor.length - 1 : 1;
   };
   const getOpacityMultiplicator = () => {
-    if (opacityBy === 'valueZ') return maxValueZ <= 1 ? opacity.length - 1 : 1;
-    return maxValueW <= 1 ? opacity.length - 1 : 1;
+    if (opacityBy === 'valueZ')
+      return valueZDataType === CONTINUOUS ? opacity.length - 1 : 1;
+    return valueWDataType === CONTINUOUS ? pointSize.length - 1 : 1;
   };
   const getSizeMultiplicator = () => {
-    if (sizeBy === 'valueZ') return maxValueZ <= 1 ? pointSize.length - 1 : 1;
-    return maxValueW <= 1 ? pointSize.length - 1 : 1;
+    if (sizeBy === 'valueZ')
+      return valueZDataType === CONTINUOUS ? pointSize.length - 1 : 1;
+    return valueWDataType === CONTINUOUS ? pointSize.length - 1 : 1;
   };
   const getOpacityDensity = () => densityBasedOpacity;
   const getPointSizeDensity = () => densityBasedPointSize;
@@ -1841,23 +1852,43 @@ const createScatterplot = (
     return index;
   };
 
-  const createStateTexture = (newPoints) => {
+  const createStateTexture = (newPoints, dataTypes = {}) => {
     const numNewPoints = newPoints.length;
     stateTexRes = Math.max(2, Math.ceil(Math.sqrt(numNewPoints)));
     stateTexEps = 0.5 / stateTexRes;
     const data = new Float32Array(stateTexRes ** 2 * 4);
 
-    maxValueZ = 0;
-    maxValueW = 0;
+    let zIsInts = true;
+    let wIsInts = true;
 
+    let k = 0;
+    let z = 0;
+    let w = 0;
     for (let i = 0; i < numNewPoints; ++i) {
-      data[i * 4] = newPoints[i][0]; // x
-      data[i * 4 + 1] = newPoints[i][1]; // y
-      data[i * 4 + 2] = newPoints[i][2] || 0; // z: value 1
-      data[i * 4 + 3] = newPoints[i][3] || 0; // w: value 2
+      k = i * 4;
 
-      maxValueZ = Math.max(maxValueZ, data[i * 4 + 2]);
-      maxValueW = Math.max(maxValueW, data[i * 4 + 3]);
+      data[k] = newPoints[i][0]; // x
+      data[k + 1] = newPoints[i][1]; // y
+
+      z = newPoints[i][2] || 0;
+      w = newPoints[i][3] || 0;
+
+      data[k + 2] = z; // z: value 1
+      data[k + 3] = w; // w: value 2
+      zIsInts &&= Number.isInteger(z);
+      wIsInts &&= Number.isInteger(w);
+    }
+
+    if (dataTypes.z && VALUE_ZW_DATA_TYPES.includes(dataTypes.z)) {
+      valueZDataType = dataTypes.z;
+    } else {
+      valueZDataType = zIsInts ? CATEGORICAL : CONTINUOUS;
+    }
+
+    if (dataTypes.w && VALUE_ZW_DATA_TYPES.includes(dataTypes.w)) {
+      valueWDataType = dataTypes.w;
+    } else {
+      valueWDataType = wIsInts ? CATEGORICAL : CONTINUOUS;
     }
 
     return renderer.regl.texture({
@@ -1867,7 +1898,7 @@ const createScatterplot = (
     });
   };
 
-  const cachePoints = (newPoints) => {
+  const cachePoints = (newPoints, dataTypes = {}) => {
     if (!stateTex) return false;
 
     if (isTransitioning) {
@@ -1878,7 +1909,7 @@ const createScatterplot = (
       prevStateTex = stateTex;
     }
 
-    tmpStateTex = createStateTexture(newPoints);
+    tmpStateTex = createStateTexture(newPoints, dataTypes);
     tmpStateBuffer = renderer.regl.framebuffer({
       color: tmpStateTex,
       depth: false,
@@ -1903,14 +1934,14 @@ const createScatterplot = (
     }
   };
 
-  const setPoints = (newPoints) => {
+  const setPoints = (newPoints, dataTypes = {}) => {
     isPointsDrawn = false;
 
     numPoints = newPoints.length;
     numPointsInView = numPoints;
 
     if (stateTex) stateTex.destroy();
-    stateTex = createStateTexture(newPoints);
+    stateTex = createStateTexture(newPoints, dataTypes);
 
     normalPointsIndexBuffer({
       usage: 'static',
@@ -2123,11 +2154,16 @@ const createScatterplot = (
         }).then((curvePoints) => {
           setPointConnectionMap(curvePoints);
           const curvePointValues = Object.values(curvePoints);
-          pointConnections.setPoints(curvePointValues, {
-            colorIndices: getPointConnectionColorIndices(curvePointValues),
-            opacities: getPointConnectionOpacities(curvePointValues),
-            widths: getPointConnectionWidths(curvePointValues),
-          });
+          pointConnections.setPoints(
+            curvePointValues.length === 1
+              ? curvePointValues[0]
+              : curvePointValues,
+            {
+              colorIndices: getPointConnectionColorIndices(curvePointValues),
+              opacities: getPointConnectionOpacities(curvePointValues),
+              widths: getPointConnectionWidths(curvePointValues),
+            }
+          );
           computingPointConnectionCurves = false;
           resolve();
         });
@@ -2208,7 +2244,7 @@ const createScatterplot = (
     select(filteredSelectedPoints, { preventEvent });
 
     // Unset any potentially hovered point
-    hover(-1, { preventEvent });
+    if (!filteredPointsSet.has(hoveredPoint)) hover(-1, { preventEvent });
 
     return new Promise((resolve) => {
       const finish = () => {
@@ -2424,28 +2460,50 @@ const createScatterplot = (
             return;
           }
 
-          // Reset filter
-          isPointsFiltered = false;
-          filteredPointsSet.clear();
-
           let pointsCached = false;
-          if (newArrayOrientedPoints) {
+
+          if (!options.preventFilterReset || points?.length !== numPoints) {
+            isPointsFiltered = false;
+            filteredPointsSet.clear();
+          }
+
+          const drawPointConnections =
+            points &&
+            hasPointConnections(points[0]) &&
+            (showPointConnections || options.showPointConnectionsOnce);
+
+          const { zDataType, wDataType } = options;
+
+          if (points) {
             if (options.transition) {
-              if (newArrayOrientedPoints.length === numPoints) {
-                pointsCached = cachePoints(newArrayOrientedPoints);
+              if (points.length === numPoints) {
+                pointsCached = cachePoints(points, {
+                  z: zDataType,
+                  w: wDataType,
+                });
               } else {
                 console.warn(
                   'Cannot transition! The number of points between the previous and current draw call must be identical.'
                 );
               }
             }
-            setPoints(newArrayOrientedPoints);
-            if (
-              showPointConnections ||
-              (options.showPointConnectionsOnce &&
-                hasPointConnections(newArrayOrientedPoints[0]))
-            ) {
-              setPointConnections(newArrayOrientedPoints).then(() => {
+
+            setPoints(points, { z: zDataType, w: wDataType });
+
+            if (options.hover !== undefined) {
+              hover(options.hover, { preventEvent: true });
+            }
+
+            if (options.select !== undefined) {
+              select(options.select, { preventEvent: true });
+            }
+
+            if (options.filter !== undefined) {
+              filter(options.filter, { preventEvent: true });
+            }
+
+            if (drawPointConnections) {
+              setPointConnections(points).then(() => {
                 pubSub.publish('pointConnectionsDraw');
                 draw = true;
                 drawReticleOnce = options.showReticleOnce;
@@ -2454,24 +2512,57 @@ const createScatterplot = (
           }
 
           if (options.transition && pointsCached) {
-            pubSub.subscribe(
-              'transitionEnd',
-              () => {
-                // Point connects cannot be transitioned yet so we hide them during
-                // the transition. Hence, we need to make sure we call `draw()` once
-                // the transition has ended.
-                draw = true;
-                drawReticleOnce = options.showReticleOnce;
-                resolve();
-              },
-              1
-            );
+            if (drawPointConnections) {
+              Promise.all([
+                new Promise((resolveTransition) => {
+                  pubSub.subscribe(
+                    'transitionEnd',
+                    () => {
+                      // Point connects cannot be transitioned yet so we hide them during
+                      // the transition. Hence, we need to make sure we call `draw()` once
+                      // the transition has ended.
+                      draw = true;
+                      drawReticleOnce = options.showReticleOnce;
+                      resolveTransition();
+                    },
+                    1
+                  );
+                }),
+                new Promise((resolveDraw) => {
+                  pubSub.subscribe('pointConnectionsDraw', resolveDraw, 1);
+                }),
+              ]).then(resolve);
+            } else {
+              pubSub.subscribe(
+                'transitionEnd',
+                () => {
+                  // Point connects cannot be transitioned yet so we hide them during
+                  // the transition. Hence, we need to make sure we call `draw()` once
+                  // the transition has ended.
+                  draw = true;
+                  drawReticleOnce = options.showReticleOnce;
+                  resolve();
+                },
+                1
+              );
+            }
             startTransition({
               duration: options.transitionDuration,
               easing: options.transitionEasing,
             });
           } else {
-            pubSub.subscribe('draw', resolve, 1);
+            if (drawPointConnections) {
+              Promise.all([
+                new Promise((resolveDraw) => {
+                  pubSub.subscribe('draw', resolveDraw, 1);
+                }),
+                new Promise((resolveDraw) => {
+                  pubSub.subscribe('pointConnectionsDraw', resolveDraw, 1);
+                }),
+              ]).then(resolve);
+            } else {
+              pubSub.subscribe('draw', resolve, 1);
+            }
             draw = true;
             drawReticleOnce = options.showReticleOnce;
           }
@@ -3011,6 +3102,7 @@ const createScatterplot = (
     if (property === 'opacityInactiveMax') return opacityInactiveMax;
     if (property === 'opacityInactiveScale') return opacityInactiveScale;
     if (property === 'points') return points;
+    if (property === 'hoveredPoint') return hoveredPoint;
     if (property === 'selectedPoints') return [...selectedPoints];
     if (property === 'filteredPoints')
       return isPointsFiltered
@@ -3078,6 +3170,8 @@ const createScatterplot = (
     if (property === 'isDestroyed') return isDestroyed;
     if (property === 'isPointsDrawn') return isPointsDrawn;
     if (property === 'isPointsFiltered') return isPointsFiltered;
+    if (property === 'zDataType') return valueZDataType;
+    if (property === 'wDataType') return valueWDataType;
 
     return undefined;
   };
@@ -3611,6 +3705,7 @@ const createScatterplot = (
     canvas.removeEventListener('mouseleave', mouseLeaveCanvasHandler, false);
     canvas.removeEventListener('click', mouseClickHandler, false);
     canvas.removeEventListener('dblclick', mouseDblClickHandler, false);
+    canvas.removeEventListener('wheel', wheelHandler, false);
     if (canvasObserver) {
       canvasObserver.disconnect();
     } else {
@@ -3622,6 +3717,7 @@ const createScatterplot = (
     camera.dispose();
     camera = undefined;
     lasso.destroy();
+    lassoManager.destroy();
     pointConnections.destroy();
     reticleHLine.destroy();
     reticleVLine.destroy();
