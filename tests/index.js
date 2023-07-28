@@ -2738,6 +2738,62 @@ test(
 );
 
 test(
+  'getScreenPosition()',
+  catchError(async (t) => {
+    const scatterplot = createScatterplot({
+      canvas: createCanvas(100, 100),
+      width: 100,
+      height: 100,
+    });
+
+    try {
+      scatterplot.getScreenPosition(0);
+      t.fail('getScreenPosition() should have thrown an error');
+    } catch (e) {
+      t.equal(e.message, ERROR_POINTS_NOT_DRAWN);
+    }
+
+    await scatterplot.draw([
+      [-1, -1],
+      [0, 0],
+      [1, 1],
+    ]);
+
+    t.equal(
+      scatterplot.getScreenPosition(0),
+      [0, 100],
+      'First point should be drawn at [0, 100]'
+    );
+    t.equal(
+      scatterplot.getScreenPosition(1),
+      [50, 50],
+      'Second point should be drawn at [50, 50]'
+    );
+    t.equal(
+      scatterplot.getScreenPosition(2),
+      [100, 0],
+      'Third point should be drawn at [100, 0]'
+    );
+
+    // A forth point does not exist as we only drew three
+    t.equal(
+      scatterplot.getScreenPosition(3),
+      undefined,
+      'Forth point does not exist'
+    );
+
+    await scatterplot.zoomToPoints([0]);
+    t.equal(
+      scatterplot.getScreenPosition(0),
+      [50, 50],
+      'After zooming, the first point should be drawn at [50, 50]'
+    );
+
+    scatterplot.destroy();
+  })
+);
+
+test(
   'isSupported',
   catchError((t) => {
     const scatterplot = createScatterplot({ canvas: createCanvas() });

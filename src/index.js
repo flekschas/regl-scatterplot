@@ -2557,6 +2557,37 @@ const createScatterplot = (
    */
   const zoomToOrigin = (options = {}) => zoomToLocation([0, 0], 1, options);
 
+  /**
+   * Get the screen position of a point
+   * @param {number} pointIdx - Point index
+   * @returns {[number, number] | undefined}
+   */
+  const getScreenPosition = (pointIdx) => {
+    if (!isPointsDrawn) throw new Error(ERROR_POINTS_NOT_DRAWN);
+
+    const point = searchIndex.points[pointIdx];
+
+    if (!point) return undefined;
+
+    // Homogeneous coordinates of the point
+    const v = [point[0], point[1], 0, 1];
+
+    // Convert to clip space
+    mat4.multiply(
+      scratch,
+      projectionLocal,
+      mat4.multiply(scratch, camera.view, model)
+    );
+
+    vec4.transformMat4(v, v, scratch);
+
+    // Finally, we convert to the screen space
+    const x = (currentWidth * (v[0] + 1)) / 2;
+    const y = currentHeight * (0.5 - v[1] / 2);
+
+    return [x, y];
+  };
+
   const updatePointConnectionStyle = () => {
     pointConnections.setStyle({
       color: getColors(
@@ -3599,6 +3630,7 @@ const createScatterplot = (
     draw: publicDraw,
     filter,
     get,
+    getScreenPosition,
     hover,
     redraw,
     refresh: renderer.refresh,
