@@ -546,6 +546,31 @@ scatterplot.zoomToArea(
 // => This will make the camera zoom into the top-right corner of the scatter plot
 ```
 
+<a name="scatterplot.getScreenPosition" href="#scatterplot.getScreenPosition">#</a> scatterplot.<b>getScreenPosition</b>(<i>pointIdx</i>)
+
+Get the screen position of a point
+
+**Arguments:**
+
+- `pointIdx` is a point indix.
+
+**Examples:**
+
+```javascript
+// Let's say we have a 100x100 pixel scatter plot with three points
+const scatterplot = createScatterplot({ width: 100, height: 100 });
+scatterplot.draw([
+  [-1, -1],
+  [0, 0],
+  [1, 1],
+]);
+
+// To retrieve the screen position of the second point you can call. If we
+// haven't panned and zoomed, the returned position should be `50, 50`
+scatterplot.getScreenPosition(1);
+// => [50, 50]
+```
+
 <a name="scatterplot.lookAt" href="#scatterplot.lookAt">#</a> scatterplot.<b>lookAt</b>(<i>view</i>, <i>options = {}</i>)
 
 Update the camera's view matrix to change the viewport. This will trigger a `view` event unless `options.preventEvent === true`.
