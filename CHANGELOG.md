@@ -1,3 +1,7 @@
+## 1.8.0
+
+- Add `scatterplot.getScreenPosition(pointIdx)` to retrieve the screen position of a point by its index.
+
 ## 1.7.1
 
 - Improve data type inference of the z/w values and allow to explicitely specify their data type via `draw(newPoints, { zDataType: 'categorical', wDataType: 'continuous' })`
