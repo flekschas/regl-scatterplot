@@ -1,3 +1,9 @@
+## 1.8.1
+
+- Add ability to set `aspectRatio` in the constructor
+- Add type for `aspectRatio`
+- Fix type of `opacity`
+
 ## 1.8.0
 
 - Add `scatterplot.getScreenPosition(pointIdx)` to retrieve the screen position of a point by its index.
