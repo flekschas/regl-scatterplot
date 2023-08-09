@@ -301,7 +301,8 @@ const createScatterplot = (
   let lassoPointsCurr = [];
   let searchIndex;
   let viewAspectRatio;
-  let dataAspectRatio = DEFAULT_DATA_ASPECT_RATIO;
+  let dataAspectRatio =
+    initialProperties.aspectRatio || DEFAULT_DATA_ASPECT_RATIO;
   let projectionLocal;
   let projection;
   let model;
