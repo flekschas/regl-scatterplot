@@ -94,13 +94,14 @@ interface BaseOptions {
   showPointConnections: boolean;
   showReticle: boolean;
   reticleColor: Color;
-  opacity: number;
+  opacity: number | Array<number>;
   opacityByDensityFill: number;
   opacityInactiveMax: number;
   opacityInactiveScale: number;
   height: 'auto' | number;
   width: 'auto' | number;
   gamma: number;
+  aspectRatio: number;
   // Nullifiable
   backgroundImage: null | import('regl').Texture2D | string;
   colorBy: null | DataEncoding;
