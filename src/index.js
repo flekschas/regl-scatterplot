@@ -4,6 +4,7 @@ import createPubSub from 'pub-sub-es';
 import { mat4, vec4 } from 'gl-matrix';
 import createLine from 'regl-line';
 import {
+  max as maxArray,
   hasSameElements,
   identity,
   rangeMap,
@@ -518,16 +519,18 @@ const createScatterplot = (
     return v.slice(0, 2);
   };
 
-  const getPointSizeNdc = () => {
+  const getPointSizeNdc = (pointSizeIncrease = 0) => {
     // eslint-disable-next-line no-use-before-define
     const pointScale = getPointScale();
 
     // The height of the view in normalized device coordinates
     const heightNdc = topRightNdc[1] - bottomLeftNdc[1];
     // The size of a pixel in the current view in normalized device coordinates
-    const pxNdc = heightNdc / currentHeight;
+    const pxNdc = heightNdc / canvas.height;
     // The scaled point size in normalized device coordinates
-    return computedPointSizeMouseDetection * pointScale * pxNdc * 0.66;
+    return (
+      (computedPointSizeMouseDetection * pointScale + pointSizeIncrease) * pxNdc
+    );
   };
 
   const getPoints = () => {
@@ -547,7 +550,7 @@ const createScatterplot = (
     const [xGl, yGl] = getMouseGlPos();
     const [xNdc, yNdc] = getScatterGlPos(xGl, yGl);
 
-    const pointSizeNdc = getPointSizeNdc();
+    const pointSizeNdc = getPointSizeNdc(4);
 
     // Get all points within a close range
     const pointsInBBox = getPointsInBBox(
@@ -559,7 +562,7 @@ const createScatterplot = (
 
     // Find the closest point
     let minDist = pointSizeNdc;
-    let clostestPoint;
+    let clostestPoint = -1;
     pointsInBBox.forEach((idx) => {
       const [ptX, ptY] = searchIndex.points[idx];
       const d = dist(ptX, ptY, xNdc, yNdc);
@@ -569,9 +572,7 @@ const createScatterplot = (
       }
     });
 
-    if (minDist < (computedPointSizeMouseDetection / currentWidth) * 2)
-      return clostestPoint;
-    return -1;
+    return clostestPoint;
   };
 
   const lassoExtend = (lassoPoints, lassoPointsFlat) => {
@@ -1232,7 +1233,7 @@ const createScatterplot = (
 
     if (pointSizeMouseDetection === AUTO) {
       computedPointSizeMouseDetection = Array.isArray(pointSize)
-        ? pointSize[Math.floor(pointSize.length / 2)]
+        ? maxArray(pointSize)
         : pointSize;
     }
   };

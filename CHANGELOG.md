@@ -1,8 +1,12 @@
+## 1.8.2
+
+- Improve hover detection
+
 ## 1.8.1
 
-- Add ability to set `aspectRatio` in the constructor
-- Add type for `aspectRatio`
-- Fix type of `opacity`
+- Fix: add ability to set `aspectRatio` in the constructor
+- Fix: add missing type definition for `aspectRatio`
+- Fix: extend `opacity` type to correctly allow `number[]`
 
 ## 1.8.0
 
