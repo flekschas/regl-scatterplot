@@ -165,7 +165,7 @@ export interface ScatterplotMethodOptions {
     preventFilterReset: boolean;
     hover: number;
     select: number | number[];
-    focus: number | number[];
+    filter: number | number[];
     zDataType: ZWDataType;
     wDataType: ZWDataType;
   }>;

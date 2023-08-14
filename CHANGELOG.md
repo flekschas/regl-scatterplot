@@ -1,3 +1,7 @@
+## 1.8.3
+
+- Fix typo in draw option type (renamed `focus` to `filter`) [#148](https://github.com/flekschas/regl-scatterplot/issues/148)
+
 ## 1.8.2
 
 - Improve hover detection
