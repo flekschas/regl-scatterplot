@@ -1402,7 +1402,7 @@ const createScatterplot = (
   const getOpacityMultiplicator = () => {
     if (opacityBy === 'valueZ')
       return valueZDataType === CONTINUOUS ? opacity.length - 1 : 1;
-    return valueWDataType === CONTINUOUS ? pointSize.length - 1 : 1;
+    return valueWDataType === CONTINUOUS ? opacity.length - 1 : 1;
   };
   const getSizeMultiplicator = () => {
     if (sizeBy === 'valueZ')

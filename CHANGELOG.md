@@ -1,3 +1,7 @@
+## 1.8.4
+
+- Fix a regression with the point opacity introduced in [v1.7.1](#1.7.1)
+
 ## 1.8.3
 
 - Fix typo in draw option type (renamed `focus` to `filter`) [#148](https://github.com/flekschas/regl-scatterplot/issues/148)
