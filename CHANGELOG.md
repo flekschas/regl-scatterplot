@@ -1,3 +1,8 @@
+## 1.8.5
+
+- Fix: add `d3-scale` types as a dev dependency [#153](https://github.com/flekschas/regl-scatterplot/issues/153)
+- Fix: run CI workflows on Ubuntu to ensure the `sed` replacement call works properly [#153](https://github.com/flekschas/regl-scatterplot/issues/153)
+
 ## 1.8.4
 
 - Fix a regression with the point opacity introduced in [v1.7.1](#1.7.1)
