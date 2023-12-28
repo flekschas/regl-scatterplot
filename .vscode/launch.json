@@ -1,0 +1,36 @@
+{
+    // Adapted from:
+    // https://stackoverflow.com/questions/66147328/is-there-a-way-to-debug-code-in-vscode-initiated-with-vite
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "type": "firefox",
+        "request": "launch",
+        "name": "Firefox regl-scatterplot debugging",
+        "url": "http://localhost:3000",
+        "webRoot": "${workspaceFolder}/",
+        "pathMappings": [
+          {
+            "url": "http://localhost:3000/src",
+            "path": "${workspaceFolder}/src"
+          }          
+        ]
+      },
+      {
+        "type": "chrome",
+        "request": "launch",
+        "name": "Chrome regl-scatterplot debugging",
+        "url": "http://localhost:3000",
+        "webRoot": "${workspaceFolder}/",
+        "enableContentValidation": false,
+        "sourceMapPathOverrides": {
+          "webpack:///./src/*": "${webRoot}/*"
+        },
+        "runtimeArgs": [
+          "--remote-debugging-port=9222"
+        ],
+        "sourceMaps": true
+      }
+    ]
+  }
+  
