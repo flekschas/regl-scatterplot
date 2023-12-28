@@ -948,6 +948,62 @@ scatterplot.set({ width, height });
 
 Related to the resizing, when conditionally displaying regl-scatterplot in Vue you might have to update the `width` and `height` when the visibility is changed. See [issue #20](https://github.com/flekschas/regl-scatterplot/issues/20#issuecomment-639377810) for an example.
 
+## Development
+
+As a first step, run ```npm install``` to install all the required local dependencies. You can then develop and debug using either a combination of a text editor and an internet browser of your preference, or an integrated tool such as [VS Code](https://code.visualstudio.com/).
+
+### Debugging with the browser
+
+Once the local dependencies are installed, just run ```npm run start```, and then open the Sources under the Developer Tools (Chrome), or the Debugger under Web Developer Tools (Firefox), to browse the source tree, add breakpoints, etc.
+
+### Debugging with VS Code
+
+To develop new features in regl-scatterplot, you can use VS Code. First, install the Vue Language Features ([Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar)) extension.
+
+Then, add the following debug configuration under the "Run & Debug" tab:
+
+```
+{
+    // Adapted from:
+    // https://stackoverflow.com/questions/66147328/is-there-a-way-to-debug-code-in-vscode-initiated-with-vite
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "type": "firefox",
+        "request": "launch",
+        "name": "Firefox regl-scatterplot debugging",
+        "url": "http://localhost:3000",
+        "webRoot": "${workspaceFolder}/",
+        "pathMappings": [
+          {
+            "url": "http://localhost:3000/src",
+            "path": "${workspaceFolder}/src"
+          }          
+        ]
+      },
+      {
+        "type": "chrome",
+        "request": "launch",
+        "name": "Chrome regl-scatterplot debugging",
+        "url": "http://localhost:3000",
+        "webRoot": "${workspaceFolder}/",
+        "enableContentValidation": false,
+        "sourceMapPathOverrides": {
+          "webpack:///./src/*": "${webRoot}/*"
+        },
+        "runtimeArgs": [
+          "--remote-debugging-port=9222"
+        ],
+        "sourceMaps": true
+      }
+    ]
+}
+```
+
+This configuration will use the example app provided by regl-scatterplot (defined via an html template in vite.congif.js).
+
+Before runing the desired debugging configuration (for Chrome or Firefox), start the regl-scatterplot server from the VS Code terminal with ```npm run start```. It will use port 3000 by default, if it is not already in use (this default in set in the pacakge.json file, under the start script). Otherwise, the port has to be updated accordingly in the launch configuration.
+
 ## Citation
 
 If you like `regl-scatterplot` and are using it in your research, we'd appreciate if you could cite our paper:
