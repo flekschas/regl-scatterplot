@@ -133,10 +133,10 @@ import {
   limit,
   toRgba,
   max,
-  min,
   flipObj,
   rgbBrightness,
   clip,
+  createPropGetter,
 } from './utils';
 
 import { version } from '../package.json';
@@ -173,6 +173,8 @@ const getEncodingType = (
 
   if (type === 'density') return allowDensity ? 'density' : defaultValue;
 
+  if (type === null) return null;
+
   return defaultValue;
 };
 
@@ -203,59 +205,146 @@ const createScatterplot = (
 
   checkDeprecations(initialProperties);
 
-  let {
-    renderer,
-    backgroundColor = DEFAULT_COLOR_BG,
-    backgroundImage = DEFAULT_BACKGROUND_IMAGE,
-    canvas = document.createElement('canvas'),
-    colorBy = DEFAULT_COLOR_BY,
-    deselectOnDblClick = DEFAULT_DESELECT_ON_DBL_CLICK,
-    deselectOnEscape = DEFAULT_DESELECT_ON_ESCAPE,
-    lassoColor = DEFAULT_LASSO_COLOR,
-    lassoLineWidth = DEFAULT_LASSO_LINE_WIDTH,
-    lassoMinDelay = DEFAULT_LASSO_MIN_DELAY,
-    lassoMinDist = DEFAULT_LASSO_MIN_DIST,
-    lassoClearEvent = DEFAULT_LASSO_CLEAR_EVENT,
-    lassoInitiator = DEFAULT_LASSO_INITIATOR,
-    lassoInitiatorParentElement = document.body,
-    lassoOnLongPress = DEFAULT_LASSO_ON_LONG_PRESS,
-    lassoLongPressTime = DEFAULT_LASSO_LONG_PRESS_TIME,
-    lassoLongPressAfterEffectTime = DEFAULT_LASSO_LONG_PRESS_AFTER_EFFECT_TIME,
-    lassoLongPressEffectDelay = DEFAULT_LASSO_LONG_PRESS_EFFECT_DELAY,
-    lassoLongPressRevertEffectTime = DEFAULT_LASSO_LONG_PRESS_REVERT_EFFECT_TIME,
-    keyMap = DEFAULT_KEY_MAP,
-    mouseMode = DEFAULT_MOUSE_MODE,
-    showReticle = DEFAULT_SHOW_RETICLE,
-    reticleColor = DEFAULT_RETICLE_COLOR,
-    pointColor = DEFAULT_COLOR_NORMAL,
-    pointColorActive = DEFAULT_COLOR_ACTIVE,
-    pointColorHover = DEFAULT_COLOR_HOVER,
-    showPointConnections = DEFAULT_SHOW_POINT_CONNECTIONS,
-    pointConnectionColor = DEFAULT_POINT_CONNECTION_COLOR_NORMAL,
-    pointConnectionColorActive = DEFAULT_POINT_CONNECTION_COLOR_ACTIVE,
-    pointConnectionColorHover = DEFAULT_POINT_CONNECTION_COLOR_HOVER,
-    pointConnectionColorBy = DEFAULT_POINT_CONNECTION_COLOR_BY,
-    pointConnectionOpacity = DEFAULT_POINT_CONNECTION_OPACITY,
-    pointConnectionOpacityBy = DEFAULT_POINT_CONNECTION_OPACITY_BY,
-    pointConnectionOpacityActive = DEFAULT_POINT_CONNECTION_OPACITY_ACTIVE,
-    pointConnectionSize = DEFAULT_POINT_CONNECTION_SIZE,
-    pointConnectionSizeActive = DEFAULT_POINT_CONNECTION_SIZE_ACTIVE,
-    pointConnectionSizeBy = DEFAULT_POINT_CONNECTION_SIZE_BY,
-    pointConnectionMaxIntPointsPerSegment = DEFAULT_POINT_CONNECTION_MAX_INT_POINTS_PER_SEGMENT,
-    pointConnectionTolerance = DEFAULT_POINT_CONNECTION_INT_POINTS_TOLERANCE,
-    pointSize = DEFAULT_POINT_SIZE,
-    pointSizeSelected = DEFAULT_POINT_SIZE_SELECTED,
-    pointSizeMouseDetection = DEFAULT_POINT_SIZE_MOUSE_DETECTION,
-    pointOutlineWidth = DEFAULT_POINT_OUTLINE_WIDTH,
-    opacity = AUTO,
-    opacityBy = DEFAULT_OPACITY_BY,
-    opacityByDensityFill = DEFAULT_OPACITY_BY_DENSITY_FILL,
-    opacityInactiveMax = DEFAULT_OPACITY_INACTIVE_MAX,
-    opacityInactiveScale = DEFAULT_OPACITY_INACTIVE_SCALE,
-    sizeBy = DEFAULT_SIZE_BY,
-    height = DEFAULT_HEIGHT,
-    width = DEFAULT_WIDTH,
-  } = initialProperties;
+  const getInitProp = createPropGetter(initialProperties);
+
+  let renderer = getInitProp('renderer');
+  let backgroundColor = getInitProp('backgroundColor', DEFAULT_COLOR_BG);
+  let backgroundImage = getInitProp(
+    'backgroundImage',
+    DEFAULT_BACKGROUND_IMAGE
+  );
+  let canvas = getInitProp('canvas', document.createElement('canvas'));
+  let colorBy = getInitProp('colorBy', DEFAULT_COLOR_BY);
+  let deselectOnDblClick = getInitProp(
+    'deselectOnDblClick',
+    DEFAULT_DESELECT_ON_DBL_CLICK
+  );
+  let deselectOnEscape = getInitProp(
+    'deselectOnEscape',
+    DEFAULT_DESELECT_ON_ESCAPE
+  );
+  let lassoColor = getInitProp('lassoColor', DEFAULT_LASSO_COLOR);
+  let lassoLineWidth = getInitProp('lassoLineWidth', DEFAULT_LASSO_LINE_WIDTH);
+  let lassoMinDelay = getInitProp('lassoMinDelay', DEFAULT_LASSO_MIN_DELAY);
+  let lassoMinDist = getInitProp('lassoMinDist', DEFAULT_LASSO_MIN_DIST);
+  let lassoClearEvent = getInitProp(
+    'lassoClearEvent',
+    DEFAULT_LASSO_CLEAR_EVENT
+  );
+  let lassoInitiator = getInitProp('lassoInitiator', DEFAULT_LASSO_INITIATOR);
+  let lassoInitiatorParentElement = getInitProp(
+    'lassoInitiatorParentElement',
+    document.body
+  );
+  let lassoOnLongPress = getInitProp(
+    'lassoOnLongPress',
+    DEFAULT_LASSO_ON_LONG_PRESS
+  );
+  let lassoLongPressTime = getInitProp(
+    'lassoLongPressTime',
+    DEFAULT_LASSO_LONG_PRESS_TIME
+  );
+  let lassoLongPressAfterEffectTime = getInitProp(
+    'lassoLongPressAfterEffectTime',
+    DEFAULT_LASSO_LONG_PRESS_AFTER_EFFECT_TIME
+  );
+  let lassoLongPressEffectDelay = getInitProp(
+    'lassoLongPressEffectDelay',
+    DEFAULT_LASSO_LONG_PRESS_EFFECT_DELAY
+  );
+  let lassoLongPressRevertEffectTime = getInitProp(
+    'lassoLongPressRevertEffectTime',
+    DEFAULT_LASSO_LONG_PRESS_REVERT_EFFECT_TIME
+  );
+  let keyMap = getInitProp('keyMap', DEFAULT_KEY_MAP);
+  let mouseMode = getInitProp('mouseMode', DEFAULT_MOUSE_MODE);
+  let showReticle = getInitProp('showReticle', DEFAULT_SHOW_RETICLE);
+  let reticleColor = getInitProp('reticleColor', DEFAULT_RETICLE_COLOR);
+  let pointColor = getInitProp('pointColor', DEFAULT_COLOR_NORMAL);
+  let pointColorActive = getInitProp('pointColorActive', DEFAULT_COLOR_ACTIVE);
+  let pointColorHover = getInitProp('pointColorHover', DEFAULT_COLOR_HOVER);
+  let showPointConnections = getInitProp(
+    'showPointConnections',
+    DEFAULT_SHOW_POINT_CONNECTIONS
+  );
+  let pointConnectionColor = getInitProp(
+    'pointConnectionColor',
+    DEFAULT_POINT_CONNECTION_COLOR_NORMAL
+  );
+  let pointConnectionColorActive = getInitProp(
+    'pointConnectionColorActive',
+    DEFAULT_POINT_CONNECTION_COLOR_ACTIVE
+  );
+  let pointConnectionColorHover = getInitProp(
+    'pointConnectionColorHover',
+    DEFAULT_POINT_CONNECTION_COLOR_HOVER
+  );
+  let pointConnectionColorBy = getInitProp(
+    'pointConnectionColorBy',
+    DEFAULT_POINT_CONNECTION_COLOR_BY
+  );
+  let pointConnectionOpacity = getInitProp(
+    'pointConnectionOpacity',
+    DEFAULT_POINT_CONNECTION_OPACITY
+  );
+  let pointConnectionOpacityBy = getInitProp(
+    'pointConnectionOpacityBy',
+    DEFAULT_POINT_CONNECTION_OPACITY_BY
+  );
+  let pointConnectionOpacityActive = getInitProp(
+    'pointConnectionOpacityActive',
+    DEFAULT_POINT_CONNECTION_OPACITY_ACTIVE
+  );
+  let pointConnectionSize = getInitProp(
+    'pointConnectionSize',
+    DEFAULT_POINT_CONNECTION_SIZE
+  );
+  let pointConnectionSizeActive = getInitProp(
+    'pointConnectionSizeActive',
+    DEFAULT_POINT_CONNECTION_SIZE_ACTIVE
+  );
+  let pointConnectionSizeBy = getInitProp(
+    'pointConnectionSizeBy',
+    DEFAULT_POINT_CONNECTION_SIZE_BY
+  );
+  let pointConnectionMaxIntPointsPerSegment = getInitProp(
+    'pointConnectionMaxIntPointsPerSegment',
+    DEFAULT_POINT_CONNECTION_MAX_INT_POINTS_PER_SEGMENT
+  );
+  let pointConnectionTolerance = getInitProp(
+    'pointConnectionTolerance',
+    DEFAULT_POINT_CONNECTION_INT_POINTS_TOLERANCE
+  );
+  let pointSize = getInitProp('pointSize', DEFAULT_POINT_SIZE);
+  let pointSizeSelected = getInitProp(
+    'pointSizeSelected',
+    DEFAULT_POINT_SIZE_SELECTED
+  );
+  let pointSizeMouseDetection = getInitProp(
+    'pointSizeMouseDetection',
+    DEFAULT_POINT_SIZE_MOUSE_DETECTION
+  );
+  let pointOutlineWidth = getInitProp(
+    'pointOutlineWidth',
+    DEFAULT_POINT_OUTLINE_WIDTH
+  );
+  let opacity = getInitProp('opacity', AUTO);
+  let opacityBy = getInitProp('opacityBy', DEFAULT_OPACITY_BY);
+  let opacityByDensityFill = getInitProp(
+    'opacityByDensityFill',
+    DEFAULT_OPACITY_BY_DENSITY_FILL
+  );
+  let opacityInactiveMax = getInitProp(
+    'opacityInactiveMax',
+    DEFAULT_OPACITY_INACTIVE_MAX
+  );
+  let opacityInactiveScale = getInitProp(
+    'opacityInactiveScale',
+    DEFAULT_OPACITY_INACTIVE_SCALE
+  );
+  let sizeBy = getInitProp('sizeBy', DEFAULT_SIZE_BY);
+  let height = getInitProp('height', DEFAULT_HEIGHT);
+  let width = getInitProp('width', DEFAULT_WIDTH);
 
   let currentWidth = width === AUTO ? 1 : width;
   let currentHeight = height === AUTO ? 1 : height;
@@ -296,6 +385,7 @@ const createScatterplot = (
   let isPointsFiltered = false;
   /** @type{Set<number>} */
   const filteredPointsSet = new Set();
+  let points = [];
   let numPoints = 0;
   let numPointsInView = 0;
   let lassoActive = false;
@@ -321,6 +411,13 @@ const createScatterplot = (
   let draw = true;
   let drawReticleOnce = false;
   let canvasObserver;
+  let densityBasedOpacity = 1;
+  let densityBasedPointSize = 1;
+  let hoveredPointExtraSize = 0;
+
+  const positionBuffer = renderer.regl.buffer([
+    -1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1,
+  ]);
 
   pointColor = isMultipleColors(pointColor) ? [...pointColor] : [pointColor];
   pointColorActive = isMultipleColors(pointColorActive)
@@ -417,7 +514,9 @@ const createScatterplot = (
   opacityBy = getEncodingType(opacityBy, DEFAULT_OPACITY_BY, {
     allowDensity: true,
   });
-  sizeBy = getEncodingType(sizeBy, DEFAULT_SIZE_BY);
+  sizeBy = getEncodingType(sizeBy, DEFAULT_SIZE_BY, {
+    allowDensity: true,
+  });
 
   pointConnectionColorBy = getEncodingType(
     pointConnectionColorBy,
@@ -535,8 +634,8 @@ const createScatterplot = (
 
   const getPoints = () => {
     if (isPointsFiltered)
-      return searchIndex.points.filter((_, i) => filteredPointsSet.has(i));
-    return searchIndex.points;
+      return points.filter((_, i) => filteredPointsSet.has(i));
+    return points;
   };
 
   const getPointsInBBox = (x0, y0, x1, y1) => {
@@ -564,7 +663,7 @@ const createScatterplot = (
     let minDist = pointSizeNdc;
     let clostestPoint = -1;
     pointsInBBox.forEach((idx) => {
-      const [ptX, ptY] = searchIndex.points[idx];
+      const [ptX, ptY] = points[idx];
       const d = dist(ptX, ptY, xNdc, yNdc);
       if (d < minDist) {
         minDist = d;
@@ -592,7 +691,7 @@ const createScatterplot = (
     // next we test each point in the bounding box if it is in the polygon too
     const pointsInPolygon = [];
     pointsInBBox.forEach((pointIdx) => {
-      if (isPointInPolygon(lassoPolygon, searchIndex.points[pointIdx]))
+      if (isPointInPolygon(lassoPolygon, points[pointIdx]))
         pointsInPolygon.push(pointIdx);
     });
 
@@ -610,7 +709,7 @@ const createScatterplot = (
     if (
       computingPointConnectionCurves ||
       !showPointConnections ||
-      !hasPointConnections(searchIndex.points[pointIdxs[0]])
+      !hasPointConnections(points[pointIdxs[0]])
     )
       return;
 
@@ -623,7 +722,7 @@ const createScatterplot = (
     // Get line IDs
     const lineIds = Object.keys(
       pointIdxs.reduce((ids, pointIdx) => {
-        const point = searchIndex.points[pointIdx];
+        const point = points[pointIdx];
         const isStruct = Array.isArray(point[4]);
         const lineId = isStruct ? point[4][0] : point[4];
 
@@ -1146,7 +1245,6 @@ const createScatterplot = (
       setter(tmpColors);
       colorTex = createColorTexture();
     } catch (e) {
-      console.error('Invalid colors. Switching back to default colors.');
       // eslint-disable-next-line no-param-reassign
       setter(prevColors);
       colorTex = createColorTexture();
@@ -1245,6 +1343,7 @@ const createScatterplot = (
     if (isStrictlyPositiveNumber(+newPointSize)) pointSize = [+newPointSize];
 
     minPointScale = MIN_POINT_SIZE / pointSize[0];
+    if (encodingTex) encodingTex.destroy();
     encodingTex = createEncodingTexture();
     computePointSizeMouseDetection();
   };
@@ -1291,6 +1390,7 @@ const createScatterplot = (
 
     if (isStrictlyPositiveNumber(+newOpacity)) opacity = [+newOpacity];
 
+    if (encodingTex) encodingTex.destroy();
     encodingTex = createEncodingTexture();
   };
 
@@ -1327,7 +1427,9 @@ const createScatterplot = (
     });
   };
   const setSizeBy = (type) => {
-    sizeBy = getEncodingType(type, DEFAULT_SIZE_BY);
+    sizeBy = getEncodingType(type, DEFAULT_SIZE_BY, {
+      allowDensity: true,
+    });
   };
   const setPointConnectionColorBy = (type) => {
     pointConnectionColorBy = getEncodingType(
@@ -1352,6 +1454,9 @@ const createScatterplot = (
   };
 
   const getResolution = () => [canvas.width, canvas.height];
+  const getMinHalfResolution = () => Math.min(canvas.width, canvas.height) / 2;
+  const getRelativePointOffset = () =>
+    0.5 / camera.scaling[0] / Math.min(canvas.width, canvas.height);
   const getBackgroundImage = () => backgroundImage;
   const getColorTex = () => colorTex;
   const getColorTexRes = () => colorTexRes;
@@ -1374,7 +1479,7 @@ const createScatterplot = (
   const getPointScale = () => {
     if (camera.scaling[0] > 1)
       return (
-        (Math.asinh(max(1.0, camera.scaling[0])) / Math.asinh(1)) *
+        (Math.asinh(camera.scaling[0]) / Math.asinh(1)) *
         window.devicePixelRatio
       );
 
@@ -1394,6 +1499,7 @@ const createScatterplot = (
   const getIsOpacityByDensity = () => +(opacityBy === 'density');
   const getIsSizedByZ = () => +(sizeBy === 'valueZ');
   const getIsSizedByW = () => +(sizeBy === 'valueW');
+  const getIsSizeByDensity = () => +(sizeBy === 'density');
   const getColorMultiplicator = () => {
     if (colorBy === 'valueZ')
       return valueZDataType === CONTINUOUS ? pointColor.length - 1 : 1;
@@ -1409,45 +1515,60 @@ const createScatterplot = (
       return valueZDataType === CONTINUOUS ? pointSize.length - 1 : 1;
     return valueWDataType === CONTINUOUS ? pointSize.length - 1 : 1;
   };
-  const getOpacityDensity = (context) => {
-    if (opacityBy !== 'density') return 1;
+  const getOpacityDensity = () => densityBasedOpacity;
+  const getPointSizeDensity = () => densityBasedPointSize;
 
-    // Adopted from the fabulous Ricky Reusser:
+  const updateOpacityAndSizeByDensity = () => {
+    if (opacityBy !== 'density' && sizeBy !== 'density') return;
+
+    // Inspired by the fabulous Ricky Reusser:
     // https://observablehq.com/@rreusser/selecting-the-right-opacity-for-2d-point-clouds
     // Extended with a point-density based approach
     const pointScale = getPointScale(true);
     const p = pointSize[0] * pointScale;
 
     // Compute the plot's x and y range from the view matrix, though these could come from any source
-    const s = (2 / (2 / camera.view[0])) * (2 / (2 / camera.view[5]));
+    // const s = (2 / (2 / camera.view[0])) * (2 / (2 / camera.view[5]));
 
     // Viewport size, in device pixels
-    const H = context.viewportHeight;
-    const W = context.viewportWidth;
+    const H = canvas.height;
+    const W = canvas.width;
+
+    const fillTarget = opacityByDensityFill * W * H;
 
     // Adaptation: Instead of using the global number of points, I am using a
     // density-based approach that takes the points in the view into context
     // when zooming in. This ensure that in sparse areas, points are opaque and
     // in dense areas points are more translucent.
-    let alpha =
-      ((opacityByDensityFill * W * H) / (numPointsInView * p * p)) * min(1, s);
-
-    // In performanceMode we use squares, otherwise we use circles, which only
-    // take up (pi r^2) of the unit square
-    alpha *= performanceMode ? 1 : 1 / (0.25 * Math.PI);
+    let alpha = performanceMode
+      ? // In performanceMode we use squares
+        fillTarget / (numPointsInView * (p * 2) ** 2)
+      : // otherwise we use circles, which only take up (pi r^2) of the unit square
+        fillTarget / (numPointsInView * p ** 2 * Math.PI);
 
     // If the pixels shrink below the minimum permitted size, then we adjust the opacity instead
-    // and apply clamping of the point size in the vertex shader. Note that we add 0.5 since we
-    // slightly inrease the size of points during rendering to accommodate SDF-style antialiasing.
-    const clampedPointDeviceSize = max(MIN_POINT_SIZE, p) + 0.5;
+    // and apply clamping of the point size in the vertex shader.
+    const clampedPointDeviceSize = max(MIN_POINT_SIZE, p);
 
     // We square this since we're concerned with the ratio of *areas*.
     // eslint-disable-next-line no-restricted-properties
     alpha *= (p / clampedPointDeviceSize) ** 2;
 
-    // And finally, we clamp to the range [0, 1]. We should really clamp this to 1 / precision
-    // on the low end, depending on the data type of the destination so that we never render *nothing*.
-    return min(1, max(0, alpha));
+    if (alpha > 1) {
+      // If the alpha value is above one, we have to increase the point size to
+      // achieve the ideal fill target. In this case the alpha value is set to
+      // one as alpha values above one do not make any sense.
+      const newPointSize = performanceMode
+        ? Math.sqrt(fillTarget / (numPointsInView * Math.PI))
+        : Math.sqrt(fillTarget / (numPointsInView * Math.PI));
+      densityBasedOpacity = 1;
+      densityBasedPointSize = newPointSize / pointScale;
+    } else {
+      // In the case that the alpha value is below one we keep the current point
+      // size and return the dynamic alpha value.
+      densityBasedOpacity = Math.max(0, alpha);
+      densityBasedPointSize = pointSize[0];
+    }
   };
 
   const updatePoints = renderer.regl({
@@ -1496,12 +1617,18 @@ const createScatterplot = (
       attributes: {
         stateIndex: {
           buffer: getStateIndexBuffer,
-          size: 2,
+          divisor: 1,
+        },
+        position: {
+          buffer: positionBuffer,
+          divisor: 0,
         },
       },
 
       uniforms: {
         resolution: getResolution,
+        minHalfResolution: getMinHalfResolution,
+        relativePointOffset: getRelativePointOffset,
         modelViewProjection: getModelViewProjection,
         devicePixelRatio: getDevicePixelRatio,
         pointScale: getPointScale,
@@ -1525,16 +1652,18 @@ const createScatterplot = (
         isOpacityByDensity: getIsOpacityByDensity,
         isSizedByZ: getIsSizedByZ,
         isSizedByW: getIsSizedByW,
+        isSizeByDensity: getIsSizeByDensity,
         colorMultiplicator: getColorMultiplicator,
         opacityMultiplicator: getOpacityMultiplicator,
         opacityDensity: getOpacityDensity,
+        pointSizeDensity: getPointSizeDensity,
         sizeMultiplicator: getSizeMultiplicator,
         numColorStates: COLOR_NUM_STATES,
       },
 
-      count: getNumPoints,
+      count: 6,
 
-      primitive: 'points',
+      instances: () => getNumPoints(),
     });
 
   const drawPointBodies = drawPoints(
@@ -1543,7 +1672,7 @@ const createScatterplot = (
     getNormalPointsIndexBuffer
   );
 
-  const drawHoveredPoint = drawPoints(
+  const drawHoveredPointBody = drawPoints(
     getNormalPointSizeExtra,
     () => 1,
     () => hoveredPointIndexBuffer,
@@ -1552,8 +1681,44 @@ const createScatterplot = (
     () => 1
   );
 
+  // Draw outer outline
+  const drawHoveredPointOutline = drawPoints(
+    () => hoveredPointExtraSize * window.devicePixelRatio,
+    () => 1,
+    () => hoveredPointIndexBuffer,
+    COLOR_ACTIVE_IDX,
+    () => 1,
+    () => 1
+  );
+
+  // Draw inner outline
+  const drawHoveredPointInnerBorder = drawPoints(
+    () => hoveredPointExtraSize * window.devicePixelRatio,
+    () => 1,
+    () => hoveredPointIndexBuffer,
+    COLOR_BG_IDX,
+    () => 1,
+    () => 1
+  );
+
+  const drawHoveredPoint = () => {
+    const pointExtraSize = selectedPointsSet.has(hoveredPoint)
+      ? pointSizeSelected
+      : 0;
+
+    const pointOutlineWidthPx = pointOutlineWidth / camera.scaling[0];
+
+    hoveredPointExtraSize = pointExtraSize + pointOutlineWidthPx * 2;
+    drawHoveredPointOutline();
+    hoveredPointExtraSize = pointExtraSize + pointOutlineWidthPx;
+    drawHoveredPointInnerBorder();
+    drawHoveredPointBody();
+  };
+
   const drawSelectedPointOutlines = drawPoints(
-    () => (pointSizeSelected + pointOutlineWidth * 2) * window.devicePixelRatio,
+    () =>
+      (pointSizeSelected + (pointOutlineWidth / camera.scaling[0]) * 2) *
+      window.devicePixelRatio,
     getSelectedNumPoints,
     getSelectedPointsIndexBuffer,
     COLOR_ACTIVE_IDX,
@@ -1562,7 +1727,9 @@ const createScatterplot = (
   );
 
   const drawSelectedPointInnerBorder = drawPoints(
-    () => (pointSizeSelected + pointOutlineWidth) * window.devicePixelRatio,
+    () =>
+      (pointSizeSelected + pointOutlineWidth / camera.scaling[0]) *
+      window.devicePixelRatio,
     getSelectedNumPoints,
     getSelectedPointsIndexBuffer,
     COLOR_BG_IDX,
@@ -1649,7 +1816,7 @@ const createScatterplot = (
   const drawReticle = () => {
     if (!(hoveredPoint >= 0)) return;
 
-    const [x, y] = searchIndex.points[hoveredPoint].slice(0, 2);
+    const [x, y] = points[hoveredPoint].slice(0, 2);
 
     // Homogeneous coordinates of the point
     const v = [x, y, 0, 1];
@@ -1671,23 +1838,6 @@ const createScatterplot = (
 
     reticleHLine.draw();
     reticleVLine.draw();
-
-    // Draw outer outline
-    drawPoints(
-      () =>
-        (pointSizeSelected + pointOutlineWidth * 2) * window.devicePixelRatio,
-      () => 1,
-      hoveredPointIndexBuffer,
-      COLOR_ACTIVE_IDX
-    )();
-
-    // Draw inner outline
-    drawPoints(
-      () => (pointSizeSelected + pointOutlineWidth) * window.devicePixelRatio,
-      () => 1,
-      hoveredPointIndexBuffer,
-      COLOR_BG_IDX
-    )();
   };
 
   const createPointIndex = (numNewPoints) => {
@@ -1801,12 +1951,11 @@ const createScatterplot = (
       data: createPointIndex(numPoints),
     });
 
-    searchIndex = new KDBush(
-      newPoints,
-      (p) => p[0],
-      (p) => p[1],
-      16
-    );
+    searchIndex = new KDBush(newPoints.length, 16);
+    newPoints.forEach(([x, y]) => searchIndex.add(x, y));
+    searchIndex.finish();
+
+    points = newPoints;
 
     isPointsDrawn = true;
   };
@@ -2046,7 +2195,7 @@ const createScatterplot = (
       };
 
       // Update point connections
-      if (showPointConnections || hasPointConnections(searchIndex.points[0])) {
+      if (showPointConnections || hasPointConnections(points[0])) {
         setPointConnections(getPoints()).then(() => {
           if (!preventEvent) pubSub.publish('pointConnectionsDraw');
           finish();
@@ -2114,7 +2263,7 @@ const createScatterplot = (
       };
 
       // Update point connections
-      if (showPointConnections || hasPointConnections(searchIndex.points[0])) {
+      if (showPointConnections || hasPointConnections(points[0])) {
         setPointConnections(getPoints()).then(() => {
           if (!preventEvent) pubSub.publish('pointConnectionsDraw');
           // We have to re-apply the selection because the connections might
@@ -2207,51 +2356,52 @@ const createScatterplot = (
     pubSub.publish('transitionStart');
   };
 
-  const toArrayOrientedPoints = (points) =>
+  const toArrayOrientedPoints = (newPoints) =>
     new Promise((resolve, reject) => {
-      if (!points || Array.isArray(points)) {
-        resolve(points);
+      if (!newPoints || Array.isArray(newPoints)) {
+        resolve(newPoints);
       } else {
         const length =
-          Array.isArray(points.x) || ArrayBuffer.isView(points.x)
-            ? points.x.length
+          Array.isArray(newPoints.x) || ArrayBuffer.isView(newPoints.x)
+            ? newPoints.x.length
             : 0;
 
         const getX =
-          (Array.isArray(points.x) || ArrayBuffer.isView(points.x)) &&
-          ((i) => points.x[i]);
+          (Array.isArray(newPoints.x) || ArrayBuffer.isView(newPoints.x)) &&
+          ((i) => newPoints.x[i]);
         const getY =
-          (Array.isArray(points.y) || ArrayBuffer.isView(points.y)) &&
-          ((i) => points.y[i]);
+          (Array.isArray(newPoints.y) || ArrayBuffer.isView(newPoints.y)) &&
+          ((i) => newPoints.y[i]);
         const getL =
-          (Array.isArray(points.line) || ArrayBuffer.isView(points.line)) &&
-          ((i) => points.line[i]);
+          (Array.isArray(newPoints.line) ||
+            ArrayBuffer.isView(newPoints.line)) &&
+          ((i) => newPoints.line[i]);
         const getLO =
-          (Array.isArray(points.lineOrder) ||
-            ArrayBuffer.isView(points.lineOrder)) &&
-          ((i) => points.lineOrder[i]);
+          (Array.isArray(newPoints.lineOrder) ||
+            ArrayBuffer.isView(newPoints.lineOrder)) &&
+          ((i) => newPoints.lineOrder[i]);
 
-        const components = Object.keys(points);
+        const components = Object.keys(newPoints);
         const getZ = (() => {
           const z = components.find((c) => Z_NAMES.has(c));
           return (
             z &&
-            (Array.isArray(points[z]) || ArrayBuffer.isView(points[z])) &&
-            ((i) => points[z][i])
+            (Array.isArray(newPoints[z]) || ArrayBuffer.isView(newPoints[z])) &&
+            ((i) => newPoints[z][i])
           );
         })();
         const getW = (() => {
           const w = components.find((c) => W_NAMES.has(c));
           return (
             w &&
-            (Array.isArray(points[w]) || ArrayBuffer.isView(points[w])) &&
-            ((i) => points[w][i])
+            (Array.isArray(newPoints[w]) || ArrayBuffer.isView(newPoints[w])) &&
+            ((i) => newPoints[w][i])
           );
         })();
 
         if (getX && getY && getZ && getW && getL && getLO) {
           resolve(
-            points.x.map((x, i) => [
+            newPoints.x.map((x, i) => [
               x,
               getY(i),
               getZ(i),
@@ -2301,7 +2451,7 @@ const createScatterplot = (
       return Promise.reject(new Error('The instance was already destroyed'));
     }
     return toArrayOrientedPoints(newPoints).then(
-      (points) =>
+      (newArrayOrientedPoints) =>
         new Promise((resolve) => {
           if (isDestroyed) {
             // In the special case where the instance was destroyed after
@@ -2443,7 +2593,7 @@ const createScatterplot = (
     let yMax = -Infinity;
 
     for (let i = 0; i < pointIdxs.length; i++) {
-      const [x, y] = searchIndex.points[pointIdxs[i]];
+      const [x, y] = points[pointIdxs[i]];
       xMin = Math.min(xMin, x);
       xMax = Math.max(xMax, x);
       yMin = Math.min(yMin, y);
@@ -2506,6 +2656,7 @@ const createScatterplot = (
   const zoomToPoints = (pointIdxs, options = {}) => {
     if (!isPointsDrawn)
       return Promise.reject(new Error(ERROR_POINTS_NOT_DRAWN));
+
     const rect = getBBoxOfPoints(pointIdxs);
     const cX = rect.x + rect.width / 2;
     const cY = rect.y + rect.height / 2;
@@ -2825,7 +2976,7 @@ const createScatterplot = (
   const setShowPointConnections = (newShowPointConnections) => {
     showPointConnections = !!newShowPointConnections;
     if (showPointConnections) {
-      if (hasPointConnections(searchIndex.points[0])) {
+      if (hasPointConnections(points[0])) {
         setPointConnections(getPoints()).then(() => {
           pubSub.publish('pointConnectionsDraw');
           draw = true;
@@ -2983,13 +3134,13 @@ const createScatterplot = (
       return opacityByDensityDebounceTime;
     if (property === 'opacityInactiveMax') return opacityInactiveMax;
     if (property === 'opacityInactiveScale') return opacityInactiveScale;
-    if (property === 'points') return searchIndex.points;
+    if (property === 'points') return points;
     if (property === 'hoveredPoint') return hoveredPoint;
     if (property === 'selectedPoints') return [...selectedPoints];
     if (property === 'filteredPoints')
       return isPointsFiltered
         ? Array.from(filteredPointsSet)
-        : Array.from({ length: searchIndex.points.length }, (_, i) => i);
+        : Array.from({ length: points.length }, (_, i) => i);
     if (property === 'pointsInView') return getPointsInView();
     if (property === 'pointColor')
       return pointColor.length === 1 ? pointColor[0] : pointColor;
@@ -3517,6 +3668,7 @@ const createScatterplot = (
       const widthRatio = canvas.width / renderer.canvas.width;
       const heightRatio = canvas.height / renderer.canvas.height;
 
+      updateOpacityAndSizeByDensity();
       updateProjectionMatrix(widthRatio, heightRatio);
 
       // eslint-disable-next-line no-underscore-dangle
@@ -3593,6 +3745,7 @@ const createScatterplot = (
       window.removeEventListener('resize', resizeHandler);
       window.removeEventListener('orientationchange', resizeHandler);
     }
+    points = undefined;
     canvas = undefined;
     camera.dispose();
     camera = undefined;
@@ -3601,6 +3754,16 @@ const createScatterplot = (
     pointConnections.destroy();
     reticleHLine.destroy();
     reticleVLine.destroy();
+    positionBuffer.destroy();
+    normalPointsIndexBuffer.destroy();
+    selectedPointsIndexBuffer.destroy();
+    hoveredPointIndexBuffer.destroy();
+    if (stateTex) stateTex.destroy();
+    if (prevStateTex) prevStateTex.destroy();
+    if (tmpStateBuffer) tmpStateBuffer.destroy();
+    colorTex.destroy();
+    encodingTex.destroy();
+    clearCachedPoints();
     if (!initialProperties.renderer) {
       // Since the user did not pass in an externally created renderer we can
       // assume that the renderer is only used by this scatter plot instance.

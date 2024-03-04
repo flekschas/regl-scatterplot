@@ -17,6 +17,7 @@ export const COLOR_BG_IDX = 3;
 export const COLOR_NUM_STATES = 4;
 export const FLOAT_BYTES = Float32Array.BYTES_PER_ELEMENT;
 export const GL_EXTENSIONS = [
+  'angle_instanced_arrays',
   'OES_texture_float',
   'OES_element_index_uint',
   'WEBGL_color_buffer_float',
@@ -100,7 +101,7 @@ export const DEFAULT_GAMMA = 1;
 // Default styles
 export const MIN_POINT_SIZE = 1;
 export const DEFAULT_POINT_SIZE = 6;
-export const DEFAULT_POINT_SIZE_SELECTED = 2;
+export const DEFAULT_POINT_SIZE_SELECTED = 0;
 export const DEFAULT_POINT_OUTLINE_WIDTH = 2;
 export const DEFAULT_SIZE_BY = null;
 export const DEFAULT_POINT_CONNECTION_SIZE = 2;

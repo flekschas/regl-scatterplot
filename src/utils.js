@@ -59,7 +59,15 @@ export const createRegl = (canvas) => {
     }
   });
 
-  return createOriginalRegl({ gl, extensions });
+  return createOriginalRegl({
+    gl,
+    extensions,
+    attributes: {
+      depth: false,
+      alpha: false,
+      premultipliedAlpha: true,
+    },
+  });
 };
 
 /**
@@ -396,3 +404,11 @@ export const rgbBrightness = (rgb) =>
  */
 export const clip = (value, minValue, maxValue) =>
   Math.min(maxValue, Math.max(minValue, value));
+
+export const getProp = (object, property, defaultValue) =>
+  Object.prototype.hasOwnProperty.call(object, property)
+    ? object[property]
+    : defaultValue;
+
+export const createPropGetter = (object) => (property, defaultValue) =>
+  getProp(object, property, defaultValue);
