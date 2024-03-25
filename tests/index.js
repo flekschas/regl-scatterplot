@@ -2821,6 +2821,35 @@ test(
   })
 );
 
+test(
+  'test "drawing" event',
+  catchError(async (t) => {
+    const scatterplot = createScatterplot({ canvas: createCanvas() });
+
+    let numDrawCalls = 0;
+    let numDrawingCalls = 0;
+
+    scatterplot.subscribe('draw', () => ++numDrawCalls);
+    scatterplot.subscribe('drawing', () => ++numDrawingCalls);
+
+    await new Promise((resolve) => {
+      scatterplot.subscribe('init', resolve);
+    });
+
+    const isDrawn = scatterplot.draw([[-1, 1]]);
+    await nextAnimationFrame();
+
+    t.equal(numDrawCalls, 0, 'should not have registered any "draw" event');
+    t.equal(numDrawingCalls, 1, 'should have registered one "drawing" event');
+
+    await isDrawn;
+
+    t.equal(numDrawCalls, 1, 'should have registered one "draw" event');
+
+    scatterplot.destroy();
+  })
+);
+
 /* --------------------------------- Utils ---------------------------------- */
 
 test(

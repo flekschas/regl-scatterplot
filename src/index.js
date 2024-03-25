@@ -3547,6 +3547,13 @@ const createScatterplot = (
       });
     }, canvas);
 
+    const renderView = {
+      view: camera.view,
+      camera,
+      xScale,
+      yScale,
+    };
+
     // Publish camera change
     if (isViewChanged) {
       updateScales();
@@ -3554,19 +3561,15 @@ const createScatterplot = (
       if (preventEventView) {
         preventEventView = false;
       } else {
-        pubSub.publish('view', {
-          view: camera.view,
-          camera,
-          xScale,
-          yScale,
-        });
+        pubSub.publish('view', renderView);
       }
     }
 
     draw = false;
     drawReticleOnce = false;
 
-    pubSub.publish('draw');
+    pubSub.publish('drawing', renderView, { async: false });
+    pubSub.publish('draw', renderView);
   });
 
   const redraw = () => {

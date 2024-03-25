@@ -929,6 +929,7 @@ Render Regl draw instructions into a target canvas using the renderer.
 | unfilter             | when the point filter is reset             | `undefined`                        |
 | view                 | when the view has changes                  | `{ camera, view, xScale, yScale }` |
 | draw                 | when the plot was drawn                    | `{ camera, view, xScale, yScale }` |
+| drawing              | when the plot is being drawn               | `{ camera, view, xScale, yScale }` |
 | lassoStart           | when the lasso selection has started       | `undefined`                        |
 | lassoExtend          | when the lasso selection has extended      | `{ coordinates }`                  |
 | lassoEnd             | when the lasso selection has ended         | `{ coordinates }`                  |
