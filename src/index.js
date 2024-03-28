@@ -2825,7 +2825,7 @@ const createScatterplot = (
   const setShowPointConnections = (newShowPointConnections) => {
     showPointConnections = !!newShowPointConnections;
     if (showPointConnections) {
-      if (hasPointConnections(searchIndex.points[0])) {
+      if (isPointsDrawn && hasPointConnections(searchIndex.points[0])) {
         setPointConnections(getPoints()).then(() => {
           pubSub.publish('pointConnectionsDraw');
           draw = true;
