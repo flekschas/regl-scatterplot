@@ -330,18 +330,13 @@ scatterplot.draw(points);
 
 // You can now do something else like changing the point size etc.
 
-// Lets redraw the scatterplot. Since `draw` is caching the points you don't
-// have to specify the points here again if they didn't change.
-scatterplot.draw();
-
 // If we want to animate the transition of our point from above to another
 // x,y position, we can also do this by drawing a new point while enableing
 // transition via the `options` argument.
 scatterplot.draw([[0.6, 0.6, 0, 0.6]], { transition: true });
 
-// Lets actively unset the points. Since `draw()` assumes that you want to
-// redraw existing points you have to actively pass in an empty array.
-// Alternatively, call `scatterplot.clear()`
+// Let's unset the points. To do so, pass in an empty array to `draw()`.
+// Or alternatively, call `scatterplot.clear()`
 scatterplot.draw([]);
 
 // You can also specify the point data in a column-oriented format. The
@@ -360,6 +355,14 @@ scatterplot.draw(
   { hover: 0, selected: [0, 1], filter: [0, 2] }
 );
 ```
+
+<a name="scatterplot.redraw" href="#scatterplot.redraw">#</a> scatterplot.<b>redraw</b>()
+
+Redraw the scatter plot at the next animation frame.
+
+Note, that regl-scatterlot automatically redraws the scatter plot whenever the
+view changes in some ways. So theoretically, there should never be a need to
+call this function!
 
 <a name="scatterplot.clear" href="#scatterplot.clear">#</a> scatterplot.<b>clear</b>()
 
@@ -926,6 +929,7 @@ Render Regl draw instructions into a target canvas using the renderer.
 | unfilter             | when the point filter is reset             | `undefined`                        |
 | view                 | when the view has changes                  | `{ camera, view, xScale, yScale }` |
 | draw                 | when the plot was drawn                    | `{ camera, view, xScale, yScale }` |
+| drawing              | when the plot is being drawn               | `{ camera, view, xScale, yScale }` |
 | lassoStart           | when the lasso selection has started       | `undefined`                        |
 | lassoExtend          | when the lasso selection has extended      | `{ coordinates }`                  |
 | lassoEnd             | when the lasso selection has ended         | `{ coordinates }`                  |

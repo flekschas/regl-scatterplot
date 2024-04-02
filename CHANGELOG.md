@@ -1,3 +1,9 @@
+## 1.9.0
+
+- Add `drawing` event that is _always fired synchronously_ before the end of a draw call. This event is useful for drawing other things as part of an animation frame. The main difference to the default `draw` event is that the `draw` event is fired asynchronously (like all other events) after the draw call such that the draw call itself isn't blocked.
+- Fix: pass `{ camera, view, xScale, yScale }` as the payload of the `draw` event as specified in the docs.
+- Fix: allow `scatterplot.set({ showPointConnections: true })` before points were drawn [#171](https://github.com/flekschas/regl-scatterplot/issues/171)
+
 ## 1.8.5
 
 - Fix: add `d3-scale` types as a dev dependency [#153](https://github.com/flekschas/regl-scatterplot/issues/153)

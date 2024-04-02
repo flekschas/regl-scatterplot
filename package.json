@@ -39,12 +39,12 @@
     "gl-matrix": "~3.4.3",
     "kdbush": "~3.0.0",
     "lodash-es": "~4.17.21",
-    "pub-sub-es": "~2.0.2",
+    "pub-sub-es": "~2.1.2",
     "regl": "~2.1.0",
     "regl-line": "~1.0.0"
   },
   "peerDependencies": {
-    "pub-sub-es": "~2.0.2",
+    "pub-sub-es": "~2.1.2",
     "regl": "~2.1.0"
   },
   "devDependencies": {

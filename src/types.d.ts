@@ -213,7 +213,7 @@ type EventMap = PubSubEvent<
   PubSubEvent<'points', { points: Array<Array<number>> }> &
   PubSubEvent<'transitionEnd', import('regl').Regl> &
   PubSubEvent<
-    'view' | 'draw',
+    'view' | 'draw' | 'drawing',
     Pick<Properties, 'camera' | 'xScale' | 'yScale'> & {
       view: Properties['cameraView'];
     }

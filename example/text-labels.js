@@ -103,15 +103,17 @@ scatterplot.subscribe('deselect', () => {
 });
 
 const showPointLabels = (pointsInView, xScale, yScale) => {
-  textOverlayCtx.clearRect(0, 0, canvas.width, canvas.height);
+  textOverlayCtx.clearRect(0, 0, textOverlayEl.width, textOverlayEl.height);
   textOverlayCtx.fillStyle = 'rgb(255, 255, 255)';
 
+  const dpr = window.devicePixelRatio;
+
   for (let i = 0; i < pointsInView.length; i++) {
+    const [x, y] = points[pointsInView[i]];
     textOverlayCtx.fillText(
       pointsInView[i],
-      xScale(points[pointsInView[i]][0]) * window.devicePixelRatio,
-      yScale(points[pointsInView[i]][1]) * window.devicePixelRatio -
-        overlayFontSize * 1.2 * window.devicePixelRatio
+      xScale(x) * dpr,
+      yScale(y) * dpr - overlayFontSize * 1.2 * dpr
     );
   }
 };
@@ -120,7 +122,7 @@ const hidePointLabels = () => {
   textOverlayCtx.clearRect(0, 0, canvas.width, canvas.height);
 };
 
-scatterplot.subscribe('view', ({ xScale, yScale }) => {
+scatterplot.subscribe('drawing', ({ xScale, yScale }) => {
   const pointsInView = scatterplot.get('pointsInView');
   if (pointsInView.length <= maxPointLabels) {
     showPointLabels(pointsInView, xScale, yScale);
