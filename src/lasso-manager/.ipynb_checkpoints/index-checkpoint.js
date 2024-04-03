@@ -10,16 +10,19 @@ import {
 } from '@flekschas/utils';
 
 import {
-  DEFAULT_DIR_START_INITIATOR_SHOW,
-  DEFAULT_DIR_MIN_DELAY,
-  DEFAULT_DIR_MIN_DIST,
-  DIR_SHOW_START_INITIATOR_TIME,
-  DIR_HIDE_START_INITIATOR_TIME,
-  DEFAULT_DIR_LONG_PRESS_TIME,
-  DEFAULT_DIR_LONG_PRESS_AFTER_EFFECT_TIME,
-  DEFAULT_DIR_LONG_PRESS_EFFECT_DELAY,
-  DEFAULT_DIR_LONG_PRESS_REVERT_EFFECT_TIME,
+  DEFAULT_LASSO_START_INITIATOR_SHOW,
+  DEFAULT_LASSO_MIN_DELAY,
+  DEFAULT_LASSO_MIN_DIST,
+  LASSO_SHOW_START_INITIATOR_TIME,
+  LASSO_HIDE_START_INITIATOR_TIME,
 } from './constants';
+
+import {
+  DEFAULT_LASSO_LONG_PRESS_TIME,
+  DEFAULT_LASSO_LONG_PRESS_AFTER_EFFECT_TIME,
+  DEFAULT_LASSO_LONG_PRESS_EFFECT_DELAY,
+  DEFAULT_LASSO_LONG_PRESS_REVERT_EFFECT_TIME,
+} from '../constants';
 
 import createLongPressElements from './create-long-press-elements';
 import {
@@ -29,29 +32,29 @@ import {
 
 const ifNotNull = (v, alternative = null) => (v === null ? alternative : v);
 
-let cachedDirStylesheets;
+let cachedLassoStylesheets;
 
-const getDirStylesheets = () => {
-  if (!cachedDirStylesheets) {
-    const dirStyleEl = document.createElement('style');
-    document.head.appendChild(dirStyleEl);
-    cachedDirStylesheets = dirStyleEl.sheet;
+const getLassoStylesheets = () => {
+  if (!cachedLassoStylesheets) {
+    const lassoStyleEl = document.createElement('style');
+    document.head.appendChild(lassoStyleEl);
+    cachedLassoStylesheets = lassoStyleEl.sheet;
   }
-  return cachedDirStylesheets;
+  return cachedLassoStylesheets;
 };
 
 const addRule = (rule) => {
-  const dirStylesheets = getDirStylesheets();
-  const currentNumRules = dirStylesheets.rules.length;
-  dirStylesheets.insertRule(rule, currentNumRules);
+  const lassoStylesheets = getLassoStylesheets();
+  const currentNumRules = lassoStylesheets.rules.length;
+  lassoStylesheets.insertRule(rule, currentNumRules);
   return currentNumRules;
 };
 
 const removeRule = (index) => {
-  getDirStylesheets().deleteRule(index);
+  getLassoStylesheets().deleteRule(index);
 };
 
-const inAnimation = `${DIR_SHOW_START_INITIATOR_TIME}ms ease scaleInFadeOut 0s 1 normal backwards`;
+const inAnimation = `${LASSO_SHOW_START_INITIATOR_TIME}ms ease scaleInFadeOut 0s 1 normal backwards`;
 
 const createInAnimationRule = (opacity, scale, rotate) => `
 @keyframes scaleInFadeOut {
@@ -71,7 +74,7 @@ const createInAnimationRule = (opacity, scale, rotate) => `
 `;
 let inAnimationRuleIndex = null;
 
-const outAnimation = `${DIR_HIDE_START_INITIATOR_TIME}ms ease fadeScaleOut 0s 1 normal backwards`;
+const outAnimation = `${LASSO_HIDE_START_INITIATOR_TIME}ms ease fadeScaleOut 0s 1 normal backwards`;
 
 const createOutAnimationRule = (opacity, scale, rotate) => `
 @keyframes fadeScaleOut {
@@ -87,19 +90,19 @@ const createOutAnimationRule = (opacity, scale, rotate) => `
 `;
 let outAnimationRuleIndex = null;
 
-export const createDir = (
+export const createLasso = (
   element,
   {
     onDraw: initialOnDraw = identity,
     onStart: initialOnStart = identity,
     onEnd: initialOnEnd = identity,
     enableInitiator:
-      initialenableInitiator = DEFAULT_DIR_START_INITIATOR_SHOW,
+      initialenableInitiator = DEFAULT_LASSO_START_INITIATOR_SHOW,
     initiatorParentElement: initialInitiatorParentElement = document.body,
     longPressIndicatorParentElement:
       initialLongPressIndicatorParentElement = document.body,
-    minDelay: initialMinDelay = DEFAULT_DIR_MIN_DELAY,
-    minDist: initialMinDist = DEFAULT_DIR_MIN_DIST,
+    minDelay: initialMinDelay = DEFAULT_LASSO_MIN_DELAY,
+    minDist: initialMinDist = DEFAULT_LASSO_MIN_DIST,
     pointNorm: initialPointNorm = identity,
   } = {}
 ) => {
@@ -120,7 +123,7 @@ export const createDir = (
   const initiatorId =
     Math.random().toString(36).substring(2, 5) +
     Math.random().toString(36).substring(2, 5);
-  initiator.id = `dir-initiator-${initiatorId}`;
+  initiator.id = `lasso-initiator-${initiatorId}`;
   initiator.style.position = 'fixed';
   initiator.style.display = 'flex';
   initiator.style.justifyContent = 'center';
@@ -141,11 +144,10 @@ export const createDir = (
   } = createLongPressElements();
 
   let isMouseDown = false;
-  let isDir = false;
-  let dirPosCenter = [];
-  let dirPos = [];
-  let dirPosFlat = [];
-  let dirPrevMousePos;
+  let isLasso = false;
+  let lassoPos = [];
+  let lassoPosFlat = [];
+  let lassoPrevMousePos;
   let longPressIsStarting = false;
 
   let longPressMainInAnimationRuleIndex = null;
@@ -254,13 +256,13 @@ export const createDir = (
     x,
     y,
     {
-      time = DEFAULT_DIR_LONG_PRESS_TIME,
-      extraTime = DEFAULT_DIR_LONG_PRESS_AFTER_EFFECT_TIME,
-      delay = DEFAULT_DIR_LONG_PRESS_EFFECT_DELAY,
+      time = DEFAULT_LASSO_LONG_PRESS_TIME,
+      extraTime = DEFAULT_LASSO_LONG_PRESS_AFTER_EFFECT_TIME,
+      delay = DEFAULT_LASSO_LONG_PRESS_EFFECT_DELAY,
     } = {
-      time: DEFAULT_DIR_LONG_PRESS_TIME,
-      extraTime: DEFAULT_DIR_LONG_PRESS_AFTER_EFFECT_TIME,
-      delay: DEFAULT_DIR_LONG_PRESS_EFFECT_DELAY,
+      time: DEFAULT_LASSO_LONG_PRESS_TIME,
+      extraTime: DEFAULT_LASSO_LONG_PRESS_AFTER_EFFECT_TIME,
+      delay: DEFAULT_LASSO_LONG_PRESS_EFFECT_DELAY,
     }
   ) => {
     longPressIsStarting = true;
@@ -332,8 +334,8 @@ export const createDir = (
   };
 
   const hideLongPressIndicator = (
-    { time = DEFAULT_DIR_LONG_PRESS_REVERT_EFFECT_TIME } = {
-      time: DEFAULT_DIR_LONG_PRESS_REVERT_EFFECT_TIME,
+    { time = DEFAULT_LASSO_LONG_PRESS_REVERT_EFFECT_TIME } = {
+      time: DEFAULT_LASSO_LONG_PRESS_REVERT_EFFECT_TIME,
     }
   ) => {
     if (!longPressIsStarting) return;
@@ -410,60 +412,33 @@ export const createDir = (
   };
 
   const draw = () => {
-    onDraw(dirPos, dirPosFlat);
+    onDraw(lassoPos, lassoPosFlat);
   };
 
   const extend = (currMousePos) => {
-    if (!dirPrevMousePos) {
-      if (!isDir) {
-        isDir = true;
+    if (!lassoPrevMousePos) {
+      if (!isLasso) {
+        isLasso = true;
         onStart();
       }
-      dirPrevMousePos = currMousePos;
+      lassoPrevMousePos = currMousePos;
       const point = pointNorm(currMousePos);
-
-      dirPosCenter = [point];
-      dirPos = [point];
-      dirPosFlat = [point[0], point[1]];
+      lassoPos = [point];
+      lassoPosFlat = [point[0], point[1]];
     } else {
       const d = l2PointDist(
         currMousePos[0],
         currMousePos[1],
-        dirPrevMousePos[0],
-        dirPrevMousePos[1]
+        lassoPrevMousePos[0],
+        lassoPrevMousePos[1]
       );
 
-      if (d > DEFAULT_DIR_MIN_DIST) {
-        const dx = currMousePos[0] - dirPrevMousePos[0];
-        const dy = currMousePos[1] - dirPrevMousePos[1];
-        const nx = -dy / d;
-        const ny = +dx / d;
-
-        const w = 10;
-
-        const pl = pointNorm([
-          currMousePos[0] - w * nx,
-          currMousePos[1] - w * ny,
-        ]);
-        const pr = pointNorm([
-          currMousePos[0] + w * nx,
-          currMousePos[1] + w * ny,
-        ]);
-
-        dirPrevMousePos = currMousePos;
+      if (d > DEFAULT_LASSO_MIN_DIST) {
+        lassoPrevMousePos = currMousePos;
         const point = pointNorm(currMousePos);
-
-        dirPosCenter.push(point);
-        const N = dirPosCenter.length;
-
-        // insert [pl, pr] in dirPos at position N
-        dirPos.splice(N, 0, pl, pr);
-        dirPosFlat.splice(2 * (N - 1), 0, pl[0], pl[1], pr[0], pr[1]);
-
-        // dirPos.push(point);
-        // dirPosFlat.push(point[0], point[1]);
-
-        if (dirPos.length > 1) {
+        lassoPos.push(point);
+        lassoPosFlat.push(point[0], point[1]);
+        if (lassoPos.length > 1) {
           draw();
         }
       }
@@ -472,8 +447,8 @@ export const createDir = (
 
   const extendDb = throttleAndDebounce(
     extend,
-    DEFAULT_DIR_MIN_DELAY,
-    DEFAULT_DIR_MIN_DELAY
+    DEFAULT_LASSO_MIN_DELAY,
+    DEFAULT_LASSO_MIN_DELAY
   );
 
   const extendPublic = (event, debounced) => {
@@ -483,10 +458,9 @@ export const createDir = (
   };
 
   const clear = () => {
-    dirPosCenter = [];
-    dirPos = [];
-    dirPosFlat = [];
-    dirPrevMousePos = undefined;
+    lassoPos = [];
+    lassoPosFlat = [];
+    lassoPrevMousePos = undefined;
     draw();
   };
 
@@ -496,7 +470,7 @@ export const createDir = (
 
   const initiatorMouseDownHandler = () => {
     isMouseDown = true;
-    isDir = true;
+    isLasso = true;
     clear();
     onStart();
   };
@@ -506,21 +480,21 @@ export const createDir = (
   };
 
   const end = ({ merge = false } = {}) => {
-    isDir = false;
+    isLasso = false;
 
-    const currDirPos = [...dirPos];
-    const currDirPosFlat = [...dirPosFlat];
+    const currLassoPos = [...lassoPos];
+    const currLassoPosFlat = [...lassoPosFlat];
 
     extendDb.cancel();
 
     clear();
 
-    // When `currDirPos` is empty the user didn't actually dir-search
-    if (currDirPos.length) {
-      onEnd(currDirPos, currDirPosFlat, { merge });
+    // When `currLassoPos` is empty the user didn't actually lasso
+    if (currLassoPos.length) {
+      onEnd(currLassoPos, currLassoPosFlat, { merge });
     }
 
-    return currDirPos;
+    return currLassoPos;
   };
 
   const set = ({
@@ -607,8 +581,8 @@ export const createDir = (
     withStaticProperty('initiator', initiator),
     withStaticProperty('longPressIndicator', longPress),
     withPublicMethods(),
-    withConstructor(createDir)
+    withConstructor(createLasso)
   )({});
 };
 
-export default createDir;
+export default createLasso;

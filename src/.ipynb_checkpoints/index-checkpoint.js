@@ -14,9 +14,7 @@ import {
 
 import createRenderer from './renderer';
 import createLassoManager from './lasso-manager';
-// //part that I added
-import createDirManager from './dir-manager';
-// //end of part that I added
+
 import BG_FS from './bg.fs';
 import BG_VS from './bg.vs';
 import POINT_FS from './point.fs';
@@ -119,8 +117,6 @@ import {
   CATEGORICAL,
   VALUE_ZW_DATA_TYPES,
 } from './constants';
-
-
 
 import {
   createRegl,
@@ -840,7 +836,7 @@ const createScatterplot = (
     if (lassoClearEvent === LASSO_CLEAR_ON_END) lassoClear();
   };
 
-  let lassoManager = createLassoManager(canvas, {
+  const lassoManager = createLassoManager(canvas, {
     onStart: lassoStart,
     onDraw: lassoExtend,
     onEnd: lassoEnd,
@@ -3655,33 +3651,6 @@ const createScatterplot = (
     zoomToArea,
     zoomToPoints,
     zoomToOrigin,
-    /** 
-     * @param {"lasso" | "directional"} type
-     */
-    setSelectionManager(type) {
-      lassoManager.destroy();
-      if (type === "lasso") {
-         lassoManager = createLassoManager(canvas, {
-          onStart: lassoStart,
-          onDraw: lassoExtend,
-          onEnd: lassoEnd,
-          enableInitiator: lassoInitiator,
-          initiatorParentElement: lassoInitiatorParentElement,
-          pointNorm: ([x, y]) => getScatterGlPos(getNdcX(x), getNdcY(y)),
-        });
-      } else if (type === "directional") {
-        lassoManager = createDirManager(canvas, {
-          onStart: lassoStart,
-          onDraw: lassoExtend,
-          onEnd: lassoEnd,
-          enableInitiator: lassoInitiator,
-          initiatorParentElement: lassoInitiatorParentElement,
-          pointNorm: ([x, y]) => getScatterGlPos(getNdcX(x), getNdcY(y)),
-        });
-      } else {
-        throw new Error("Unknown type", { type });
-      }
-    }
   };
 };
 

@@ -15,11 +15,14 @@ import {
   DEFAULT_DIR_MIN_DIST,
   DIR_SHOW_START_INITIATOR_TIME,
   DIR_HIDE_START_INITIATOR_TIME,
+} from './constants';
+
+import {
   DEFAULT_DIR_LONG_PRESS_TIME,
   DEFAULT_DIR_LONG_PRESS_AFTER_EFFECT_TIME,
   DEFAULT_DIR_LONG_PRESS_EFFECT_DELAY,
   DEFAULT_DIR_LONG_PRESS_REVERT_EFFECT_TIME,
-} from './constants';
+} from '../constants';
 
 import createLongPressElements from './create-long-press-elements';
 import {
