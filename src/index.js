@@ -850,6 +850,39 @@ const createScatterplot = (
   });
 
   const checkLassoMode = () => mouseMode === MOUSE_MODE_LASSO;
+  
+  const dirExtend = (lassoPoints, lassoPointsFlat) => {
+    //lassoPointsCurr = lassoPoints;
+    lasso.setPoints(lassoPointsFlat);
+    pubSub.publish('dirExtend', { coordinates: lassoPoints });
+  };
+  
+  const dirStart = () => {
+    // Fix camera for the lasso selection
+    camera.config({ isFixed: true });
+    mouseDown = true;
+    lassoActive = true;
+    lassoClear();
+    if (mouseDownTimeout >= 0) {
+      clearTimeout(mouseDownTimeout);
+      mouseDownTimeout = -1;
+    }
+    pubSub.publish('dirStart');
+  };
+
+  const dirEnd = (lassoPoints, lassoPointsFlat, { merge = false } = {}) => {
+    camera.config({ isFixed: false });
+    lassoPointsCurr = [...lassoPoints];
+    const pointsInLasso = findPointsInLasso(lassoPointsFlat);
+    select(pointsInLasso, { merge });
+
+    pubSub.publish('dirEnd', {
+      coordinates: lassoPointsCurr,
+    });
+    if (lassoClearEvent === LASSO_CLEAR_ON_END) lassoClear();
+  };
+
+
 
   const checkModKey = (event, action) => {
     switch (keyActionMap[action]) {
@@ -3529,6 +3562,7 @@ const createScatterplot = (
       }
 
       if (lassoPointsCurr.length > 2) drawPolygon2d();
+      
 
       // The draw order of the following calls is important!
       if (!isTransitioning) {
@@ -3671,9 +3705,9 @@ const createScatterplot = (
         });
       } else if (type === "directional") {
         lassoManager = createDirManager(canvas, {
-          onStart: lassoStart,
-          onDraw: lassoExtend,
-          onEnd: lassoEnd,
+          onStart: dirStart,
+          onDraw: dirExtend,
+          onEnd: dirEnd,
           enableInitiator: lassoInitiator,
           initiatorParentElement: lassoInitiatorParentElement,
           pointNorm: ([x, y]) => getScatterGlPos(getNdcX(x), getNdcY(y)),
