@@ -828,7 +828,7 @@ const createScatterplot = (
     pubSub.publish('lassoStart');
   };
 
-  const lassoEnd = (lassoPoints, lassoPointsFlat, { merge = false } = {}) => {
+  const lassoEnd = (lassoPoints, lassoPointsFlat, { merge = false, centerPositions } = {}) => {
     camera.config({ isFixed: false });
     lassoPointsCurr = [...lassoPoints];
     const pointsInLasso = findPointsInLasso(lassoPointsFlat);
@@ -836,6 +836,7 @@ const createScatterplot = (
 
     pubSub.publish('lassoEnd', {
       coordinates: lassoPointsCurr,
+      centerPositions: centerPositions
     });
     if (lassoClearEvent === LASSO_CLEAR_ON_END) lassoClear();
   };
@@ -870,7 +871,7 @@ const createScatterplot = (
     pubSub.publish('dirStart');
   };
 
-  const dirEnd = (lassoPoints, lassoPointsFlat, { merge = false } = {}) => {
+  const dirEnd = (lassoPoints, lassoPointsFlat, { merge = false, dircenterPositions } = {}) => {
     camera.config({ isFixed: false });
     lassoPointsCurr = [...lassoPoints];
     const pointsInLasso = findPointsInLasso(lassoPointsFlat);
@@ -878,6 +879,7 @@ const createScatterplot = (
 
     pubSub.publish('dirEnd', {
       coordinates: lassoPointsCurr,
+      dircenterPositions: dircenterPositions
     });
     if (lassoClearEvent === LASSO_CLEAR_ON_END) lassoClear();
   };

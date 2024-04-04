@@ -513,6 +513,8 @@ export const createDir = (
 
     extendDb.cancel();
 
+    const dircenterPositions = [...dirPosCenter]
+
     clear();
 
     // When `currDirPos` is empty the user didn't actually dir-search
