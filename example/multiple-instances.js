@@ -147,6 +147,7 @@ const opacityValEl = document.querySelector('#opacity-value');
 const clickLassoInitiatorEl = document.querySelector('#click-lasso-initiator');
 const resetEl = document.querySelector('#reset');
 const exampleEl = document.querySelector('#example-multiple-instances');
+const clickSelectionModeEl = document.querySelector('#selection-mode');
 
 exampleEl.setAttribute('class', 'active');
 exampleEl.removeAttribute('href');
@@ -225,6 +226,16 @@ const resetClickHandler = () => {
   scatterplots.forEach((sp) => sp.reset());
 };
 resetEl.addEventListener('click', resetClickHandler);
+
+clickSelectionModeEl.addEventListener('change', (event) => {
+  const directionType = event.target.value; // Directional, Lasso
+  console.log("setting selection mode ", directionType)
+  scatterplot.setSelectionManager(
+    directionType === "Directional" ? "directional" : "lasso"
+  )
+})
+
+
 
 /**
  * Link scatter plots
