@@ -219,13 +219,21 @@ type EventMap = PubSubEvent<
     }
   >;
 
+export type EventHandler<EventName extends keyof EventMap> = (payload: EventMap[EventName]) => void;
+
+export type Subscription<EventName extends keyof EventMap> = {
+  event: EventName;
+  handler: EventHandler<EventName>;
+};
+
 export interface PubSub {
   subscribe<EventName extends keyof EventMap>(
     eventName: EventName,
-    eventHandler: (payload: EventMap[EventName]) => void,
+    eventHandler: EventHandler<EventName>,
     times?: number
-  ): void;
-  unsubscribe(eventName: keyof EventMap): void;
+  ): Subscription<EventName>;
+  unsubscribe<EventName extends keyof EventMap>(eventName: EventName, eventHandler: EventHandler<EventName>): void;
+  unsubscribe<EventName extends keyof EventMap>(subscription: Subscription<EventName>): void;
   publish<EventName extends keyof EventMap>(
     eventName: EventName,
     payload: EventMap[EventName]
