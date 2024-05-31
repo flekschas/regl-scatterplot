@@ -168,6 +168,7 @@ export interface ScatterplotMethodOptions {
     filter: number | number[];
     zDataType: ZWDataType;
     wDataType: ZWDataType;
+    spatialIndex: ArrayBuffer;
   }>;
   hover: Partial<{
     showReticleOnce: boolean;
@@ -191,12 +192,7 @@ export interface ScatterplotMethodOptions {
   }>;
 }
 
-// PubSub definitions
-type PubSubEvent<EventName extends string, Payload extends unknown> = {
-  [Key in EventName]: Payload;
-};
-
-type EventMap = PubSubEvent<
+type Events = import('pub-sub-es').Event<
   | 'init'
   | 'destroy'
   | 'backgroundImageReady'
@@ -207,27 +203,17 @@ type EventMap = PubSubEvent<
   | 'pointConnectionsDraw',
   undefined
 > &
-  PubSubEvent<'lassoEnd' | 'lassoExtend', { coordinates: number[] }> &
-  PubSubEvent<'pointOver' | 'pointOut', number> &
-  PubSubEvent<'select' | 'focus', { points: Array<number> }> &
-  PubSubEvent<'points', { points: Array<Array<number>> }> &
-  PubSubEvent<'transitionEnd', import('regl').Regl> &
-  PubSubEvent<
+  import('pub-sub-es').Event<
+    'lassoEnd' | 'lassoExtend',
+    { coordinates: number[] }
+  > &
+  import('pub-sub-es').Event<'pointOver' | 'pointOut', number> &
+  import('pub-sub-es').Event<'select' | 'focus', { points: Array<number> }> &
+  import('pub-sub-es').Event<'points', { points: Array<Array<number>> }> &
+  import('pub-sub-es').Event<'transitionEnd', import('regl').Regl> &
+  import('pub-sub-es').Event<
     'view' | 'draw' | 'drawing',
     Pick<Properties, 'camera' | 'xScale' | 'yScale'> & {
       view: Properties['cameraView'];
     }
   >;
-
-export interface PubSub {
-  subscribe<EventName extends keyof EventMap>(
-    eventName: EventName,
-    eventHandler: (payload: EventMap[EventName]) => void,
-    times?: number
-  ): void;
-  unsubscribe(eventName: keyof EventMap): void;
-  publish<EventName extends keyof EventMap>(
-    eventName: EventName,
-    payload: EventMap[EventName]
-  ): void;
-}
