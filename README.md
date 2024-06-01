@@ -253,6 +253,41 @@ Note that the zooming can be smoothly transitioned when `{ transition: true }` i
 
 [Code Example](example/multiple-instances.js) | [Demo](https://flekschas.github.io/regl-scatterplot/multiple-instances.html)
 
+### Update only the Z/W point coordinates
+
+If you only want to update the z/w points coordinates that can be used for encoding te point color, opacity, or size, you can improve the redrawing performance by reusing the existing spatial index, which is otherwise recomputed every time you draw new points.
+
+```javascript
+const x = (length) => Array.from({ length }, () => -1 + Math.random() * 2);
+const y = (length) => Array.from({ length }, () => -1 + Math.random() * 2);
+const z = (length) => Array.from({ length }, () => Math.round(Math.random()));
+const w = (length) => Array.from({ length }, () => Math.random());
+
+const numPoints = 1000000;
+const points = {
+  x: x(numPoints),
+  y: y(numPoints),
+  z: z(numPoints),
+  w: w(numPoints),
+};
+
+const scatterplot = createScatterplot({ ... });
+scatterplot.draw(initialPoints).then(() => {
+  // After the initial draw, we retrieve and save the KDBush spatial index.
+  const spatialIndex = scatterplot.get('spatialIndex');
+  setInterval(() => {
+    // Update Z and W values
+    points.z = z(numPoints);
+    points.w = w(numPoints);
+
+    // We redraw the scatter plot with the updates points. Importantly, since
+    // the x/y coordinates remain unchanged we pass in the saved spatial index
+    // to avoid having to re-index the points.
+    scatterplot.draw(points, { spatialIndex });
+  }, 2000);
+})
+```
+
 ## API
 
 ### Constructors
@@ -307,6 +342,7 @@ Note that repeatedly calling this method without specifying `points` will not cl
   - `filter` [default: `undefined`]: a shortcut for [`filter()`](#scatterplot.filter). This option allows to programmatically filter points by specifying a list of point indices
   - `zDataType` [default: `undefined`]: This option allows to manually set the data type of the z/valueA value to either `continuous` or `categorical`. By default the data type is [determined automatically](#color-opacity-and-size-encoding).
   - `wDataType` [default: `undefined`]: This option allows to manually set the data type of the w/valyeB value to either `continuous` or `categorical`. By default the data type is [determined automatically](#color-opacity-and-size-encoding).
+  - `spatialIndex` [default: `undefined`]: This option allows to pass in the array buffer of [KDBush](https://github.com/mourner/kdbush) to skip the manual creation of the spatial index. Caution: only use this option if you know what you're doing! The point data is not validated against the spatial index.
 
 **Returns:** a Promise object that resolves once the points have been drawn or transitioned.
 
@@ -635,6 +671,8 @@ can be read and written via [`scatterplot.get()`](#scatterplot.get) and [`scatte
 | renderer                              | [Renderer](#renderer)                        | `createRenderer()`                  |                                                                 | `false`  | `false`     |
 | syncEvents                            | boolean                                      | `false`                             |                                                                 | `false`  | `false`     |
 | version                               | string                                       |                                     |                                                                 | `false`  | `false`     |
+| spatialIndex                          | ArrayBuffer                                  |                                     |                                                                 | `false`  | `false`     |
+| spatialIndexUseWorker                 | undefined or boolean                         | `undefined`                         |                                                                 | `true`   | `false`     |
 | width                                 | int or str                                   | `'auto'`                            | `'auto'` or > 0                                                 | `true`   | `false`     |
 | height                                | int or str                                   | `'auto'`                            | `'auto'` or > 0                                                 | `true`   | `false`     |
 | aspectRatio                           | float                                        | `1.0`                               | > 0                                                             | `true`   | `false`     |
