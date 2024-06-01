@@ -116,6 +116,7 @@ import {
   CONTINUOUS,
   CATEGORICAL,
   VALUE_ZW_DATA_TYPES,
+  DEFAULT_SPATIAL_INDEX_USE_WORKER,
 } from './constants';
 
 import {
@@ -137,6 +138,7 @@ import {
   flipObj,
   rgbBrightness,
   clip,
+  toArrayOrientedPoints,
 } from './utils';
 
 import { version } from '../package.json';
@@ -264,6 +266,7 @@ const createScatterplot = (
   const {
     performanceMode = DEFAULT_PERFORMANCE_MODE,
     opacityByDensityDebounceTime = DEFAULT_OPACITY_BY_DENSITY_DEBOUNCE_TIME,
+    spatialIndexUseWorker = DEFAULT_SPATIAL_INDEX_USE_WORKER,
   } = initialProperties;
 
   // Same as renderer ||= createRenderer({ ... }) but avoids having to rely on
@@ -1806,7 +1809,9 @@ const createScatterplot = (
         data: createPointIndex(numPoints),
       });
 
-      createKdbush(options.spatialIndex || newPoints)
+      createKdbush(options.spatialIndex || newPoints, {
+        useWorker: spatialIndexUseWorker,
+      })
         .then((newSearchIndex) => {
           spatialIndex = newSearchIndex;
           points = newPoints;
@@ -2211,91 +2216,6 @@ const createScatterplot = (
 
     pubSub.publish('transitionStart');
   };
-
-  const toArrayOrientedPoints = (newPoints) =>
-    new Promise((resolve, reject) => {
-      if (!newPoints || Array.isArray(newPoints)) {
-        resolve(newPoints);
-      } else {
-        const length =
-          Array.isArray(newPoints.x) || ArrayBuffer.isView(newPoints.x)
-            ? newPoints.x.length
-            : 0;
-
-        const getX =
-          (Array.isArray(newPoints.x) || ArrayBuffer.isView(newPoints.x)) &&
-          ((i) => newPoints.x[i]);
-        const getY =
-          (Array.isArray(newPoints.y) || ArrayBuffer.isView(newPoints.y)) &&
-          ((i) => newPoints.y[i]);
-        const getL =
-          (Array.isArray(newPoints.line) ||
-            ArrayBuffer.isView(newPoints.line)) &&
-          ((i) => newPoints.line[i]);
-        const getLO =
-          (Array.isArray(newPoints.lineOrder) ||
-            ArrayBuffer.isView(newPoints.lineOrder)) &&
-          ((i) => newPoints.lineOrder[i]);
-
-        const components = Object.keys(newPoints);
-        const getZ = (() => {
-          const z = components.find((c) => Z_NAMES.has(c));
-          return (
-            z &&
-            (Array.isArray(newPoints[z]) || ArrayBuffer.isView(newPoints[z])) &&
-            ((i) => newPoints[z][i])
-          );
-        })();
-        const getW = (() => {
-          const w = components.find((c) => W_NAMES.has(c));
-          return (
-            w &&
-            (Array.isArray(newPoints[w]) || ArrayBuffer.isView(newPoints[w])) &&
-            ((i) => newPoints[w][i])
-          );
-        })();
-
-        if (getX && getY && getZ && getW && getL && getLO) {
-          resolve(
-            newPoints.x.map((x, i) => [
-              x,
-              getY(i),
-              getZ(i),
-              getW(i),
-              getL(i),
-              getLO(i),
-            ])
-          );
-        } else if (getX && getY && getZ && getW && getL) {
-          resolve(
-            Array.from({ length }, (_, i) => [
-              getX(i),
-              getY(i),
-              getZ(i),
-              getW(i),
-              getL(i),
-            ])
-          );
-        } else if (getX && getY && getZ && getW) {
-          resolve(
-            Array.from({ length }, (_, i) => [
-              getX(i),
-              getY(i),
-              getZ(i),
-              getW(i),
-            ])
-          );
-        } else if (getX && getY && getZ) {
-          resolve(
-            Array.from({ length }, (_, i) => [getX(i), getY(i), getZ(i)])
-          );
-        } else if (getX && getY) {
-          resolve(Array.from({ length }, (_, i) => [getX(i), getY(i)]));
-        } else {
-          reject(new Error('You need to specify at least x and y'));
-        }
-      }
-    });
 
   /**
    * @param {import('./types').Points} newPoints
@@ -3626,7 +3546,7 @@ const createScatterplot = (
     pointConnections.destroy();
     reticleHLine.destroy();
     reticleVLine.destroy();
-    if (!initialProperties.renderer) {
+    if (!initialProperties.renderer && !renderer.isDestroyed) {
       // Since the user did not pass in an externally created renderer we can
       // assume that the renderer is only used by this scatter plot instance.
       // Therefore it's save to destroy it when this scatter plot instance is
@@ -3678,6 +3598,22 @@ const createScatterplot = (
 
 export default createScatterplot;
 
-export { createRegl, createRenderer, createTextureFromUrl };
+/**
+ * Create spatial index from points.
+ *
+ * @description
+ * The spatial index can be used with `scatterplot.draw(points, { spatialIndex })`
+ * to drastically speed up the draw call.
+ *
+ * @param {import('./types').Points} points - The points for which to create the spatial index.
+ * @param {boolean=} useWorker - Whether to create the spatial index in a worker thread or not. If `undefined`, the spatial index will be created in a worker if `points` contains more than one million entries.
+ * @return {Promise<ArrayBuffer>} Spatial index
+ */
+const createSpatialIndex = (points, useWorker) =>
+  toArrayOrientedPoints(points)
+    .then((arrayPoints) => createKdbush(arrayPoints, { useWorker }))
+    .then((index) => index.data);
+
+export { createRegl, createRenderer, createSpatialIndex, createTextureFromUrl };
 
 export { checkReglExtensions as checkSupport } from './utils';

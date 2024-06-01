@@ -10,6 +10,8 @@ export const createRenderer = (
     gamma = DEFAULT_GAMMA,
   } = options;
 
+  let isDestroyed = false;
+
   // Same as regl ||= createRegl(canvas) but avoids having to rely on
   // https://babeljs.io/docs/en/babel-plugin-proposal-logical-assignment-operators
   // eslint-disable-next-line no-unused-expressions
@@ -159,11 +161,13 @@ export const createRenderer = (
    * Destroy the renderer to free resources and cancel animation frames
    */
   const destroy = () => {
-    frame.cancel();
-    canvas = undefined;
-    regl = undefined;
+    isDestroyed = true;
     window.removeEventListener('resize', resize);
     window.removeEventListener('orientationchange', resize);
+    frame.cancel();
+    canvas = undefined;
+    regl.destroy();
+    regl = undefined;
   };
 
   return {
@@ -201,6 +205,13 @@ export const createRenderer = (
      */
     get isSupported() {
       return isSupportingAllGlExtensions;
+    },
+    /**
+     * Get whether the renderer (and its Regl instance) is destroyed
+     * @return {boolean} If `true` the renderer is destroyed
+     */
+    get isDestroyed() {
+      return isDestroyed;
     },
     render,
     onFrame,

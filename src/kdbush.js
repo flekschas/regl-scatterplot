@@ -18,6 +18,12 @@ const createWorker = (fn) => {
   );
 };
 
+/**
+ * Create KDBush from an either point data or an existing spatial index
+ * @param {import('./types').Points | ArrayBuffer} pointsOrIndex - Points or KDBush index
+ * @param {Partial<import('./types').CreateKDBushOptions>} options - Options for configuring the index and its creation
+ * @return {Promise<KDBush>} KDBush instance
+ */
 const createKdbush = (
   pointsOrIndex,
   options = { nodeSize: 16, useWorker: undefined }

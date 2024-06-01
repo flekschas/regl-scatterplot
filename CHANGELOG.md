@@ -2,7 +2,8 @@
 
 - Add: allow to retrieve KDBush's spatial index via `scatterplot.get('spatialIndex')`. The index refers to KDBush v4.0.2.
 - Add: allow to pass a spatial index to `scatterplot.draw(newPoints, { spatialIndex })` to circumvent the indexing of `newPoints`. This can be useful when only the z or w coordinates of `newPoints` differ to previously drawn points or when you've computed the spatial index upfront.
-- Add: run the computation of the spatial index in a worker when the number of points is larger or equal to one million.
+- Add: run the computation of the spatial index in a worker when the number of points is larger or equal to one million. This behavior can be adjusted during the instantiation of the scatterplot via `createScatterplot({ spatialIndexUseWorker })`. If `true`, regl-scatterplot will always compute the spatial index in a worker. If `false`, regl-scatterplot will always compute the spatial index in the main browser thread.
+- Add: export `createSpatialIndex` to allow creating a spatial index upfront conveniently
 - Add: new `drawing` event that is _always fired synchronously_ before the end of a draw call. This event is useful for drawing other things as part of an animation frame. The main difference to the default `draw` event is that the `draw` event is fired asynchronously (like all other events) after the draw call such that the draw call itself isn't blocked.
 - Fix: pass `{ camera, view, xScale, yScale }` as the payload of the `draw` event as specified in the docs.
 - Fix: allow `scatterplot.set({ showPointConnections: true })` before points were drawn [#171](https://github.com/flekschas/regl-scatterplot/issues/171)

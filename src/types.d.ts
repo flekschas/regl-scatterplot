@@ -111,6 +111,11 @@ interface BaseOptions {
   yScale: null | Scale;
 }
 
+export interface CreateKDBushOptions {
+  node: number;
+  useWorker: boolean;
+}
+
 /**
  * Helper type. Adds a prefix to keys of Options.
  *
@@ -146,6 +151,7 @@ export type Properties = {
   camera: Camera2D;
   performanceMode: boolean;
   opacityByDensityDebounceTime: number;
+  spatialIndexUseWorker: undefined | boolean;
   points: [number, number][];
   pointsInView: number[];
   isDestroyed: boolean;
@@ -192,7 +198,7 @@ export interface ScatterplotMethodOptions {
   }>;
 }
 
-type Events = import('pub-sub-es').Event<
+export type Events = import('pub-sub-es').Event<
   | 'init'
   | 'destroy'
   | 'backgroundImageReady'

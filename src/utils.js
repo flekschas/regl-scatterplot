@@ -4,6 +4,8 @@ import {
   GL_EXTENSIONS,
   DEFAULT_IMAGE_LOAD_TIMEOUT,
   IMAGE_LOAD_ERROR,
+  Z_NAMES,
+  W_NAMES,
 } from './constants';
 
 /**
@@ -389,10 +391,92 @@ export const rgbBrightness = (rgb) =>
 
 /**
  * Clip a number between min and max
- * @param   {number}  value  The value to be clipped
- * @param   {number}  minValue  The minimum value
- * @param   {number}  maxValue  The maximum value
- * @return  {number}  The clipped value
+ * @param {number} value - The value to be clipped
+ * @param {number} minValue - The minimum value
+ * @param {number} maxValue - The maximum value
+ * @return {number} The clipped value
  */
 export const clip = (value, minValue, maxValue) =>
   Math.min(maxValue, Math.max(minValue, value));
+
+/**
+ * Convert object- or array-oriented points to array-oriented points
+ * @param {import('./types').Points} points - The point data
+ * @return {number[][]} Array-oriented points
+ */
+export const toArrayOrientedPoints = (points) =>
+  new Promise((resolve, reject) => {
+    if (!points || Array.isArray(points)) {
+      resolve(points);
+    } else {
+      const length =
+        Array.isArray(points.x) || ArrayBuffer.isView(points.x)
+          ? points.x.length
+          : 0;
+
+      const getX =
+        (Array.isArray(points.x) || ArrayBuffer.isView(points.x)) &&
+        ((i) => points.x[i]);
+      const getY =
+        (Array.isArray(points.y) || ArrayBuffer.isView(points.y)) &&
+        ((i) => points.y[i]);
+      const getL =
+        (Array.isArray(points.line) || ArrayBuffer.isView(points.line)) &&
+        ((i) => points.line[i]);
+      const getLO =
+        (Array.isArray(points.lineOrder) ||
+          ArrayBuffer.isView(points.lineOrder)) &&
+        ((i) => points.lineOrder[i]);
+
+      const components = Object.keys(points);
+      const getZ = (() => {
+        const z = components.find((c) => Z_NAMES.has(c));
+        return (
+          z &&
+          (Array.isArray(points[z]) || ArrayBuffer.isView(points[z])) &&
+          ((i) => points[z][i])
+        );
+      })();
+      const getW = (() => {
+        const w = components.find((c) => W_NAMES.has(c));
+        return (
+          w &&
+          (Array.isArray(points[w]) || ArrayBuffer.isView(points[w])) &&
+          ((i) => points[w][i])
+        );
+      })();
+
+      if (getX && getY && getZ && getW && getL && getLO) {
+        resolve(
+          points.x.map((x, i) => [
+            x,
+            getY(i),
+            getZ(i),
+            getW(i),
+            getL(i),
+            getLO(i),
+          ])
+        );
+      } else if (getX && getY && getZ && getW && getL) {
+        resolve(
+          Array.from({ length }, (_, i) => [
+            getX(i),
+            getY(i),
+            getZ(i),
+            getW(i),
+            getL(i),
+          ])
+        );
+      } else if (getX && getY && getZ && getW) {
+        resolve(
+          Array.from({ length }, (_, i) => [getX(i), getY(i), getZ(i), getW(i)])
+        );
+      } else if (getX && getY && getZ) {
+        resolve(Array.from({ length }, (_, i) => [getX(i), getY(i), getZ(i)]));
+      } else if (getX && getY) {
+        resolve(Array.from({ length }, (_, i) => [getX(i), getY(i)]));
+      } else {
+        reject(new Error('You need to specify at least x and y'));
+      }
+    }
+  });

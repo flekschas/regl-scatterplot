@@ -276,15 +276,15 @@ scatterplot.draw(initialPoints).then(() => {
   // After the initial draw, we retrieve and save the KDBush spatial index.
   const spatialIndex = scatterplot.get('spatialIndex');
   setInterval(() => {
-      // Update Z and W values
-      points.z = z(numPoints);
-      points.w = w(numPoints);
+    // Update Z and W values
+    points.z = z(numPoints);
+    points.w = w(numPoints);
 
-      // We redraw the scatter plot with the updates points. Importantly, since
-      // the x/y coordinates remain unchanged we pass in the saved spatial index
-      // to avoid having to re-index the points.
-      scatterplot.draw(points, { spatialIndex });
-    }, 2000);
+    // We redraw the scatter plot with the updates points. Importantly, since
+    // the x/y coordinates remain unchanged we pass in the saved spatial index
+    // to avoid having to re-index the points.
+    scatterplot.draw(points, { spatialIndex });
+  }, 2000);
 })
 ```
 
@@ -672,6 +672,7 @@ can be read and written via [`scatterplot.get()`](#scatterplot.get) and [`scatte
 | syncEvents                            | boolean                                      | `false`                             |                                                                 | `false`  | `false`     |
 | version                               | string                                       |                                     |                                                                 | `false`  | `false`     |
 | spatialIndex                          | ArrayBuffer                                  |                                     |                                                                 | `false`  | `false`     |
+| spatialIndexUseWorker                 | undefined or boolean                         | `undefined`                         |                                                                 | `true`   | `false`     |
 | width                                 | int or str                                   | `'auto'`                            | `'auto'` or > 0                                                 | `true`   | `false`     |
 | height                                | int or str                                   | `'auto'`                            | `'auto'` or > 0                                                 | `true`   | `false`     |
 | aspectRatio                           | float                                        | `1.0`                               | > 0                                                             | `true`   | `false`     |
