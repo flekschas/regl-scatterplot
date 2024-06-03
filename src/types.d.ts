@@ -151,6 +151,7 @@ export type Properties = {
   camera: Camera2D;
   performanceMode: boolean;
   opacityByDensityDebounceTime: number;
+  spatialIndex: ArrayBuffer;
   spatialIndexUseWorker: undefined | boolean;
   points: [number, number][];
   pointsInView: number[];

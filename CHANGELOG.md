@@ -1,3 +1,7 @@
+## 1.9.1
+
+- Fix: add missing type definition for `scatterplot.get('spatialIndex')` ([#179](https://github.com/flekschas/regl-scatterplot/issues/179))
+
 ## 1.9.0
 
 - Add: allow to retrieve KDBush's spatial index via `scatterplot.get('spatialIndex')`. The index refers to KDBush v4.0.2.
