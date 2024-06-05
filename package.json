@@ -39,7 +39,7 @@
     "gl-matrix": "~3.4.3",
     "pub-sub-es": "~3.0.0",
     "regl": "~2.1.0",
-    "regl-line": "~1.0.0"
+    "regl-line": "~1.1.0"
   },
   "peerDependencies": {
     "pub-sub-es": "~2.1.2",

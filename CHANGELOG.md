@@ -1,3 +1,7 @@
+## 1.9.2
+
+- Fix: update `regl-line` to include a critical bug fix related to drawing connected points.
+
 ## 1.9.1
 
 - Fix: add missing type definition for `scatterplot.get('spatialIndex')` ([#179](https://github.com/flekschas/regl-scatterplot/issues/179))
