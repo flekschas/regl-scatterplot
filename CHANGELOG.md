@@ -1,3 +1,8 @@
+## 1.9.3
+
+- Fix: point connection initial color map
+- Fix: allow point connection color to be set to `inherit` (to inherit the point color)
+
 ## 1.9.2
 
 - Fix: update `regl-line` to include a critical bug fix related to drawing connected points.

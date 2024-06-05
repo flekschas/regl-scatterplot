@@ -163,7 +163,7 @@ const checkDeprecations = (properties) => {
 const getEncodingType = (
   type,
   defaultValue,
-  { allowSegment = false, allowDensity = false } = {}
+  { allowSegment = false, allowDensity = false, allowInherit = false } = {}
 ) => {
   // Z refers to the 3rd component of the RGBA value
   if (Z_NAMES.has(type)) return 'valueZ';
@@ -174,6 +174,8 @@ const getEncodingType = (
   if (type === 'segment') return allowSegment ? 'segment' : defaultValue;
 
   if (type === 'density') return allowDensity ? 'density' : defaultValue;
+
+  if (type === 'inherit') return allowInherit ? 'inherit' : defaultValue;
 
   return defaultValue;
 };
@@ -426,7 +428,7 @@ const createScatterplot = (
   pointConnectionColorBy = getEncodingType(
     pointConnectionColorBy,
     DEFAULT_POINT_CONNECTION_COLOR_BY,
-    { allowSegment: true }
+    { allowSegment: true, allowInherit: true }
   );
   pointConnectionOpacityBy = getEncodingType(
     pointConnectionOpacityBy,
@@ -1337,7 +1339,7 @@ const createScatterplot = (
     pointConnectionColorBy = getEncodingType(
       type,
       DEFAULT_POINT_CONNECTION_COLOR_BY,
-      { allowSegment: true }
+      { allowSegment: true, allowInherit: true }
     );
   };
   const setPointConnectionOpacityBy = (type) => {
@@ -3370,9 +3372,11 @@ const createScatterplot = (
       is2d: true,
     });
     pointConnections = createLine(renderer.regl, {
-      color: pointConnectionColor,
-      colorHover: pointConnectionColorHover,
-      colorActive: pointConnectionColorActive,
+      color: getColors(
+        pointConnectionColor,
+        pointConnectionColorActive,
+        pointConnectionColorHover
+      ),
       opacity:
         pointConnectionOpacity === null ? null : pointConnectionOpacity[0],
       width: pointConnectionSize[0],
