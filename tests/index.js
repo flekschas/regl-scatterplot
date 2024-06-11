@@ -2257,10 +2257,10 @@ test('other methods', async (t2) => {
 
       const points = [
         [0, 0],
-        [1, 1],
-        [1, -1],
-        [-1, -1],
-        [-1, 1],
+        [0.9, 0.9],
+        [0.9, -0.9],
+        [-0.9, -0.9],
+        [-0.9, 0.9],
       ];
 
       await scatterplot.draw(points);
@@ -2273,9 +2273,36 @@ test('other methods', async (t2) => {
         `only points ${filteredPoints} should be filtered in`
       );
 
-      const updatedPoints = points.map(([x, y]) => [x + 1, y + 1]);
+      const getPixelSum = (img, xStart, xEnd, yStart, yEnd) => {
+        let pixelSum = 0;
+        for (let i = yStart; i < yEnd; i++) {
+          for (let j = xStart; j < xEnd; j++) {
+            const idx = (i * img.width + j) * 4;
+            pixelSum +=
+              img.data[idx] +
+              img.data[idx + 1] +
+              img.data[idx + 2] +
+              img.data[idx + 3];
+          }
+        }
+        return pixelSum;
+      };
 
-      await scatterplot.draw(updatedPoints, { preventFilterReset: true });
+      let img = scatterplot.export();
+
+      t.equal(
+        getPixelSum(img, 0, Math.ceil(img.width / 3), 0, img.height),
+        0,
+        'The left side of the image should be empty as points #3 and #4 are filtered out'
+      );
+
+      t.ok(
+        getPixelSum(img, Math.ceil(img.width / 3), img.width, 0, img.height) >
+          0,
+        'The right side of the image should *not* be empty as points #0 to #2 are filtered in'
+      );
+
+      await scatterplot.draw([...points], { preventFilterReset: true });
 
       t.equal(
         scatterplot.get('isPointsFiltered'),
@@ -2288,7 +2315,21 @@ test('other methods', async (t2) => {
         'the filtered points should be the same as before'
       );
 
-      await scatterplot.draw([...updatedPoints, [0.5, 0.5]], {
+      img = scatterplot.export();
+
+      t.equal(
+        getPixelSum(img, 0, Math.ceil(img.width / 3), 0, img.height),
+        0,
+        'The left side of the image should be empty as points #3 and #4 are filtered out'
+      );
+
+      t.ok(
+        getPixelSum(img, Math.ceil(img.width / 3), img.width, 0, img.height) >
+          0,
+        'The right side of the image should *not* be empty as points #0 to #2 are filtered in'
+      );
+
+      await scatterplot.draw([...points, [0.5, 0.5]], {
         preventFilterReset: true,
       });
 
@@ -2300,8 +2341,15 @@ test('other methods', async (t2) => {
 
       t.equal(
         scatterplot.get('filteredPoints').length,
-        updatedPoints.length + 1,
+        points.length + 1,
         'the filtered points should be reset as draw has been invoked with different number of points'
+      );
+
+      img = scatterplot.export();
+
+      t.ok(
+        getPixelSum(img, 0, Math.ceil(img.width / 3), 0, img.height) > 0,
+        'The left side of the image should *not* be empty as the filter was reset'
       );
 
       scatterplot.destroy();
@@ -2532,6 +2580,16 @@ test('other methods', async (t2) => {
       scatterplot.subscribe('filter', filterHandler);
       scatterplot.subscribe('unfilter', unfilterHandler);
 
+      let hoveredPoint;
+      const pointOverHandler = (pointIdx) => {
+        hoveredPoint = pointIdx;
+      };
+      const pointOutHandler = () => {
+        hoveredPoint = undefined;
+      };
+      scatterplot.subscribe('pointover', pointOverHandler);
+      scatterplot.subscribe('pointout', pointOutHandler);
+
       await scatterplot.filter([1, 3]);
       await wait(0);
 
@@ -2554,6 +2612,24 @@ test('other methods', async (t2) => {
       t.ok(
         isSameElements(scatterplot.get('filteredPoints'), [1, 3]),
         'should be able to retrieve the filtered points'
+      );
+
+      scatterplot.hover(1);
+      await wait(0);
+
+      t.equal(
+        hoveredPoint,
+        1,
+        'should be able to hover a point that is filtered in'
+      );
+
+      scatterplot.hover(2);
+      await wait(0);
+
+      t.equal(
+        hoveredPoint,
+        undefined,
+        'should not be able to hover a point that is filtered out'
       );
 
       let selectedPoints = [];

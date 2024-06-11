@@ -1,3 +1,8 @@
+## 1.9.4
+
+- Fix: `scatterplot.draw(newPoints, { preventFilterReset })` should preserves the filter ([Jupyter-Scatter#134](https://github.com/flekschas/jupyter-scatter/issues/134))
+- Fix: `scatterplot.hover(filteredOutPoint)` should not trigger a hover event
+
 ## 1.9.3
 
 - Fix: point connection initial color map
