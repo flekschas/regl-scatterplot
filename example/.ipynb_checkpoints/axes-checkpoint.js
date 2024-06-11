@@ -1,9 +1,14 @@
 /* eslint no-console: 0 */
 
+import { axisBottom, axisRight } from 'd3-axis';
+import { scaleLinear } from 'd3-scale';
+import { select } from 'd3-selection';
+
 import createScatterplot from '../src';
 import { saveAsPng, checkSupport } from './utils';
 
-
+const parentWrapper = document.querySelector('#parent-wrapper');
+const canvasWrapper = document.querySelector('#canvas-wrapper');
 const canvas = document.querySelector('#canvas');
 const numPointsEl = document.querySelector('#num-points');
 const numPointsValEl = document.querySelector('#num-points-value');
@@ -12,57 +17,57 @@ const pointSizeValEl = document.querySelector('#point-size-value');
 const opacityEl = document.querySelector('#opacity');
 const opacityValEl = document.querySelector('#opacity-value');
 const clickLassoInitiatorEl = document.querySelector('#click-lasso-initiator');
-const clickSelectionModeEl = document.querySelector('#selection-mode');
 const resetEl = document.querySelector('#reset');
 const exportEl = document.querySelector('#export');
-const exampleEl = document.querySelector('#example-basic');
+const exampleBg = document.querySelector('#example-axes');
 
-exampleEl.setAttribute('class', 'active');
-exampleEl.removeAttribute('href');
+exampleBg.setAttribute('class', 'active');
+exampleBg.removeAttribute('href');
 
-let points = { x: [], y: [], z: [], w: [] };
+const xDomain = [0, 42];
+const yDomain = [0, 4.2];
+const xScale = scaleLinear().domain(xDomain);
+const yScale = scaleLinear().domain(yDomain);
+const xAxis = axisBottom(xScale);
+const yAxis = axisRight(yScale);
+const axisContainer = select(parentWrapper).append('svg');
+const xAxisContainer = axisContainer.append('g');
+const yAxisContainer = axisContainer.append('g');
+const xAxisPadding = 20;
+const yAxisPadding = 40;
+
+axisContainer.node().style.position = 'absolute';
+axisContainer.node().style.top = 0;
+axisContainer.node().style.left = 0;
+axisContainer.node().style.width = '100%';
+axisContainer.node().style.height = '100%';
+axisContainer.node().style.pointerEvents = 'none';
+
+canvasWrapper.style.right = `${yAxisPadding}px`;
+canvasWrapper.style.bottom = `${xAxisPadding}px`;
+
+let { width, height } = canvasWrapper.getBoundingClientRect();
+
+xAxisContainer.attr('transform', `translate(0, ${height})`).call(xAxis);
+yAxisContainer.attr('transform', `translate(${width}, 0)`).call(yAxis);
+
+// Render grid
+xAxis.tickSizeInner(-height);
+yAxis.tickSizeInner(-width);
+
+let points = [];
 let numPoints = 100000;
 let pointSize = 2;
-let opacity = 0.33;
+let opacity = 0.5;
 let selection = [];
 
-const lassoMinDelay = 10;
-const lassoMinDist = 2;
-const showReticle = true;
-const reticleColor = [1, 1, 0.878431373, 0.33];
-
-const pointoverHandler = (pointId) => {
-  const x = points.x[pointId];
-  const y = points.y[pointId];
-  const category = points.z[pointId];
-  const value = points.w[pointId];
-  console.log(
-    `Out point: ${pointId}`,
-    `X: ${x}\nY: ${y}\nCategory: ${category}\nValue: ${value}`
-  );
-};
-
-const pointoutHandler = (pointId) => {
-  const x = points.x[pointId];
-  const y = points.y[pointId];
-  const category = points.z[pointId];
-  const value = points.w[pointId];
-  console.log(
-    `Out point: ${pointId}`,
-    `X: ${x}\nY: ${y}\nCategory: ${category}\nValue: ${value}`
-  );
-};
-
 const selectHandler = ({ points: selectedPoints }) => {
+  console.log('Selected:', selectedPoints);
   selection = selectedPoints;
   if (selection.length === 1) {
-    const x = points.x[selection[0]];
-    const y = points.y[selection[0]];
-    const category = points.z[selection[0]];
-    const value = points.w[selection[0]];
+    const point = points[selection[0]];
     console.log(
-      `Selected: ${selectedPoints}`,
-      `X: ${x}\nY: ${y}\nCategory: ${category}\nValue: ${value}`
+      `X: ${point[0]}\nY: ${point[1]}\nCategory: ${point[2]}\nValue: ${point[3]}`
     );
   }
 };
@@ -74,11 +79,10 @@ const deselectHandler = () => {
 
 const scatterplot = createScatterplot({
   canvas,
-  lassoMinDelay,
-  lassoMinDist,
   pointSize,
-  showReticle,
-  reticleColor,
+  xScale,
+  yScale,
+  showReticle: true,
   lassoInitiator: true,
 });
 
@@ -88,23 +92,50 @@ exportEl.addEventListener('click', () => saveAsPng(scatterplot));
 
 console.log(`Scatterplot v${scatterplot.get('version')}`);
 
-scatterplot.subscribe('pointover', pointoverHandler);
-scatterplot.subscribe('pointout', pointoutHandler);
 scatterplot.subscribe('select', selectHandler);
 scatterplot.subscribe('deselect', deselectHandler);
-
-const generatePoints = (length) => ({
-  x: Array.from({ length }, () => -1 + Math.random() * 2),
-  y: Array.from({ length }, () => -1 + Math.random() * 2),
-  z: Array.from({ length }, () => Math.round(Math.random())), // category
-  w: Array.from({ length }, () => Math.random()), // value
+scatterplot.subscribe('view', (event) => {
+  xAxisContainer.call(xAxis.scale(event.xScale));
+  yAxisContainer.call(yAxis.scale(event.yScale));
 });
+
+scatterplot.subscribe(
+  'init',
+  () => {
+    xAxisContainer.call(xAxis.scale(scatterplot.get('xScale')));
+    yAxisContainer.call(yAxis.scale(scatterplot.get('yScale')));
+  },
+  1
+);
+
+const resizeHandler = () => {
+  ({ width, height } = canvasWrapper.getBoundingClientRect());
+
+  xAxisContainer.attr('transform', `translate(0, ${height})`).call(xAxis);
+  yAxisContainer.attr('transform', `translate(${width}, 0)`).call(yAxis);
+
+  // Render grid
+  xAxis.tickSizeInner(-height);
+  yAxis.tickSizeInner(-width);
+};
+
+window.addEventListener('resize', resizeHandler);
+window.addEventListener('orientationchange', resizeHandler);
+
+const generatePoints = (num) =>
+  new Array(num).fill().map(() => [
+    -1 + Math.random() * 2, // x
+    -1 + Math.random() * 2, // y
+    Math.round(Math.random() * 9), // category
+    Math.random(), // value
+  ]);
 
 const setNumPoint = (newNumPoints) => {
   numPoints = newNumPoints;
   numPointsEl.value = numPoints;
   numPointsValEl.innerHTML = numPoints;
   points = generatePoints(numPoints);
+
   scatterplot.draw(points);
 };
 
@@ -159,42 +190,18 @@ const resetClickHandler = () => {
 
 resetEl.addEventListener('click', resetClickHandler);
 
-clickSelectionModeEl.addEventListener('change', (event) => {
-  const directionType = event.target.value; // Directional, Lasso
-  console.log("setting selection mode ", directionType)
-  scatterplot.setSelectionManager(
-    directionType === "Directional" ? "directional" : "lasso"
-  )
-})
-
-const colorsCat = ['#3a78aa', '#aa3a99'];
-scatterplot.set({ colorBy: 'category', pointColor: colorsCat });
-
-const colorsScale = [
-  '#002072', // dark blue
-  '#162b79',
-  '#233680',
-  '#2e4186',
-  '#394d8d',
-  '#425894',
-  '#4b649a',
-  '#5570a1',
-  '#5e7ca7',
-  '#6789ae',
-  '#7195b4',
-  '#7ba2ba',
-  '#85aec0',
-  '#90bbc6',
-  '#9cc7cc',
-  '#a9d4d2',
-  '#b8e0d7',
-  '#c8ecdc',
-  '#ddf7df',
-  '#ffffe0', // bright yellow
-];
-scatterplot.set({ colorBy: 'value', pointColor: colorsScale });
-scatterplot.subscribe("lassoEnd", (lassodata) => { console.log(lassodata) });
-scatterplot.subscribe("dirEnd", (data) => { console.log(data) });
+scatterplot.set({
+  colorBy: 'category',
+  pointColor: [
+    '#d192b7',
+    '#6fb2e4',
+    '#eecb62',
+    '#56bf92',
+    '#dca237',
+    '#3a84cc',
+    '#c76526',
+  ],
+});
 
 setPointSize(pointSize);
 setOpacity(opacity);

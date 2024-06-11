@@ -66,6 +66,7 @@
     "d3-random": "^3.0.1",
     "d3-scale": "^4.0.2",
     "d3-selection": "^3.0.0",
+    "esbuild": "0.20.2",
     "eslint": "^8.43.0",
     "eslint-config-airbnb": "^19.0.4",
     "eslint-config-prettier": "^8.8.0",

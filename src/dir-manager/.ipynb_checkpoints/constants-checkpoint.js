@@ -1,0 +1,5 @@
+export const DEFAULT_DIR_START_INITIATOR_SHOW = true;
+export const DEFAULT_DIR_MIN_DELAY = 8;
+export const DEFAULT_DIR_MIN_DIST = 2;
+export const DIR_SHOW_START_INITIATOR_TIME = 2500;
+export const DIR_HIDE_START_INITIATOR_TIME = 250;
