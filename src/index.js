@@ -772,7 +772,9 @@ const createScatterplot = (
   ) => {
     let needsRedraw = false;
 
-    if (point >= 0 && point < numPoints) {
+    const isFilteredOut = isPointsFiltered && !filteredPointsSet.has(point);
+
+    if (!isFilteredOut && point >= 0 && point < numPoints) {
       needsRedraw = true;
       const oldHoveredPoint = hoveredPoint;
       const newHoveredPoint = point !== hoveredPoint;
@@ -1796,6 +1798,9 @@ const createScatterplot = (
     new Promise((resolve) => {
       isPointsDrawn = false;
 
+      const preventFilterReset =
+        options?.preventFilterReset && newPoints.length === numPoints;
+
       numPoints = newPoints.length;
       numPointsInView = numPoints;
 
@@ -1805,11 +1810,13 @@ const createScatterplot = (
         w: options.wDataType,
       });
 
-      normalPointsIndexBuffer({
-        usage: 'static',
-        type: 'float',
-        data: createPointIndex(numPoints),
-      });
+      if (!preventFilterReset) {
+        normalPointsIndexBuffer({
+          usage: 'static',
+          type: 'float',
+          data: createPointIndex(numPoints),
+        });
+      }
 
       createKdbush(options.spatialIndex || newPoints, {
         useWorker: spatialIndexUseWorker,
@@ -2275,6 +2282,7 @@ const createScatterplot = (
               setPoints(newPointsArray, {
                 zDataType,
                 wDataType,
+                preventFilterReset: options.preventFilterReset,
                 spatialIndex: options.spatialIndex,
               }).then(() => {
                 if (options.hover !== undefined) {
