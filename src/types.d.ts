@@ -197,6 +197,16 @@ export interface ScatterplotMethodOptions {
     transitionDuration: number;
     transitionEasing: (t: number) => number;
   }>;
+  zoomToArea: Partial<{
+    transition: boolean;
+    transitionDuration: number;
+    transitionEasing: (t: number) => number;
+  }>;
+  zoomToLocation: Partial<{
+    transition: boolean;
+    transitionDuration: number;
+    transitionEasing: (t: number) => number;
+  }>;
 }
 
 export type Events = import('pub-sub-es').Event<

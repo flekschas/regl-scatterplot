@@ -1,3 +1,8 @@
+## 1.9.5
+
+- Fix: option types of `zoomToLocation`, `zoomToOrigin`, `zoomToArea`
+- Fix: ensure `zoomToArea` works in cases where `aspectRatio` is not equal to `1`
+
 ## 1.9.4
 
 - Fix: `scatterplot.draw(newPoints, { preventFilterReset })` should preserves the filter ([Jupyter-Scatter#134](https://github.com/flekschas/jupyter-scatter/issues/134))

@@ -2406,8 +2406,8 @@ const createScatterplot = (
 
   /**
    * Zoom to an area specified as a rectangle
-   * @param {import('./types').Rect} rect - The rectangle to zoom to
-   * @param {import('./types').ScatterplotMethodOptions['draw']} options
+   * @param {import('./types').Rect} rect - The rectangle to zoom to in normalized device coordinates
+   * @param {import('./types').ScatterplotMethodOptions['zoomToArea']} options
    * @returns {Promise<void>}
    */
   const zoomToArea = (rect, options = {}) =>
@@ -2419,12 +2419,14 @@ const createScatterplot = (
       // we would have to do `Math.atan(1 / camera.view[5])`
       const vFOV = 2 * Math.atan(1);
 
+      const aspectRatio = viewAspectRatio / dataAspectRatio;
+
       const distance =
-        rect.height * viewAspectRatio > rect.width
+        rect.height * aspectRatio >= rect.width
           ? // Distance is based on the height of the bounding box
             rect.height / 2 / Math.tan(vFOV / 2)
           : // Distance is based on the width of the bounding box
-            rect.width / 2 / Math.tan((vFOV * viewAspectRatio) / 2);
+            rect.width / 2 / Math.tan(vFOV / 2) / aspectRatio;
 
       if (options.transition) {
         camera.config({ isFixed: true });
@@ -2474,9 +2476,9 @@ const createScatterplot = (
 
   /**
    * Zoom to a location specified in normalized devide coordinates.
-   * @param {number[]} target - The camera target
+   * @param {number[]} target - The camera target given in normalized device coordinates
    * @param {number} distance - The camera distance
-   * @param {import('./types').ScatterplotMethodOptions['draw']} options
+   * @param {import('./types').ScatterplotMethodOptions['zoomToLocation']} options
    * @returns {Promise<void>}
    */
   const zoomToLocation = (target, distance, options = {}) =>
@@ -2505,7 +2507,7 @@ const createScatterplot = (
 
   /**
    * Zoom to the origin
-   * @param {import('./types').ScatterplotMethodOptions['draw']} options
+   * @param {import('./types').ScatterplotMethodOptions['zoomToLocation']} options
    * @returns {Promise<void>}
    */
   const zoomToOrigin = (options = {}) => zoomToLocation([0, 0], 1, options);
