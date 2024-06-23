@@ -2932,6 +2932,68 @@ test('other methods', async (t2) => {
   );
 
   await t2.test(
+    'zoomToArea() with non-standard aspect ratio',
+    catchError(async (t) => {
+      const dims = [
+        [200, 200],
+        [200, 100],
+        [100, 200],
+        [333, 123],
+      ];
+      const aspectRatios = [1, 2, 0.3, 5 / 3];
+
+      const xStart = -8 / 6;
+      const xWidth = 5 + 8 / 6;
+      const yStart = -1 / 3;
+      const yWidth = 2 / 3;
+
+      const points = {
+        x: Array.from({ length: 500 }, (_, i) => xStart + (i / 499) * xWidth),
+        y: Array.from({ length: 500 }, (_, i) => yStart + (i / 499) * yWidth),
+      };
+
+      const rect = {
+        x: xStart - EPS,
+        width: xWidth + EPS * 2,
+        y: yStart - EPS,
+        height: yWidth + EPS * 2,
+      };
+
+      for (const [width, height] of dims) {
+        for (const aspectRatio of aspectRatios) {
+          const scatterplot = createScatterplot({
+            canvas: createCanvas(width, height),
+            aspectRatio,
+          });
+
+          // eslint-disable-next-line no-await-in-loop
+          await scatterplot.draw(points);
+          // eslint-disable-next-line no-await-in-loop
+          await scatterplot.zoomToArea(rect);
+
+          t.equal(
+            scatterplot.get('pointsInView').length,
+            500,
+            'should show all points'
+          );
+
+          t.ok(
+            Math.abs(scatterplot.getScreenPosition(0)[0]) < 0.01,
+            'first point should be close to zero'
+          );
+
+          t.ok(
+            Math.abs(scatterplot.getScreenPosition(499)[0] - width) < 0.01,
+            `last point should be close to ${width}`
+          );
+
+          scatterplot.destroy();
+        }
+      }
+    })
+  );
+
+  await t2.test(
     'getScreenPosition()',
     catchError(async (t) => {
       const scatterplot = createScatterplot({
@@ -3058,7 +3120,15 @@ test('other methods', async (t2) => {
 
       await scatterplot.draw({ x, y, z: z1 });
 
-      await scatterplot.zoomToArea({ x: 0, y: 0, width: 1, height: 1 });
+      await scatterplot.zoomToArea(
+        {
+          x: -EPS,
+          y: -EPS,
+          width: 1 + 2 * EPS,
+          height: 1 + 2 * EPS,
+        },
+        { log: true }
+      );
 
       t.equal(
         scatterplot.get('pointsInView'),
@@ -3072,7 +3142,12 @@ test('other methods', async (t2) => {
       // from the previous draw call.
       await scatterplot.draw({ x, y, z: z2 }, { spatialIndex });
 
-      await scatterplot.zoomToArea({ x: -1, y: -1, width: 1, height: 1 });
+      await scatterplot.zoomToArea({
+        x: -1 - EPS,
+        y: -1 - EPS,
+        width: 1 + 2 * EPS,
+        height: 1 + 2 * EPS,
+      });
 
       // The reused spatial index should work as before
       t.equal(

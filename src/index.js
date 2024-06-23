@@ -2412,7 +2412,13 @@ const createScatterplot = (
    */
   const zoomToArea = (rect, options = {}) =>
     new Promise((resolve) => {
-      const target = [rect.x + rect.width / 2, rect.y + rect.height / 2];
+      const target = vec4
+        .transformMat4(
+          [],
+          [rect.x + rect.width / 2, rect.y + rect.height / 2, 0, 0],
+          model
+        )
+        .slice(0, 2);
 
       // Vertical field of view
       // The Arc Tangent is based on the original camera position. Otherwise

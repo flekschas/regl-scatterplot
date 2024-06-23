@@ -10,7 +10,7 @@
     "prettier"
   ],
   "parserOptions": {
-    "ecmaVersion": 2021,
+    "ecmaVersion": "latest",
     "sourceType": "module"
   },
   "plugins": ["prettier"],
@@ -25,7 +25,8 @@
     "no-param-reassign": ["error", { "props": false }],
     "prefer-destructuring": 0,
     "no-continue": 0,
-    "prefer-spread": 0
+    "prefer-spread": 0,
+    "no-restricted-syntax": ["off", "ForOfStatement"]
   },
   "settings": {
     "react": {

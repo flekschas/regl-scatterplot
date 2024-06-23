@@ -1,3 +1,7 @@
+## 1.9.6
+
+- Fix: try ensure `zoomToArea` works in cases where `aspectRatio` is not equal to `1` and add tests to verify this
+
 ## 1.9.5
 
 - Fix: option types of `zoomToLocation`, `zoomToOrigin`, `zoomToArea`
