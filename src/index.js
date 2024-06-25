@@ -117,6 +117,9 @@ import {
   CATEGORICAL,
   VALUE_ZW_DATA_TYPES,
   DEFAULT_SPATIAL_INDEX_USE_WORKER,
+  DEFAULT_ANNOTATION_LINE_COLOR,
+  DEFAULT_ANNOTATION_LINE_WIDTH,
+  DEFAULT_ANNOTATION_HVLINE_LIMIT,
 } from './constants';
 
 import {
@@ -139,6 +142,11 @@ import {
   rgbBrightness,
   clip,
   toArrayOrientedPoints,
+  isHorizontalLine,
+  isVerticalLine,
+  isDomRect,
+  isRect,
+  isPolygon,
 } from './utils';
 
 import { version } from '../package.json';
@@ -259,6 +267,9 @@ const createScatterplot = (
     sizeBy = DEFAULT_SIZE_BY,
     height = DEFAULT_HEIGHT,
     width = DEFAULT_WIDTH,
+    annotationLineColor = DEFAULT_ANNOTATION_LINE_COLOR,
+    annotationLineWidth = DEFAULT_ANNOTATION_LINE_WIDTH,
+    annotationHVLineLimit = DEFAULT_ANNOTATION_HVLINE_LIMIT,
   } = initialProperties;
 
   let currentWidth = width === AUTO ? 1 : width;
@@ -287,7 +298,10 @@ const createScatterplot = (
   let isDestroyed = false;
   let backgroundColorBrightness = rgbBrightness(backgroundColor);
   let camera;
+  /** @type {ReturnType<createLine>} */
   let lasso;
+  /** @type {ReturnType<createLine>} */
+  let annotations;
   let mouseDown = false;
   let mouseDownTime = null;
   let mouseDownPosition = [0, 0];
@@ -469,6 +483,7 @@ const createScatterplot = (
 
   let isViewChanged = false;
   let isPointsDrawn = false;
+  let isAnnotationsDrawn = false;
   let isMouseOverCanvasChecked = false;
 
   let valueZDataType = CATEGORICAL;
@@ -2373,6 +2388,129 @@ const createScatterplot = (
     );
   };
 
+  /**
+   * Draw line-based annotations.
+   * @param {import('./types').Annotation[]} newAnnotations
+   * @returns {Promise<void>}
+   */
+  const drawAnnotations = (newAnnotations) => {
+    if (isDestroyed) {
+      return Promise.reject(new Error('The instance was already destroyed'));
+    }
+
+    isAnnotationsDrawn = false;
+
+    if (newAnnotations.length === 0) {
+      return new Promise((resolve) => {
+        annotations.clear();
+        pubSub.subscribe('draw', resolve, 1);
+        isAnnotationsDrawn = true;
+        draw = true;
+      });
+    }
+
+    return new Promise((resolve) => {
+      const newPoints = [];
+      const newColors = new Map();
+      const newColorIndices = [];
+      const newWidths = [];
+
+      let maxNewColorIdx = -1;
+
+      const addColorAndWidth = (annotation) => {
+        newWidths.push(annotation.lineWidth || annotationLineWidth);
+
+        const color = toRgba(annotation.lineColor || annotationLineColor, true);
+        const colorId = `[${color.join(',')}]`;
+        if (newColors.has(colorId)) {
+          const { idx } = newColors.get(colorId);
+          newColorIndices.push(idx);
+        } else {
+          const idx = ++maxNewColorIdx;
+          newColors.set(colorId, { idx, color });
+          newColorIndices.push(idx);
+        }
+      };
+
+      for (const annotation of newAnnotations) {
+        if (isHorizontalLine(annotation)) {
+          newPoints.push([
+            -annotationHVLineLimit,
+            annotation.y,
+            annotationHVLineLimit,
+            annotation.y,
+          ]);
+          addColorAndWidth(annotation);
+          continue;
+        }
+
+        if (isVerticalLine(annotation)) {
+          newPoints.push([
+            annotation.x,
+            -annotationHVLineLimit,
+            annotation.x,
+            annotationHVLineLimit,
+          ]);
+          addColorAndWidth(annotation);
+          continue;
+        }
+
+        if (isRect(annotation)) {
+          newPoints.push([
+            annotation.x1,
+            annotation.y1,
+            annotation.x2,
+            annotation.y1,
+            annotation.x2,
+            annotation.y2,
+            annotation.x1,
+            annotation.y2,
+            annotation.x1,
+            annotation.y1,
+          ]);
+          addColorAndWidth(annotation);
+          continue;
+        }
+
+        if (isDomRect(annotation)) {
+          newPoints.push([
+            annotation.x,
+            annotation.y,
+            annotation.x + annotation.width,
+            annotation.y,
+            annotation.x + annotation.width,
+            annotation.y + annotation.height,
+            annotation.x,
+            annotation.y + annotation.height,
+            annotation.x,
+            annotation.y,
+          ]);
+          addColorAndWidth(annotation);
+          continue;
+        }
+
+        if (isPolygon(annotation)) {
+          newPoints.push(annotation.vertices.flatMap(identity));
+          addColorAndWidth(annotation);
+        }
+      }
+
+      annotations.setStyle({
+        color: Array.from(newColors.values())
+          .sort((a, b) => (a.idx > b.idx ? 1 : -1))
+          .map(({ color }) => color),
+      });
+      annotations.setPoints(newPoints, {
+        colorIndices: newColorIndices,
+        widths: newWidths,
+      });
+
+      pubSub.subscribe('draw', resolve, 1);
+      isAnnotationsDrawn = true;
+      draw = true;
+    });
+  };
+
   /** @type {<F extends Function>(f: F) => (...args: Parameters<F>) => ReturnType<F>} */
   const withDraw =
     (f) =>
@@ -2900,6 +3038,18 @@ const createScatterplot = (
     opacityInactiveScale = +newOpacityInactiveScale;
   };
 
+  const setAnnotationLineColor = (newAnnotationLineColor) => {
+    annotationLineColor = toRgba(newAnnotationLineColor);
+  };
+
+  const setAnnotationLineWidth = (newAnnotationLineWidth) => {
+    annotationLineWidth = +newAnnotationLineWidth;
+  };
+
+  const setAnnotationHVLineLimit = (newAnnotationHVLineLimit) => {
+    annotationHVLineLimit = +newAnnotationHVLineLimit;
+  };
+
   const setGamma = (newGamma) => {
     renderer.gamma = newGamma;
   };
@@ -3011,9 +3161,13 @@ const createScatterplot = (
     if (property === 'isDestroyed') return isDestroyed;
     if (property === 'isPointsDrawn') return isPointsDrawn;
     if (property === 'isPointsFiltered') return isPointsFiltered;
+    if (property === 'isAnnotationsDrawn') return isAnnotationsDrawn;
     if (property === 'zDataType') return valueZDataType;
     if (property === 'wDataType') return valueWDataType;
     if (property === 'spatialIndex') return spatialIndex?.data;
+    if (property === 'annotationLineColor') return annotationLineColor;
+    if (property === 'annotationLineWidth') return annotationLineWidth;
+    if (property === 'annotationHVLineLimit') return annotationHVLineLimit;
 
     return undefined;
   };
@@ -3259,6 +3413,18 @@ const createScatterplot = (
       setGamma(properties.gamma);
     }
 
+    if (properties.annotationLineColor !== undefined) {
+      setAnnotationLineColor(properties.annotationLineColor);
+    }
+
+    if (properties.annotationLineWidth !== undefined) {
+      setAnnotationLineWidth(properties.annotationLineWidth);
+    }
+
+    if (properties.annotationHVLineLimit !== undefined) {
+      setAnnotationHVLineLimit(properties.annotationHVLineLimit);
+    }
+
     // setWidth and setHeight can be async when width or height are set to
     // 'auto'. And since draw() would have anyway been async we can just make
     // all calls async.
@@ -3409,6 +3575,11 @@ const createScatterplot = (
       width: 1,
       is2d: true,
     });
+    annotations = createLine(renderer.regl, {
+      color: annotationLineColor,
+      width: annotationLineWidth,
+      is2d: true,
+    });
     computePointSizeMouseDetection();
 
     // Event listeners
@@ -3464,7 +3635,8 @@ const createScatterplot = (
     // Update camera: this needs to happen on every
     isViewChanged = camera.tick();
 
-    if (!isPointsDrawn || !(draw || isTransitioning)) return;
+    if (!(isPointsDrawn || isAnnotationsDrawn) || !(draw || isTransitioning))
+      return;
 
     if (isTransitioning && !tween(transitionDuration, transitionEasing))
       endTransition();
@@ -3497,10 +3669,16 @@ const createScatterplot = (
         });
       }
 
-      drawPointBodies();
+      if (isPointsDrawn) drawPointBodies();
       if (!mouseDown && (showReticle || drawReticleOnce)) drawReticle();
       if (hoveredPoint >= 0) drawHoveredPoint();
       if (selectedPoints.length) drawSelectedPoints();
+
+      annotations.draw({
+        projection: getProjection(),
+        model: getModel(),
+        view: getView(),
+      });
 
       lasso.draw({
         projection: getProjection(),
@@ -3540,6 +3718,7 @@ const createScatterplot = (
 
   const destroy = () => {
     isPointsDrawn = false;
+    isAnnotationsDrawn = false;
     isDestroyed = true;
     cancelFrameListener();
     window.removeEventListener('keyup', keyUpHandler, false);
@@ -3595,6 +3774,7 @@ const createScatterplot = (
     deselect,
     destroy,
     draw: publicDraw,
+    drawAnnotations,
     filter,
     get,
     getScreenPosition,

@@ -480,3 +480,24 @@ export const toArrayOrientedPoints = (points) =>
       }
     }
   });
+
+export const isHorizontalLine = (annotation) =>
+  Number.isFinite(annotation.y) && !('x' in annotation);
+
+export const isVerticalLine = (annotation) =>
+  Number.isFinite(annotation.x) && !('y' in annotation);
+
+export const isDomRect = (annotation) =>
+  Number.isFinite(annotation.x) &&
+  Number.isFinite(annotation.y) &&
+  Number.isFinite(annotation.width) &&
+  Number.isFinite(annotation.height);
+
+export const isRect = (annotation) =>
+  Number.isFinite(annotation.x1) &&
+  Number.isFinite(annotation.y1) &&
+  Number.isFinite(annotation.x2) &&
+  Number.isFinite(annotation.x2);
+
+export const isPolygon = (annotation) =>
+  'vertices' in annotation && annotation.vertices.length > 1;

@@ -85,6 +85,44 @@ type Rect = {
   height: number;
 };
 
+interface BaseAnnotation {
+  lineColor?: Color;
+  lineWidth?: number;
+}
+
+interface AnnotationHLine extends BaseAnnotation {
+  y: number;
+}
+
+interface AnnotationVLine extends BaseAnnotation {
+  x: number;
+}
+
+interface AnnotationDomRect extends BaseAnnotation {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+interface AnnotationRect extends BaseAnnotation {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+}
+
+interface AnnotationPolygon extends BaseAnnotation {
+  vertices: [number, number][];
+}
+
+type Annotation =
+  | AnnotationHLine
+  | AnnotationVLine
+  | AnnotationDomRect
+  | AnnotationRect
+  | AnnotationPolygon;
+
 interface BaseOptions {
   backgroundColor: Color;
   deselectOnDblClick: boolean;
@@ -102,6 +140,9 @@ interface BaseOptions {
   width: 'auto' | number;
   gamma: number;
   aspectRatio: number;
+  annotationLineColor: Color;
+  annotationLineWidth: number;
+  annotationHVLineLimit: number;
   // Nullifiable
   backgroundImage: null | import('regl').Texture2D | string;
   colorBy: null | DataEncoding;

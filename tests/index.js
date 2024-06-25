@@ -62,6 +62,7 @@ import {
   capitalize,
   catchError,
   isSameElements,
+  getPixelSum,
 } from './utils';
 
 const EPS = 1e-7;
@@ -2273,21 +2274,6 @@ test('other methods', async (t2) => {
         `only points ${filteredPoints} should be filtered in`
       );
 
-      const getPixelSum = (img, xStart, xEnd, yStart, yEnd) => {
-        let pixelSum = 0;
-        for (let i = yStart; i < yEnd; i++) {
-          for (let j = xStart; j < xEnd; j++) {
-            const idx = (i * img.width + j) * 4;
-            pixelSum +=
-              img.data[idx] +
-              img.data[idx + 1] +
-              img.data[idx + 2] +
-              img.data[idx + 3];
-          }
-        }
-        return pixelSum;
-      };
-
       let img = scatterplot.export();
 
       t.equal(
@@ -3154,6 +3140,74 @@ test('other methods', async (t2) => {
         scatterplot.get('pointsInView'),
         [2, 3],
         'should have points #2 and #3 in the view'
+      );
+
+      scatterplot.destroy();
+    })
+  );
+
+  await t2.test(
+    'drawAnnotations()',
+    catchError(async (t) => {
+      const scatterplot = createScatterplot({ canvas: createCanvas(100, 100) });
+
+      await scatterplot.drawAnnotations([
+        { x: 0.95, lineColor: [1, 1, 1, 0.1], lineWidth: 1 },
+        { y: 0.95, lineColor: [1, 1, 1, 0.1], lineWidth: 1 },
+        {
+          x1: -0.88,
+          y1: -0.88,
+          x2: -0.82,
+          y2: -0.82,
+          lineColor: [1, 1, 1, 0.25],
+          lineWidth: 1,
+        },
+        {
+          x: -0.88,
+          y: 0.82,
+          width: 0.06,
+          height: 0.06,
+          lineColor: [1, 1, 1, 0.25],
+          lineWidth: 1,
+        },
+        {
+          vertices: [
+            [0.82, 0.88],
+            [0.88, 0.88],
+            [0.88, 0.82],
+            [0.82, 0.82],
+            [0.82, 0.88],
+          ],
+          lineColor: '#D55E00',
+          lineWidth: 2,
+        },
+      ]);
+
+      const img = scatterplot.export();
+
+      t.ok(
+        getPixelSum(img, 0, img.width, 0, 8) > 0,
+        'The horizontal line should be drawn'
+      );
+
+      t.ok(
+        getPixelSum(img, img.width - 8, img.width, 0, img.height) > 0,
+        'The vertical line should be drawn'
+      );
+
+      t.ok(
+        getPixelSum(img, 10, 20, img.height - 20, img.height - 10) > 0,
+        'The bottom left rectangle should be drawn'
+      );
+
+      t.ok(
+        getPixelSum(img, 10, 20, 10, 20) > 0,
+        'The top left rectangle should be drawn'
+      );
+
+      t.ok(
+        getPixelSum(img, img.width - 20, img.width - 10, 10, 20) > 0,
+        'The top right polygon should be drawn'
       );
 
       scatterplot.destroy();

@@ -404,6 +404,59 @@ call this function!
 
 Clears previously drawn points.
 
+<a name="scatterplot.drawAnnotations" href="#scatterplot.drawAnnotations">#</a> scatterplot.<b>drawAnnotations</b>(<i>annotations</i>)
+
+Draw line-based annotations of the following kind in normalized device coordinates:
+
+- Horizontal line
+- Vertical line
+- Rectangle
+- Polygon
+
+**Arguments:**
+
+- `annotations` is expected to be a list of the following objects:
+  - For horizontal lines: `{ x: number, lineColor?: Color, lineWidth?: number }`
+  - For vertical lines: `{ x: number, lineColor?: Color, lineWidth?: number }`
+  - For rectangle : `{ x: number, y: number, width: number, height: number, lineColor?: Color, lineWidth?: number }` or `{ x1: number, y1: number, x2: number, y2: number, lineColor?: Color, lineWidth?: number }`
+  - For polygons or lines: `{ vertices: [number, number][], lineColor?: Color, lineWidth?: number }`
+
+**Returns:** a Promise object that resolves once the annotations have been drawn or transitioned.
+
+**Examples:**
+
+```javascript
+const scatterplot = createScatterplot({
+  ...,
+  annotationLineColor: [1, 1, 1, 0.1], // Default line color
+  annotationLineWidth: 1, // Default line width
+});
+
+scatterplot.draw({
+  x: Array.from({ length: 10000 }, () => -1 + Math.random() * 2),
+  y: Array.from({ length: 10000 }, () => -1 + Math.random() * 2),
+});
+
+scatterplot.drawAnnotations([
+  // Horizontal line
+  { y: 0 },
+  // Vertical line
+  { x: 0 },
+  // Rectangle
+  {
+    x1: -0.5, y1: -0.5, x2: 0.5, y2: 0.5,
+    lineColor: [1, 0, 0, 0.33],
+    lineWidth: 2,
+  },
+  // Polygon
+  {
+    vertices: [[-1, 0], [0, 1], [1, 0], [0, -1], [-1, 0]],
+    lineColor: [1, 1, 0, 0.33],
+    lineWidth: 3,
+  },
+]);
+```
+
 <a name="scatterplot.get" href="#scatterplot.set">#</a> scatterplot.<b>get</b>(<i>property</i>)
 
 **Arguments:**
@@ -733,6 +786,9 @@ can be read and written via [`scatterplot.get()`](#scatterplot.get) and [`scatte
 | isDestroyed                           | boolean                                      | `false`                             |                                                                 | `false`  | `false`     |
 | isPointsDrawn                         | boolean                                      | `false`                             |                                                                 | `false`  | `false`     |
 | isPointsFiltered                      | boolean                                      | `false`                             |                                                                 | `false`  | `false`     |
+| annotationLineColor                   | string or quadruple                          | `[1, 1, 1, 0.1]`                    | hex, rgb, rgba                                                  | `true`   | `false`     |
+| annotationLineWidth                   | number                                       | `1`                                 |                                                                 | `true`   | `false`     |
+| annotationHVLineLimit                 | number                                       | `1000`                              | the extent of horizontal or vertical lines                      | `true`   | `false`     |
 
 <a name="property-notes" href="#property-notes">#</a> <b>Notes:</b>
 
