@@ -71,3 +71,18 @@ export const isSameElements = (a, b) => {
   const aSet = new Set(a);
   return b.every((value) => aSet.has(value));
 };
+
+export const getPixelSum = (img, xStart, xEnd, yStart, yEnd) => {
+  let pixelSum = 0;
+  for (let i = yStart; i < yEnd; i++) {
+    for (let j = xStart; j < xEnd; j++) {
+      const idx = (i * img.width + j) * 4;
+      pixelSum +=
+        img.data[idx] +
+        img.data[idx + 1] +
+        img.data[idx + 2] +
+        img.data[idx + 3];
+    }
+  }
+  return pixelSum;
+};

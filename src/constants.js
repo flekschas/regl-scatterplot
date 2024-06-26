@@ -128,6 +128,11 @@ export const DEFAULT_POINT_CONNECTION_COLOR_NORMAL = [0.66, 0.66, 0.66, 0.2];
 export const DEFAULT_POINT_CONNECTION_COLOR_ACTIVE = [0, 0.55, 1, 1];
 export const DEFAULT_POINT_CONNECTION_COLOR_HOVER = [1, 1, 1, 1];
 
+// Annotations
+export const DEFAULT_ANNOTATION_LINE_COLOR = [1, 1, 1, 0.5];
+export const DEFAULT_ANNOTATION_LINE_WIDTH = 1;
+export const DEFAULT_ANNOTATION_HVLINE_LIMIT = 1000;
+
 // Default view
 export const DEFAULT_TARGET = [0, 0];
 export const DEFAULT_DISTANCE = 1;

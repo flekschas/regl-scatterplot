@@ -1,3 +1,7 @@
+## 1.10.0
+
+- Feat: add support for annotations via `scatterplot.drawAnnotations()`
+
 ## 1.9.6
 
 - Fix: try ensure `zoomToArea` works in cases where `aspectRatio` is not equal to `1` and add tests to verify this

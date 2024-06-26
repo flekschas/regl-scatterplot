@@ -14,6 +14,7 @@ const chunks = [
   'texture-background',
   'transition',
   'multiple-instances',
+  'annotations',
 ];
 
 const pages = Object.fromEntries(
