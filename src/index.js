@@ -2511,13 +2511,15 @@ const createScatterplot = (
     });
   };
 
-  /** @type {<F extends Function>(f: F) => (...args: Parameters<F>) => ReturnType<F>} */
+  /** @type {<F extends Function>(f: F) => (...args: Parameters<F>) => Promise<ReturnType<F>>} */
   const withDraw =
     (f) =>
     (...args) => {
       const out = f(...args);
       draw = true;
-      return out;
+      return new Promise((resolve) => {
+        pubSub.subscribe('draw', () => resolve(out), 1);
+      });
     };
 
   /**
@@ -3518,9 +3520,25 @@ const createScatterplot = (
   };
 
   /** @type {() => void} */
-  const clear = () => {
+  const clearPoints = () => {
     setPoints([]);
     pointConnections.clear();
+  };
+
+  /** @type {() => void} */
+  const clearPointConnections = () => {
+    pointConnections.clear();
+  };
+
+  /** @type {() => void} */
+  const clearAnnotations = () => {
+    drawAnnotations([]);
+  };
+
+  /** @type {() => void} */
+  const clear = () => {
+    clearPoints();
+    clearAnnotations();
   };
 
   const resizeHandler = () => {
@@ -3767,6 +3785,9 @@ const createScatterplot = (
       return renderer.isSupported;
     },
     clear: withDraw(clear),
+    clearPoints: withDraw(clearPoints),
+    clearPointConnections: withDraw(clearPointConnections),
+    clearAnnotations: withDraw(clearAnnotations),
     createTextureFromUrl: (
       /** @type {string} */ url,
       /** @type {number} */ timeout = DEFAULT_IMAGE_LOAD_TIMEOUT

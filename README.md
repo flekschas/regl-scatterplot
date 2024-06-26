@@ -402,7 +402,15 @@ call this function!
 
 <a name="scatterplot.clear" href="#scatterplot.clear">#</a> scatterplot.<b>clear</b>()
 
-Clears previously drawn points.
+Clears previously drawn points, point connections, and annotations.
+
+<a name="scatterplot.clearPoints" href="#scatterplot.clearPoints">#</a> scatterplot.<b>clearPoints</b>()
+
+Clears previously drawn points and point connections.
+
+<a name="scatterplot.clearPointConnections" href="#scatterplot.clearPointConnections">#</a> scatterplot.<b>clearPointConnections</b>()
+
+Clears previously point connections.
 
 <a name="scatterplot.drawAnnotations" href="#scatterplot.drawAnnotations">#</a> scatterplot.<b>drawAnnotations</b>(<i>annotations</i>)
 
@@ -456,6 +464,10 @@ scatterplot.drawAnnotations([
   },
 ]);
 ```
+
+<a name="scatterplot.clearAnnotations" href="#scatterplot.clearAnnotations">#</a> scatterplot.<b>clearAnnotations</b>()
+
+Clears previously drawn annotations.
 
 <a name="scatterplot.get" href="#scatterplot.set">#</a> scatterplot.<b>get</b>(<i>property</i>)
 

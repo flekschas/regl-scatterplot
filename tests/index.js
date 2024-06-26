@@ -3187,9 +3187,9 @@ test('other methods', async (t2) => {
         },
       ]);
 
-      const img = scatterplot.export();
-      const w = img.width;
-      const h = img.height;
+      let img = scatterplot.export();
+      let w = img.width;
+      let h = img.height;
       const wp = w * 0.1;
       const hp = w * 0.1;
 
@@ -3217,6 +3217,13 @@ test('other methods', async (t2) => {
         getPixelSum(img, wp - 2 * wp, w - wp, hp, 2 * hp) > 0,
         'The top right polygon should be drawn'
       );
+
+      await scatterplot.clearAnnotations();
+
+      img = scatterplot.export();
+      w = img.width;
+      h = img.height;
+      t.ok(getPixelSum(img, 0, w, 0, h) === 0, 'Annotations should be cleared');
 
       scatterplot.destroy();
     })
