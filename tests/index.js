@@ -3152,14 +3152,14 @@ test('other methods', async (t2) => {
       const scatterplot = createScatterplot({ canvas: createCanvas(100, 100) });
 
       await scatterplot.drawAnnotations([
-        { x: 0.95, lineColor: [1, 1, 1, 0.1], lineWidth: 1 },
-        { y: 0.95, lineColor: [1, 1, 1, 0.1], lineWidth: 1 },
+        { x: 0.95, lineColor: [1, 1, 1, 1], lineWidth: 1 },
+        { y: 0.95, lineColor: [1, 1, 1, 1], lineWidth: 1 },
         {
           x1: -0.88,
           y1: -0.88,
           x2: -0.82,
           y2: -0.82,
-          lineColor: [1, 1, 1, 0.25],
+          lineColor: [1, 1, 1, 1],
           lineWidth: 1,
         },
         {
@@ -3167,7 +3167,7 @@ test('other methods', async (t2) => {
           y: 0.82,
           width: 0.06,
           height: 0.06,
-          lineColor: [1, 1, 1, 0.25],
+          lineColor: [1, 1, 1, 1],
           lineWidth: 1,
         },
         {
