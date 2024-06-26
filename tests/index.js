@@ -3184,29 +3184,33 @@ test('other methods', async (t2) => {
       ]);
 
       const img = scatterplot.export();
+      const w = img.width;
+      const h = img.height;
+      const wp = w * 0.05;
+      const hp = w * 0.05;
 
       t.ok(
-        getPixelSum(img, 0, img.width, 0, 8) > 0,
+        getPixelSum(img, 0, w, 0, hp) > 0,
         'The horizontal line should be drawn'
       );
 
       t.ok(
-        getPixelSum(img, img.width - 8, img.width, 0, img.height) > 0,
+        getPixelSum(img, w - wp, w, 0, h) > 0,
         'The vertical line should be drawn'
       );
 
       t.ok(
-        getPixelSum(img, 10, 20, img.height - 20, img.height - 10) > 0,
+        getPixelSum(img, wp, 2 * wp, h - hp * 2, h - hp) > 0,
         'The bottom left rectangle should be drawn'
       );
 
       t.ok(
-        getPixelSum(img, 10, 20, 10, 20) > 0,
+        getPixelSum(img, wp, 2 * wp, hp, 2 * hp) > 0,
         'The top left rectangle should be drawn'
       );
 
       t.ok(
-        getPixelSum(img, img.width - 20, img.width - 10, 10, 20) > 0,
+        getPixelSum(img, wp - 2 * wp, w - wp, hp, 2 * hp) > 0,
         'The top right polygon should be drawn'
       );
 
