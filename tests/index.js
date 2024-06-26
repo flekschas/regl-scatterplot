@@ -3149,34 +3149,38 @@ test('other methods', async (t2) => {
   await t2.test(
     'drawAnnotations()',
     catchError(async (t) => {
-      const scatterplot = createScatterplot({ canvas: createCanvas(100, 100) });
+      const scatterplot = createScatterplot({
+        canvas: createCanvas(100, 100),
+        width: 100,
+        height: 100,
+      });
 
       await scatterplot.drawAnnotations([
-        { x: 0.95, lineColor: [1, 1, 1, 1], lineWidth: 1 },
-        { y: 0.95, lineColor: [1, 1, 1, 1], lineWidth: 1 },
+        { x: 0.9, lineColor: [1, 1, 1, 0.1], lineWidth: 1 },
+        { y: 0.9, lineColor: [1, 1, 1, 0.1], lineWidth: 1 },
         {
-          x1: -0.88,
-          y1: -0.88,
-          x2: -0.82,
-          y2: -0.82,
-          lineColor: [1, 1, 1, 1],
+          x1: -0.8,
+          y1: -0.8,
+          x2: -0.6,
+          y2: -0.6,
+          lineColor: [1, 1, 1, 0.25],
           lineWidth: 1,
         },
         {
-          x: -0.88,
-          y: 0.82,
-          width: 0.06,
-          height: 0.06,
-          lineColor: [1, 1, 1, 1],
+          x: -0.8,
+          y: 0.6,
+          width: 0.2,
+          height: 0.2,
+          lineColor: [1, 1, 1, 0.25],
           lineWidth: 1,
         },
         {
           vertices: [
-            [0.82, 0.88],
-            [0.88, 0.88],
-            [0.88, 0.82],
-            [0.82, 0.82],
-            [0.82, 0.88],
+            [0.6, 0.8],
+            [0.8, 0.8],
+            [0.8, 0.6],
+            [0.6, 0.6],
+            [0.6, 0.8],
           ],
           lineColor: '#D55E00',
           lineWidth: 2,
@@ -3186,8 +3190,8 @@ test('other methods', async (t2) => {
       const img = scatterplot.export();
       const w = img.width;
       const h = img.height;
-      const wp = w * 0.05;
-      const hp = w * 0.05;
+      const wp = w * 0.1;
+      const hp = w * 0.1;
 
       t.ok(
         getPixelSum(img, 0, w, 0, hp) > 0,
