@@ -1,3 +1,7 @@
+## 1.10.1
+
+- Fix: ensure single annotations render properly ([#187](https://github.com/flekschas/regl-scatterplot/issues/187))
+
 ## 1.10.0
 
 - Feat: add support for annotations via `scatterplot.drawAnnotations()`

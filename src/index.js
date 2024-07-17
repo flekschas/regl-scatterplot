@@ -2500,10 +2500,13 @@ const createScatterplot = (
           .sort((a, b) => (a.idx > b.idx ? 1 : -1))
           .map(({ color }) => color),
       });
-      annotations.setPoints(newPoints, {
-        colorIndices: newColorIndices,
-        widths: newWidths,
-      });
+      annotations.setPoints(
+        newPoints.length === 1 ? newPoints.flat() : newPoints,
+        {
+          colorIndices: newColorIndices,
+          widths: newWidths,
+        }
+      );
 
       pubSub.subscribe('draw', resolve, 1);
       isAnnotationsDrawn = true;
