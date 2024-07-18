@@ -2435,9 +2435,9 @@ const createScatterplot = (
       for (const annotation of newAnnotations) {
         if (isHorizontalLine(annotation)) {
           newPoints.push([
-            -annotationHVLineLimit,
+            annotation.x1 ?? -annotationHVLineLimit,
             annotation.y,
-            annotationHVLineLimit,
+            annotation.x2 ?? annotationHVLineLimit,
             annotation.y,
           ]);
           addColorAndWidth(annotation);
@@ -2447,9 +2447,9 @@ const createScatterplot = (
         if (isVerticalLine(annotation)) {
           newPoints.push([
             annotation.x,
-            -annotationHVLineLimit,
+            annotation.y1 ?? -annotationHVLineLimit,
             annotation.x,
-            annotationHVLineLimit,
+            annotation.y2 ?? annotationHVLineLimit,
           ]);
           addColorAndWidth(annotation);
           continue;

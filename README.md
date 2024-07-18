@@ -424,9 +424,9 @@ Draw line-based annotations of the following kind in normalized device coordinat
 **Arguments:**
 
 - `annotations` is expected to be a list of the following objects:
-  - For horizontal lines: `{ y: number, lineColor?: Color, lineWidth?: number }`
-  - For vertical lines: `{ x: number, lineColor?: Color, lineWidth?: number }`
-  - For rectangle : `{ x: number, y: number, width: number, height: number, lineColor?: Color, lineWidth?: number }` or `{ x1: number, y1: number, x2: number, y2: number, lineColor?: Color, lineWidth?: number }`
+  - For horizontal lines: `{ y: number, x1?: number, x2?: number, lineColor?: Color, lineWidth?: number }`
+  - For vertical lines: `{ x: number, y1?: number, y2?: number, lineColor?: Color, lineWidth?: number }`
+  - For rectangle : `{ x1: number, y1: number, x2: number, y2: number, lineColor?: Color, lineWidth?: number }` or `{ x: number, y: number, width: number, height: number, lineColor?: Color, lineWidth?: number }`
   - For polygons or lines: `{ vertices: [number, number][], lineColor?: Color, lineWidth?: number }`
 
 **Returns:** a Promise object that resolves once the annotations have been drawn or transitioned.

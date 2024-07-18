@@ -92,10 +92,14 @@ interface BaseAnnotation {
 
 interface AnnotationHLine extends BaseAnnotation {
   y: number;
+  x1?: number;
+  x2?: number;
 }
 
 interface AnnotationVLine extends BaseAnnotation {
   x: number;
+  y1?: number;
+  y2?: number;
 }
 
 interface AnnotationDomRect extends BaseAnnotation {
