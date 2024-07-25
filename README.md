@@ -25,6 +25,14 @@ A highly-scalable pan-and-zoomable scatter plot library that uses WebGL through 
 - **Select multiple dots**:
 
   - While pressing <kbd>SHIFT</kbd>, click and drag your mouse. All items within the lasso will be selected.
+  - Upon activating the lasso on long press (i.e., `lassoOnLongPress: true`) you can click and hold anywhere on the plot, and a circle will appear at your mouse cursor. Wait until the circle is closed, then drag your mouse to start lassoing.
+    <details><summary>Click here to see how it works</summary>
+    <p>
+
+    ![Lassso on Long Press](https://github.com/user-attachments/assets/5e6a7c2a-5686-4711-9b3d-36d45a96ca69)
+
+    </p>
+    </details>
   - Upon activating the lasso initiator (i.e., `lassoInitiator: true`) you can click into the background and a circle will appear under your mouse cursor. Click inside this circle and drag your mouse to start lassoing.
     <details><summary>Click here to see how it works</summary>
     <p>
@@ -787,6 +795,11 @@ can be read and written via [`scatterplot.get()`](#scatterplot.get) and [`scatte
 | lassoInitiator                        | boolean                                      | `false`                             |                                                                 | `true`   | `false`     |
 | lassoInitiatorElement                 | object                                       | the lasso dom element               |                                                                 | `false`  | `false`     |
 | lassoInitiatorParentElement           | object                                       | `document.body`                     |                                                                 | `true`   | `false`     |
+| lassoOnLongPress                      | boolean                                      | `false`                             |                                                                 | `true`   | `false`     |
+| lassoLongPressTime                    | int                                          | `750`                               |                                                                 | `true`   | `false`     |
+| lassoLongPressAfterEffectTime         | int                                          | `500`                               |                                                                 | `true`   | `false`     |
+| lassoLongPressEffectDelay             | int                                          | `100`                               |                                                                 | `true`   | `false`     |
+| lassoLongPressRevertEffectTime        | int                                          | `250`                               |                                                                 | `true`   | `false`     |
 | showReticle                           | boolean                                      | `false`                             | `true` or `false`                                               | `true`   | `false`     |
 | reticleColor                          | quadruple                                    | rgba(1, 1, 1, .5)                   | hex, rgb, rgba                                                  | `true`   | `false`     |
 | xScale                                | function                                     | `null`                              | must follow the D3 scale API                                    | `true`   | `true`      |
