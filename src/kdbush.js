@@ -5,13 +5,17 @@ const KDBush = createKDBushClass();
 const WORKER_THRESHOLD = 1000000;
 
 const createWorker = (fn) => {
-  let kdbushStr = createKDBushClass.toString();
-  kdbushStr = kdbushStr.substring(10, kdbushStr.length - 18);
-  let fnStr = fn.toString();
-  fnStr = fnStr.substring(10, fnStr.length - 2);
+  const kdbushStr = createKDBushClass.toString();
+  const fnStr = fn.toString();
+  const workerStr =
+    `const createKDBushClass = ${kdbushStr};` +
+    'KDBush = createKDBushClass();' +
+    `const createWorker = ${fnStr};` +
+    'createWorker();';
+
   return new Worker(
     window.URL.createObjectURL(
-      new Blob([`${kdbushStr};${fnStr}`], {
+      new Blob([workerStr], {
         type: 'text/javascript',
       })
     )
