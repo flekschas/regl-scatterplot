@@ -194,6 +194,7 @@ setNumPoint(numPoints);
 scatterplot.drawAnnotations([
   { x: 0, lineColor: [1, 1, 1, 0.1], lineWidth: 1 },
   { y: 0, lineColor: [1, 1, 1, 0.1], lineWidth: 1 },
+  { y: 0.5, x1: -0.9, x2: 0.9, lineColor: [1, 1, 1, 1], lineWidth: 1 },
   {
     x1: -1,
     y1: -1,
