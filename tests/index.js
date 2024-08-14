@@ -602,6 +602,82 @@ test('get() and set()', async (t2) => {
   );
 
   await t2.test(
+    'set({ mouseMode })',
+    catchError((t) => {
+      const canvas = createCanvas();
+
+      let scatterplot = createScatterplot({ canvas });
+      t.equal(
+        scatterplot.get('mouseMode'),
+        'panZoom',
+        'default mouseMode should be panZoom'
+      );
+      scatterplot.destroy();
+
+      scatterplot = createScatterplot({ canvas, mouseMode: 'panZoom' });
+      t.equal(
+        scatterplot.get('mouseMode'),
+        'panZoom',
+        'initial mouseMode should be panZoom'
+      );
+      scatterplot.destroy();
+
+      scatterplot = createScatterplot({ canvas, mouseMode: 'lasso' });
+      t.equal(
+        scatterplot.get('mouseMode'),
+        'lasso',
+        'initial mouseMode should be lasso'
+      );
+      scatterplot.destroy();
+
+      scatterplot = createScatterplot({ canvas, mouseMode: 'rotate' });
+      t.equal(
+        scatterplot.get('mouseMode'),
+        'rotate',
+        'initial mouseMode should be rotate'
+      );
+      scatterplot.destroy();
+
+      scatterplot = createScatterplot({ canvas, mouseMode: 'invalid' });
+      t.equal(
+        scatterplot.get('mouseMode'),
+        'panZoom',
+        'initial mouseMode should be panZoom'
+      );
+
+      scatterplot.set({ mouseMode: 'lasso' });
+      t.equal(
+        scatterplot.get('mouseMode'),
+        'lasso',
+        'mouseMode should be set to lasso'
+      );
+
+      scatterplot.set({ mouseMode: 'panZoom' });
+      t.equal(
+        scatterplot.get('mouseMode'),
+        'panZoom',
+        'mouseMode should be set to panZoom'
+      );
+
+      scatterplot.set({ mouseMode: 'rotate' });
+      t.equal(
+        scatterplot.get('mouseMode'),
+        'rotate',
+        'mouseMode should be set to rotate'
+      );
+
+      scatterplot.set({ mouseMode: 'invalid' });
+      t.equal(
+        scatterplot.get('mouseMode'),
+        'panZoom',
+        'mouseMode should fall back to panZoom'
+      );
+
+      scatterplot.destroy();
+    })
+  );
+
+  await t2.test(
     'set({ colorBy, opacityBy, sizeBy, pointConnectionColorBy, pointConnectionOpacityBy, pointConnectionSizeBy })',
     catchError((t) => {
       const scatterplot = createScatterplot({ canvas: createCanvas() });
@@ -1213,11 +1289,9 @@ test('get() and set()', async (t2) => {
       scatterplot.destroy();
     })
   );
-});
 
-/* ---------------------------------- events -------------------------------- */
+  /* --------------------------------- events ------------------------------- */
 
-test('events', async (t2) => {
   await t2.test(
     'init and destroy events',
     catchError(async (t) => {
@@ -2204,11 +2278,9 @@ test('tests involving mouse events', async (t2) => {
       scatterplot.destroy();
     })
   );
-});
 
-/* ----------------------------- Other Methods ------------------------------ */
+  /* ---------------------------- Other Methods ----------------------------- */
 
-test('other methods', async (t2) => {
   await t2.test(
     'draw() with transition',
     catchError(async (t) => {

@@ -282,6 +282,8 @@ const createScatterplot = (
     spatialIndexUseWorker = DEFAULT_SPATIAL_INDEX_USE_WORKER,
   } = initialProperties;
 
+  mouseMode = limit(MOUSE_MODES, MOUSE_MODE_PANZOOM)(mouseMode);
+
   // Same as renderer ||= createRenderer({ ... }) but avoids having to rely on
   // https://babeljs.io/docs/en/babel-plugin-proposal-logical-assignment-operators
   // eslint-disable-next-line no-unused-expressions
@@ -3456,8 +3458,13 @@ const createScatterplot = (
   };
 
   const initCamera = () => {
-    if (!camera)
-      camera = createDom2dCamera(canvas, { isPanInverted: [false, true] });
+    if (!camera) {
+      camera = createDom2dCamera(canvas, {
+        isPanInverted: [false, true],
+        defaultMouseDownMoveAction:
+          mouseMode === MOUSE_MODE_ROTATE ? 'rotate' : 'pan',
+      });
+    }
 
     if (initialProperties.cameraView) {
       camera.setView(mat4.clone(initialProperties.cameraView));

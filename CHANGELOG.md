@@ -1,3 +1,7 @@
+## 1.10.3
+
+- Fix: properly set mouse mode on initialization and add tests for it
+
 ## 1.10.2
 
 - Fix: expose x start/end and y start/end for horizontal and vertical line annotations.
