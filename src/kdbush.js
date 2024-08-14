@@ -1,6 +1,8 @@
+// biome-ignore lint/style/useNamingConvention: KDBush is a library name
 import createKDBushClass from './kdbush-class';
 import workerFn from './kdbush-worker';
 
+// biome-ignore lint/style/useNamingConvention: KDBush is a library name
 const KDBush = createKDBushClass();
 const WORKER_THRESHOLD = 1000000;
 
@@ -8,6 +10,7 @@ const createWorker = (fn) => {
   const kdbushStr = createKDBushClass.toString();
   const fnStr = fn.toString();
   const workerStr =
+    // biome-ignore lint/style/useTemplate: Prefer one assignment per line
     `const createKDBushClass = ${kdbushStr};` +
     'KDBush = createKDBushClass();' +
     `const createWorker = ${fnStr};` +
@@ -17,8 +20,8 @@ const createWorker = (fn) => {
     window.URL.createObjectURL(
       new Blob([workerStr], {
         type: 'text/javascript',
-      })
-    )
+      }),
+    ),
   );
 };
 
@@ -30,7 +33,7 @@ const createWorker = (fn) => {
  */
 const createKdbush = (
   pointsOrIndex,
-  options = { nodeSize: 16, useWorker: undefined }
+  options = { nodeSize: 16, useWorker: undefined },
 ) =>
   new Promise((resolve, reject) => {
     if (pointsOrIndex instanceof ArrayBuffer) {
@@ -41,8 +44,8 @@ const createKdbush = (
       options.useWorker !== true
     ) {
       const index = new KDBush(pointsOrIndex.length, options.nodeSize);
-      for (let i = 0; i < pointsOrIndex.length; ++i) {
-        index.add(pointsOrIndex[i][0], pointsOrIndex[i][1]);
+      for (const pointOrIndex of pointsOrIndex) {
+        index.add(pointOrIndex[0], pointOrIndex[1]);
       }
       index.finish();
       resolve(index);
@@ -50,8 +53,11 @@ const createKdbush = (
       const worker = createWorker(workerFn);
 
       worker.onmessage = (e) => {
-        if (e.data.error) reject(e.data.error);
-        else resolve(KDBush.from(e.data));
+        if (e.data.error) {
+          reject(e.data.error);
+        } else {
+          resolve(KDBush.from(e.data));
+        }
         worker.terminate();
       };
 

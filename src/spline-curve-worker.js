@@ -106,6 +106,7 @@ const worker = function worker() {
    * @param   {[type]}  simplified  [description]
    * @return  {[type]}  [description]
    */
+  // biome-ignore lint/style/useNamingConvention: DP stands for Douglas Peucker
   const simplifyDPStep = (points, first, last, tolerance, simplified) => {
     let maxDist = tolerance;
     let index;
@@ -120,11 +121,13 @@ const worker = function worker() {
     }
 
     if (maxDist > tolerance) {
-      if (index - first > 1)
+      if (index - first > 1) {
         simplifyDPStep(points, first, index, tolerance, simplified);
+      }
       simplified.push(points[index]);
-      if (last - index > 1)
+      if (last - index > 1) {
         simplifyDPStep(points, index, last, tolerance, simplified);
+      }
     }
   };
 
@@ -156,7 +159,7 @@ const worker = function worker() {
    */
   const interpolatePoints = (
     points,
-    { maxIntPointsPerSegment = 100, tolerance = 0.002 } = {}
+    { maxIntPointsPerSegment = 100, tolerance = 0.002 } = {},
   ) => {
     const numPoints = points.length;
     const maxPointIdx = numPoints - 1;
@@ -194,7 +197,7 @@ const worker = function worker() {
       // Add simplified points without the last key point, which is added
       // anyway in the next segment
       outPoints = outPoints.concat(
-        segmentPoints.slice(0, segmentPoints.length - 1)
+        segmentPoints.slice(0, segmentPoints.length - 1),
       );
     }
     outPoints.push(points[points.length - 1].slice(0, 2));
@@ -211,16 +214,23 @@ const worker = function worker() {
     const groupedPoints = {};
 
     const isOrdered = !Number.isNaN(+points[0][5]);
+    // biome-ignore lint/complexity/noForEach: somehow for .. of does not work in a worker
     points.forEach((point) => {
       const segId = point[4];
 
-      if (!groupedPoints[segId]) groupedPoints[segId] = [];
+      if (!groupedPoints[segId]) {
+        groupedPoints[segId] = [];
+      }
 
-      if (isOrdered) groupedPoints[segId][point[5]] = point;
-      else groupedPoints[segId].push(point);
+      if (isOrdered) {
+        groupedPoints[segId][point[5]] = point;
+      } else {
+        groupedPoints[segId].push(point);
+      }
     });
 
     // The filtering ensures that non-existing array entries are removed
+    // biome-ignore lint/complexity/noForEach: somehow for .. of does not work in a worker
     Object.entries(groupedPoints).forEach((idPoints) => {
       groupedPoints[idPoints[0]] = idPoints[1].filter((v) => v);
       // Store the first point as the reference
@@ -233,8 +243,9 @@ const worker = function worker() {
   self.onmessage = function onmessage(event) {
     const numPoints = event.data.points ? +event.data.points.length : 0;
 
-    if (!numPoints)
+    if (!numPoints) {
       self.postMessage({ error: new Error('No points provided') });
+    }
 
     state.points = event.data.points;
 
@@ -245,13 +256,13 @@ const worker = function worker() {
         (curvePoints, idAndPoints) => {
           curvePoints[idAndPoints[0]] = interpolatePoints(
             idAndPoints[1],
-            event.data.options
+            event.data.options,
           );
           // Make sure the reference is passed on
           curvePoints[idAndPoints[0]].reference = idAndPoints[1].reference;
           return curvePoints;
         },
-        {}
+        {},
       ),
     });
   };

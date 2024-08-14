@@ -137,12 +137,12 @@ export const DEFAULT_ANNOTATION_HVLINE_LIMIT = 1000;
 export const DEFAULT_TARGET = [0, 0];
 export const DEFAULT_DISTANCE = 1;
 export const DEFAULT_ROTATION = 0;
-// prettier-ignore
+// biome-ignore format: the array should not be formatted
 export const DEFAULT_VIEW = new Float32Array([
   1, 0, 0, 0,
   0, 1, 0, 0,
   0, 0, 1, 0,
-  0, 0, 0, 1
+  0, 0, 0, 1,
 ]);
 
 // Error codes

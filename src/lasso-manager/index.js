@@ -10,25 +10,25 @@ import {
 } from '@flekschas/utils';
 
 import {
-  DEFAULT_LASSO_START_INITIATOR_SHOW,
   DEFAULT_LASSO_MIN_DELAY,
   DEFAULT_LASSO_MIN_DIST,
-  LASSO_SHOW_START_INITIATOR_TIME,
+  DEFAULT_LASSO_START_INITIATOR_SHOW,
   LASSO_HIDE_START_INITIATOR_TIME,
+  LASSO_SHOW_START_INITIATOR_TIME,
 } from './constants';
 
 import {
-  DEFAULT_LASSO_LONG_PRESS_TIME,
   DEFAULT_LASSO_LONG_PRESS_AFTER_EFFECT_TIME,
   DEFAULT_LASSO_LONG_PRESS_EFFECT_DELAY,
   DEFAULT_LASSO_LONG_PRESS_REVERT_EFFECT_TIME,
+  DEFAULT_LASSO_LONG_PRESS_TIME,
 } from '../constants';
 
-import createLongPressElements from './create-long-press-elements';
 import {
   createLongPressInAnimations,
   createLongPressOutAnimations,
 } from './create-long-press-animations';
+import createLongPressElements from './create-long-press-elements';
 
 const ifNotNull = (v, alternative = null) => (v === null ? alternative : v);
 
@@ -104,7 +104,7 @@ export const createLasso = (
     minDelay: initialMinDelay = DEFAULT_LASSO_MIN_DELAY,
     minDist: initialMinDist = DEFAULT_LASSO_MIN_DIST,
     pointNorm: initialPointNorm = identity,
-  } = {}
+  } = {},
 ) => {
   let enableInitiator = initialenableInitiator;
   let initiatorParentElement = initialInitiatorParentElement;
@@ -197,7 +197,9 @@ export const createLasso = (
   };
 
   const showInitiator = (event) => {
-    if (!enableInitiator || isMouseDown) return;
+    if (!enableInitiator || isMouseDown) {
+      return;
+    }
 
     const x = event.clientX;
     const y = event.clientY;
@@ -216,10 +218,12 @@ export const createLasso = (
     // See https://developer.mozilla.org/en-US/docs/Web/CSS/CSS_Animations/Tips
     // why we need to wait for two animation frames
     nextAnimationFrame().then(() => {
-      if (inAnimationRuleIndex !== null) removeRule(inAnimationRuleIndex);
+      if (inAnimationRuleIndex !== null) {
+        removeRule(inAnimationRuleIndex);
+      }
 
       inAnimationRuleIndex = addRule(
-        createInAnimationRule(opacity, scale, rotate)
+        createInAnimationRule(opacity, scale, rotate),
       );
 
       initiator.style.animation = inAnimation;
@@ -238,10 +242,12 @@ export const createLasso = (
     initiator.style.animation = 'none';
 
     nextAnimationFrame(2).then(() => {
-      if (outAnimationRuleIndex !== null) removeRule(outAnimationRuleIndex);
+      if (outAnimationRuleIndex !== null) {
+        removeRule(outAnimationRuleIndex);
+      }
 
       outAnimationRuleIndex = addRule(
-        createOutAnimationRule(opacity, scale, rotate)
+        createOutAnimationRule(opacity, scale, rotate),
       );
 
       initiator.style.animation = outAnimation;
@@ -263,7 +269,7 @@ export const createLasso = (
       time: DEFAULT_LASSO_LONG_PRESS_TIME,
       extraTime: DEFAULT_LASSO_LONG_PRESS_AFTER_EFFECT_TIME,
       delay: DEFAULT_LASSO_LONG_PRESS_EFFECT_DELAY,
-    }
+    },
   ) => {
     longPressIsStarting = true;
 
@@ -292,18 +298,25 @@ export const createLasso = (
     longPressCircleRight.style.animation = 'none';
 
     nextAnimationFrame().then(() => {
-      if (!longPressIsStarting) return;
+      if (!longPressIsStarting) {
+        return;
+      }
 
-      if (longPressCircleInAnimationRuleIndex !== null)
+      if (longPressCircleInAnimationRuleIndex !== null) {
         removeRule(longPressCircleInAnimationRuleIndex);
-      if (longPressCircleRightInAnimationRuleIndex !== null)
+      }
+      if (longPressCircleRightInAnimationRuleIndex !== null) {
         removeRule(longPressCircleRightInAnimationRuleIndex);
-      if (longPressCircleLeftInAnimationRuleIndex !== null)
+      }
+      if (longPressCircleLeftInAnimationRuleIndex !== null) {
         removeRule(longPressCircleLeftInAnimationRuleIndex);
-      if (longPressEffectInAnimationRuleIndex !== null)
+      }
+      if (longPressEffectInAnimationRuleIndex !== null) {
         removeRule(longPressEffectInAnimationRuleIndex);
-      if (longPressMainInAnimationRuleIndex !== null)
+      }
+      if (longPressMainInAnimationRuleIndex !== null) {
         removeRule(longPressMainInAnimationRuleIndex);
+      }
 
       const { rules, names } = createLongPressInAnimations({
         time,
@@ -336,9 +349,11 @@ export const createLasso = (
   const hideLongPressIndicator = (
     { time = DEFAULT_LASSO_LONG_PRESS_REVERT_EFFECT_TIME } = {
       time: DEFAULT_LASSO_LONG_PRESS_REVERT_EFFECT_TIME,
-    }
+    },
   ) => {
-    if (!longPressIsStarting) return;
+    if (!longPressIsStarting) {
+      return;
+    }
 
     longPressIsStarting = false;
 
@@ -364,7 +379,7 @@ export const createLasso = (
 
     const circleLeftStyle = getCurrentTransformStyle(
       longPressCircleLeft,
-      isAnimatedMoreThan50Percent
+      isAnimatedMoreThan50Percent,
     );
     longPressCircleLeft.style.transform = `rotate(${circleLeftStyle.rotate}deg)`;
     longPressCircleLeft.style.animation = 'none';
@@ -374,16 +389,21 @@ export const createLasso = (
     longPressCircleRight.style.animation = 'none';
 
     nextAnimationFrame().then(() => {
-      if (longPressCircleOutAnimationRuleIndex !== null)
+      if (longPressCircleOutAnimationRuleIndex !== null) {
         removeRule(longPressCircleOutAnimationRuleIndex);
-      if (longPressCircleRightOutAnimationRuleIndex !== null)
+      }
+      if (longPressCircleRightOutAnimationRuleIndex !== null) {
         removeRule(longPressCircleRightOutAnimationRuleIndex);
-      if (longPressCircleLeftOutAnimationRuleIndex !== null)
+      }
+      if (longPressCircleLeftOutAnimationRuleIndex !== null) {
         removeRule(longPressCircleLeftOutAnimationRuleIndex);
-      if (longPressEffectOutAnimationRuleIndex !== null)
+      }
+      if (longPressEffectOutAnimationRuleIndex !== null) {
         removeRule(longPressEffectOutAnimationRuleIndex);
-      if (longPressMainOutAnimationRuleIndex !== null)
+      }
+      if (longPressMainOutAnimationRuleIndex !== null) {
         removeRule(longPressMainOutAnimationRuleIndex);
+      }
 
       const { rules, names } = createLongPressOutAnimations({
         time,
@@ -416,21 +436,12 @@ export const createLasso = (
   };
 
   const extend = (currMousePos) => {
-    if (!lassoPrevMousePos) {
-      if (!isLasso) {
-        isLasso = true;
-        onStart();
-      }
-      lassoPrevMousePos = currMousePos;
-      const point = pointNorm(currMousePos);
-      lassoPos = [point];
-      lassoPosFlat = [point[0], point[1]];
-    } else {
+    if (lassoPrevMousePos) {
       const d = l2PointDist(
         currMousePos[0],
         currMousePos[1],
         lassoPrevMousePos[0],
-        lassoPrevMousePos[1]
+        lassoPrevMousePos[1],
       );
 
       if (d > DEFAULT_LASSO_MIN_DIST) {
@@ -442,18 +453,29 @@ export const createLasso = (
           draw();
         }
       }
+    } else {
+      if (!isLasso) {
+        isLasso = true;
+        onStart();
+      }
+      lassoPrevMousePos = currMousePos;
+      const point = pointNorm(currMousePos);
+      lassoPos = [point];
+      lassoPosFlat = [point[0], point[1]];
     }
   };
 
   const extendDb = throttleAndDebounce(
     extend,
     DEFAULT_LASSO_MIN_DELAY,
-    DEFAULT_LASSO_MIN_DELAY
+    DEFAULT_LASSO_MIN_DELAY,
   );
 
   const extendPublic = (event, debounced) => {
     const mousePosition = getMousePosition(event);
-    if (debounced) return extendDb(mousePosition);
+    if (debounced) {
+      return extendDb(mousePosition);
+    }
     return extend(mousePosition);
   };
 
@@ -581,7 +603,7 @@ export const createLasso = (
     withStaticProperty('initiator', initiator),
     withStaticProperty('longPressIndicator', longPress),
     withPublicMethods(),
-    withConstructor(createLasso)
+    withConstructor(createLasso),
   )({});
 };
 

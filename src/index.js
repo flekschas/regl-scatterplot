@@ -1,152 +1,153 @@
-import createDom2dCamera from 'dom-2d-camera';
-import createPubSub from 'pub-sub-es';
-import { mat4, vec4 } from 'gl-matrix';
-import createLine from 'regl-line';
 import {
-  max as maxArray,
   hasSameElements,
   identity,
+  max as maxArray,
   rangeMap,
-  unionIntegers,
   throttleAndDebounce,
+  unionIntegers,
 } from '@flekschas/utils';
+import createDom2dCamera from 'dom-2d-camera';
+import { mat4, vec4 } from 'gl-matrix';
+import createPubSub from 'pub-sub-es';
+import createLine from 'regl-line';
 
 import createKdbush from './kdbush';
-import createRenderer from './renderer';
 import createLassoManager from './lasso-manager';
+import createRenderer from './renderer';
 
 import BG_FS from './bg.fs';
 import BG_VS from './bg.vs';
-import POINT_FS from './point.fs';
 import POINT_SIMPLE_FS from './point-simple.fs';
-import createVertexShader from './point.vs';
 import POINT_UPDATE_FS from './point-update.fs';
 import POINT_UPDATE_VS from './point-update.vs';
+import POINT_FS from './point.fs';
+import createVertexShader from './point.vs';
 
 import createSplineCurve from './spline-curve';
 
 import {
   AUTO,
+  CATEGORICAL,
   COLOR_ACTIVE_IDX,
   COLOR_BG_IDX,
   COLOR_HOVER_IDX,
   COLOR_NORMAL_IDX,
   COLOR_NUM_STATES,
+  CONTINUOUS,
+  DEFAULT_ANNOTATION_HVLINE_LIMIT,
+  DEFAULT_ANNOTATION_LINE_COLOR,
+  DEFAULT_ANNOTATION_LINE_WIDTH,
   DEFAULT_BACKGROUND_IMAGE,
+  DEFAULT_COLOR_ACTIVE,
   DEFAULT_COLOR_BG,
   DEFAULT_COLOR_BY,
-  DEFAULT_COLOR_NORMAL,
-  DEFAULT_COLOR_ACTIVE,
   DEFAULT_COLOR_HOVER,
+  DEFAULT_COLOR_NORMAL,
   DEFAULT_DATA_ASPECT_RATIO,
   DEFAULT_DESELECT_ON_DBL_CLICK,
   DEFAULT_DESELECT_ON_ESCAPE,
   DEFAULT_DISTANCE,
   DEFAULT_EASING,
   DEFAULT_HEIGHT,
-  DEFAULT_LASSO_COLOR,
-  DEFAULT_LASSO_LINE_WIDTH,
-  DEFAULT_LASSO_MIN_DELAY,
-  DEFAULT_LASSO_MIN_DIST,
+  DEFAULT_IMAGE_LOAD_TIMEOUT,
+  DEFAULT_KEY_MAP,
   DEFAULT_LASSO_CLEAR_EVENT,
-  DEFAULT_LASSO_ON_LONG_PRESS,
-  DEFAULT_LASSO_LONG_PRESS_TIME,
+  DEFAULT_LASSO_COLOR,
+  DEFAULT_LASSO_INITIATOR,
+  DEFAULT_LASSO_LINE_WIDTH,
   DEFAULT_LASSO_LONG_PRESS_AFTER_EFFECT_TIME,
   DEFAULT_LASSO_LONG_PRESS_EFFECT_DELAY,
   DEFAULT_LASSO_LONG_PRESS_REVERT_EFFECT_TIME,
-  DEFAULT_SHOW_RETICLE,
-  DEFAULT_RETICLE_COLOR,
-  DEFAULT_POINT_CONNECTION_COLOR_NORMAL,
+  DEFAULT_LASSO_LONG_PRESS_TIME,
+  DEFAULT_LASSO_MIN_DELAY,
+  DEFAULT_LASSO_MIN_DIST,
+  DEFAULT_LASSO_ON_LONG_PRESS,
+  DEFAULT_MOUSE_MODE,
+  DEFAULT_OPACITY_BY,
+  DEFAULT_OPACITY_BY_DENSITY_DEBOUNCE_TIME,
+  DEFAULT_OPACITY_BY_DENSITY_FILL,
+  DEFAULT_OPACITY_INACTIVE_MAX,
+  DEFAULT_OPACITY_INACTIVE_SCALE,
+  DEFAULT_PERFORMANCE_MODE,
   DEFAULT_POINT_CONNECTION_COLOR_ACTIVE,
-  DEFAULT_POINT_CONNECTION_COLOR_HOVER,
   DEFAULT_POINT_CONNECTION_COLOR_BY,
+  DEFAULT_POINT_CONNECTION_COLOR_HOVER,
+  DEFAULT_POINT_CONNECTION_COLOR_NORMAL,
+  DEFAULT_POINT_CONNECTION_INT_POINTS_TOLERANCE,
+  DEFAULT_POINT_CONNECTION_MAX_INT_POINTS_PER_SEGMENT,
   DEFAULT_POINT_CONNECTION_OPACITY,
-  DEFAULT_POINT_CONNECTION_OPACITY_BY,
   DEFAULT_POINT_CONNECTION_OPACITY_ACTIVE,
+  DEFAULT_POINT_CONNECTION_OPACITY_BY,
   DEFAULT_POINT_CONNECTION_SIZE,
   DEFAULT_POINT_CONNECTION_SIZE_ACTIVE,
   DEFAULT_POINT_CONNECTION_SIZE_BY,
-  DEFAULT_POINT_CONNECTION_MAX_INT_POINTS_PER_SEGMENT,
-  DEFAULT_POINT_CONNECTION_INT_POINTS_TOLERANCE,
-  DEFAULT_SHOW_POINT_CONNECTIONS,
   DEFAULT_POINT_OUTLINE_WIDTH,
-  MIN_POINT_SIZE,
   DEFAULT_POINT_SIZE,
-  DEFAULT_POINT_SIZE_SELECTED,
   DEFAULT_POINT_SIZE_MOUSE_DETECTION,
-  DEFAULT_SIZE_BY,
+  DEFAULT_POINT_SIZE_SELECTED,
+  DEFAULT_RETICLE_COLOR,
   DEFAULT_ROTATION,
+  DEFAULT_SHOW_POINT_CONNECTIONS,
+  DEFAULT_SHOW_RETICLE,
+  DEFAULT_SIZE_BY,
+  DEFAULT_SPATIAL_INDEX_USE_WORKER,
   DEFAULT_TARGET,
   DEFAULT_VIEW,
   DEFAULT_WIDTH,
-  DEFAULT_PERFORMANCE_MODE,
   EASING_FNS,
+  ERROR_POINTS_NOT_DRAWN,
   FLOAT_BYTES,
-  LASSO_CLEAR_EVENTS,
-  LASSO_CLEAR_ON_DESELECT,
-  LASSO_CLEAR_ON_END,
-  DEFAULT_LASSO_INITIATOR,
-  KEY_ACTION_LASSO,
-  KEY_ACTION_ROTATE,
-  KEY_ACTION_MERGE,
+  KEYS,
   KEY_ACTIONS,
+  KEY_ACTION_LASSO,
+  KEY_ACTION_MERGE,
+  KEY_ACTION_ROTATE,
   KEY_ALT,
   KEY_CMD,
   KEY_CTRL,
   KEY_META,
   KEY_SHIFT,
-  KEYS,
-  DEFAULT_KEY_MAP,
-  MOUSE_MODE_PANZOOM,
-  MOUSE_MODE_LASSO,
-  MOUSE_MODE_ROTATE,
-  MOUSE_MODES,
-  DEFAULT_MOUSE_MODE,
-  SINGLE_CLICK_DELAY,
+  LASSO_CLEAR_EVENTS,
+  LASSO_CLEAR_ON_DESELECT,
+  LASSO_CLEAR_ON_END,
   LONG_CLICK_TIME,
-  DEFAULT_OPACITY_BY,
-  DEFAULT_OPACITY_BY_DENSITY_FILL,
-  DEFAULT_OPACITY_BY_DENSITY_DEBOUNCE_TIME,
-  DEFAULT_OPACITY_INACTIVE_MAX,
-  DEFAULT_OPACITY_INACTIVE_SCALE,
-  Z_NAMES,
-  W_NAMES,
-  DEFAULT_IMAGE_LOAD_TIMEOUT,
-  ERROR_POINTS_NOT_DRAWN,
-  CONTINUOUS,
-  CATEGORICAL,
+  MIN_POINT_SIZE,
+  MOUSE_MODES,
+  MOUSE_MODE_LASSO,
+  MOUSE_MODE_PANZOOM,
+  MOUSE_MODE_ROTATE,
+  SINGLE_CLICK_DELAY,
   VALUE_ZW_DATA_TYPES,
-  DEFAULT_SPATIAL_INDEX_USE_WORKER,
-  DEFAULT_ANNOTATION_LINE_COLOR,
-  DEFAULT_ANNOTATION_LINE_WIDTH,
-  DEFAULT_ANNOTATION_HVLINE_LIMIT,
+  W_NAMES,
+  Z_NAMES,
 } from './constants';
 
 import {
+  checkReglExtensions as checkSupport,
+  clip,
   createRegl,
   createTextureFromUrl,
   dist,
+  flipObj,
   getBBox,
-  isValidBBox,
   isConditionalArray,
-  isPositiveNumber,
-  isStrictlyPositiveNumber,
+  isDomRect,
+  isHorizontalLine,
   isMultipleColors,
   isPointInPolygon,
+  isPolygon,
+  isPositiveNumber,
+  isRect,
+  isStrictlyPositiveNumber,
   isString,
+  isValidBBox,
+  isVerticalLine,
   limit,
-  toRgba,
   max,
   min,
-  flipObj,
   rgbBrightness,
-  clip,
   toArrayOrientedPoints,
-  isHorizontalLine,
-  isVerticalLine,
-  isDomRect,
-  isRect,
-  isPolygon,
+  toRgba,
 } from './utils';
 
 import { version } from '../package.json';
@@ -157,33 +158,45 @@ const deprecations = {
 };
 
 const checkDeprecations = (properties) => {
-  Object.keys(properties)
-    .filter((prop) => deprecations[prop])
-    .forEach((name) => {
-      console.warn(
-        `regl-scatterplot: the "${name}" property is deprecated. Please use "${deprecations[name]}" instead.`
-      );
-      properties[deprecations[name]] = properties[name];
-      delete properties[name];
-    });
+  const deprecatedProps = Object.keys(properties).filter(
+    (prop) => deprecations[prop],
+  );
+
+  for (const prop of deprecatedProps) {
+    console.warn(
+      `regl-scatterplot: the "${prop}" property is deprecated. Please use "${deprecations[prop]}" instead.`,
+    );
+    properties[deprecations[prop]] = properties[prop];
+    delete properties[prop];
+  }
 };
 
 const getEncodingType = (
   type,
   defaultValue,
-  { allowSegment = false, allowDensity = false, allowInherit = false } = {}
+  { allowSegment = false, allowDensity = false, allowInherit = false } = {},
 ) => {
   // Z refers to the 3rd component of the RGBA value
-  if (Z_NAMES.has(type)) return 'valueZ';
+  if (Z_NAMES.has(type)) {
+    return 'valueZ';
+  }
 
   // W refers to the 4th component of the RGBA value
-  if (W_NAMES.has(type)) return 'valueW';
+  if (W_NAMES.has(type)) {
+    return 'valueW';
+  }
 
-  if (type === 'segment') return allowSegment ? 'segment' : defaultValue;
+  if (type === 'segment') {
+    return allowSegment ? 'segment' : defaultValue;
+  }
 
-  if (type === 'density') return allowDensity ? 'density' : defaultValue;
+  if (type === 'density') {
+    return allowDensity ? 'density' : defaultValue;
+  }
 
-  if (type === 'inherit') return allowInherit ? 'inherit' : defaultValue;
+  if (type === 'inherit') {
+    return allowInherit ? 'inherit' : defaultValue;
+  }
 
   return defaultValue;
 };
@@ -202,7 +215,7 @@ const getEncodingIdx = (type) => {
 };
 
 const createScatterplot = (
-  /** @type {Partial<import('./types').Properties>} */ initialProperties = {}
+  /** @type {Partial<import('./types').Properties>} */ initialProperties = {},
 ) => {
   /** @type {import('pub-sub-es').PubSub<import('./types').Events>} */
   const pubSub = createPubSub({
@@ -284,14 +297,12 @@ const createScatterplot = (
 
   mouseMode = limit(MOUSE_MODES, MOUSE_MODE_PANZOOM)(mouseMode);
 
-  // Same as renderer ||= createRenderer({ ... }) but avoids having to rely on
-  // https://babeljs.io/docs/en/babel-plugin-proposal-logical-assignment-operators
-  // eslint-disable-next-line no-unused-expressions
-  renderer ||
-    (renderer = createRenderer({
+  if (!renderer) {
+    renderer = createRenderer({
       regl: initialProperties.regl,
       gamma: initialProperties.gamma,
-    }));
+    });
+  }
 
   backgroundColor = toRgba(backgroundColor, true);
   lassoColor = toRgba(lassoColor, true);
@@ -332,7 +343,9 @@ const createScatterplot = (
   let pointConnections;
   let pointConnectionMap;
   let computingPointConnectionCurves;
+  // biome-ignore lint/style/useNamingConvention: HLine stands for HorizontalLine
   let reticleHLine;
+  // biome-ignore lint/style/useNamingConvention: VLine stands for VerticalLine
   let reticleVLine;
   let computedPointSizeMouseDetection;
   let keyActionMap = flipObj(keyMap);
@@ -381,7 +394,7 @@ const createScatterplot = (
       ? [...pointConnectionColor]
       : [pointConnectionColor];
     pointConnectionColor = pointConnectionColor.map((color) =>
-      toRgba(color, true)
+      toRgba(color, true),
     );
   }
 
@@ -392,7 +405,7 @@ const createScatterplot = (
       ? [...pointConnectionColorActive]
       : [pointConnectionColorActive];
     pointConnectionColorActive = pointConnectionColorActive.map((color) =>
-      toRgba(color, true)
+      toRgba(color, true),
     );
   }
 
@@ -403,7 +416,7 @@ const createScatterplot = (
       ? [...pointConnectionColorHover]
       : [pointConnectionColorHover];
     pointConnectionColorHover = pointConnectionColorHover.map((color) =>
-      toRgba(color, true)
+      toRgba(color, true),
     );
   }
 
@@ -415,7 +428,7 @@ const createScatterplot = (
       isPositiveNumber,
       {
         minLength: 1,
-      }
+      },
     )
       ? [...pointConnectionOpacity]
       : [pointConnectionOpacity];
@@ -429,7 +442,7 @@ const createScatterplot = (
       isPositiveNumber,
       {
         minLength: 1,
-      }
+      },
     )
       ? [...pointConnectionSize]
       : [pointConnectionSize];
@@ -444,17 +457,17 @@ const createScatterplot = (
   pointConnectionColorBy = getEncodingType(
     pointConnectionColorBy,
     DEFAULT_POINT_CONNECTION_COLOR_BY,
-    { allowSegment: true, allowInherit: true }
+    { allowSegment: true, allowInherit: true },
   );
   pointConnectionOpacityBy = getEncodingType(
     pointConnectionOpacityBy,
     DEFAULT_POINT_CONNECTION_OPACITY_BY,
-    { allowSegment: true }
+    { allowSegment: true },
   );
   pointConnectionSizeBy = getEncodingType(
     pointConnectionSizeBy,
     DEFAULT_POINT_CONNECTION_SIZE_BY,
-    { allowSegment: true }
+    { allowSegment: true },
   );
 
   let stateTex; // Stores the point texture holding x, y, category, and value
@@ -488,7 +501,9 @@ const createScatterplot = (
   let isAnnotationsDrawn = false;
   let isMouseOverCanvasChecked = false;
 
+  // biome-ignore lint/style/useNamingConvention: ZDate is not one word
   let valueZDataType = CATEGORICAL;
+  // biome-ignore lint/style/useNamingConvention: WDate is not one word
   let valueWDataType = CATEGORICAL;
 
   /** @type{number|undefined} */
@@ -532,8 +547,8 @@ const createScatterplot = (
       mat4.multiply(
         scratch,
         projectionLocal,
-        mat4.multiply(scratch, camera.view, model)
-      )
+        mat4.multiply(scratch, camera.view, model),
+      ),
     );
 
     // Translate vector
@@ -543,7 +558,6 @@ const createScatterplot = (
   };
 
   const getPointSizeNdc = (pointSizeIncrease = 0) => {
-    // eslint-disable-next-line no-use-before-define
     const pointScale = getPointScale();
 
     // The height of the view in normalized device coordinates
@@ -557,15 +571,19 @@ const createScatterplot = (
   };
 
   const getPoints = () => {
-    if (isPointsFiltered)
+    if (isPointsFiltered) {
       return points.filter((_, i) => filteredPointsSet.has(i));
+    }
     return points;
   };
 
+  // biome-ignore lint/style/useNamingConvention: BBox stands for BoundingBox
   const getPointsInBBox = (x0, y0, x1, y1) => {
+    // biome-ignore lint/style/useNamingConvention: BBox stands for BoundingBox
     const pointsInBBox = spatialIndex.range(x0, y0, x1, y1);
-    if (isPointsFiltered)
+    if (isPointsFiltered) {
       return pointsInBBox.filter((i) => filteredPointsSet.has(i));
+    }
     return pointsInBBox;
   };
 
@@ -576,26 +594,27 @@ const createScatterplot = (
     const pointSizeNdc = getPointSizeNdc(4);
 
     // Get all points within a close range
+    // biome-ignore lint/style/useNamingConvention: BBox stands for BoundingBox
     const pointsInBBox = getPointsInBBox(
       xNdc - pointSizeNdc,
       yNdc - pointSizeNdc,
       xNdc + pointSizeNdc,
-      yNdc + pointSizeNdc
+      yNdc + pointSizeNdc,
     );
 
     // Find the closest point
     let minDist = pointSizeNdc;
-    let clostestPoint = -1;
-    pointsInBBox.forEach((idx) => {
-      const [ptX, ptY] = points[idx];
+    let clostestPointIdx = -1;
+    for (const pointIdx of pointsInBBox) {
+      const [ptX, ptY] = points[pointIdx];
       const d = dist(ptX, ptY, xNdc, yNdc);
       if (d < minDist) {
         minDist = d;
-        clostestPoint = idx;
+        clostestPointIdx = pointIdx;
       }
-    });
+    }
 
-    return clostestPoint;
+    return clostestPointIdx;
   };
 
   const lassoExtend = (lassoPoints, lassoPointsFlat) => {
@@ -608,23 +627,29 @@ const createScatterplot = (
     // get the bounding box of the lasso selection...
     const bBox = getBBox(lassoPolygon);
 
-    if (!isValidBBox(bBox)) return [];
+    if (!isValidBBox(bBox)) {
+      return [];
+    }
 
     // ...to efficiently preselect potentially selected points
+    // biome-ignore lint/style/useNamingConvention: BBox stands for BoundingBox
     const pointsInBBox = getPointsInBBox(...bBox);
     // next we test each point in the bounding box if it is in the polygon too
     const pointsInPolygon = [];
-    pointsInBBox.forEach((pointIdx) => {
-      if (isPointInPolygon(lassoPolygon, points[pointIdx]))
+    for (const pointIdx of pointsInBBox) {
+      if (isPointInPolygon(lassoPolygon, points[pointIdx])) {
         pointsInPolygon.push(pointIdx);
-    });
+      }
+    }
 
     return pointsInPolygon;
   };
 
   const lassoClear = () => {
     lassoPointsCurr = [];
-    if (lasso) lasso.clear();
+    if (lasso) {
+      lasso.clear();
+    }
   };
 
   const hasPointConnections = (point) => point && point.length > 4;
@@ -634,8 +659,9 @@ const createScatterplot = (
       computingPointConnectionCurves ||
       !showPointConnections ||
       !hasPointConnections(points[pointIdxs[0]])
-    )
+    ) {
       return;
+    }
 
     const isNormal = stateIndex === 0;
     const lineIdCacher =
@@ -653,37 +679,36 @@ const createScatterplot = (
         ids[lineId] = true;
 
         return ids;
-      }, {})
+      }, {}),
     );
 
     const buffer = pointConnections.getData().opacities;
 
-    lineIds
-      .filter((lineId) => !selectedPointsConnectionSet.has(+lineId))
-      .forEach((lineId) => {
-        const index = pointConnectionMap[lineId][0];
-        const numPointPerLine = pointConnectionMap[lineId][2];
-        const pointOffset = pointConnectionMap[lineId][3];
+    const unselectedLineIds = lineIds.filter(
+      (lineId) => !selectedPointsConnectionSet.has(+lineId),
+    );
 
-        const bufferStart = index * 4 + pointOffset * 2;
-        const bufferEnd = bufferStart + numPointPerLine * 2 + 4;
+    for (const lineId of unselectedLineIds) {
+      const index = pointConnectionMap[lineId][0];
+      const numPointPerLine = pointConnectionMap[lineId][2];
+      const pointOffset = pointConnectionMap[lineId][3];
 
-        // eslint-disable-next-line no-underscore-dangle
-        if (buffer.__original__ === undefined) {
-          // eslint-disable-next-line no-underscore-dangle
-          buffer.__original__ = buffer.slice();
-        }
+      const bufferStart = index * 4 + pointOffset * 2;
+      const bufferEnd = bufferStart + numPointPerLine * 2 + 4;
 
-        for (let i = bufferStart; i < bufferEnd; i++) {
-          // buffer[i] = Math.floor(buffer[i] / 4) * 4 + stateIndex;
-          buffer[i] = isNormal
-            ? // eslint-disable-next-line no-underscore-dangle
-              buffer.__original__[i]
-            : pointConnectionOpacityActive;
-        }
+      if (buffer.__original__ === undefined) {
+        buffer.__original__ = buffer.slice();
+      }
 
-        lineIdCacher(lineId);
-      });
+      for (let i = bufferStart; i < bufferEnd; i++) {
+        // buffer[i] = Math.floor(buffer[i] / 4) * 4 + stateIndex;
+        buffer[i] = isNormal
+          ? buffer.__original__[i]
+          : pointConnectionOpacityActive;
+      }
+
+      lineIdCacher(lineId);
+    }
 
     pointConnections.getBuffer().opacities.subdata(buffer, 0);
   };
@@ -697,9 +722,13 @@ const createScatterplot = (
     isPointsFiltered && !filteredPointsSet.has(pointIdx);
 
   const deselect = ({ preventEvent = false } = {}) => {
-    if (lassoClearEvent === LASSO_CLEAR_ON_DESELECT) lassoClear();
+    if (lassoClearEvent === LASSO_CLEAR_ON_DESELECT) {
+      lassoClear();
+    }
     if (selectedPoints.length) {
-      if (!preventEvent) pubSub.publish('deselect');
+      if (!preventEvent) {
+        pubSub.publish('deselect');
+      }
       selectedPointsConnectionSet.clear();
       setPointConnectionColorState(selectedPoints, 0);
       selectedPoints = [];
@@ -727,8 +756,9 @@ const createScatterplot = (
       }
     } else {
       // Unset previously highlight point connections
-      if (selectedPoints && selectedPoints.length)
+      if (selectedPoints?.length) {
         setPointConnectionColorState(selectedPoints, 0);
+      }
       if (currSelectedPoints.length > 0 && newSelectedPoints.length === 0) {
         deselect({ preventEvent });
         return;
@@ -762,7 +792,7 @@ const createScatterplot = (
       selectedPointsSet.add(pointIdx);
       selectedPointsBuffer.push.apply(
         selectedPointsBuffer,
-        indexToStateTexCoord(pointIdx)
+        indexToStateTexCoord(pointIdx),
       );
     }
 
@@ -774,7 +804,9 @@ const createScatterplot = (
 
     setPointConnectionColorState(selectedPoints, 1);
 
-    if (!preventEvent) pubSub.publish('select', { points: selectedPoints });
+    if (!preventEvent) {
+      pubSub.publish('select', { points: selectedPoints });
+    }
 
     draw = true;
   };
@@ -785,7 +817,7 @@ const createScatterplot = (
    */
   const hover = (
     point,
-    { showReticleOnce = false, preventEvent = false } = {}
+    { showReticleOnce = false, preventEvent = false } = {},
   ) => {
     let needsRedraw = false;
 
@@ -804,10 +836,12 @@ const createScatterplot = (
       }
       hoveredPoint = point;
       hoveredPointIndexBuffer.subdata(indexToStateTexCoord(point));
-      if (!selectedPointsSet.has(point))
+      if (!selectedPointsSet.has(point)) {
         setPointConnectionColorState([point], 2);
-      if (newHoveredPoint && !preventEvent)
+      }
+      if (newHoveredPoint && !preventEvent) {
         pubSub.publish('pointover', hoveredPoint);
+      }
     } else {
       needsRedraw = +hoveredPoint >= 0;
       if (needsRedraw) {
@@ -858,7 +892,9 @@ const createScatterplot = (
     pubSub.publish('lassoEnd', {
       coordinates: lassoPointsCurr,
     });
-    if (lassoClearEvent === LASSO_CLEAR_ON_END) lassoClear();
+    if (lassoClearEvent === LASSO_CLEAR_ON_END) {
+      lassoClear();
+    }
   };
 
   const lassoManager = createLassoManager(canvas, {
@@ -900,7 +936,9 @@ const createScatterplot = (
       .some((element) => element === canvas);
 
   const mouseDownHandler = (event) => {
-    if (!isPointsDrawn || event.buttons !== 1) return;
+    if (!isPointsDrawn || event.buttons !== 1) {
+      return;
+    }
 
     mouseDown = true;
     mouseDownTime = performance.now();
@@ -922,7 +960,9 @@ const createScatterplot = (
   };
 
   const mouseUpHandler = (event) => {
-    if (!isPointsDrawn) return;
+    if (!isPointsDrawn) {
+      return;
+    }
 
     mouseDown = false;
     if (mouseDownTimeout >= 0) {
@@ -946,14 +986,17 @@ const createScatterplot = (
   };
 
   const mouseClickHandler = (event) => {
-    if (!isPointsDrawn) return;
+    if (!isPointsDrawn) {
+      return;
+    }
 
     event.preventDefault();
 
     const currentMousePosition = getRelativeMousePosition(event);
 
-    if (dist(...currentMousePosition, ...mouseDownPosition) >= lassoMinDist)
+    if (dist(...currentMousePosition, ...mouseDownPosition) >= lassoMinDist) {
       return;
+    }
 
     const clickTime = performance.now() - mouseDownTime;
 
@@ -1000,7 +1043,9 @@ const createScatterplot = (
       isMouseInCanvas = checkIfMouseIsOverCanvas(event);
       isMouseOverCanvasChecked = true;
     }
-    if (!isPointsDrawn || (!isMouseInCanvas && !mouseDown)) return;
+    if (!(isPointsDrawn && (isMouseInCanvas || mouseDown))) {
+      return;
+    }
 
     const currentMousePosition = getRelativeMousePosition(event);
     const mouseMoveDist = dist(...currentMousePosition, ...mouseDownPosition);
@@ -1026,7 +1071,9 @@ const createScatterplot = (
     }
 
     // Always redraw when mousedown as the user might have panned or lassoed
-    if (mouseDown) draw = true;
+    if (mouseDown) {
+      draw = true;
+    }
   };
 
   const blurHandler = () => {
@@ -1034,10 +1081,13 @@ const createScatterplot = (
     isMouseInCanvas = false;
     isMouseOverCanvasChecked = false;
 
-    if (!isPointsDrawn) return;
+    if (!isPointsDrawn) {
+      return;
+    }
 
-    if (+hoveredPoint >= 0 && !selectedPointsSet.has(hoveredPoint))
+    if (+hoveredPoint >= 0 && !selectedPointsSet.has(hoveredPoint)) {
       setPointConnectionColorState([hoveredPoint], 0);
+    }
     mouseUpHandler();
     draw = true;
   };
@@ -1053,19 +1103,19 @@ const createScatterplot = (
       rgba[i * 4 + 1] = Math.min(1, opacity[i] || 0);
 
       const activeOpacity = Number(
-        (pointColorActive[i] || pointColorActive[0])[3]
+        (pointColorActive[i] || pointColorActive[0])[3],
       );
       rgba[i * 4 + 2] = Math.min(
         1,
-        Number.isNaN(activeOpacity) ? 1 : activeOpacity
+        Number.isNaN(activeOpacity) ? 1 : activeOpacity,
       );
 
       const hoverOpacity = Number(
-        (pointColorHover[i] || pointColorHover[0])[3]
+        (pointColorHover[i] || pointColorHover[0])[3],
       );
       rgba[i * 4 + 3] = Math.min(
         1,
-        Number.isNaN(hoverOpacity) ? 1 : hoverOpacity
+        Number.isNaN(hoverOpacity) ? 1 : hoverOpacity,
       );
     }
 
@@ -1079,7 +1129,7 @@ const createScatterplot = (
   const getColors = (
     baseColor = pointColor,
     activeColor = pointColorActive,
-    hoverColor = pointColorHover
+    hoverColor = pointColorHover,
   ) => {
     const n = baseColor.length;
     const n2 = activeColor.length;
@@ -1091,7 +1141,7 @@ const createScatterplot = (
           baseColor[i],
           activeColor[i],
           hoverColor[i],
-          backgroundColor
+          backgroundColor,
         );
       }
     } else {
@@ -1152,12 +1202,16 @@ const createScatterplot = (
   };
 
   const setDataAspectRatio = (newDataAspectRatio) => {
-    if (+newDataAspectRatio <= 0) return;
+    if (+newDataAspectRatio <= 0) {
+      return;
+    }
     dataAspectRatio = newDataAspectRatio;
   };
 
   const setColors = (getter, setter) => (newColors) => {
-    if (!newColors || !newColors.length) return;
+    if (!newColors?.length) {
+      return;
+    }
 
     const colors = getter();
     const prevColors = [...colors];
@@ -1165,14 +1219,15 @@ const createScatterplot = (
     let tmpColors = isMultipleColors(newColors) ? newColors : [newColors];
     tmpColors = tmpColors.map((color) => toRgba(color, true));
 
-    if (colorTex) colorTex.destroy();
+    if (colorTex) {
+      colorTex.destroy();
+    }
 
     try {
       setter(tmpColors);
       colorTex = createColorTexture();
-    } catch (e) {
+    } catch (_error) {
       console.error('Invalid colors. Switching back to default colors.');
-      // eslint-disable-next-line no-param-reassign
       setter(prevColors);
       colorTex = createColorTexture();
     }
@@ -1182,19 +1237,19 @@ const createScatterplot = (
     () => pointColor,
     (colors) => {
       pointColor = colors;
-    }
+    },
   );
   const setPointColorActive = setColors(
     () => pointColorActive,
     (colors) => {
       pointColorActive = colors;
-    }
+    },
   );
   const setPointColorHover = setColors(
     () => pointColorHover,
     (colors) => {
       pointColorHover = colors;
-    }
+    },
   );
 
   const computeDomainView = () => {
@@ -1219,12 +1274,19 @@ const createScatterplot = (
   };
 
   const updateScales = () => {
-    if (!xScale && !yScale) return;
+    if (!(xScale || yScale)) {
+      return;
+    }
 
     const [xDomainView, yDomainView] = computeDomainView();
 
-    if (xScale) xScale.domain(xDomainView);
-    if (yScale) yScale.domain(yDomainView);
+    if (xScale) {
+      xScale.domain(xDomainView);
+    }
+
+    if (yScale) {
+      yScale.domain(yDomainView);
+    }
   };
 
   const setCurrentHeight = (newCurrentHeight) => {
@@ -1241,12 +1303,16 @@ const createScatterplot = (
       height = newHeight;
       canvas.style.height = '100%';
       window.requestAnimationFrame(() => {
-        if (canvas) setCurrentHeight(canvas.getBoundingClientRect().height);
+        if (canvas) {
+          setCurrentHeight(canvas.getBoundingClientRect().height);
+        }
       });
       return;
     }
 
-    if (!+newHeight || +newHeight <= 0) return;
+    if (!+newHeight || +newHeight <= 0) {
+      return;
+    }
 
     height = +newHeight;
     setCurrentHeight(height);
@@ -1264,10 +1330,13 @@ const createScatterplot = (
   };
 
   const setPointSize = (newPointSize) => {
-    if (isConditionalArray(newPointSize, isPositiveNumber, { minLength: 1 }))
+    if (isConditionalArray(newPointSize, isPositiveNumber, { minLength: 1 })) {
       pointSize = [...newPointSize];
+    }
 
-    if (isStrictlyPositiveNumber(+newPointSize)) pointSize = [+newPointSize];
+    if (isStrictlyPositiveNumber(+newPointSize)) {
+      pointSize = [+newPointSize];
+    }
 
     minPointScale = MIN_POINT_SIZE / pointSize[0];
     encodingTex = createEncodingTexture();
@@ -1275,12 +1344,16 @@ const createScatterplot = (
   };
 
   const setPointSizeSelected = (newPointSizeSelected) => {
-    if (!+newPointSizeSelected || +newPointSizeSelected < 0) return;
+    if (!+newPointSizeSelected || +newPointSizeSelected < 0) {
+      return;
+    }
     pointSizeSelected = +newPointSizeSelected;
   };
 
   const setPointOutlineWidth = (newPointOutlineWidth) => {
-    if (!+newPointOutlineWidth || +newPointOutlineWidth < 0) return;
+    if (!+newPointOutlineWidth || +newPointOutlineWidth < 0) {
+      return;
+    }
     pointOutlineWidth = +newPointOutlineWidth;
   };
 
@@ -1298,12 +1371,16 @@ const createScatterplot = (
       width = newWidth;
       canvas.style.width = '100%';
       window.requestAnimationFrame(() => {
-        if (canvas) setCurrentWidth(canvas.getBoundingClientRect().width);
+        if (canvas) {
+          setCurrentWidth(canvas.getBoundingClientRect().width);
+        }
       });
       return;
     }
 
-    if (!+newWidth || +newWidth <= 0) return;
+    if (!+newWidth || +newWidth <= 0) {
+      return;
+    }
 
     width = +newWidth;
     setCurrentWidth(width);
@@ -1311,10 +1388,13 @@ const createScatterplot = (
   };
 
   const setOpacity = (newOpacity) => {
-    if (isConditionalArray(newOpacity, isPositiveNumber, { minLength: 1 }))
+    if (isConditionalArray(newOpacity, isPositiveNumber, { minLength: 1 })) {
       opacity = [...newOpacity];
+    }
 
-    if (isStrictlyPositiveNumber(+newOpacity)) opacity = [+newOpacity];
+    if (isStrictlyPositiveNumber(+newOpacity)) {
+      opacity = [+newOpacity];
+    }
 
     encodingTex = createEncodingTexture();
   };
@@ -1337,7 +1417,6 @@ const createScatterplot = (
       case CONTINUOUS:
         return (value) => Math.round(value * (rangeValues.length - 1));
 
-      case CATEGORICAL:
       default:
         return identity;
     }
@@ -1358,21 +1437,21 @@ const createScatterplot = (
     pointConnectionColorBy = getEncodingType(
       type,
       DEFAULT_POINT_CONNECTION_COLOR_BY,
-      { allowSegment: true, allowInherit: true }
+      { allowSegment: true, allowInherit: true },
     );
   };
   const setPointConnectionOpacityBy = (type) => {
     pointConnectionOpacityBy = getEncodingType(
       type,
       DEFAULT_POINT_CONNECTION_OPACITY_BY,
-      { allowSegment: true }
+      { allowSegment: true },
     );
   };
   const setPointConnectionSizeBy = (type) => {
     pointConnectionSizeBy = getEncodingType(
       type,
       DEFAULT_POINT_CONNECTION_SIZE_BY,
-      { allowSegment: true }
+      { allowSegment: true },
     );
   };
 
@@ -1397,11 +1476,12 @@ const createScatterplot = (
   const getModelViewProjection = () =>
     mat4.multiply(pvm, projection, mat4.multiply(pvm, camera.view, model));
   const getPointScale = () => {
-    if (camera.scaling[0] > 1)
+    if (camera.scaling[0] > 1) {
       return (
         (Math.asinh(max(1.0, camera.scaling[0])) / Math.asinh(1)) *
         window.devicePixelRatio
       );
+    }
 
     return max(minPointScale, camera.scaling[0]) * window.devicePixelRatio;
   };
@@ -1420,22 +1500,27 @@ const createScatterplot = (
   const getIsSizedByZ = () => +(sizeBy === 'valueZ');
   const getIsSizedByW = () => +(sizeBy === 'valueW');
   const getColorMultiplicator = () => {
-    if (colorBy === 'valueZ')
+    if (colorBy === 'valueZ') {
       return valueZDataType === CONTINUOUS ? pointColor.length - 1 : 1;
+    }
     return valueWDataType === CONTINUOUS ? pointColor.length - 1 : 1;
   };
   const getOpacityMultiplicator = () => {
-    if (opacityBy === 'valueZ')
+    if (opacityBy === 'valueZ') {
       return valueZDataType === CONTINUOUS ? opacity.length - 1 : 1;
+    }
     return valueWDataType === CONTINUOUS ? opacity.length - 1 : 1;
   };
   const getSizeMultiplicator = () => {
-    if (sizeBy === 'valueZ')
+    if (sizeBy === 'valueZ') {
       return valueZDataType === CONTINUOUS ? pointSize.length - 1 : 1;
+    }
     return valueWDataType === CONTINUOUS ? pointSize.length - 1 : 1;
   };
   const getOpacityDensity = (context) => {
-    if (opacityBy !== 'density') return 1;
+    if (opacityBy !== 'density') {
+      return 1;
+    }
 
     // Adopted from the fabulous Ricky Reusser:
     // https://observablehq.com/@rreusser/selecting-the-right-opacity-for-2d-point-clouds
@@ -1467,7 +1552,6 @@ const createScatterplot = (
     const clampedPointDeviceSize = max(MIN_POINT_SIZE, p) + 0.5;
 
     // We square this since we're concerned with the ratio of *areas*.
-    // eslint-disable-next-line no-restricted-properties
     alpha *= (p / clampedPointDeviceSize) ** 2;
 
     // And finally, we clamp to the range [0, 1]. We should really clamp this to 1 / precision
@@ -1488,7 +1572,7 @@ const createScatterplot = (
     uniforms: {
       startStateTex: () => prevStateTex,
       endStateTex: () => stateTex,
-      t: (ctx, props) => props.t,
+      t: (_ctx, props) => props.t,
     },
 
     count: 3,
@@ -1500,7 +1584,7 @@ const createScatterplot = (
     getStateIndexBuffer,
     globalState = COLOR_NORMAL_IDX,
     getPointOpacityMax = getPointOpacityMaxBase,
-    getPointOpacityScale = getPointOpacityScaleBase
+    getPointOpacityScale = getPointOpacityScaleBase,
   ) =>
     renderer.regl({
       frag: performanceMode ? POINT_SIMPLE_FS : POINT_FS,
@@ -1509,8 +1593,10 @@ const createScatterplot = (
       blend: {
         enable: !performanceMode,
         func: {
+          // biome-ignore lint/style/useNamingConvention: Regl specific
           srcRGB: 'src alpha',
           srcAlpha: 'one',
+          // biome-ignore lint/style/useNamingConvention: Regl specific
           dstRGB: 'one minus src alpha',
           dstAlpha: 'one minus src alpha',
         },
@@ -1565,7 +1651,7 @@ const createScatterplot = (
   const drawPointBodies = drawPoints(
     getNormalPointSizeExtra,
     getNormalNumPoints,
-    getNormalPointsIndexBuffer
+    getNormalPointsIndexBuffer,
   );
 
   const drawHoveredPoint = drawPoints(
@@ -1574,7 +1660,7 @@ const createScatterplot = (
     () => hoveredPointIndexBuffer,
     COLOR_HOVER_IDX,
     () => 1,
-    () => 1
+    () => 1,
   );
 
   const drawSelectedPointOutlines = drawPoints(
@@ -1583,7 +1669,7 @@ const createScatterplot = (
     getSelectedPointsIndexBuffer,
     COLOR_ACTIVE_IDX,
     () => 1,
-    () => 1
+    () => 1,
   );
 
   const drawSelectedPointInnerBorder = drawPoints(
@@ -1592,7 +1678,7 @@ const createScatterplot = (
     getSelectedPointsIndexBuffer,
     COLOR_BG_IDX,
     () => 1,
-    () => 1
+    () => 1,
   );
 
   const drawSelectedPointBodies = drawPoints(
@@ -1601,7 +1687,7 @@ const createScatterplot = (
     getSelectedPointsIndexBuffer,
     COLOR_ACTIVE_IDX,
     () => 1,
-    () => 1
+    () => 1,
   );
 
   const drawSelectedPoints = () => {
@@ -1647,8 +1733,10 @@ const createScatterplot = (
     blend: {
       enable: true,
       func: {
+        // biome-ignore lint/style/useNamingConvention: Regl specific
         srcRGB: 'src alpha',
         srcAlpha: 'one',
+        // biome-ignore lint/style/useNamingConvention: Regl specific
         dstRGB: 'one minus src alpha',
         dstAlpha: 'one minus src alpha',
       },
@@ -1672,7 +1760,9 @@ const createScatterplot = (
   });
 
   const drawReticle = () => {
-    if (!(hoveredPoint >= 0)) return;
+    if (!(hoveredPoint >= 0)) {
+      return;
+    }
 
     const [x, y] = points[hoveredPoint].slice(0, 2);
 
@@ -1686,7 +1776,7 @@ const createScatterplot = (
     mat4.multiply(
       scratch,
       projection,
-      mat4.multiply(scratch, camera.view, model)
+      mat4.multiply(scratch, camera.view, model),
     );
 
     vec4.transformMat4(v, v, scratch);
@@ -1703,7 +1793,7 @@ const createScatterplot = (
         (pointSizeSelected + pointOutlineWidth * 2) * window.devicePixelRatio,
       () => 1,
       hoveredPointIndexBuffer,
-      COLOR_ACTIVE_IDX
+      COLOR_ACTIVE_IDX,
     )();
 
     // Draw inner outline
@@ -1711,7 +1801,7 @@ const createScatterplot = (
       () => (pointSizeSelected + pointOutlineWidth) * window.devicePixelRatio,
       () => 1,
       hoveredPointIndexBuffer,
-      COLOR_BG_IDX
+      COLOR_BG_IDX,
     )();
   };
 
@@ -1776,7 +1866,9 @@ const createScatterplot = (
   };
 
   const cachePoints = (newPoints, dataTypes = {}) => {
-    if (!stateTex) return false;
+    if (!stateTex) {
+      return false;
+    }
 
     if (isTransitioning) {
       const tmp = prevStateTex;
@@ -1821,7 +1913,9 @@ const createScatterplot = (
       numPoints = newPoints.length;
       numPointsInView = numPoints;
 
-      if (stateTex) stateTex.destroy();
+      if (stateTex) {
+        stateTex.destroy();
+      }
       stateTex = createStateTexture(newPoints, {
         z: options.zDataType,
         w: options.wDataType,
@@ -1859,7 +1953,7 @@ const createScatterplot = (
       cameraZoomTargetStart !== undefined &&
         cameraZoomTargetEnd !== undefined &&
         cameraZoomDistanceStart !== undefined &&
-        cameraZoomDistanceEnd !== undefined
+        cameraZoomDistanceEnd !== undefined,
     );
 
   const clearCachedCamera = () => {
@@ -1875,14 +1969,16 @@ const createScatterplot = (
 
     if (colorEncoding === 'segment') {
       const maxColorIdx = pointConnectionColor.length - 1;
-      if (maxColorIdx < 1) return [];
+      if (maxColorIdx < 1) {
+        return [];
+      }
       return curvePoints.reduce((colorIndices, curve, index) => {
         let totalLength = 0;
         const segLengths = [];
         // Compute the total length of the line
         for (let i = 2; i < curve.length; i += 2) {
           const segLength = Math.sqrt(
-            (curve[i - 2] - curve[i]) ** 2 + (curve[i - 1] - curve[i + 1]) ** 2
+            (curve[i - 2] - curve[i]) ** 2 + (curve[i - 1] - curve[i + 1]) ** 2,
           );
           segLengths.push(segLength);
           totalLength += segLength;
@@ -1895,7 +1991,7 @@ const createScatterplot = (
           // The `4` comes from the fact that we have 4 color states:
           // normal, active, hover, and background
           colorIndices[index].push(
-            Math.floor((cumLength / totalLength) * maxColorIdx) * 4
+            Math.floor((cumLength / totalLength) * maxColorIdx) * 4,
           );
         }
         // The `4` comes from the fact that we have 4 color states:
@@ -1912,7 +2008,9 @@ const createScatterplot = (
       const encodingIdx = getEncodingIdx(colorEncoding);
       const encodingValueToIdx = getEncodingValueToIdx(
         getEncodingDataType(colorEncoding),
-        pointConnectionColorBy === 'inherit' ? pointColor : pointConnectionColor
+        pointConnectionColorBy === 'inherit'
+          ? pointColor
+          : pointConnectionColor,
       );
       return pointConnectionMap.reduce(
         (colorIndices, [index, referencePoint]) => {
@@ -1922,7 +2020,7 @@ const createScatterplot = (
             encodingValueToIdx(referencePoint[encodingIdx]) * 4;
           return colorIndices;
         },
-        []
+        [],
       );
     }
 
@@ -1937,20 +2035,21 @@ const createScatterplot = (
 
     if (opacityEncoding === 'segment') {
       const maxOpacityIdx = pointConnectionOpacity.length - 1;
-      if (maxOpacityIdx < 1) return [];
+      if (maxOpacityIdx < 1) {
+        return [];
+      }
       return pointConnectionMap.reduce(
-        // eslint-disable-next-line no-unused-vars
-        (opacities, [index, referencePoint, length]) => {
+        (opacities, [index, _referencePoint, length]) => {
           opacities[index] = rangeMap(
             length,
             (i) =>
               pointConnectionOpacity[
                 Math.floor((i / (length - 1)) * maxOpacityIdx)
-              ]
+              ],
           );
           return opacities;
         },
-        []
+        [],
       );
     }
 
@@ -1962,7 +2061,7 @@ const createScatterplot = (
           : pointConnectionOpacity;
       const encodingValueToIdx = getEncodingValueToIdx(
         getEncodingDataType(opacityEncoding),
-        encodingRangeMap
+        encodingRangeMap,
       );
       return pointConnectionMap.reduce((opacities, [index, referencePoint]) => {
         opacities[index] =
@@ -1980,18 +2079,19 @@ const createScatterplot = (
 
     if (sizeEncoding === 'segment') {
       const maxSizeIdx = pointConnectionSize.length - 1;
-      if (maxSizeIdx < 1) return [];
+      if (maxSizeIdx < 1) {
+        return [];
+      }
       return pointConnectionMap.reduce(
-        // eslint-disable-next-line no-unused-vars
-        (widths, [index, referencePoint, length]) => {
+        (widths, [index, _referencePoint, length]) => {
           widths[index] = rangeMap(
             length,
             (i) =>
-              pointConnectionSize[Math.floor((i / (length - 1)) * maxSizeIdx)]
+              pointConnectionSize[Math.floor((i / (length - 1)) * maxSizeIdx)],
           );
           return widths;
         },
-        []
+        [],
       );
     }
 
@@ -2001,7 +2101,7 @@ const createScatterplot = (
         pointConnectionSizeBy === 'inherit' ? pointSize : pointConnectionSize;
       const encodingValueToIdx = getEncodingValueToIdx(
         getEncodingDataType(sizeEncoding),
-        encodingRangeMap
+        encodingRangeMap,
       );
       return pointConnectionMap.reduce((widths, [index, referencePoint]) => {
         widths[index] =
@@ -2033,9 +2133,7 @@ const createScatterplot = (
   const setPointConnections = (newPoints) =>
     new Promise((resolve) => {
       pointConnections.setPoints([]);
-      if (!newPoints || !newPoints.length) {
-        resolve();
-      } else {
+      if (newPoints?.length) {
         computingPointConnectionCurves = true;
         createSplineCurve(newPoints, {
           maxIntPointsPerSegment: pointConnectionMaxIntPointsPerSegment,
@@ -2051,11 +2149,13 @@ const createScatterplot = (
               colorIndices: getPointConnectionColorIndices(curvePointValues),
               opacities: getPointConnectionOpacities(curvePointValues),
               widths: getPointConnectionWidths(curvePointValues),
-            }
+            },
           );
           computingPointConnectionCurves = false;
           resolve();
         });
+      } else {
+        resolve();
       }
     });
 
@@ -2073,10 +2173,12 @@ const createScatterplot = (
         pubSub.subscribe(
           'draw',
           () => {
-            if (!preventEvent) pubSub.publish('unfilter');
+            if (!preventEvent) {
+              pubSub.publish('unfilter');
+            }
             resolve();
           },
-          1
+          1,
         );
         draw = true;
       };
@@ -2084,7 +2186,9 @@ const createScatterplot = (
       // Update point connections
       if (showPointConnections || hasPointConnections(points[0])) {
         setPointConnections(getPoints()).then(() => {
-          if (!preventEvent) pubSub.publish('pointConnectionsDraw');
+          if (!preventEvent) {
+            pubSub.publish('pointConnectionsDraw');
+          }
           finish();
         });
       } else {
@@ -2119,11 +2223,12 @@ const createScatterplot = (
       filteredPointsSet.add(pointIdx);
       filteredPointsBuffer.push.apply(
         filteredPointsBuffer,
-        indexToStateTexCoord(pointIdx)
+        indexToStateTexCoord(pointIdx),
       );
 
-      if (selectedPointsSet.has(pointIdx))
+      if (selectedPointsSet.has(pointIdx)) {
         filteredSelectedPoints.push(pointIdx);
+      }
     }
 
     // Update the normal points index buffers
@@ -2133,18 +2238,21 @@ const createScatterplot = (
     select(filteredSelectedPoints, { preventEvent });
 
     // Unset any potentially hovered point
-    if (!filteredPointsSet.has(hoveredPoint)) hover(-1, { preventEvent });
+    if (!filteredPointsSet.has(hoveredPoint)) {
+      hover(-1, { preventEvent });
+    }
 
     return new Promise((resolve) => {
       const finish = () => {
         pubSub.subscribe(
           'draw',
           () => {
-            if (!preventEvent)
+            if (!preventEvent) {
               pubSub.publish('filter', { points: filteredPoints });
+            }
             resolve();
           },
-          1
+          1,
         );
         draw = true;
       };
@@ -2152,7 +2260,9 @@ const createScatterplot = (
       // Update point connections
       if (showPointConnections || hasPointConnections(points[0])) {
         setPointConnections(getPoints()).then(() => {
-          if (!preventEvent) pubSub.publish('pointConnectionsDraw');
+          if (!preventEvent) {
+            pubSub.publish('pointConnectionsDraw');
+          }
           // We have to re-apply the selection because the connections might
           // have changed
           select(filteredSelectedPoints, { preventEvent });
@@ -2169,7 +2279,7 @@ const createScatterplot = (
       bottomLeftNdc[0],
       bottomLeftNdc[1],
       topRightNdc[0],
-      topRightNdc[1]
+      topRightNdc[1],
     );
 
   const getNumPointsInView = () => {
@@ -2178,7 +2288,7 @@ const createScatterplot = (
 
   const getNumPointsInViewDb = throttleAndDebounce(
     getNumPointsInView,
-    opacityByDensityDebounceTime
+    opacityByDensityDebounceTime,
   );
 
   const tweenCamera = (t) => {
@@ -2199,7 +2309,9 @@ const createScatterplot = (
   const isTransitioningCamera = () => hasCachedCamera();
 
   const tween = (duration, easing) => {
-    if (!transitionStartTime) transitionStartTime = performance.now();
+    if (!transitionStartTime) {
+      transitionStartTime = performance.now();
+    }
 
     const dt = performance.now() - transitionStartTime;
     const t = clip(easing(dt / duration), 0, 1);
@@ -2229,7 +2341,9 @@ const createScatterplot = (
   };
 
   const startTransition = ({ duration = 500, easing = DEFAULT_EASING }) => {
-    if (isTransitioning) pubSub.publish('transitionEnd');
+    if (isTransitioning) {
+      pubSub.publish('transitionEnd');
+    }
 
     isTransitioning = true;
     transitionStartTime = null;
@@ -2291,7 +2405,7 @@ const createScatterplot = (
                   });
                 } else {
                   console.warn(
-                    'Cannot transition! The number of points between the previous and current draw call must be identical.'
+                    'Cannot transition! The number of points between the previous and current draw call must be identical.',
                   );
                 }
               }
@@ -2344,7 +2458,7 @@ const createScatterplot = (
                         drawReticleOnce = options.showReticleOnce;
                         resolveTransition();
                       },
-                      1
+                      1,
                     );
                   }),
                   new Promise((resolveDraw) => {
@@ -2362,7 +2476,7 @@ const createScatterplot = (
                     drawReticleOnce = options.showReticleOnce;
                     resolve();
                   },
-                  1
+                  1,
                 );
               }
               startTransition({
@@ -2386,7 +2500,7 @@ const createScatterplot = (
               drawReticleOnce = options.showReticleOnce;
             }
           });
-        })
+        }),
     );
   };
 
@@ -2507,7 +2621,7 @@ const createScatterplot = (
         {
           colorIndices: newColorIndices,
           widths: newWidths,
-        }
+        },
       );
 
       pubSub.subscribe('draw', resolve, 1);
@@ -2532,14 +2646,15 @@ const createScatterplot = (
    * @param {number[]} pointIdxs - A list of point indices
    * @returns {import('./types').Rect} The bounding box
    */
+  // biome-ignore lint/style/useNamingConvention: BBox stands for BoundingBox
   const getBBoxOfPoints = (pointIdxs) => {
-    let xMin = Infinity;
-    let xMax = -Infinity;
-    let yMin = Infinity;
-    let yMax = -Infinity;
+    let xMin = Number.POSITIVE_INFINITY;
+    let xMax = Number.NEGATIVE_INFINITY;
+    let yMin = Number.POSITIVE_INFINITY;
+    let yMax = Number.NEGATIVE_INFINITY;
 
-    for (let i = 0; i < pointIdxs.length; i++) {
-      const [x, y] = points[pointIdxs[i]];
+    for (const pointIdx of pointIdxs) {
+      const [x, y] = points[pointIdx];
       xMin = Math.min(xMin, x);
       xMax = Math.max(xMax, x);
       yMin = Math.min(yMin, y);
@@ -2561,13 +2676,14 @@ const createScatterplot = (
         .transformMat4(
           [],
           [rect.x + rect.width / 2, rect.y + rect.height / 2, 0, 0],
-          model
+          model,
         )
         .slice(0, 2);
 
       // Vertical field of view
       // The Arc Tangent is based on the original camera position. Otherwise
       // we would have to do `Math.atan(1 / camera.view[5])`
+      // biome-ignore lint/style/useNamingConvention: FOV stands for field of view
       const vFOV = 2 * Math.atan(1);
 
       const aspectRatio = viewAspectRatio / dataAspectRatio;
@@ -2588,7 +2704,7 @@ const createScatterplot = (
             resolve();
             camera.config({ isFixed: false });
           },
-          1
+          1,
         );
         startTransition({
           duration: options.transitionDuration,
@@ -2608,8 +2724,9 @@ const createScatterplot = (
    * @returns {Promise<void>}
    */
   const zoomToPoints = (pointIdxs, options = {}) => {
-    if (!isPointsDrawn)
+    if (!isPointsDrawn) {
       return Promise.reject(new Error(ERROR_POINTS_NOT_DRAWN));
+    }
     const rect = getBBoxOfPoints(pointIdxs);
     const cX = rect.x + rect.width / 2;
     const cY = rect.y + rect.height / 2;
@@ -2643,7 +2760,7 @@ const createScatterplot = (
             resolve();
             camera.config({ isFixed: false });
           },
-          1
+          1,
         );
         startTransition({
           duration: options.transitionDuration,
@@ -2669,11 +2786,15 @@ const createScatterplot = (
    * @returns {[number, number] | undefined}
    */
   const getScreenPosition = (pointIdx) => {
-    if (!isPointsDrawn) throw new Error(ERROR_POINTS_NOT_DRAWN);
+    if (!isPointsDrawn) {
+      throw new Error(ERROR_POINTS_NOT_DRAWN);
+    }
 
     const point = points[pointIdx];
 
-    if (!point) return undefined;
+    if (!point) {
+      return undefined;
+    }
 
     // Homogeneous coordinates of the point
     const v = [point[0], point[1], 0, 1];
@@ -2682,7 +2803,7 @@ const createScatterplot = (
     mat4.multiply(
       scratch,
       projectionLocal,
-      mat4.multiply(scratch, camera.view, model)
+      mat4.multiply(scratch, camera.view, model),
     );
 
     vec4.transformMat4(v, v, scratch);
@@ -2699,7 +2820,7 @@ const createScatterplot = (
       color: getColors(
         pointConnectionColor,
         pointConnectionColorActive,
-        pointConnectionColorHover
+        pointConnectionColorHover,
       ),
       opacity:
         pointConnectionOpacity === null ? null : pointConnectionOpacity[0],
@@ -2724,7 +2845,9 @@ const createScatterplot = (
   };
 
   const setBackgroundColor = (newBackgroundColor) => {
-    if (!newBackgroundColor) return;
+    if (!newBackgroundColor) {
+      return;
+    }
 
     backgroundColor = toRgba(newBackgroundColor, true);
     backgroundColorBrightness = rgbBrightness(backgroundColor);
@@ -2746,7 +2869,6 @@ const createScatterplot = (
           console.error(`Count not create texture from ${newBackgroundImage}`);
           backgroundImage = null;
         });
-      // eslint-disable-next-line no-underscore-dangle
     } else if (newBackgroundImage._reglType === 'texture2d') {
       backgroundImage = newBackgroundImage;
     } else {
@@ -2755,24 +2877,33 @@ const createScatterplot = (
   };
 
   const setCameraDistance = (distance) => {
-    if (distance > 0) camera.lookAt(camera.target, distance, camera.rotation);
+    if (distance > 0) {
+      camera.lookAt(camera.target, distance, camera.rotation);
+    }
   };
 
   const setCameraRotation = (rotation) => {
-    if (rotation !== null)
+    if (rotation !== null) {
       camera.lookAt(camera.target, camera.distance[0], rotation);
+    }
   };
 
   const setCameraTarget = (target) => {
-    if (target) camera.lookAt(target, camera.distance[0], camera.rotation);
+    if (target) {
+      camera.lookAt(target, camera.distance[0], camera.rotation);
+    }
   };
 
   const setCameraView = (view) => {
-    if (view) camera.setView(view);
+    if (view) {
+      camera.setView(view);
+    }
   };
 
   const setLassoColor = (newLassoColor) => {
-    if (!newLassoColor) return;
+    if (!newLassoColor) {
+      return;
+    }
 
     lassoColor = toRgba(newLassoColor, true);
 
@@ -2783,7 +2914,9 @@ const createScatterplot = (
   };
 
   const setLassoLineWidth = (newLassoLineWidth) => {
-    if (Number.isNaN(+newLassoLineWidth) || +newLassoLineWidth < 1) return;
+    if (Number.isNaN(+newLassoLineWidth) || +newLassoLineWidth < 1) {
+      return;
+    }
 
     lassoLineWidth = +newLassoLineWidth;
 
@@ -2791,7 +2924,9 @@ const createScatterplot = (
   };
 
   const setLassoMinDelay = (newLassoMinDelay) => {
-    if (!+newLassoMinDelay) return;
+    if (!+newLassoMinDelay) {
+      return;
+    }
 
     lassoMinDelay = +newLassoMinDelay;
 
@@ -2801,7 +2936,9 @@ const createScatterplot = (
   };
 
   const setLassoMinDist = (newLassoMinDist) => {
-    if (!+newLassoMinDist) return;
+    if (!+newLassoMinDist) {
+      return;
+    }
 
     lassoMinDist = +newLassoMinDist;
 
@@ -2813,7 +2950,7 @@ const createScatterplot = (
   const setLassoClearEvent = (newLassoClearEvent) => {
     lassoClearEvent = limit(
       LASSO_CLEAR_EVENTS,
-      lassoClearEvent
+      lassoClearEvent,
     )(newLassoClearEvent);
   };
 
@@ -2884,13 +3021,17 @@ const createScatterplot = (
   };
 
   const setShowReticle = (newShowReticle) => {
-    if (newShowReticle === null) return;
+    if (newShowReticle === null) {
+      return;
+    }
 
     showReticle = newShowReticle;
   };
 
   const setReticleColor = (newReticleColor) => {
-    if (!newReticleColor) return;
+    if (!newReticleColor) {
+      return;
+    }
 
     reticleColor = toRgba(newReticleColor, true);
 
@@ -2898,8 +3039,11 @@ const createScatterplot = (
     reticleVLine.setStyle({ color: reticleColor });
   };
 
+  // biome-ignore lint/style/useNamingConvention: XScale are two words
   const setXScale = (newXScale) => {
-    if (!newXScale) return;
+    if (!newXScale) {
+      return;
+    }
 
     xScale = newXScale;
     xDomainStart = newXScale.domain()[0];
@@ -2908,8 +3052,11 @@ const createScatterplot = (
     updateScales();
   };
 
+  // biome-ignore lint/style/useNamingConvention: YScale are two words
   const setYScale = (newYScale) => {
-    if (!newYScale) return;
+    if (!newYScale) {
+      return;
+    }
 
     yScale = newYScale;
     yDomainStart = yScale.domain()[0];
@@ -2954,34 +3101,36 @@ const createScatterplot = (
     (newColors) => {
       pointConnectionColor = newColors;
     },
-    () => pointColor
+    () => pointColor,
   );
 
   const setPointConnectionColorActive = setPointConnectionColors(
     (newColors) => {
       pointConnectionColorActive = newColors;
     },
-    () => pointColorActive
+    () => pointColorActive,
   );
 
   const setPointConnectionColorHover = setPointConnectionColors(
     (newColors) => {
       pointConnectionColorHover = newColors;
     },
-    () => pointColorHover
+    () => pointColorHover,
   );
 
   const setPointConnectionOpacity = (newOpacity) => {
-    if (isConditionalArray(newOpacity, isPositiveNumber, { minLength: 1 }))
+    if (isConditionalArray(newOpacity, isPositiveNumber, { minLength: 1 })) {
       pointConnectionOpacity = [...newOpacity];
+    }
 
-    if (isStrictlyPositiveNumber(+newOpacity))
+    if (isStrictlyPositiveNumber(+newOpacity)) {
       pointConnectionOpacity = [+newOpacity];
+    }
 
     pointConnectionColor = pointConnectionColor.map((color) => {
-      color[3] = !Number.isNaN(+pointConnectionOpacity[0])
-        ? +pointConnectionOpacity[0]
-        : color[3];
+      color[3] = Number.isNaN(+pointConnectionOpacity[0])
+        ? color[3]
+        : +pointConnectionOpacity[0];
       return color;
     });
 
@@ -2989,8 +3138,9 @@ const createScatterplot = (
   };
 
   const setPointConnectionOpacityActive = (newOpacity) => {
-    if (!Number.isNaN(+newOpacity) && +newOpacity)
+    if (!Number.isNaN(+newOpacity) && +newOpacity) {
       pointConnectionOpacityActive = +newOpacity;
+    }
   };
 
   const setPointConnectionSize = (newPointConnectionSize) => {
@@ -2998,11 +3148,13 @@ const createScatterplot = (
       isConditionalArray(newPointConnectionSize, isPositiveNumber, {
         minLength: 1,
       })
-    )
+    ) {
       pointConnectionSize = [...newPointConnectionSize];
+    }
 
-    if (isStrictlyPositiveNumber(+newPointConnectionSize))
+    if (isStrictlyPositiveNumber(+newPointConnectionSize)) {
       pointConnectionSize = [+newPointConnectionSize];
+    }
 
     updatePointConnectionStyle();
   };
@@ -3011,16 +3163,17 @@ const createScatterplot = (
     if (
       !Number.isNaN(+newPointConnectionSizeActive) &&
       +newPointConnectionSizeActive
-    )
+    ) {
       pointConnectionSizeActive = Math.max(0, newPointConnectionSizeActive);
+    }
   };
 
   const setPointConnectionMaxIntPointsPerSegment = (
-    newPointConnectionMaxIntPointsPerSegment
+    newPointConnectionMaxIntPointsPerSegment,
   ) => {
     pointConnectionMaxIntPointsPerSegment = Math.max(
       0,
-      newPointConnectionMaxIntPointsPerSegment
+      newPointConnectionMaxIntPointsPerSegment,
     );
   };
 
@@ -3053,6 +3206,7 @@ const createScatterplot = (
     annotationLineWidth = +newAnnotationLineWidth;
   };
 
+  // biome-ignore lint/style/useNamingConvention: HVLine stands for horizontal vertical line
   const setAnnotationHVLineLimit = (newAnnotationHVLineLimit) => {
     annotationHVLineLimit = +newAnnotationHVLineLimit;
   };
@@ -3065,116 +3219,323 @@ const createScatterplot = (
   const get = (property) => {
     checkDeprecations({ property: true });
 
-    if (property === 'aspectRatio') return dataAspectRatio;
-    if (property === 'background') return backgroundColor;
-    if (property === 'backgroundColor') return backgroundColor;
-    if (property === 'backgroundImage') return backgroundImage;
-    if (property === 'camera') return camera;
-    if (property === 'cameraTarget') return camera.target;
-    if (property === 'cameraDistance') return camera.distance[0];
-    if (property === 'cameraRotation') return camera.rotation;
-    if (property === 'cameraView') return camera.view;
-    if (property === 'canvas') return canvas;
-    if (property === 'colorBy') return colorBy;
-    if (property === 'sizeBy') return sizeBy;
-    if (property === 'deselectOnDblClick') return deselectOnDblClick;
-    if (property === 'deselectOnEscape') return deselectOnEscape;
-    if (property === 'height') return height;
-    if (property === 'lassoColor') return lassoColor;
-    if (property === 'lassoLineWidth') return lassoLineWidth;
-    if (property === 'lassoMinDelay') return lassoMinDelay;
-    if (property === 'lassoMinDist') return lassoMinDist;
-    if (property === 'lassoClearEvent') return lassoClearEvent;
-    if (property === 'lassoInitiator') return lassoInitiator;
-    if (property === 'lassoInitiatorElement') return lassoManager.initiator;
-    if (property === 'lassoInitiatorParentElement')
+    if (property === 'aspectRatio') {
+      return dataAspectRatio;
+    }
+
+    if (property === 'background') {
+      return backgroundColor;
+    }
+
+    if (property === 'backgroundColor') {
+      return backgroundColor;
+    }
+
+    if (property === 'backgroundImage') {
+      return backgroundImage;
+    }
+
+    if (property === 'camera') {
+      return camera;
+    }
+
+    if (property === 'cameraTarget') {
+      return camera.target;
+    }
+
+    if (property === 'cameraDistance') {
+      return camera.distance[0];
+    }
+
+    if (property === 'cameraRotation') {
+      return camera.rotation;
+    }
+
+    if (property === 'cameraView') {
+      return camera.view;
+    }
+
+    if (property === 'canvas') {
+      return canvas;
+    }
+
+    if (property === 'colorBy') {
+      return colorBy;
+    }
+
+    if (property === 'sizeBy') {
+      return sizeBy;
+    }
+
+    if (property === 'deselectOnDblClick') {
+      return deselectOnDblClick;
+    }
+
+    if (property === 'deselectOnEscape') {
+      return deselectOnEscape;
+    }
+
+    if (property === 'height') {
+      return height;
+    }
+
+    if (property === 'lassoColor') {
+      return lassoColor;
+    }
+
+    if (property === 'lassoLineWidth') {
+      return lassoLineWidth;
+    }
+
+    if (property === 'lassoMinDelay') {
+      return lassoMinDelay;
+    }
+
+    if (property === 'lassoMinDist') {
+      return lassoMinDist;
+    }
+
+    if (property === 'lassoClearEvent') {
+      return lassoClearEvent;
+    }
+
+    if (property === 'lassoInitiator') {
+      return lassoInitiator;
+    }
+
+    if (property === 'lassoInitiatorElement') {
+      return lassoManager.initiator;
+    }
+
+    if (property === 'lassoInitiatorParentElement') {
       return lassoInitiatorParentElement;
-    if (property === 'keyMap') return { ...keyMap };
-    if (property === 'mouseMode') return mouseMode;
-    if (property === 'opacity')
+    }
+    if (property === 'keyMap') {
+      return { ...keyMap };
+    }
+
+    if (property === 'mouseMode') {
+      return mouseMode;
+    }
+
+    if (property === 'opacity') {
       return opacity.length === 1 ? opacity[0] : opacity;
-    if (property === 'opacityBy') return opacityBy;
-    if (property === 'opacityByDensityFill') return opacityByDensityFill;
-    if (property === 'opacityByDensityDebounceTime')
+    }
+    if (property === 'opacityBy') {
+      return opacityBy;
+    }
+
+    if (property === 'opacityByDensityFill') {
+      return opacityByDensityFill;
+    }
+
+    if (property === 'opacityByDensityDebounceTime') {
       return opacityByDensityDebounceTime;
-    if (property === 'opacityInactiveMax') return opacityInactiveMax;
-    if (property === 'opacityInactiveScale') return opacityInactiveScale;
-    if (property === 'points') return points;
-    if (property === 'hoveredPoint') return hoveredPoint;
-    if (property === 'selectedPoints') return [...selectedPoints];
-    if (property === 'filteredPoints')
+    }
+
+    if (property === 'opacityInactiveMax') {
+      return opacityInactiveMax;
+    }
+
+    if (property === 'opacityInactiveScale') {
+      return opacityInactiveScale;
+    }
+
+    if (property === 'points') {
+      return points;
+    }
+
+    if (property === 'hoveredPoint') {
+      return hoveredPoint;
+    }
+
+    if (property === 'selectedPoints') {
+      return [...selectedPoints];
+    }
+
+    if (property === 'filteredPoints') {
       return isPointsFiltered
         ? Array.from(filteredPointsSet)
         : Array.from({ length: points.length }, (_, i) => i);
-    if (property === 'pointsInView') return getPointsInView();
-    if (property === 'pointColor')
+    }
+
+    if (property === 'pointsInView') {
+      return getPointsInView();
+    }
+
+    if (property === 'pointColor') {
       return pointColor.length === 1 ? pointColor[0] : pointColor;
-    if (property === 'pointColorActive')
+    }
+
+    if (property === 'pointColorActive') {
       return pointColorActive.length === 1
         ? pointColorActive[0]
         : pointColorActive;
-    if (property === 'pointColorHover')
+    }
+
+    if (property === 'pointColorHover') {
       return pointColorHover.length === 1
         ? pointColorHover[0]
         : pointColorHover;
-    if (property === 'pointOutlineWidth') return pointOutlineWidth;
-    if (property === 'pointSize')
+    }
+
+    if (property === 'pointOutlineWidth') {
+      return pointOutlineWidth;
+    }
+
+    if (property === 'pointSize') {
       return pointSize.length === 1 ? pointSize[0] : pointSize;
-    if (property === 'pointSizeSelected') return pointSizeSelected;
-    if (property === 'pointSizeMouseDetection') return pointSizeMouseDetection;
-    if (property === 'showPointConnections') return showPointConnections;
-    if (property === 'pointConnectionColor')
+    }
+
+    if (property === 'pointSizeSelected') {
+      return pointSizeSelected;
+    }
+
+    if (property === 'pointSizeMouseDetection') {
+      return pointSizeMouseDetection;
+    }
+
+    if (property === 'showPointConnections') {
+      return showPointConnections;
+    }
+
+    if (property === 'pointConnectionColor') {
       return pointConnectionColor.length === 1
         ? pointConnectionColor[0]
         : pointConnectionColor;
-    if (property === 'pointConnectionColorActive')
+    }
+
+    if (property === 'pointConnectionColorActive') {
       return pointConnectionColorActive.length === 1
         ? pointConnectionColorActive[0]
         : pointConnectionColorActive;
-    if (property === 'pointConnectionColorHover')
+    }
+
+    if (property === 'pointConnectionColorHover') {
       return pointConnectionColorHover.length === 1
         ? pointConnectionColorHover[0]
         : pointConnectionColorHover;
-    if (property === 'pointConnectionColorBy') return pointConnectionColorBy;
-    if (property === 'pointConnectionOpacity')
+    }
+
+    if (property === 'pointConnectionColorBy') {
+      return pointConnectionColorBy;
+    }
+
+    if (property === 'pointConnectionOpacity') {
       return pointConnectionOpacity.length === 1
         ? pointConnectionOpacity[0]
         : pointConnectionOpacity;
-    if (property === 'pointConnectionOpacityBy')
+    }
+
+    if (property === 'pointConnectionOpacityBy') {
       return pointConnectionOpacityBy;
-    if (property === 'pointConnectionOpacityActive')
+    }
+
+    if (property === 'pointConnectionOpacityActive') {
       return pointConnectionOpacityActive;
-    if (property === 'pointConnectionSize')
+    }
+
+    if (property === 'pointConnectionSize') {
       return pointConnectionSize.length === 1
         ? pointConnectionSize[0]
         : pointConnectionSize;
-    if (property === 'pointConnectionSizeActive')
+    }
+
+    if (property === 'pointConnectionSizeActive') {
       return pointConnectionSizeActive;
-    if (property === 'pointConnectionSizeBy') return pointConnectionSizeBy;
-    if (property === 'pointConnectionMaxIntPointsPerSegment')
+    }
+
+    if (property === 'pointConnectionSizeBy') {
+      return pointConnectionSizeBy;
+    }
+
+    if (property === 'pointConnectionMaxIntPointsPerSegment') {
       return pointConnectionMaxIntPointsPerSegment;
-    if (property === 'pointConnectionTolerance')
+    }
+
+    if (property === 'pointConnectionTolerance') {
       return pointConnectionTolerance;
-    if (property === 'reticleColor') return reticleColor;
-    if (property === 'regl') return renderer.regl;
-    if (property === 'showReticle') return showReticle;
-    if (property === 'version') return version;
-    if (property === 'width') return width;
-    if (property === 'xScale') return xScale;
-    if (property === 'yScale') return yScale;
-    if (property === 'performanceMode') return performanceMode;
-    if (property === 'gamma') return renderer.gamma;
-    if (property === 'renderer') return renderer;
-    if (property === 'isDestroyed') return isDestroyed;
-    if (property === 'isPointsDrawn') return isPointsDrawn;
-    if (property === 'isPointsFiltered') return isPointsFiltered;
-    if (property === 'isAnnotationsDrawn') return isAnnotationsDrawn;
-    if (property === 'zDataType') return valueZDataType;
-    if (property === 'wDataType') return valueWDataType;
-    if (property === 'spatialIndex') return spatialIndex?.data;
-    if (property === 'annotationLineColor') return annotationLineColor;
-    if (property === 'annotationLineWidth') return annotationLineWidth;
-    if (property === 'annotationHVLineLimit') return annotationHVLineLimit;
+    }
+
+    if (property === 'reticleColor') {
+      return reticleColor;
+    }
+
+    if (property === 'regl') {
+      return renderer.regl;
+    }
+
+    if (property === 'showReticle') {
+      return showReticle;
+    }
+
+    if (property === 'version') {
+      return version;
+    }
+
+    if (property === 'width') {
+      return width;
+    }
+
+    if (property === 'xScale') {
+      return xScale;
+    }
+
+    if (property === 'yScale') {
+      return yScale;
+    }
+
+    if (property === 'performanceMode') {
+      return performanceMode;
+    }
+
+    if (property === 'gamma') {
+      return renderer.gamma;
+    }
+
+    if (property === 'renderer') {
+      return renderer;
+    }
+
+    if (property === 'isDestroyed') {
+      return isDestroyed;
+    }
+
+    if (property === 'isPointsDrawn') {
+      return isPointsDrawn;
+    }
+
+    if (property === 'isPointsFiltered') {
+      return isPointsFiltered;
+    }
+
+    if (property === 'isAnnotationsDrawn') {
+      return isAnnotationsDrawn;
+    }
+
+    if (property === 'zDataType') {
+      return valueZDataType;
+    }
+
+    if (property === 'wDataType') {
+      return valueWDataType;
+    }
+
+    if (property === 'spatialIndex') {
+      return spatialIndex?.data;
+    }
+
+    if (property === 'annotationLineColor') {
+      return annotationLineColor;
+    }
+
+    if (property === 'annotationLineWidth') {
+      return annotationLineWidth;
+    }
+
+    if (property === 'annotationHVLineLimit') {
+      return annotationHVLineLimit;
+    }
 
     return undefined;
   };
@@ -3292,7 +3653,7 @@ const createScatterplot = (
 
     if (properties.pointConnectionMaxIntPointsPerSegment !== undefined) {
       setPointConnectionMaxIntPointsPerSegment(
-        properties.pointConnectionMaxIntPointsPerSegment
+        properties.pointConnectionMaxIntPointsPerSegment,
       );
     }
 
@@ -3342,7 +3703,7 @@ const createScatterplot = (
 
     if (properties.lassoLongPressAfterEffectTime !== undefined) {
       setLassoLongPressAfterEffectTime(
-        properties.lassoLongPressAfterEffectTime
+        properties.lassoLongPressAfterEffectTime,
       );
     }
 
@@ -3352,7 +3713,7 @@ const createScatterplot = (
 
     if (properties.lassoLongPressRevertEffectTime !== undefined) {
       setLassoLongPressRevertEffectTime(
-        properties.lassoLongPressRevertEffectTime
+        properties.lassoLongPressRevertEffectTime,
       );
     }
 
@@ -3437,7 +3798,10 @@ const createScatterplot = (
     // all calls async.
     return new Promise((resolve) => {
       window.requestAnimationFrame(() => {
-        if (!canvas) return; // Instance was destroyed in between
+        if (!canvas) {
+          // Instance was destroyed in between
+          return;
+        }
         updateViewAspectRatio();
         camera.refresh();
         renderer.refresh();
@@ -3476,7 +3840,7 @@ const createScatterplot = (
       camera.lookAt(
         [...(initialProperties.cameraTarget || DEFAULT_TARGET)],
         initialProperties.cameraDistance || DEFAULT_DISTANCE,
-        initialProperties.cameraRotation || DEFAULT_ROTATION
+        initialProperties.cameraRotation || DEFAULT_ROTATION,
       );
     } else {
       camera.setView(mat4.clone(DEFAULT_VIEW));
@@ -3493,7 +3857,9 @@ const createScatterplot = (
     initCamera();
     updateScales();
 
-    if (preventEvent) return;
+    if (preventEvent) {
+      return;
+    }
 
     pubSub.publish('view', {
       view: camera.view,
@@ -3505,9 +3871,12 @@ const createScatterplot = (
 
   const keyUpHandler = ({ key }) => {
     switch (key) {
-      case 'Escape':
-        if (deselectOnEscape) deselect();
+      case 'Escape': {
+        if (deselectOnEscape) {
+          deselect();
+        }
         break;
+      }
       default:
       // Nothing
     }
@@ -3559,8 +3928,13 @@ const createScatterplot = (
       const { width: newWidth, height: newHeight } =
         canvas.getBoundingClientRect();
 
-      if (autoWidth) setCurrentWidth(newWidth);
-      if (autoHeight) setCurrentHeight(newHeight);
+      if (autoWidth) {
+        setCurrentWidth(newWidth);
+      }
+
+      if (autoHeight) {
+        setCurrentHeight(newHeight);
+      }
 
       updateViewAspectRatio();
       draw = true;
@@ -3585,7 +3959,7 @@ const createScatterplot = (
       color: getColors(
         pointConnectionColor,
         pointConnectionColorActive,
-        pointConnectionColorHover
+        pointConnectionColorHover,
       ),
       opacity:
         pointConnectionOpacity === null ? null : pointConnectionOpacity[0],
@@ -3663,16 +4037,20 @@ const createScatterplot = (
     // Update camera: this needs to happen on every
     isViewChanged = camera.tick();
 
-    if (!(isPointsDrawn || isAnnotationsDrawn) || !(draw || isTransitioning))
+    if (!((isPointsDrawn || isAnnotationsDrawn) && (draw || isTransitioning))) {
       return;
+    }
 
-    if (isTransitioning && !tween(transitionDuration, transitionEasing))
+    if (isTransitioning && !tween(transitionDuration, transitionEasing)) {
       endTransition();
+    }
 
     if (isViewChanged) {
       topRightNdc = getScatterGlPos(1, 1);
       bottomLeftNdc = getScatterGlPos(-1, -1);
-      if (opacityBy === 'density') getNumPointsInViewDb();
+      if (opacityBy === 'density') {
+        getNumPointsInViewDb();
+      }
     }
 
     renderer.render(() => {
@@ -3681,12 +4059,13 @@ const createScatterplot = (
 
       updateProjectionMatrix(widthRatio, heightRatio);
 
-      // eslint-disable-next-line no-underscore-dangle
-      if (backgroundImage && backgroundImage._reglType) {
+      if (backgroundImage?._reglType) {
         drawBackgroundImage();
       }
 
-      if (lassoPointsCurr.length > 2) drawPolygon2d();
+      if (lassoPointsCurr.length > 2) {
+        drawPolygon2d();
+      }
 
       // The draw order of the following calls is important!
       if (!isTransitioning) {
@@ -3697,10 +4076,21 @@ const createScatterplot = (
         });
       }
 
-      if (isPointsDrawn) drawPointBodies();
-      if (!mouseDown && (showReticle || drawReticleOnce)) drawReticle();
-      if (hoveredPoint >= 0) drawHoveredPoint();
-      if (selectedPoints.length) drawSelectedPoints();
+      if (isPointsDrawn) {
+        drawPointBodies();
+      }
+
+      if (!mouseDown && (showReticle || drawReticleOnce)) {
+        drawReticle();
+      }
+
+      if (hoveredPoint >= 0) {
+        drawHoveredPoint();
+      }
+
+      if (selectedPoints.length) {
+        drawSelectedPoints();
+      }
 
       annotations.draw({
         projection: getProjection(),
@@ -3773,7 +4163,7 @@ const createScatterplot = (
     pointConnections.destroy();
     reticleHLine.destroy();
     reticleVLine.destroy();
-    if (!initialProperties.renderer && !renderer.isDestroyed) {
+    if (!(initialProperties.renderer || renderer.isDestroyed)) {
       // Since the user did not pass in an externally created renderer we can
       // assume that the renderer is only used by this scatter plot instance.
       // Therefore it's save to destroy it when this scatter plot instance is
@@ -3800,7 +4190,7 @@ const createScatterplot = (
     clearAnnotations: withDraw(clearAnnotations),
     createTextureFromUrl: (
       /** @type {string} */ url,
-      /** @type {number} */ timeout = DEFAULT_IMAGE_LOAD_TIMEOUT
+      /** @type {number} */ timeout = DEFAULT_IMAGE_LOAD_TIMEOUT,
     ) => createTextureFromUrl(renderer.regl, url, timeout),
     deselect,
     destroy,
@@ -3845,6 +4235,10 @@ const createSpatialIndex = (points, useWorker) =>
     .then((arrayPoints) => createKdbush(arrayPoints, { useWorker }))
     .then((index) => index.data);
 
-export { createRegl, createRenderer, createSpatialIndex, createTextureFromUrl };
-
-export { checkReglExtensions as checkSupport } from './utils';
+export {
+  createRegl,
+  createRenderer,
+  createSpatialIndex,
+  createTextureFromUrl,
+  checkSupport,
+};

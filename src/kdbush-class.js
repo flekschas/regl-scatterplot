@@ -1,4 +1,3 @@
-/* eslint-disable */
 /**
  * KDBush - A fast static index for 2D points
  * @license ISC License

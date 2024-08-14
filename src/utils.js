@@ -1,11 +1,11 @@
 import createOriginalRegl from 'regl';
 
 import {
-  GL_EXTENSIONS,
   DEFAULT_IMAGE_LOAD_TIMEOUT,
+  GL_EXTENSIONS,
   IMAGE_LOAD_ERROR,
-  Z_NAMES,
   W_NAMES,
+  Z_NAMES,
 } from './constants';
 
 /**
@@ -23,12 +23,14 @@ export const arrayMax = (max, x) => (max > x ? max : x);
  * @return  {boolean}  If `true` all required GL extensions are supported
  */
 export const checkReglExtensions = (regl, silent) => {
-  if (!regl) return false;
-  return GL_EXTENSIONS.reduce((every, EXTENSION) => {
-    if (!regl.hasExtension(EXTENSION)) {
+  if (!regl) {
+    return false;
+  }
+  return GL_EXTENSIONS.reduce((every, extension) => {
+    if (!regl.hasExtension(extension)) {
       if (!silent) {
         console.warn(
-          `WebGL: ${EXTENSION} extension not supported. Scatterplot might not render properly`
+          `WebGL: ${extension} extension not supported. Scatterplot might not render properly`,
         );
       }
       return false;
@@ -51,15 +53,15 @@ export const createRegl = (canvas) => {
 
   // Needed to run the tests properly as the headless-gl doesn't support all
   // extensions, which is fine for the functional tests.
-  GL_EXTENSIONS.forEach((EXTENSION) => {
-    if (gl.getExtension(EXTENSION)) {
-      extensions.push(EXTENSION);
+  for (const extension of GL_EXTENSIONS) {
+    if (gl.getExtension(extension)) {
+      extensions.push(extension);
     } else {
       console.warn(
-        `WebGL: ${EXTENSION} extension not supported. Scatterplot might not render properly`
+        `WebGL: ${extension} extension not supported. Scatterplot might not render properly`,
       );
     }
-  });
+  }
 
   return createOriginalRegl({ gl, extensions });
 };
@@ -81,11 +83,12 @@ export const dist = (x1, y1, x2, y2) =>
  * @return  {array}  Quadruple of form `[xMin, yMin, xMax, yMax]` defining the
  *  bounding box
  */
+// biome-ignore lint/style/useNamingConvention: BBox stands for BoundingBox
 export const getBBox = (positions2d) => {
-  let xMin = Infinity;
-  let xMax = -Infinity;
-  let yMin = Infinity;
-  let yMax = -Infinity;
+  let xMin = Number.POSITIVE_INFINITY;
+  let xMax = Number.NEGATIVE_INFINITY;
+  let yMin = Number.POSITIVE_INFINITY;
+  let yMax = Number.NEGATIVE_INFINITY;
 
   for (let i = 0; i < positions2d.length; i += 2) {
     xMin = positions2d[i] < xMin ? positions2d[i] : xMin;
@@ -102,6 +105,7 @@ export const getBBox = (positions2d) => {
  * @param   {array}  bBox  The bounding box to be checked
  * @return  {array}  `true` if the bounding box is valid
  */
+// biome-ignore lint/style/useNamingConvention: BBox stands for BoundingBox
 export const isValidBBox = ([xMin, yMin, xMax, yMax]) =>
   Number.isFinite(xMin) &&
   Number.isFinite(yMin) &&
@@ -121,11 +125,11 @@ export const hexToRgb = (hex, isNormalize = false) =>
   hex
     .replace(
       /^#?([a-f\d])([a-f\d])([a-f\d])$/i,
-      (m, r, g, b) => `#${r}${r}${g}${g}${b}${b}`
+      (_m, r, g, b) => `#${r}${r}${g}${g}${b}${b}`,
     )
     .substring(1)
     .match(/.{2}/g)
-    .map((x) => parseInt(x, 16) / 255 ** isNormalize);
+    .map((x) => Number.parseInt(x, 16) / 255 ** isNormalize);
 
 export const isConditionalArray = (a, condition, { minLength = 0 } = {}) =>
   Array.isArray(a) && a.length >= minLength && a.every(condition);
@@ -152,11 +156,13 @@ export const limit = (choices, defaultChoice) => (choice) =>
 export const loadImage = (
   src,
   isCrossOrigin = false,
-  timeout = DEFAULT_IMAGE_LOAD_TIMEOUT
+  timeout = DEFAULT_IMAGE_LOAD_TIMEOUT,
 ) =>
   new Promise((resolve, reject) => {
     const image = new Image();
-    if (isCrossOrigin) image.crossOrigin = 'anonymous';
+    if (isCrossOrigin) {
+      image.crossOrigin = 'anonymous';
+    }
     image.src = src;
     image.onload = () => {
       resolve(image);
@@ -179,13 +185,13 @@ export const loadImage = (
 export const createTextureFromUrl = (
   regl,
   url,
-  timeout = DEFAULT_IMAGE_LOAD_TIMEOUT
+  timeout = DEFAULT_IMAGE_LOAD_TIMEOUT,
 ) =>
   new Promise((resolve, reject) => {
     loadImage(
       url,
       url.indexOf(window.location.origin) !== 0 && url.indexOf('base64') === -1,
-      timeout
+      timeout,
     )
       .then((image) => {
         resolve(regl.texture(image));
@@ -245,8 +251,9 @@ export const isPointInPolygon = (polygon, [px, py] = []) => {
     y1 = polygon[i + 1];
     x2 = polygon[j];
     y2 = polygon[j + 1];
-    if (y1 > py !== y2 > py && px < ((x2 - x1) * (py - y1)) / (y2 - y1) + x1)
+    if (y1 > py !== y2 > py && px < ((x2 - x1) * (py - y1)) / (y2 - y1) + x1) {
       isWithin = !isWithin;
+    }
     j = i;
   }
   return isWithin;
@@ -327,7 +334,7 @@ export const min = (a, b) => (a < b ? a : b);
  * @return  {array}  Normalized array.
  */
 export const normNumArray = (a) =>
-  a.map((x) => x / a.reduce(arrayMax, -Infinity));
+  a.map((x) => x / a.reduce(arrayMax, Number.NEGATIVE_INFINITY));
 
 /**
  * Convert a color to an RGBA color
@@ -342,10 +349,13 @@ export const toRgba = (color, shouldNormalize) => {
     const isNormalized = isNormFloatArray(color);
     if (
       (shouldNormalize && isNormalized) ||
-      (!shouldNormalize && !isNormalized)
-    )
+      !(shouldNormalize || isNormalized)
+    ) {
       return color;
-    if (shouldNormalize && !isNormalized) return color.map((x) => x / 255);
+    }
+    if (shouldNormalize && !isNormalized) {
+      return color.map((x) => x / 255);
+    }
     return color.map((x) => x * 255);
   }
 
@@ -355,18 +365,22 @@ export const toRgba = (color, shouldNormalize) => {
 
     if (
       (shouldNormalize && isNormalized) ||
-      (!shouldNormalize && !isNormalized)
-    )
+      !(shouldNormalize || isNormalized)
+    ) {
       return [...color, base];
-    if (shouldNormalize && !isNormalized)
+    }
+    if (shouldNormalize && !isNormalized) {
       return [...color.map((x) => x / 255), base];
+    }
     return [...color.map((x) => x * 255), base];
   }
 
-  if (isHex(color)) return hexToRgba(color, shouldNormalize);
+  if (isHex(color)) {
+    return hexToRgba(color, shouldNormalize);
+  }
 
   console.warn(
-    'Only HEX, RGB, and RGBA are handled by this function. Returning white instead.'
+    'Only HEX, RGB, and RGBA are handled by this function. Returning white instead.',
   );
   return shouldNormalize ? [1, 1, 1, 1] : [255, 255, 255, 255];
 };
@@ -423,6 +437,8 @@ export const toArrayOrientedPoints = (points) =>
       const getL =
         (Array.isArray(points.line) || ArrayBuffer.isView(points.line)) &&
         ((i) => points.line[i]);
+
+      // biome-ignore lint/style/useNamingConvention: LO stands for line and order
       const getLO =
         (Array.isArray(points.lineOrder) ||
           ArrayBuffer.isView(points.lineOrder)) &&
@@ -455,7 +471,7 @@ export const toArrayOrientedPoints = (points) =>
             getW(i),
             getL(i),
             getLO(i),
-          ])
+          ]),
         );
       } else if (getX && getY && getZ && getW && getL) {
         resolve(
@@ -465,11 +481,16 @@ export const toArrayOrientedPoints = (points) =>
             getZ(i),
             getW(i),
             getL(i),
-          ])
+          ]),
         );
       } else if (getX && getY && getZ && getW) {
         resolve(
-          Array.from({ length }, (_, i) => [getX(i), getY(i), getZ(i), getW(i)])
+          Array.from({ length }, (_, i) => [
+            getX(i),
+            getY(i),
+            getZ(i),
+            getW(i),
+          ]),
         );
       } else if (getX && getY && getZ) {
         resolve(Array.from({ length }, (_, i) => [getX(i), getY(i), getZ(i)]));

@@ -1,8 +1,8 @@
 import {
-  DEFAULT_LASSO_LONG_PRESS_TIME,
   DEFAULT_LASSO_LONG_PRESS_AFTER_EFFECT_TIME,
   DEFAULT_LASSO_LONG_PRESS_EFFECT_DELAY,
   DEFAULT_LASSO_LONG_PRESS_REVERT_EFFECT_TIME,
+  DEFAULT_LASSO_LONG_PRESS_TIME,
 } from '../constants';
 
 const getInTime = (p, time, extraTime) => (1 - p) * time + extraTime;
@@ -125,7 +125,7 @@ export const createLongPressInAnimations = ({
         longPressPercent,
         afterEffectPercent,
         effectOpacity,
-        effectScale
+        effectScale,
       ),
       circleRight: getCircleRightIn(halfLongPressPercent, circleRightRotation),
       circleLeft: getCircleLeftIn(longPressPercent, circleLeftRotation),

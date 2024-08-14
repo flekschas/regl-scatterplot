@@ -74,9 +74,9 @@ const valueVariants = {
   valueW: ['value', 'value2', 'valueB', 'valueW', 'w'],
 };
 
-/* ------------------------------ constructors ------------------------------ */
+test('regl-scatterplot', async (t2) => {
+  /* ----------------------------- constructors ----------------------------- */
 
-test('constructors', async (t2) => {
   await t2.test(
     'createRegl()',
     catchError((t) => {
@@ -346,11 +346,9 @@ test('constructors', async (t2) => {
       scatterplot.destroy();
     })
   );
-});
 
-/* ---------------------------- get() and set() ----------------------------- */
+  /* --------------------------- get() and set() ---------------------------- */
 
-test('get() and set()', async (t2) => {
   await t2.test(
     'get("canvas"), get("regl"), and get("version")',
     catchError(async (t) => {
@@ -1567,7 +1565,13 @@ test('get() and set()', async (t2) => {
       await scatterplot.draw(
         new Array(10)
           .fill()
-          .map((_, i) => [-1 + (i / 6) * 2, -1 + Math.random() * 2, i, 1, 0])
+          .map((_, i) => [
+            -1 + (i / 6) * 2, // x
+            -1 + Math.random() * 2, // y
+            i, // category
+            1, // group
+            0, // line group
+          ])
       );
       await wait(0);
 
@@ -1591,9 +1595,7 @@ test('get() and set()', async (t2) => {
       scatterplot.destroy();
     })
   );
-});
 
-test('tests involving mouse events', async (t2) => {
   await t2.test(
     'draw(), clear(), publish("select")',
     catchError(async (t) => {

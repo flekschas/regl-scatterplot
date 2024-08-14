@@ -3,7 +3,7 @@ type Rgb = [number, number, number];
 type Rgba = [number, number, number, number];
 
 type Color = Hex | Rgb | Rgba;
-type ColorMap = Color | Array<Color>;
+type ColorMap = Color | Color[];
 
 type Category = 'category' | 'value1' | 'valueA' | 'valueZ' | 'z';
 type Value = 'value' | 'value2' | 'valueB' | 'valueW' | 'w';
@@ -15,8 +15,10 @@ type KeyMap = Record<'alt' | 'cmd' | 'ctrl' | 'meta' | 'shift', KeyAction>;
 
 type MouseMode = 'panZoom' | 'lasso' | 'rotate';
 
+// biome-ignore lint/style/useNamingConvention: ZWData are three words, z, w, and data
 type ZWDataType = 'continuous' | 'categorical';
 
+// biome-ignore lint/suspicious/noExplicitAny: Untyped external library
 type Camera2D = any; // Needs to be typed at some point
 type Scale = import('d3-scale').ScaleContinuousNumeric<number, number>;
 
@@ -29,14 +31,14 @@ type PointsObject = {
   [Key in Category | Value]?: ArrayLike<number>;
 };
 
-export type Points = Array<Array<number>> | PointsObject;
+export type Points = number[][] | PointsObject;
 
 type PointOptions = {
   color: ColorMap;
   colorActive: Color;
   colorHover: Color;
   outlineWidth: number;
-  size: number | Array<number>;
+  size: number | number[];
   sizeSelected: number;
 };
 
@@ -44,9 +46,9 @@ type PointConnectionOptions = {
   color: ColorMap;
   colorActive: Color;
   colorHover: Color;
-  opacity: number | Array<number>;
+  opacity: number | number[];
   opacityActive: number;
-  size: number | Array<number>;
+  size: number | number[];
   sizeActive: number;
   maxIntPointsPerSegment: number;
   tolerance: number;
@@ -90,12 +92,14 @@ interface BaseAnnotation {
   lineWidth?: number;
 }
 
+// biome-ignore lint/style/useNamingConvention: HLine stands for HorizontalLine
 interface AnnotationHLine extends BaseAnnotation {
   y: number;
   x1?: number;
   x2?: number;
 }
 
+// biome-ignore lint/style/useNamingConvention: HLine stands for VerticalLine
 interface AnnotationVLine extends BaseAnnotation {
   x: number;
   y1?: number;
@@ -136,7 +140,7 @@ interface BaseOptions {
   showPointConnections: boolean;
   showReticle: boolean;
   reticleColor: Color;
-  opacity: number | Array<number>;
+  opacity: number | number[];
   opacityByDensityFill: number;
   opacityInactiveMax: number;
   opacityInactiveScale: number;
@@ -146,6 +150,7 @@ interface BaseOptions {
   aspectRatio: number;
   annotationLineColor: Color;
   annotationLineWidth: number;
+  // biome-ignore lint/style/useNamingConvention: HVLine stands for HorizontalVerticalLine
   annotationHVLineLimit: number;
   // Nullifiable
   backgroundImage: null | import('regl').Texture2D | string;
@@ -156,6 +161,7 @@ interface BaseOptions {
   yScale: null | Scale;
 }
 
+// biome-ignore lint/style/useNamingConvention: KDBush is a library name
 export interface CreateKDBushOptions {
   node: number;
   useWorker: boolean;
@@ -169,7 +175,7 @@ export interface CreateKDBushOptions {
  */
 type WithPrefix<
   Name extends string,
-  Options extends Record<string, unknown>
+  Options extends Record<string, unknown>,
 > = {
   [Key in keyof Options as `${Name}${Capitalize<string & Key>}`]: Options[Key];
 };
@@ -270,8 +276,8 @@ export type Events = import('pub-sub-es').Event<
     { coordinates: number[] }
   > &
   import('pub-sub-es').Event<'pointOver' | 'pointOut', number> &
-  import('pub-sub-es').Event<'select' | 'focus', { points: Array<number> }> &
-  import('pub-sub-es').Event<'points', { points: Array<Array<number>> }> &
+  import('pub-sub-es').Event<'select' | 'focus', { points: number[] }> &
+  import('pub-sub-es').Event<'points', { points: number[][] }> &
   import('pub-sub-es').Event<'transitionEnd', import('regl').Regl> &
   import('pub-sub-es').Event<
     'view' | 'draw' | 'drawing',
