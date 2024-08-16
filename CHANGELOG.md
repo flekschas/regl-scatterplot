@@ -1,3 +1,7 @@
+## 1.10.4
+
+- Fix: restrict the renderer's canvas to be at most as large as the screen. Previously we had the canvas size bound to `window.innerWidth` and `window.innerHeight`. However, in VSCode it was possible that `window.innerHeight` was muuuuch larger than the actual screen, which in turn caused a WebGL error (invalid renderbuffer size). This issues was first reported at https://github.com/flekschas/jupyter-scatter/issues/37.
+
 ## 1.10.3
 
 - Fix: properly set mouse mode on initialization and add tests for it

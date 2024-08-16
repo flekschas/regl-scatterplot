@@ -145,8 +145,22 @@ export const createRenderer = (
   });
 
   const resize = () => {
-    canvas.width = window.innerWidth * window.devicePixelRatio;
-    canvas.height = window.innerHeight * window.devicePixelRatio;
+    // We need to limit the width and height by the screen size to prevent
+    // a bug in VSCode where the window height is said to be taller than the
+    // screen height. The problem with too large dimensions is that at some
+    // point WebGL will break down because there's an upper limit on how large
+    // any buffer and texture can be. It also harms the performance quite a bit.
+    //
+    // By restricting the widht/height to the screen size we should have a safe
+    // upper limit for the canvas size.
+    //
+    // @see
+    // https://github.com/microsoft/vscode/issues/225808
+    // https://github.com/flekschas/jupyter-scatter/issues/37
+    const width = Math.min(window.innerWidth, window.screen.availWidth);
+    const height = Math.min(window.innerHeight, window.screen.availHeight);
+    canvas.width = width * window.devicePixelRatio;
+    canvas.height = height * window.devicePixelRatio;
     fboRes[0] = canvas.width;
     fboRes[1] = canvas.height;
     fbo.resize(...fboRes);
