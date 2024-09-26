@@ -1481,10 +1481,10 @@ const createScatterplot = (
   const getPointScale = () => {
     if (pointScaleMode === 'proportional') {
       return camera.scaling[0] * window.devicePixelRatio;
-    } 
+    }
     if (pointScaleMode === 'constant') {
       return window.devicePixelRatio;
-    } 
+    }
     if (pointScaleMode === 'default') {
       if (camera.scaling[0] > 1) {
         return (
