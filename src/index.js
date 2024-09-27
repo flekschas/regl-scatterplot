@@ -1477,25 +1477,27 @@ const createScatterplot = (
   const getModel = () => model;
   const getModelViewProjection = () =>
     mat4.multiply(pvm, projection, mat4.multiply(pvm, camera.view, model));
-
-  const getPointScale = () => {
-    if (pointScaleMode === 'proportional') {
-      return camera.scaling[0] * window.devicePixelRatio;
-    }
-    if (pointScaleMode === 'constant') {
-      return window.devicePixelRatio;
-    }
-    if (pointScaleMode === 'default') {
-      if (camera.scaling[0] > 1) {
-        return (
-          (Math.asinh(max(1.0, camera.scaling[0])) / Math.asinh(1)) *
-          window.devicePixelRatio
-        );
-      }
-      return max(minPointScale, camera.scaling[0]) * window.devicePixelRatio;
-    }
+  const getConstantPointScale = () => {
+    return window.devicePixelRatio;
   };
-
+  const getLinearPointScale = () => {
+    return max(minPointScale, camera.scaling[0]) * window.devicePixelRatio;
+  };
+  const getAsinhPointScale = () => {
+    if (camera.scaling[0] > 1) {
+      return (
+        (Math.asinh(max(1.0, camera.scaling[0])) / Math.asinh(1)) *
+        window.devicePixelRatio
+      );
+    }
+    return max(minPointScale, camera.scaling[0]) * window.devicePixelRatio;
+  };
+  let getPointScale = getAsinhPointScale;
+  if (pointScaleMode === 'linear') {
+    getPointScale = getLinearPointScale;
+  } else if (pointScaleMode === 'constant') {
+    getPointScale = getConstantPointScale;
+  }
   const getNormalNumPoints = () =>
     isPointsFiltered ? filteredPointsSet.size : numPoints;
   const getSelectedNumPoints = () => selectedPoints.length;
@@ -3197,6 +3199,26 @@ const createScatterplot = (
     computePointSizeMouseDetection();
   };
 
+  const setPointScaleMode = (newPointScaleMode) => {
+    switch (newPointScaleMode) {
+      case 'linear': {
+        pointScaleMode = newPointScaleMode;
+        getPointScale = getLinearPointScale;
+        break;
+      }
+      case 'constant': {
+        pointScaleMode = newPointScaleMode;
+        getPointScale = getConstantPointScale;
+        break;
+      }
+      default: {
+        pointScaleMode = 'asinh';
+        getPointScale = getAsinhPointScale;
+        break;
+      }
+    }
+  };
+
   const setOpacityByDensityFill = (newOpacityByDensityFill) => {
     opacityByDensityFill = +newOpacityByDensityFill;
   };
@@ -3468,6 +3490,10 @@ const createScatterplot = (
       return pointConnectionTolerance;
     }
 
+    if (property === 'pointScaleMode') {
+      return pointScaleMode;
+    }
+
     if (property === 'reticleColor') {
       return reticleColor;
     }
@@ -3670,6 +3696,10 @@ const createScatterplot = (
 
     if (properties.pointConnectionTolerance !== undefined) {
       setPointConnectionTolerance(properties.pointConnectionTolerance);
+    }
+
+    if (properties.pointScaleMode !== undefined) {
+      setPointScaleMode(properties.pointScaleMode);
     }
 
     if (properties.opacityBy !== undefined) {
