@@ -15,6 +15,8 @@ type KeyMap = Record<'alt' | 'cmd' | 'ctrl' | 'meta' | 'shift', KeyAction>;
 
 type MouseMode = 'panZoom' | 'lasso' | 'rotate';
 
+type PointScaleMode = 'constant' | 'asinh' | 'linear';
+
 // biome-ignore lint/style/useNamingConvention: ZWData are three words, z, w, and data
 type ZWDataType = 'continuous' | 'categorical';
 
@@ -159,6 +161,7 @@ interface BaseOptions {
   opacityBy: null | DataEncoding;
   xScale: null | Scale;
   yScale: null | Scale;
+  pointScaleMode: PointScaleMode;
 }
 
 // biome-ignore lint/style/useNamingConvention: KDBush is a library name
