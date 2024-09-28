@@ -82,6 +82,7 @@ import {
   DEFAULT_POINT_CONNECTION_SIZE_ACTIVE,
   DEFAULT_POINT_CONNECTION_SIZE_BY,
   DEFAULT_POINT_OUTLINE_WIDTH,
+  DEFAULT_POINT_SCALE_MODE,
   DEFAULT_POINT_SIZE,
   DEFAULT_POINT_SIZE_MOUSE_DETECTION,
   DEFAULT_POINT_SIZE_SELECTED,
@@ -278,6 +279,7 @@ const createScatterplot = (
     opacityInactiveMax = DEFAULT_OPACITY_INACTIVE_MAX,
     opacityInactiveScale = DEFAULT_OPACITY_INACTIVE_SCALE,
     sizeBy = DEFAULT_SIZE_BY,
+    pointScaleMode = DEFAULT_POINT_SCALE_MODE,
     height = DEFAULT_HEIGHT,
     width = DEFAULT_WIDTH,
     annotationLineColor = DEFAULT_ANNOTATION_LINE_COLOR,
@@ -1475,16 +1477,27 @@ const createScatterplot = (
   const getModel = () => model;
   const getModelViewProjection = () =>
     mat4.multiply(pvm, projection, mat4.multiply(pvm, camera.view, model));
-  const getPointScale = () => {
+  const getConstantPointScale = () => {
+    return window.devicePixelRatio;
+  };
+  const getLinearPointScale = () => {
+    return max(minPointScale, camera.scaling[0]) * window.devicePixelRatio;
+  };
+  const getAsinhPointScale = () => {
     if (camera.scaling[0] > 1) {
       return (
         (Math.asinh(max(1.0, camera.scaling[0])) / Math.asinh(1)) *
         window.devicePixelRatio
       );
     }
-
     return max(minPointScale, camera.scaling[0]) * window.devicePixelRatio;
   };
+  let getPointScale = getAsinhPointScale;
+  if (pointScaleMode === 'linear') {
+    getPointScale = getLinearPointScale;
+  } else if (pointScaleMode === 'constant') {
+    getPointScale = getConstantPointScale;
+  }
   const getNormalNumPoints = () =>
     isPointsFiltered ? filteredPointsSet.size : numPoints;
   const getSelectedNumPoints = () => selectedPoints.length;
@@ -1525,7 +1538,7 @@ const createScatterplot = (
     // Adopted from the fabulous Ricky Reusser:
     // https://observablehq.com/@rreusser/selecting-the-right-opacity-for-2d-point-clouds
     // Extended with a point-density based approach
-    const pointScale = getPointScale(true);
+    const pointScale = getPointScale();
     const p = pointSize[0] * pointScale;
 
     // Compute the plot's x and y range from the view matrix, though these could come from any source
@@ -1615,7 +1628,7 @@ const createScatterplot = (
         resolution: getResolution,
         modelViewProjection: getModelViewProjection,
         devicePixelRatio: getDevicePixelRatio,
-        pointScale: getPointScale,
+        pointScale: () => getPointScale(),
         encodingTex: getEncodingTex,
         encodingTexRes: getEncodingTexRes,
         encodingTexEps: getEncodingTexEps,
@@ -3186,6 +3199,26 @@ const createScatterplot = (
     computePointSizeMouseDetection();
   };
 
+  const setPointScaleMode = (newPointScaleMode) => {
+    switch (newPointScaleMode) {
+      case 'linear': {
+        pointScaleMode = newPointScaleMode;
+        getPointScale = getLinearPointScale;
+        break;
+      }
+      case 'constant': {
+        pointScaleMode = newPointScaleMode;
+        getPointScale = getConstantPointScale;
+        break;
+      }
+      default: {
+        pointScaleMode = 'asinh';
+        getPointScale = getAsinhPointScale;
+        break;
+      }
+    }
+  };
+
   const setOpacityByDensityFill = (newOpacityByDensityFill) => {
     opacityByDensityFill = +newOpacityByDensityFill;
   };
@@ -3457,6 +3490,10 @@ const createScatterplot = (
       return pointConnectionTolerance;
     }
 
+    if (property === 'pointScaleMode') {
+      return pointScaleMode;
+    }
+
     if (property === 'reticleColor') {
       return reticleColor;
     }
@@ -3659,6 +3696,10 @@ const createScatterplot = (
 
     if (properties.pointConnectionTolerance !== undefined) {
       setPointConnectionTolerance(properties.pointConnectionTolerance);
+    }
+
+    if (properties.pointScaleMode !== undefined) {
+      setPointScaleMode(properties.pointScaleMode);
     }
 
     if (properties.opacityBy !== undefined) {
