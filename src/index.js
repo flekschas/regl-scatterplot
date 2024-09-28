@@ -1538,7 +1538,7 @@ const createScatterplot = (
     // Adopted from the fabulous Ricky Reusser:
     // https://observablehq.com/@rreusser/selecting-the-right-opacity-for-2d-point-clouds
     // Extended with a point-density based approach
-    const pointScale = getPointScale(true);
+    const pointScale = getPointScale();
     const p = pointSize[0] * pointScale;
 
     // Compute the plot's x and y range from the view matrix, though these could come from any source
@@ -1628,7 +1628,7 @@ const createScatterplot = (
         resolution: getResolution,
         modelViewProjection: getModelViewProjection,
         devicePixelRatio: getDevicePixelRatio,
-        pointScale: getPointScale,
+        pointScale: () => getPointScale(),
         encodingTex: getEncodingTex,
         encodingTexRes: getEncodingTexRes,
         encodingTexEps: getEncodingTexEps,
