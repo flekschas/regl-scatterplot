@@ -77,7 +77,7 @@ const scatterplot = createScatterplot({
   pointSize,
   showReticle,
   reticleColor,
-  lassoInitiator: true
+  lassoInitiator: true,
 });
 
 checkSupport(scatterplot);
