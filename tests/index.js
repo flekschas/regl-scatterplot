@@ -38,6 +38,7 @@ import {
   DEFAULT_POINT_CONNECTION_OPACITY_ACTIVE,
   DEFAULT_POINT_CONNECTION_SIZE,
   DEFAULT_POINT_CONNECTION_SIZE_ACTIVE,
+  DEFAULT_POINT_SCALE_MODE,
   DEFAULT_GAMMA,
   KEY_ACTION_LASSO,
   KEY_ACTION_ROTATE,
@@ -3298,6 +3299,85 @@ test('regl-scatterplot', async (t2) => {
       w = img.width;
       h = img.height;
       t.ok(getPixelSum(img, 0, w, 0, h) === 0, 'Annotations should be cleared');
+
+      scatterplot.destroy();
+    })
+  );
+
+  await t2.test(
+    'pointScaleMode',
+    catchError(async (t) => {
+      const dim = 100;
+      const scatterplot = createScatterplot({
+        canvas: createCanvas(dim, dim),
+        width: dim,
+        height: dim,
+        pointSize: 10,
+      });
+
+      t.equal(
+        scatterplot.get('pointScaleMode'),
+        DEFAULT_POINT_SCALE_MODE,
+        `The default point scale mode should be ${DEFAULT_POINT_SCALE_MODE}`
+      );
+
+      await scatterplot.draw([[0, 0]]);
+
+      const initialImage = scatterplot.export();
+      const initialPixelSum = getPixelSum(initialImage, 0, dim, 0, dim);
+
+      t.ok(initialPixelSum > 0, 'The point should be drawn');
+
+      // Zoom in a bit
+      await scatterplot.zoomToLocation([0, 0], 0.5);
+
+      const asinhImage = scatterplot.export();
+      const asinhPixelSum = getPixelSum(asinhImage, 0, dim, 0, dim);
+
+      t.ok(asinhPixelSum > initialPixelSum, 'The point should be larger');
+
+      // Zoom back to the origin
+      await scatterplot.zoomToLocation([0, 0], 1);
+
+      scatterplot.set({ pointScaleMode: 'constant' });
+      t.equal(
+        scatterplot.get('pointScaleMode'),
+        'constant',
+        'The new point scale mode should be constant'
+      );
+
+      // Zoom in a bit
+      await scatterplot.zoomToLocation([0, 0], 0.5);
+
+      const constantImage = scatterplot.export();
+      const constantPixelSum = getPixelSum(constantImage, 0, dim, 0, dim);
+
+      t.ok(constantPixelSum === initialPixelSum, 'The point should be unchanged');
+
+      // Zoom back to the origin
+      await scatterplot.zoomToLocation([0, 0], 1);
+
+      scatterplot.set({ pointScaleMode: 'linear' });
+      t.equal(
+        scatterplot.get('pointScaleMode'),
+        'linear',
+        'The new point scale mode should be linear'
+      );
+
+      // Zoom in a bit
+      await scatterplot.zoomToLocation([0, 0], 0.5);
+
+      const linearImage = scatterplot.export();
+      const linearPixelSum = getPixelSum(linearImage, 0, dim, 0, dim);
+
+      t.ok(linearPixelSum > asinhPixelSum, 'The point should be larger');
+
+      scatterplot.set({ pointScaleMode: 'nonsense' });
+      t.equal(
+        scatterplot.get('pointScaleMode'),
+        'asinh',
+        'The point scale mode should default to "asinh" for invalid values'
+      );
 
       scatterplot.destroy();
     })
