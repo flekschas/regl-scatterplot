@@ -72,7 +72,7 @@
     "rollup": "^4.20.0",
     "rollup-plugin-filesize": "^10.0.0",
     "tap-spec": "^5.0.0",
-    "tape-run": "^10.0.0",
+    "tape-run": "^11.0.0",
     "typescript": "~5.5.4",
     "vite": "^5.4.0",
     "vite-plugin-virtual-html-template": "^1.1.0",
