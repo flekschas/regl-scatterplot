@@ -6,7 +6,7 @@ import {
   IMAGE_LOAD_ERROR,
   W_NAMES,
   Z_NAMES,
-} from './constants';
+} from './constants.js';
 
 /**
  * Get the max value of an array. helper method to be used with `Array.reduce()`.
@@ -29,6 +29,7 @@ export const checkReglExtensions = (regl, silent) => {
   return GL_EXTENSIONS.reduce((every, extension) => {
     if (!regl.hasExtension(extension)) {
       if (!silent) {
+        // biome-ignore lint/suspicious/noConsole: This is a legitimately useful warning
         console.warn(
           `WebGL: ${extension} extension not supported. Scatterplot might not render properly`,
         );
@@ -57,6 +58,7 @@ export const createRegl = (canvas) => {
     if (gl.getExtension(extension)) {
       extensions.push(extension);
     } else {
+      // biome-ignore lint/suspicious/noConsole: This is a legitimately useful warning
       console.warn(
         `WebGL: ${extension} extension not supported. Scatterplot might not render properly`,
       );
@@ -114,6 +116,8 @@ export const isValidBBox = ([xMin, yMin, xMax, yMax]) =>
   xMax - xMin > 0 &&
   yMax - yMin > 0;
 
+const REGEX_HEX_TO_RGB = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+
 /**
  * Convert a HEX-encoded color to an RGB-encoded color
  * @param   {string}  hex  HEX-encoded color string.
@@ -123,10 +127,7 @@ export const isValidBBox = ([xMin, yMin, xMax, yMax]) =>
  */
 export const hexToRgb = (hex, isNormalize = false) =>
   hex
-    .replace(
-      /^#?([a-f\d])([a-f\d])([a-f\d])$/i,
-      (_m, r, g, b) => `#${r}${r}${g}${g}${b}${b}`,
-    )
+    .replace(REGEX_HEX_TO_RGB, (_m, r, g, b) => `#${r}${r}${g}${g}${b}${b}`)
     .substring(1)
     .match(/.{2}/g)
     .map((x) => Number.parseInt(x, 16) / 255 ** isNormalize);
@@ -213,12 +214,14 @@ export const hexToRgba = (hex, isNormalize = false) => [
   255 ** !isNormalize,
 ];
 
+const REGEX_IS_HEX = /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i;
+
 /**
  * Tests if a string is a valid HEX color encoding
  * @param   {string}  hex  HEX-encoded color string.
  * @return  {boolean}  If `true` the string is a valid HEX color encoding.
  */
-export const isHex = (hex) => /(^#[0-9A-F]{6}$)|(^#[0-9A-F]{3}$)/i.test(hex);
+export const isHex = (hex) => REGEX_IS_HEX.test(hex);
 
 /**
  * Tests if a number is in `[0,1]`.
@@ -305,7 +308,7 @@ export const isRgba = (rgba) =>
  */
 export const isMultipleColors = (color) =>
   Array.isArray(color) &&
-  color.length &&
+  color.length > 0 &&
   (Array.isArray(color[0]) || isString(color[0]));
 
 /**
@@ -379,6 +382,7 @@ export const toRgba = (color, shouldNormalize) => {
     return hexToRgba(color, shouldNormalize);
   }
 
+  // biome-ignore lint/suspicious/noConsole: This is a legitimately useful warning
   console.warn(
     'Only HEX, RGB, and RGBA are handled by this function. Returning white instead.',
   );

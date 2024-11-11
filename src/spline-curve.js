@@ -1,5 +1,5 @@
 import { createWorker } from '@flekschas/utils';
-import workerFn from './spline-curve-worker';
+import workerFn from './spline-curve-worker.js';
 
 const createSplineCurve = (
   points,

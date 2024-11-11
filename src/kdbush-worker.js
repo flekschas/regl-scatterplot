@@ -2,7 +2,7 @@ export default () => {
   addEventListener('message', (event) => {
     const points = event.data.points;
 
-    if (!points.length) {
+    if (points.length === 0) {
       self.postMessage({ error: new Error('Invalid point data') });
     }
 
