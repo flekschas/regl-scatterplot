@@ -11,9 +11,9 @@ import { mat4, vec4 } from 'gl-matrix';
 import createPubSub from 'pub-sub-es';
 import createLine from 'regl-line';
 
-import createKdbush from './kdbush';
-import createLassoManager from './lasso-manager';
-import createRenderer from './renderer';
+import createKdbush from './kdbush.js';
+import createLassoManager from './lasso-manager/index.js';
+import createRenderer from './renderer.js';
 
 import BG_FS from './bg.fs';
 import BG_VS from './bg.vs';
@@ -23,7 +23,7 @@ import POINT_UPDATE_VS from './point-update.vs';
 import POINT_FS from './point.fs';
 import createVertexShader from './point.vs';
 
-import createSplineCurve from './spline-curve';
+import createSplineCurve from './spline-curve.js';
 
 import {
   AUTO,
@@ -121,7 +121,7 @@ import {
   VALUE_ZW_DATA_TYPES,
   W_NAMES,
   Z_NAMES,
-} from './constants';
+} from './constants.js';
 
 import {
   checkReglExtensions as checkSupport,
@@ -149,7 +149,7 @@ import {
   rgbBrightness,
   toArrayOrientedPoints,
   toRgba,
-} from './utils';
+} from './utils.js';
 
 import { version } from '../package.json';
 
@@ -164,6 +164,7 @@ const checkDeprecations = (properties) => {
   );
 
   for (const prop of deprecatedProps) {
+    // biome-ignore lint/suspicious/noConsole: This is a legitimately useful warning
     console.warn(
       `regl-scatterplot: the "${prop}" property is deprecated. Please use "${deprecations[prop]}" instead.`,
     );
@@ -727,7 +728,7 @@ const createScatterplot = (
     if (lassoClearEvent === LASSO_CLEAR_ON_DESELECT) {
       lassoClear();
     }
-    if (selectedPoints.length) {
+    if (selectedPoints.length > 0) {
       if (!preventEvent) {
         pubSub.publish('deselect');
       }
@@ -758,7 +759,7 @@ const createScatterplot = (
       }
     } else {
       // Unset previously highlight point connections
-      if (selectedPoints?.length) {
+      if (selectedPoints?.length > 0) {
         setPointConnectionColorState(selectedPoints, 0);
       }
       if (currSelectedPoints.length > 0 && newSelectedPoints.length === 0) {
@@ -1008,7 +1009,7 @@ const createScatterplot = (
       const clostestPoint = raycast();
       if (clostestPoint >= 0) {
         if (
-          selectedPoints.length &&
+          selectedPoints.length > 0 &&
           lassoClearEvent === LASSO_CLEAR_ON_DESELECT
         ) {
           // Special case where we silently "deselect" the previous points by
@@ -1211,7 +1212,7 @@ const createScatterplot = (
   };
 
   const setColors = (getter, setter) => (newColors) => {
-    if (!newColors?.length) {
+    if (!newColors || newColors.length === 0) {
       return;
     }
 
@@ -1229,6 +1230,7 @@ const createScatterplot = (
       setter(tmpColors);
       colorTex = createColorTexture();
     } catch (_error) {
+      // biome-ignore lint/suspicious/noConsole: This is a legitimately useful warning
       console.error('Invalid colors. Switching back to default colors.');
       setter(prevColors);
       colorTex = createColorTexture();
@@ -2037,7 +2039,7 @@ const createScatterplot = (
       );
     }
 
-    return Array(pointConnectionMap.length).fill(0);
+    return new Array(pointConnectionMap.length).fill(0);
   };
 
   const getPointConnectionOpacities = () => {
@@ -2146,7 +2148,7 @@ const createScatterplot = (
   const setPointConnections = (newPoints) =>
     new Promise((resolve) => {
       pointConnections.setPoints([]);
-      if (newPoints?.length) {
+      if (newPoints?.length > 0) {
         computingPointConnectionCurves = true;
         createSplineCurve(newPoints, {
           maxIntPointsPerSegment: pointConnectionMaxIntPointsPerSegment,
@@ -2417,6 +2419,7 @@ const createScatterplot = (
                     w: wDataType,
                   });
                 } else {
+                  // biome-ignore lint/suspicious/noConsole: This is a legitimately useful warning
                   console.warn(
                     'Cannot transition! The number of points between the previous and current draw call must be identical.',
                   );
@@ -2879,6 +2882,7 @@ const createScatterplot = (
           pubSub.publish('backgroundImageReady');
         })
         .catch(() => {
+          // biome-ignore lint/suspicious/noConsole: This is a legitimately useful error log
           console.error(`Count not create texture from ${newBackgroundImage}`);
           backgroundImage = null;
         });
@@ -4129,7 +4133,7 @@ const createScatterplot = (
         drawHoveredPoint();
       }
 
-      if (selectedPoints.length) {
+      if (selectedPoints.length > 0) {
         drawSelectedPoints();
       }
 

@@ -82,6 +82,7 @@ type CameraOptions = {
   view: Float32Array;
 };
 
+// biome-ignore lint/correctness/noUnusedVariables: Imported from ./index.js
 type Rect = {
   x: number;
   y: number;
@@ -126,6 +127,7 @@ interface AnnotationPolygon extends BaseAnnotation {
   vertices: [number, number][];
 }
 
+// biome-ignore lint/correctness/noUnusedVariables: Imported from ./index.js
 type Annotation =
   | AnnotationHLine
   | AnnotationVLine

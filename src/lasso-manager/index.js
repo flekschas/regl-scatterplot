@@ -15,20 +15,20 @@ import {
   DEFAULT_LASSO_START_INITIATOR_SHOW,
   LASSO_HIDE_START_INITIATOR_TIME,
   LASSO_SHOW_START_INITIATOR_TIME,
-} from './constants';
+} from './constants.js';
 
 import {
   DEFAULT_LASSO_LONG_PRESS_AFTER_EFFECT_TIME,
   DEFAULT_LASSO_LONG_PRESS_EFFECT_DELAY,
   DEFAULT_LASSO_LONG_PRESS_REVERT_EFFECT_TIME,
   DEFAULT_LASSO_LONG_PRESS_TIME,
-} from '../constants';
+} from '../constants.js';
 
 import {
   createLongPressInAnimations,
   createLongPressOutAnimations,
-} from './create-long-press-animations';
-import createLongPressElements from './create-long-press-elements';
+} from './create-long-press-animations.js';
+import createLongPressElements from './create-long-press-elements.js';
 
 const ifNotNull = (v, alternative = null) => (v === null ? alternative : v);
 
@@ -512,7 +512,7 @@ export const createLasso = (
     clear();
 
     // When `currLassoPos` is empty the user didn't actually lasso
-    if (currLassoPos.length) {
+    if (currLassoPos.length > 0) {
       onEnd(currLassoPos, currLassoPosFlat, { merge });
     }
 

@@ -1,5 +1,5 @@
-import { CLEAR_OPTIONS, DEFAULT_GAMMA } from './constants';
-import { checkReglExtensions, createRegl } from './utils';
+import { CLEAR_OPTIONS, DEFAULT_GAMMA } from './constants.js';
+import { checkReglExtensions, createRegl } from './utils.js';
 
 export const createRenderer = (
   /** @type {Partial<import('./types').RendererOptions>} */ options = {},

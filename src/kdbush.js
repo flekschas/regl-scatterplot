@@ -1,6 +1,6 @@
 // biome-ignore lint/style/useNamingConvention: KDBush is a library name
-import createKDBushClass from './kdbush-class';
-import workerFn from './kdbush-worker';
+import createKDBushClass from './kdbush-class.js';
+import workerFn from './kdbush-worker.js';
 
 // biome-ignore lint/style/useNamingConvention: KDBush is a library name
 const KDBush = createKDBushClass();
