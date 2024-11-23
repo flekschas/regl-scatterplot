@@ -1,3 +1,7 @@
+## 1.11.1
+
+- Fix: ensure that the drawing order of points cannot be manipulated via `scatterplot.filter()` ([#197](https://github.com/flekschas/regl-scatterplot/issues/197))
+
 ## 1.11.0
 
 - Feat: add support for linear and constant point scaling via a new property called `pointScaleMode`.

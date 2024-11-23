@@ -526,3 +526,19 @@ export const isRect = (annotation) =>
 
 export const isPolygon = (annotation) =>
   'vertices' in annotation && annotation.vertices.length > 1;
+
+export const insertionSort = (array) => {
+  const end = array.length;
+  for (let i = 1; i < end; i++) {
+    // Choosing the first element in our unsorted subarray
+    const current = array[i];
+    // The last element of our sorted subarray
+    let j = i - 1;
+    while (j > -1 && current < array[j]) {
+      array[j + 1] = array[j];
+      j--;
+    }
+    array[j + 1] = current;
+  }
+  return array;
+};

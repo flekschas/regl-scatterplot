@@ -131,6 +131,7 @@ import {
   dist,
   flipObj,
   getBBox,
+  insertionSort,
   isConditionalArray,
   isDomRect,
   isHorizontalLine,
@@ -2218,32 +2219,35 @@ const createScatterplot = (
    * @param {import('./types').ScatterplotMethodOptions['filter']}
    */
   const filter = (pointIdxs, { preventEvent = false } = {}) => {
-    const filteredPoints = Array.isArray(pointIdxs) ? pointIdxs : [pointIdxs];
-
     isPointsFiltered = true;
     filteredPointsSet.clear();
 
+    const pointIdxsArray = Array.isArray(pointIdxs) ? pointIdxs : [pointIdxs];
+    const filteredPoints = [];
     const filteredPointsBuffer = [];
     const filteredSelectedPoints = [];
 
-    for (let i = filteredPoints.length - 1; i >= 0; i--) {
-      const pointIdx = filteredPoints[i];
-
+    for (const pointIdx of pointIdxsArray) {
       if (pointIdx < 0 || pointIdx >= numPoints) {
-        // Remove invalid filtered points
-        filteredPoints.splice(i, 1);
+        // Skip invalid filtered points
         continue;
       }
 
+      filteredPoints.push(pointIdx);
       filteredPointsSet.add(pointIdx);
-      filteredPointsBuffer.push.apply(
-        filteredPointsBuffer,
-        indexToStateTexCoord(pointIdx),
-      );
 
       if (selectedPointsSet.has(pointIdx)) {
         filteredSelectedPoints.push(pointIdx);
       }
+    }
+
+    const sortedFilteredPoints = insertionSort([...filteredPoints]);
+
+    for (const pointIdx of sortedFilteredPoints) {
+      filteredPointsBuffer.push.apply(
+        filteredPointsBuffer,
+        indexToStateTexCoord(pointIdx),
+      );
     }
 
     // Update the normal points index buffers
