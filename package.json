@@ -32,20 +32,20 @@
     "pretest": "npm run lint",
     "prestart": "cp scripts/pre-commit .git/hooks/ && chmod +x .git/hooks/pre-commit && echo 'pre-commit hook copied'",
     "start": "vite --port=3000",
-    "test": "rollup -c ./rollup.test.config.mjs | tape-run --render='tap-spec'",
-    "watch": "rollup -cw"
+    "test": "vitest run",
+    "coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@flekschas/utils": "^0.32.2",
     "dom-2d-camera": "~2.2.5",
     "gl-matrix": "~3.4.3",
     "pub-sub-es": "~3.0.0",
-    "regl": "~2.1.0",
+    "regl": "~2.1.1",
     "regl-line": "~1.1.1"
   },
   "peerDependencies": {
     "pub-sub-es": "~3.0.0",
-    "regl": "~2.1.0"
+    "regl": "~2.1.1"
   },
   "devDependencies": {
     "@babel/core": "^7.26.0",
@@ -59,7 +59,9 @@
     "@rollup/plugin-node-resolve": "^15.3.0",
     "@rollup/plugin-terser": "^0.4.3",
     "@types/d3-scale": "^4.0.6",
-    "@types/node": "^22.9.0",
+    "@types/node": "^22.9.3",
+    "@vitest/browser": "^2.1.5",
+    "@vitest/coverage-v8": "^2.1.5",
     "apache-arrow": "^18.0.0",
     "browser-env": "^3.3.0",
     "d3-axis": "^3.0.0",
@@ -69,14 +71,13 @@
     "esm": "^3.2.25",
     "gh-pages": "^6.2.0",
     "merge": "^2.1.1",
-    "rollup": "^4.25.0",
+    "playwright": "^1.49.0",
+    "rollup": "^4.27.4",
     "rollup-plugin-filesize": "^10.0.0",
-    "tap-spec": "^5.0.0",
-    "tape-run": "^11.0.0",
-    "typescript": "~5.6.3",
+    "typescript": "~5.7.2",
     "vite": "^5.4.11",
     "vite-plugin-virtual-html-template": "^1.1.0",
-    "zora": "^4.1.0"
+    "vitest": "^2.1.5"
   },
   "engines": {
     "npm": ">=7.0.0",
