@@ -2802,7 +2802,9 @@ test('regl-scatterplot', async (t2) => {
         'should have not filter down to any point because -1 is an invalid point index'
       );
 
-      await scatterplot.filter([0, -1, 2, 4, 6]);
+      const pointsToBeFiltered = [0, -1, 2, 4, 6];
+
+      await scatterplot.filter(pointsToBeFiltered);
       await wait(0);
 
       t.ok(
@@ -2810,7 +2812,75 @@ test('regl-scatterplot', async (t2) => {
         'should have filtered down to valid points (0, 2, and 4) only'
       );
 
+      // We're testing this due to the following bug where we accidentically
+      // spliced of from the input argument, which we should never do.
+      // @see https://github.com/flekschas/regl-scatterplot/issues/197
+      t.equal(
+        pointsToBeFiltered.length,
+        5,
+        'should have not altered `pointsToBeFiltered`'
+      );
+
       scatterplot.destroy();
+    })
+  );
+
+  await t2.test(
+    '`filter() point order consistency`',
+    catchError(async (t) => {
+      const scatterplot = createScatterplot({
+        canvas: createCanvas(50, 50),
+        width: 50,
+        height: 50,
+        pointColor: ['#FF0000', '#00FF00', '#0000FF'],
+        pointSize: 50,
+        opacity: 1,
+        colorBy: "valueA"
+      });
+
+      const dpr = window.devicePixelRatio;
+      const middlePixel = (50 * dpr * 25 * dpr + 25 * dpr) * 4;
+
+      await scatterplot.draw({
+        x: [0, 0, 0],
+        y: [0, 0, 0],
+        valueA: [0, 1, 2]
+      });
+
+      await wait(25);
+
+      let image = scatterplot.export();
+
+      t.equal(
+        Array.from(image.data.slice(middlePixel, middlePixel + 4)),
+        [0, 0, 255, 255],
+        'the center pixel should be blue'
+      );
+
+      await scatterplot.filter([1, 0]);
+
+      await wait(25);
+
+      image = scatterplot.export();
+
+      t.equal(
+        Array.from(image.data.slice(middlePixel, middlePixel + 4)),
+        [0, 255, 0, 255],
+        'the center pixel should be green'
+      );
+
+      await scatterplot.unfilter();
+      await scatterplot.filter([0, 1]);
+
+      await wait(25);
+
+      image = scatterplot.export();
+
+      t.equal(
+        Array.from(image.data.slice(middlePixel, middlePixel + 4)),
+        [0, 255, 0, 255],
+        'the center pixel should be green'
+      );
     })
   );
 
