@@ -20,3 +20,5 @@ node_modules/*
 
 docs
 stats.html
+
+tests/__screenshots__
