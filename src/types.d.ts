@@ -164,6 +164,7 @@ interface BaseOptions {
   xScale: null | Scale;
   yScale: null | Scale;
   pointScaleMode: PointScaleMode;
+  cameraIsFixed: boolean;
 }
 
 // biome-ignore lint/style/useNamingConvention: KDBush is a library name

@@ -10,6 +10,7 @@ import createScatterplot, {
 } from '../src';
 
 import {
+  DEFAULT_CAMERA_IS_FIXED,
   DEFAULT_COLOR_NORMAL,
   DEFAULT_COLOR_ACTIVE,
   DEFAULT_COLOR_HOVER,
@@ -73,6 +74,7 @@ test('createScatterplot()', () => {
   expect(scatterplot.get('opacityInactiveScale')).toBe(DEFAULT_OPACITY_INACTIVE_SCALE);
   expect(scatterplot.get('width')).toBe(DEFAULT_WIDTH);
   expect(scatterplot.get('height')).toBe(DEFAULT_HEIGHT);
+  expect(scatterplot.get('cameraIsFixed')).toBe(DEFAULT_CAMERA_IS_FIXED);
 
   scatterplot.destroy();
 });
