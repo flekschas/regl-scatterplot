@@ -2780,7 +2780,7 @@ const createScatterplot = (
           'transitionEnd',
           () => {
             resolve();
-            camera.config({ isFixed: false });
+            camera.config({ isFixed: cameraIsFixed });
           },
           1,
         );

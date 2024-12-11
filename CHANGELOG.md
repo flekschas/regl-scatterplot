@@ -1,3 +1,7 @@
+## 1.11.3
+
+- Fix: catch another edge case where `zoomToOrigin` was unsetting the camera fixed state
+
 ## 1.11.2
 
 - Fix: handle camera fixing better by adding a dedicated prop called `cameraIsFixed`. Previously, the lasso end interaction would unset the camera fixing. ([#94](https://github.com/flekschas/regl-scatterplot/issues/94))
