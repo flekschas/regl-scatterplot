@@ -661,6 +661,10 @@ test('set({ cameraIsFixed })', async () => {
   scatterplot.set({ cameraIsFixed: true });
   expect(scatterplot.get('cameraIsFixed')).toBe(true);
 
+  // Adding this here to triple check that the programmatic zoom does not unset
+  // the camera fixed state
+  await scatterplot.zoomToOrigin();
+
   canvas.dispatchEvent(new WheelEvent('wheel', { deltaY: -100 }));
 
   await nextAnimationFrame();
