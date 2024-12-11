@@ -37,7 +37,7 @@
   },
   "dependencies": {
     "@flekschas/utils": "^0.32.2",
-    "dom-2d-camera": "~2.2.5",
+    "dom-2d-camera": "^2.2.6",
     "gl-matrix": "~3.4.3",
     "pub-sub-es": "~3.0.0",
     "regl": "~2.1.1",
