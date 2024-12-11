@@ -1,4 +1,5 @@
 import '@babel/polyfill';
+import { nextAnimationFrame } from '@flekschas/utils';
 import { assert, expect, test } from 'vitest';
 
 import { version } from '../package.json';
@@ -451,7 +452,7 @@ test(
     );
 
     expect(scatterplot.get('pointConnectionOpacityActive')).toBe(
-      scatterplot.get('pointConnectionOpacityActive'),
+      DEFAULT_POINT_CONNECTION_OPACITY_ACTIVE,
     );
 
     scatterplot.set({
@@ -630,3 +631,63 @@ test(
     scatterplot.destroy();
   }
 );
+
+test('set({ cameraIsFixed })', async () => {
+  const canvas = createCanvas();
+  const scatterplot = createScatterplot({ canvas });
+
+  await scatterplot.draw([
+    [-1, 1],
+    [1, 1],
+    [0, 0],
+    [-1, -1],
+    [1, -1],
+  ]);
+
+  canvas.dispatchEvent(new WheelEvent('wheel', { deltaY: -100 }));
+
+  await nextAnimationFrame();
+
+  console.log('1. camera distance', scatterplot.get('camera').distance[0]);
+
+  // We expect the distance to be less than one because we zoomed into the plot
+  // via wheeling
+  expect(scatterplot.get('camera').distance[0]).toBeLessThan(1);
+
+  await scatterplot.zoomToOrigin();
+
+  expect(scatterplot.get('camera').distance[0]).toBe(1);
+
+  scatterplot.set({ cameraIsFixed: true });
+  expect(scatterplot.get('cameraIsFixed')).toBe(true);
+
+  canvas.dispatchEvent(new WheelEvent('wheel', { deltaY: -100 }));
+
+  await nextAnimationFrame();
+
+  // We expect the distance to be one because we fixed the camera
+  expect(scatterplot.get('camera').distance[0]).toBe(1);
+
+  scatterplot.set({ cameraIsFixed: false });
+  expect(scatterplot.get('cameraIsFixed')).toBe(false);
+
+  canvas.dispatchEvent(new WheelEvent('wheel', { deltaY: -100 }));
+
+  await nextAnimationFrame();
+
+  // We expect the distance to be less than one because we unfixed the camera
+  expect(scatterplot.get('camera').distance[0]).toBeLessThan(1);
+
+  await scatterplot.zoomToOrigin();
+  expect(scatterplot.get('camera').distance[0]).toBe(1);
+
+  scatterplot.set({ cameraIsFixed: true });
+  await scatterplot.zoomToPoints([2]);
+
+  // Even though the camera is fixed, programmatic zooming still works. Only
+  // mouse wheel interactions are prevented
+  expect(scatterplot.get('cameraIsFixed')).toBe(true);
+  expect(scatterplot.get('camera').distance[0]).toBeLessThan(1);
+
+  scatterplot.destroy();
+});

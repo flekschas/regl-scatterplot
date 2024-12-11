@@ -166,6 +166,7 @@ export const Z_NAMES = new Set(['z', 'valueZ', 'valueA', 'value1', 'category']);
 export const W_NAMES = new Set(['w', 'valueW', 'valueB', 'value2', 'value']);
 export const DEFAULT_IMAGE_LOAD_TIMEOUT = 15000;
 export const DEFAULT_SPATIAL_INDEX_USE_WORKER = undefined;
+export const DEFAULT_CAMERA_IS_FIXED = false;
 
 // Error messages
 export const ERROR_POINTS_NOT_DRAWN = 'Points have not been drawn';

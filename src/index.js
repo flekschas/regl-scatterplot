@@ -38,6 +38,7 @@ import {
   DEFAULT_ANNOTATION_LINE_COLOR,
   DEFAULT_ANNOTATION_LINE_WIDTH,
   DEFAULT_BACKGROUND_IMAGE,
+  DEFAULT_CAMERA_IS_FIXED,
   DEFAULT_COLOR_ACTIVE,
   DEFAULT_COLOR_BG,
   DEFAULT_COLOR_BY,
@@ -287,6 +288,7 @@ const createScatterplot = (
     annotationLineColor = DEFAULT_ANNOTATION_LINE_COLOR,
     annotationLineWidth = DEFAULT_ANNOTATION_LINE_WIDTH,
     annotationHVLineLimit = DEFAULT_ANNOTATION_HVLINE_LIMIT,
+    cameraIsFixed = DEFAULT_CAMERA_IS_FIXED,
   } = initialProperties;
 
   let currentWidth = width === AUTO ? 1 : width;
@@ -888,7 +890,7 @@ const createScatterplot = (
   };
 
   const lassoEnd = (lassoPoints, lassoPointsFlat, { merge = false } = {}) => {
-    camera.config({ isFixed: false });
+    camera.config({ isFixed: cameraIsFixed });
     lassoPointsCurr = [...lassoPoints];
     const pointsInLasso = findPointsInLasso(lassoPointsFlat);
     select(pointsInLasso, { merge });
@@ -2722,7 +2724,7 @@ const createScatterplot = (
           'transitionEnd',
           () => {
             resolve();
-            camera.config({ isFixed: false });
+            camera.config({ isFixed: cameraIsFixed });
           },
           1,
         );
@@ -2919,6 +2921,11 @@ const createScatterplot = (
     if (view) {
       camera.setView(view);
     }
+  };
+
+  const setCameraIsFixed = (isFixed) => {
+    cameraIsFixed = Boolean(isFixed);
+    camera.config({ isFixed: cameraIsFixed });
   };
 
   const setLassoColor = (newLassoColor) => {
@@ -3296,6 +3303,10 @@ const createScatterplot = (
       return camera.view;
     }
 
+    if (property === 'cameraIsFixed') {
+      return cameraIsFixed;
+    }
+
     if (property === 'canvas') {
       return canvas;
     }
@@ -3616,6 +3627,10 @@ const createScatterplot = (
       setCameraView(properties.cameraView);
     }
 
+    if (properties.cameraIsFixed !== undefined) {
+      setCameraIsFixed(properties.cameraIsFixed);
+    }
+
     if (properties.colorBy !== undefined) {
       setColorBy(properties.colorBy);
     }
@@ -3873,6 +3888,7 @@ const createScatterplot = (
   const initCamera = () => {
     if (!camera) {
       camera = createDom2dCamera(canvas, {
+        isFixed: cameraIsFixed,
         isPanInverted: [false, true],
         defaultMouseDownMoveAction:
           mouseMode === MOUSE_MODE_ROTATE ? 'rotate' : 'pan',
@@ -4083,7 +4099,7 @@ const createScatterplot = (
   };
 
   const cancelFrameListener = renderer.onFrame(() => {
-    // Update camera: this needs to happen on every
+    // Update camera: this needs to happen on every frame
     isViewChanged = camera.tick();
 
     if (!((isPointsDrawn || isAnnotationsDrawn) && (draw || isTransitioning))) {
