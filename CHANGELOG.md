@@ -1,3 +1,7 @@
+## 1.11.4
+
+- Fix: allow setting the lasso long press indicator parent element
+
 ## 1.11.3
 
 - Fix: catch another edge case where `zoomToOrigin` was unsetting the camera fixed state

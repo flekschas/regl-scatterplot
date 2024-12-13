@@ -205,6 +205,7 @@ export type Properties = {
   syncEvents: boolean;
   version: string;
   lassoInitiatorElement: HTMLElement;
+  lassoLongPressIndicatorParentElement: HTMLElement;
   camera: Camera2D;
   performanceMode: boolean;
   opacityByDensityDebounceTime: number;

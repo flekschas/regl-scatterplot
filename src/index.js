@@ -247,6 +247,7 @@ const createScatterplot = (
     lassoClearEvent = DEFAULT_LASSO_CLEAR_EVENT,
     lassoInitiator = DEFAULT_LASSO_INITIATOR,
     lassoInitiatorParentElement = document.body,
+    lassoLongPressIndicatorParentElement = document.body,
     lassoOnLongPress = DEFAULT_LASSO_ON_LONG_PRESS,
     lassoLongPressTime = DEFAULT_LASSO_LONG_PRESS_TIME,
     lassoLongPressAfterEffectTime = DEFAULT_LASSO_LONG_PRESS_AFTER_EFFECT_TIME,
@@ -909,6 +910,7 @@ const createScatterplot = (
     onEnd: lassoEnd,
     enableInitiator: lassoInitiator,
     initiatorParentElement: lassoInitiatorParentElement,
+    longPressIndicatorParentElement: lassoLongPressIndicatorParentElement,
     pointNorm: ([x, y]) => getScatterGlPos(getNdcX(x), getNdcY(y)),
   });
 
@@ -2994,7 +2996,15 @@ const createScatterplot = (
     lassoInitiatorParentElement = newLassoInitiatorParentElement;
 
     lassoManager.set({
-      startInitiatorParentElement: lassoInitiatorParentElement,
+      initiatorParentElement: lassoInitiatorParentElement,
+    });
+  };
+
+  const setLassoLongPressIndicatorParentElement = (newParentElement) => {
+    lassoLongPressIndicatorParentElement = newParentElement;
+
+    lassoManager.set({
+      longPressIndicatorParentElement: lassoLongPressIndicatorParentElement,
     });
   };
 
@@ -3362,6 +3372,11 @@ const createScatterplot = (
     if (property === 'lassoInitiatorParentElement') {
       return lassoInitiatorParentElement;
     }
+
+    if (property === 'lassoLongPressIndicatorParentElement') {
+      return lassoLongPressIndicatorParentElement;
+    }
+
     if (property === 'keyMap') {
       return { ...keyMap };
     }
@@ -3755,6 +3770,12 @@ const createScatterplot = (
 
     if (properties.lassoInitiatorParentElement !== undefined) {
       setLassoInitiatorParentElement(properties.lassoInitiatorParentElement);
+    }
+
+    if (properties.lassoLongPressIndicatorParentElement !== undefined) {
+      setLassoLongPressIndicatorParentElement(
+        properties.lassoLongPressIndicatorParentElement,
+      );
     }
 
     if (properties.lassoOnLongPress !== undefined) {
