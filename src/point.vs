@@ -23,12 +23,15 @@ uniform float isOpacityByW;
 uniform float isOpacityByDensity;
 uniform float isSizedByZ;
 uniform float isSizedByW;
+uniform float isPixelAligned;
 uniform float colorMultiplicator;
 uniform float opacityMultiplicator;
 uniform float opacityDensity;
 uniform float sizeMultiplicator;
 uniform float numColorStates;
 uniform float pointScale;
+uniform float drawingBufferWidth;
+uniform float drawingBufferHeight;
 uniform mat4 modelViewProjection;
 
 attribute vec2 stateIndex;
@@ -39,7 +42,17 @@ varying float finalPointSize;
 void main() {
   vec4 state = texture2D(stateTex, stateIndex);
 
-  gl_Position = modelViewProjection * vec4(state.x, state.y, 0.0, 1.0);
+  if (isPixelAligned < 0.5) {
+    gl_Position = modelViewProjection * vec4(state.x, state.y, 0.0, 1.0);
+  } else {
+    vec4 clipSpacePosition = modelViewProjection * vec4(state.x, state.y, 0.0, 1.0);
+    vec2 ndcPosition = clipSpacePosition.xy / clipSpacePosition.w;
+    vec2 pixelPos = 0.5 * (ndcPosition + 1.0) * vec2(drawingBufferWidth, drawingBufferHeight);
+    pixelPos = floor(pixelPos + 0.5); // Snap to nearest pixel
+    vec2 snappedPosition = (pixelPos / vec2(drawingBufferWidth, drawingBufferHeight)) * 2.0 - 1.0;
+    gl_Position = vec4(snappedPosition, 0.0, 1.0);
+  }
+
 
   // Determine color index
   float colorIndexZ =  isColoredByZ * floor(state.z * colorMultiplicator);

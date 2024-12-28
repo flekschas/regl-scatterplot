@@ -37,6 +37,7 @@ import {
   DEFAULT_ANNOTATION_HVLINE_LIMIT,
   DEFAULT_ANNOTATION_LINE_COLOR,
   DEFAULT_ANNOTATION_LINE_WIDTH,
+  DEFAULT_ANTI_ALIASING,
   DEFAULT_BACKGROUND_IMAGE,
   DEFAULT_CAMERA_IS_FIXED,
   DEFAULT_COLOR_ACTIVE,
@@ -70,6 +71,7 @@ import {
   DEFAULT_OPACITY_INACTIVE_MAX,
   DEFAULT_OPACITY_INACTIVE_SCALE,
   DEFAULT_PERFORMANCE_MODE,
+  DEFAULT_PIXEL_ALIGNED,
   DEFAULT_POINT_CONNECTION_COLOR_ACTIVE,
   DEFAULT_POINT_CONNECTION_COLOR_BY,
   DEFAULT_POINT_CONNECTION_COLOR_HOVER,
@@ -234,6 +236,8 @@ const createScatterplot = (
 
   let {
     renderer,
+    antiAliasing = DEFAULT_ANTI_ALIASING,
+    pixelAligned = DEFAULT_PIXEL_ALIGNED,
     backgroundColor = DEFAULT_COLOR_BG,
     backgroundImage = DEFAULT_BACKGROUND_IMAGE,
     canvas = document.createElement('canvas'),
@@ -1464,6 +1468,7 @@ const createScatterplot = (
     );
   };
 
+  const getAntiAliasing = () => antiAliasing;
   const getResolution = () => [canvas.width, canvas.height];
   const getBackgroundImage = () => backgroundImage;
   const getColorTex = () => colorTex;
@@ -1519,6 +1524,7 @@ const createScatterplot = (
   const getIsOpacityByDensity = () => +(opacityBy === 'density');
   const getIsSizedByZ = () => +(sizeBy === 'valueZ');
   const getIsSizedByW = () => +(sizeBy === 'valueW');
+  const getIsPixelAligned = () => +pixelAligned;
   const getColorMultiplicator = () => {
     if (colorBy === 'valueZ') {
       return valueZDataType === CONTINUOUS ? pointColor.length - 1 : 1;
@@ -1632,6 +1638,7 @@ const createScatterplot = (
       },
 
       uniforms: {
+        antiAliasing: getAntiAliasing,
         resolution: getResolution,
         modelViewProjection: getModelViewProjection,
         devicePixelRatio: getDevicePixelRatio,
@@ -1656,11 +1663,14 @@ const createScatterplot = (
         isOpacityByDensity: getIsOpacityByDensity,
         isSizedByZ: getIsSizedByZ,
         isSizedByW: getIsSizedByW,
+        isPixelAligned: getIsPixelAligned,
         colorMultiplicator: getColorMultiplicator,
         opacityMultiplicator: getOpacityMultiplicator,
         opacityDensity: getOpacityDensity,
         sizeMultiplicator: getSizeMultiplicator,
         numColorStates: COLOR_NUM_STATES,
+        drawingBufferWidth: (context) => context.drawingBufferWidth,
+        drawingBufferHeight: (context) => context.drawingBufferHeight,
       },
 
       count: getNumPoints,
@@ -3273,6 +3283,14 @@ const createScatterplot = (
     renderer.gamma = newGamma;
   };
 
+  const setAntiAliasing = (newAntiAliasing) => {
+    antiAliasing = Number(newAntiAliasing) || 0.5;
+  };
+
+  const setPixelAligned = (newPixelAligned) => {
+    pixelAligned = Boolean(newPixelAligned);
+  };
+
   /** @type {<Key extends keyof import('./types').Properties>(property: Key) => import('./types').Properties[Key] } */
   const get = (property) => {
     checkDeprecations({ property: true });
@@ -3608,10 +3626,18 @@ const createScatterplot = (
       return annotationHVLineLimit;
     }
 
+    if (property === 'antiAliasing') {
+      return antiAliasing;
+    }
+
+    if (property === 'pixelAligned') {
+      return pixelAligned;
+    }
+
     return undefined;
   };
 
-  /** @type {(properties: Partial<import('./types').Settable>) => void} */
+  /** @type {(properties: Partial<import('./types').Settable>) => Promise<void>} */
   const set = (properties = {}) => {
     checkDeprecations(properties);
 
@@ -3878,6 +3904,14 @@ const createScatterplot = (
       setAnnotationHVLineLimit(properties.annotationHVLineLimit);
     }
 
+    if (properties.antiAliasing !== undefined) {
+      setAntiAliasing(properties.antiAliasing);
+    }
+
+    if (properties.pixelAligned !== undefined) {
+      setPixelAligned(properties.pixelAligned);
+    }
+
     // setWidth and setHeight can be async when width or height are set to
     // 'auto'. And since draw() would have anyway been async we can just make
     // all calls async.
@@ -4027,9 +4061,94 @@ const createScatterplot = (
     }
   };
 
-  /** @type {() => ImageData} */
-  const exportFn = () =>
-    canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
+  /**
+   * Export view as `ImageData` using custom render settings
+   * @param {import('./types').ScatterplotMethodOptions['export']} options
+   * @returns {Promise<ImageData>}
+   */
+  const exportFnAdvanced = async (options) => {
+    canvas.style.userSelect = 'none';
+
+    const dpr = window.devicePixelRatio;
+
+    const currPointSize = pointSize;
+    const currWidth = width;
+    const currHeight = height;
+    const currRendererWidth = renderer.canvas.width / dpr;
+    const currRendererHeight = renderer.canvas.height / dpr;
+    const currPixelAligned = pixelAligned;
+    const currAntiAliasing = antiAliasing;
+
+    const scale = options?.scale || 1;
+    const newPointSize = Array.isArray(pointSize)
+      ? pointSize.map((s) => s * scale)
+      : pointSize * scale;
+    const newWidth = currentWidth * scale;
+    const newHeight = currentHeight * scale;
+
+    setPointSize(newPointSize);
+    setWidth(newWidth);
+    setHeight(newHeight);
+    setPixelAligned(options?.pixelAligned || pixelAligned);
+    setAntiAliasing(options?.antiAliasing || antiAliasing);
+
+    renderer.resize(width, height);
+    renderer.refresh();
+
+    await new Promise((resolve) => {
+      pubSub.subscribe('draw', resolve);
+      redraw();
+    });
+
+    const imageData = canvas
+      .getContext('2d')
+      .getImageData(0, 0, canvas.width, canvas.height);
+
+    renderer.resize(currRendererWidth, currRendererHeight);
+    renderer.refresh();
+
+    setPointSize(currPointSize);
+    setWidth(currWidth);
+    setHeight(currHeight);
+    setPixelAligned(currPixelAligned);
+    setAntiAliasing(currAntiAliasing);
+
+    await new Promise((resolve) => {
+      pubSub.subscribe('draw', resolve);
+      redraw();
+    });
+
+    canvas.style.userSelect = null;
+
+    return imageData;
+  };
+
+  /**
+   * Export view as `ImageData` using the current render settings
+   * @overload
+   * @param {undefined} options
+   * @return {ImageData}
+   */
+  /**
+   * Export view as `ImageData` using custom render settings
+   * @overload
+   * @param {import('./types').ScatterplotMethodOptions['export']} options
+   * @return {Promise<ImageData>}
+   */
+  /**
+   * Export view
+   * @param {import('./types').ScatterplotMethodOptions['export']} [options]
+   * @returns {Promise<ImageData>}
+   */
+  const exportFn = (options) => {
+    if (options === undefined) {
+      return canvas
+        .getContext('2d')
+        .getImageData(0, 0, canvas.width, canvas.height);
+    }
+
+    return exportFnAdvanced(options);
+  };
 
   const init = () => {
     updateViewAspectRatio();

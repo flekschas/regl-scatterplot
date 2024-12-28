@@ -707,9 +707,12 @@ Sets the view back to the initially defined view. This will trigger a `view` eve
 
 **Arguments:**
 
-- `options` is an object for customizing how to export. See [regl.read()](https://github.com/regl-project/regl/blob/master/API.md#reading-pixels) for details.
+- `options` is an object for customizing the render settings during the export:
+  - `scale`: is a float number allowning to adjust the exported image size
+  - `antiAliasing`: is a float allowing to adjust the anti-aliasing factor
+  - `pixelAligned`: is a Boolean allowing to adjust the point alignment with the pixel grid
 
-**Returns:** an object with three properties: `pixels`, `width`, and `height`. The `pixels` is a `Uint8ClampedArray`.
+**Returns:** an [`ImageData`](https://developer.mozilla.org/en-US/docs/Web/API/ImageData) object if `option` is `undefined`. Otherwise it returns a Promise resolving to an [`ImageData`](https://developer.mozilla.org/en-US/docs/Web/API/ImageData) object.
 
 <a name="scatterplot.subscribe" href="#scatterplot.subscribe">#</a> scatterplot.<b>subscribe</b>(<i>eventName</i>, <i>eventHandler</i>)
 
@@ -818,6 +821,8 @@ can be read and written via [`scatterplot.get()`](#scatterplot.get) and [`scatte
 | annotationLineColor                   | string or quadruple                          | `[1, 1, 1, 0.1]`                    | hex, rgb, rgba                                                  | `true`   | `false`     |
 | annotationLineWidth                   | number                                       | `1`                                 |                                                                 | `true`   | `false`     |
 | annotationHVLineLimit                 | number                                       | `1000`                              | the extent of horizontal or vertical lines                      | `true`   | `false`     |
+| antiAliasing                          | number                                       | `0.5`                               | higher values result in more blurry points                      | `true`   | `false`     |
+| pixelAligned                          | number                                       | `false`                             | if true, points are aligned with the pixel grid                 | `true`   | `false`     |
 
 <a name="property-notes" href="#property-notes">#</a> <b>Notes:</b>
 

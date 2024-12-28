@@ -167,6 +167,8 @@ export const W_NAMES = new Set(['w', 'valueW', 'valueB', 'value2', 'value']);
 export const DEFAULT_IMAGE_LOAD_TIMEOUT = 15000;
 export const DEFAULT_SPATIAL_INDEX_USE_WORKER = undefined;
 export const DEFAULT_CAMERA_IS_FIXED = false;
+export const DEFAULT_ANTI_ALIASING = 0.5;
+export const DEFAULT_PIXEL_ALIGNED = false;
 
 // Error messages
 export const ERROR_POINTS_NOT_DRAWN = 'Points have not been drawn';

@@ -1,6 +1,8 @@
 const FRAGMENT_SHADER = `
 precision highp float;
 
+uniform float antiAliasing;
+
 varying vec4 color;
 varying float finalPointSize;
 
@@ -11,7 +13,7 @@ float linearstep(float edge0, float edge1, float x) {
 void main() {
   vec2 c = gl_PointCoord * 2.0 - 1.0;
   float sdf = length(c) * finalPointSize;
-  float alpha = linearstep(finalPointSize + 0.5, finalPointSize - 0.5, sdf);
+  float alpha = linearstep(finalPointSize + antiAliasing, finalPointSize - antiAliasing, sdf);
 
   gl_FragColor = vec4(color.rgb, alpha * color.a);
 }

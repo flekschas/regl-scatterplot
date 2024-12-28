@@ -1,3 +1,10 @@
+## 1.12.0
+
+- Feat: add support for adjusting the anti-aliasing via `scatterplot.set({ antiAliasing: 1 })`. ([#175](https://github.com/flekschas/regl-scatterplot/issues/175))
+- Feat: add support for aligning points with the pixel grid via `scatterplot.set({ pixelAligned: true })`. ([#175](https://github.com/flekschas/regl-scatterplot/issues/175))
+- Feat: enhance `scatterplot.export()` by allowing to adjust the scale, anti-aliasing, and pixel alignment. Note that when customizing the render setting for export, the function returns a promise that resolves into `ImageData`.
+- Feat: expose `resize()` method of the `renderer`.
+
 ## 1.11.4
 
 - Fix: allow setting the lasso long press indicator parent element
