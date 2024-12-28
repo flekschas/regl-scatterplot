@@ -144,7 +144,10 @@ export const createRenderer = (
     }
   });
 
-  const resize = () => {
+  const resize = (
+    /** @type {number} */ customWidth,
+    /** @type {number} */ customHeight,
+  ) => {
     // We need to limit the width and height by the screen size to prevent
     // a bug in VSCode where the window height is said to be taller than the
     // screen height. The problem with too large dimensions is that at some
@@ -157,8 +160,14 @@ export const createRenderer = (
     // @see
     // https://github.com/microsoft/vscode/issues/225808
     // https://github.com/flekschas/jupyter-scatter/issues/37
-    const width = Math.min(window.innerWidth, window.screen.availWidth);
-    const height = Math.min(window.innerHeight, window.screen.availHeight);
+    const width =
+      customWidth === undefined
+        ? Math.min(window.innerWidth, window.screen.availWidth)
+        : customWidth;
+    const height =
+      customHeight === undefined
+        ? Math.min(window.innerHeight, window.screen.availHeight)
+        : customHeight;
     canvas.width = width * window.devicePixelRatio;
     canvas.height = height * window.devicePixelRatio;
     fboRes[0] = canvas.width;
@@ -166,9 +175,13 @@ export const createRenderer = (
     fbo.resize(...fboRes);
   };
 
+  const resizeHandler = () => {
+    resize();
+  };
+
   if (!options.canvas) {
-    window.addEventListener('resize', resize);
-    window.addEventListener('orientationchange', resize);
+    window.addEventListener('resize', resizeHandler);
+    window.addEventListener('orientationchange', resizeHandler);
     resize();
   }
 
@@ -177,8 +190,8 @@ export const createRenderer = (
    */
   const destroy = () => {
     isDestroyed = true;
-    window.removeEventListener('resize', resize);
-    window.removeEventListener('orientationchange', resize);
+    window.removeEventListener('resize', resizeHandler);
+    window.removeEventListener('orientationchange', resizeHandler);
     frame.cancel();
     canvas = undefined;
     regl.destroy();
@@ -229,6 +242,7 @@ export const createRenderer = (
       return isDestroyed;
     },
     render,
+    resize,
     onFrame,
     refresh,
     destroy,

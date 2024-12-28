@@ -896,3 +896,35 @@ test('pointScaleMode', async () => {
 
   scatterplot.destroy();
 });
+
+test('export()', async () => {
+  const dim = 10;
+  const scatterplot = createScatterplot({
+    canvas: createCanvas(dim, dim),
+    width: dim,
+    height: dim,
+    pointSize: 4,
+  });
+
+  await scatterplot.draw([[0.01, 0.01]]);
+
+  const initialImage = scatterplot.export();
+  const initialPixelSum = getPixelSum(initialImage, 0, dim, 0, dim);
+
+  expect(initialPixelSum).toBeGreaterThan(0);
+
+  // Export at two scale
+  const upscaledImage = await scatterplot.export({ scale: 2 });
+  const upscaledPixelSum = getPixelSum(upscaledImage, 0, dim * 2, 0, dim * 2);
+  expect(upscaledPixelSum).toBeGreaterThan(initialPixelSum);
+
+  // Align point with pixel grid
+  const pixelAlignedImage = await scatterplot.export({ pixelAligned: true });
+  expect(pixelAlignedImage.data).not.toEqual(initialImage.data);
+
+  // Increase anti aliasing
+  const antiAliasingImage = await scatterplot.export({ antiAliasing: 2 });
+  const antiAliasingPixelSum = getPixelSum(antiAliasingImage, 0, dim, 0, dim);
+
+  expect(antiAliasingPixelSum).toBeLessThan(initialPixelSum);
+});

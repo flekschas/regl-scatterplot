@@ -165,6 +165,8 @@ interface BaseOptions {
   yScale: null | Scale;
   pointScaleMode: PointScaleMode;
   cameraIsFixed: boolean;
+  antiAliasing: number;
+  pixelAligned: boolean;
 }
 
 // biome-ignore lint/style/useNamingConvention: KDBush is a library name
@@ -264,6 +266,11 @@ export interface ScatterplotMethodOptions {
     transition: boolean;
     transitionDuration: number;
     transitionEasing: (t: number) => number;
+  }>;
+  export: Partial<{
+    scale: number;
+    antiAliasing: number;
+    pixelAligned: boolean;
   }>;
 }
 
