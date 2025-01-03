@@ -648,8 +648,6 @@ test('set({ cameraIsFixed })', async () => {
 
   await nextAnimationFrame();
 
-  console.log('1. camera distance', scatterplot.get('camera').distance[0]);
-
   // We expect the distance to be less than one because we zoomed into the plot
   // via wheeling
   expect(scatterplot.get('camera').distance[0]).toBeLessThan(1);
@@ -692,6 +690,39 @@ test('set({ cameraIsFixed })', async () => {
   // mouse wheel interactions are prevented
   expect(scatterplot.get('cameraIsFixed')).toBe(true);
   expect(scatterplot.get('camera').distance[0]).toBeLessThan(1);
+
+  scatterplot.destroy();
+});
+
+test('get("isDestroyed")', async () => {
+  const scatterplot = createScatterplot({ canvas: createCanvas() });
+
+  expect(scatterplot.get('isDestroyed')).toBe(false);
+
+  scatterplot.destroy();
+
+  expect(scatterplot.get('isDestroyed')).toBe(true);
+});
+
+test('get("isDrawing")', async () => {
+  const canvas = createCanvas();
+  const scatterplot = createScatterplot({ canvas });
+
+  expect(scatterplot.get('isDrawing')).toBe(false);
+
+  const whenDrawn = scatterplot.draw([
+    [-1, 1],
+    [1, 1],
+    [0, 0],
+    [-1, -1],
+    [1, -1],
+  ]);
+
+  expect(scatterplot.get('isDrawing')).toBe(true);
+
+  await expect(whenDrawn).resolves.toBe(undefined);
+
+  expect(scatterplot.get('isDrawing')).toBe(false);
 
   scatterplot.destroy();
 });

@@ -35,19 +35,17 @@ test('init and destroy events', async () => {
   });
 
   const whenInit = new Promise((resolve) => {
-    scatterplot.subscribe('init', resolve, 1);
+    scatterplot.subscribe('init', () => resolve(true), 1);
   });
   const whenDestroy = new Promise((resolve) => {
-    scatterplot.subscribe('destroy', resolve, 1);
+    scatterplot.subscribe('destroy', () => resolve(true), 1);
   });
 
-  await whenInit;
+  await expect(whenInit).resolves.toBe(true);
 
   scatterplot.destroy();
 
-  await whenDestroy;
-
-  expect(true).toBe(true);
+  await expect(whenDestroy).resolves.toBe(true);
 });
 
 test('throw an error when calling draw() after destroy()', async () => {

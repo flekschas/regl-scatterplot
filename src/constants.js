@@ -172,3 +172,6 @@ export const DEFAULT_PIXEL_ALIGNED = false;
 
 // Error messages
 export const ERROR_POINTS_NOT_DRAWN = 'Points have not been drawn';
+export const ERROR_INSTANCE_IS_DESTROYED = 'The instance was already destroyed';
+export const ERROR_IS_DRAWING =
+  'Ignoring draw call as the previous draw call has not yet finished. To avoid this warning `await` the draw call.';
