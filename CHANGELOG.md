@@ -1,3 +1,11 @@
+## 1.12.1
+
+- Fix: destroy the encoding texture before recreating it
+- Fix: reject `set()` calls if the instance was destroyed
+- Fix: ensures unnecessary color and encoding texture updates are avoided
+- Fix: color and encoding textures are destroyed upon calling `scatterplot.destroy()`
+- Fix: prevent a minor memory leak in the newly added advanced exporter
+
 ## 1.12.0
 
 - Feat: add support for adjusting the anti-aliasing via `scatterplot.set({ antiAliasing: 1 })`. ([#175](https://github.com/flekschas/regl-scatterplot/issues/175))

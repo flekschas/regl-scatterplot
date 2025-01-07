@@ -145,6 +145,8 @@ import {
   isPolygon,
   isPositiveNumber,
   isRect,
+  isSameElements,
+  isSameRgbas,
   isStrictlyPositiveNumber,
   isString,
   isValidBBox,
@@ -1234,6 +1236,11 @@ const createScatterplot = (
     let tmpColors = isMultipleColors(newColors) ? newColors : [newColors];
     tmpColors = tmpColors.map((color) => toRgba(color, true));
 
+    if (isSameRgbas(prevColors, tmpColors)) {
+      // We don't need to update the color texture so we return early
+      return;
+    }
+
     if (colorTex) {
       colorTex.destroy();
     }
@@ -1346,12 +1353,21 @@ const createScatterplot = (
   };
 
   const setPointSize = (newPointSize) => {
+    const oldPointSize = Array.isArray(pointSize) ? [...pointSize] : pointSize;
+
     if (isConditionalArray(newPointSize, isPositiveNumber, { minLength: 1 })) {
       pointSize = [...newPointSize];
+    } else if (isStrictlyPositiveNumber(+newPointSize)) {
+      pointSize = [+newPointSize];
     }
 
-    if (isStrictlyPositiveNumber(+newPointSize)) {
-      pointSize = [+newPointSize];
+    if (oldPointSize === pointSize || isSameElements(oldPointSize, pointSize)) {
+      // We don't need to update the encoding texture so we return early
+      return;
+    }
+
+    if (encodingTex) {
+      encodingTex.destroy();
     }
 
     minPointScale = MIN_POINT_SIZE / pointSize[0];
@@ -1404,12 +1420,21 @@ const createScatterplot = (
   };
 
   const setOpacity = (newOpacity) => {
+    const oldOpacity = Array.isArray(opacity) ? [...opacity] : opacity;
+
     if (isConditionalArray(newOpacity, isPositiveNumber, { minLength: 1 })) {
       opacity = [...newOpacity];
+    } else if (isStrictlyPositiveNumber(+newOpacity)) {
+      opacity = [+newOpacity];
     }
 
-    if (isStrictlyPositiveNumber(+newOpacity)) {
-      opacity = [+newOpacity];
+    if (oldOpacity === opacity || isSameElements(oldOpacity, opacity)) {
+      // We don't need to update the encoding texture so we return early
+      return;
+    }
+
+    if (encodingTex) {
+      encodingTex.destroy();
     }
 
     encodingTex = createEncodingTexture();
@@ -3651,6 +3676,10 @@ const createScatterplot = (
 
   /** @type {(properties: Partial<import('./types').Settable>) => Promise<void>} */
   const set = (properties = {}) => {
+    if (isDestroyed) {
+      return Promise.reject(new Error(ERROR_INSTANCE_IS_DESTROYED));
+    }
+
     checkDeprecations(properties);
 
     if (
@@ -3929,14 +3958,14 @@ const createScatterplot = (
     // all calls async.
     return new Promise((resolve) => {
       window.requestAnimationFrame(() => {
-        if (!canvas) {
+        if (isDestroyed || !canvas) {
           // Instance was destroyed in between
           return;
         }
         updateViewAspectRatio();
         camera.refresh();
         renderer.refresh();
-        draw = true;
+        redraw();
         resolve();
       });
     });
@@ -4108,7 +4137,7 @@ const createScatterplot = (
     renderer.refresh();
 
     await new Promise((resolve) => {
-      pubSub.subscribe('draw', resolve);
+      pubSub.subscribe('draw', resolve, 1);
       redraw();
     });
 
@@ -4126,7 +4155,7 @@ const createScatterplot = (
     setAntiAliasing(currAntiAliasing);
 
     await new Promise((resolve) => {
-      pubSub.subscribe('draw', resolve);
+      pubSub.subscribe('draw', resolve, 1);
       redraw();
     });
 
@@ -4380,6 +4409,12 @@ const createScatterplot = (
     pointConnections.destroy();
     reticleHLine.destroy();
     reticleVLine.destroy();
+    if (colorTex) {
+      colorTex.destroy();
+    }
+    if (encodingTex) {
+      encodingTex.destroy();
+    }
     if (!(initialProperties.renderer || renderer.isDestroyed)) {
       // Since the user did not pass in an externally created renderer we can
       // assume that the renderer is only used by this scatter plot instance.

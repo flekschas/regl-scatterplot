@@ -22,6 +22,7 @@ import {
   DEFAULT_POINT_CONNECTION_SIZE,
   DEFAULT_POINT_CONNECTION_SIZE_ACTIVE,
   DEFAULT_IMAGE_LOAD_TIMEOUT,
+  ERROR_INSTANCE_IS_DESTROYED,
   IMAGE_LOAD_ERROR,
 } from '../src/constants';
 
@@ -725,4 +726,15 @@ test('get("isDrawing")', async () => {
   expect(scatterplot.get('isDrawing')).toBe(false);
 
   scatterplot.destroy();
+});
+
+
+test('set() after destroy', async () => {
+  const scatterplot = createScatterplot({ canvas: createCanvas() });
+
+  scatterplot.destroy();
+
+  const whenSet = scatterplot.set({ mouseMode: 'lasso' });
+
+  await expect(whenSet).rejects.toThrow(ERROR_INSTANCE_IS_DESTROYED);
 });
