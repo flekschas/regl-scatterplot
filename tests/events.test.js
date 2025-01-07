@@ -23,7 +23,6 @@ import {
   createKeyboardEvent,
   wait,
   capitalize,
-  catchError,
 } from './utils';
 
 test('init and destroy events', async () => {

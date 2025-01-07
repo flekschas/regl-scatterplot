@@ -57,14 +57,6 @@ export const wait = (milliSeconds) =>
 
 export const capitalize = (s) => `${s[0].toUpperCase}${s.slice(1)}`;
 
-export const catchError = (testFn) => async (t) => {
-  try {
-    await testFn(t);
-  } catch (e) {
-    t.fail(e.message);
-  }
-};
-
 export const isSameElements = (a, b) => {
   if (a.length !== b.length) return false;
   const aSet = new Set(a);
