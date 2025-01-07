@@ -1,3 +1,7 @@
+## 1.12.1
+
+- Fix: prevent drawing points if all are filtered out ([#201](https://github.com/flekschas/regl-scatterplot/issues/201))
+
 ## 1.12.0
 
 - Feat: add support for adjusting the anti-aliasing via `scatterplot.set({ antiAliasing: 1 })`. ([#175](https://github.com/flekschas/regl-scatterplot/issues/175))
