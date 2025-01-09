@@ -99,6 +99,8 @@ import {
   DEFAULT_VIEW,
   DEFAULT_WIDTH,
   EASING_FNS,
+  ERROR_INSTANCE_IS_DESTROYED,
+  ERROR_IS_DRAWING,
   ERROR_POINTS_NOT_DRAWN,
   FLOAT_BYTES,
   KEYS,
@@ -143,6 +145,8 @@ import {
   isPolygon,
   isPositiveNumber,
   isRect,
+  isSameElements,
+  isSameRgbas,
   isStrictlyPositiveNumber,
   isString,
   isValidBBox,
@@ -319,6 +323,7 @@ const createScatterplot = (
   lassoColor = toRgba(lassoColor, true);
   reticleColor = toRgba(reticleColor, true);
 
+  let isDrawing = false;
   let isDestroyed = false;
   let backgroundColorBrightness = rgbBrightness(backgroundColor);
   let camera;
@@ -1231,6 +1236,11 @@ const createScatterplot = (
     let tmpColors = isMultipleColors(newColors) ? newColors : [newColors];
     tmpColors = tmpColors.map((color) => toRgba(color, true));
 
+    if (isSameRgbas(prevColors, tmpColors)) {
+      // We don't need to update the color texture so we return early
+      return;
+    }
+
     if (colorTex) {
       colorTex.destroy();
     }
@@ -1343,12 +1353,21 @@ const createScatterplot = (
   };
 
   const setPointSize = (newPointSize) => {
+    const oldPointSize = Array.isArray(pointSize) ? [...pointSize] : pointSize;
+
     if (isConditionalArray(newPointSize, isPositiveNumber, { minLength: 1 })) {
       pointSize = [...newPointSize];
+    } else if (isStrictlyPositiveNumber(+newPointSize)) {
+      pointSize = [+newPointSize];
     }
 
-    if (isStrictlyPositiveNumber(+newPointSize)) {
-      pointSize = [+newPointSize];
+    if (oldPointSize === pointSize || isSameElements(oldPointSize, pointSize)) {
+      // We don't need to update the encoding texture so we return early
+      return;
+    }
+
+    if (encodingTex) {
+      encodingTex.destroy();
     }
 
     minPointScale = MIN_POINT_SIZE / pointSize[0];
@@ -1401,12 +1420,21 @@ const createScatterplot = (
   };
 
   const setOpacity = (newOpacity) => {
+    const oldOpacity = Array.isArray(opacity) ? [...opacity] : opacity;
+
     if (isConditionalArray(newOpacity, isPositiveNumber, { minLength: 1 })) {
       opacity = [...newOpacity];
+    } else if (isStrictlyPositiveNumber(+newOpacity)) {
+      opacity = [+newOpacity];
     }
 
-    if (isStrictlyPositiveNumber(+newOpacity)) {
-      opacity = [+newOpacity];
+    if (oldOpacity === opacity || isSameElements(oldOpacity, opacity)) {
+      // We don't need to update the encoding texture so we return early
+      return;
+    }
+
+    if (encodingTex) {
+      encodingTex.destroy();
     }
 
     encodingTex = createEncodingTexture();
@@ -2397,144 +2425,149 @@ const createScatterplot = (
    */
   const publicDraw = (newPoints, options = {}) => {
     if (isDestroyed) {
-      return Promise.reject(new Error('The instance was already destroyed'));
+      return Promise.reject(new Error(ERROR_INSTANCE_IS_DESTROYED));
     }
-    return toArrayOrientedPoints(newPoints).then(
-      (newPointsArray) =>
-        new Promise((resolve) => {
-          if (isDestroyed) {
-            // In the special case where the instance was destroyed after
-            // scatterplot.draw() was called but before toArrayOrientedPoints()
-            // resolved, we will _not_ reject the promise as this would be
-            // confusing. Instead we will immediately resolve and return.
-            resolve();
-            return;
-          }
+    if (isDrawing) {
+      return Promise.reject(new Error(ERROR_IS_DRAWING));
+    }
+    isDrawing = true;
+    return toArrayOrientedPoints(newPoints).then((newPointsArray) =>
+      new Promise((resolve) => {
+        if (isDestroyed) {
+          // In the special case where the instance was destroyed after
+          // scatterplot.draw() was called but before toArrayOrientedPoints()
+          // resolved, we will _not_ reject the promise as this would be
+          // confusing. Instead we will immediately resolve and return.
+          resolve();
+          return;
+        }
 
-          let pointsCached = false;
+        let pointsCached = false;
 
-          if (
-            !options.preventFilterReset ||
-            newPointsArray?.length !== numPoints
-          ) {
-            isPointsFiltered = false;
-            filteredPointsSet.clear();
-          }
+        if (
+          !options.preventFilterReset ||
+          newPointsArray?.length !== numPoints
+        ) {
+          isPointsFiltered = false;
+          filteredPointsSet.clear();
+        }
 
-          const drawPointConnections =
-            newPointsArray &&
-            hasPointConnections(newPointsArray[0]) &&
-            (showPointConnections || options.showPointConnectionsOnce);
+        const drawPointConnections =
+          newPointsArray &&
+          hasPointConnections(newPointsArray[0]) &&
+          (showPointConnections || options.showPointConnectionsOnce);
 
-          const { zDataType, wDataType } = options;
+        const { zDataType, wDataType } = options;
 
-          new Promise((resolveDraw) => {
-            if (newPointsArray) {
-              if (options.transition) {
-                if (newPointsArray.length === numPoints) {
-                  pointsCached = cachePoints(newPointsArray, {
-                    z: zDataType,
-                    w: wDataType,
-                  });
-                } else {
-                  // biome-ignore lint/suspicious/noConsole: This is a legitimately useful warning
-                  console.warn(
-                    'Cannot transition! The number of points between the previous and current draw call must be identical.',
-                  );
-                }
-              }
-
-              setPoints(newPointsArray, {
-                zDataType,
-                wDataType,
-                preventFilterReset: options.preventFilterReset,
-                spatialIndex: options.spatialIndex,
-              }).then(() => {
-                if (options.hover !== undefined) {
-                  hover(options.hover, { preventEvent: true });
-                }
-
-                if (options.select !== undefined) {
-                  select(options.select, { preventEvent: true });
-                }
-
-                if (options.filter !== undefined) {
-                  filter(options.filter, { preventEvent: true });
-                }
-
-                if (drawPointConnections) {
-                  setPointConnections(newPointsArray)
-                    .then(() => {
-                      pubSub.publish('pointConnectionsDraw');
-                      draw = true;
-                      drawReticleOnce = options.showReticleOnce;
-                    })
-                    .then(resolve);
-                } else {
-                  resolveDraw();
-                }
-              });
-            } else {
-              resolveDraw();
-            }
-          }).then(() => {
-            if (options.transition && pointsCached) {
-              if (drawPointConnections) {
-                Promise.all([
-                  new Promise((resolveTransition) => {
-                    pubSub.subscribe(
-                      'transitionEnd',
-                      () => {
-                        // Point connects cannot be transitioned yet so we hide them during
-                        // the transition. Hence, we need to make sure we call `draw()` once
-                        // the transition has ended.
-                        draw = true;
-                        drawReticleOnce = options.showReticleOnce;
-                        resolveTransition();
-                      },
-                      1,
-                    );
-                  }),
-                  new Promise((resolveDraw) => {
-                    pubSub.subscribe('pointConnectionsDraw', resolveDraw, 1);
-                  }),
-                ]).then(resolve);
+        new Promise((resolveDraw) => {
+          if (newPointsArray) {
+            if (options.transition) {
+              if (newPointsArray.length === numPoints) {
+                pointsCached = cachePoints(newPointsArray, {
+                  z: zDataType,
+                  w: wDataType,
+                });
               } else {
-                pubSub.subscribe(
-                  'transitionEnd',
-                  () => {
-                    // Point connects cannot be transitioned yet so we hide them during
-                    // the transition. Hence, we need to make sure we call `draw()` once
-                    // the transition has ended.
-                    draw = true;
-                    drawReticleOnce = options.showReticleOnce;
-                    resolve();
-                  },
-                  1,
+                // biome-ignore lint/suspicious/noConsole: This is a legitimately useful warning
+                console.warn(
+                  'Cannot transition! The number of points between the previous and current draw call must be identical.',
                 );
               }
-              startTransition({
-                duration: options.transitionDuration,
-                easing: options.transitionEasing,
-              });
-            } else {
-              if (drawPointConnections) {
-                Promise.all([
-                  new Promise((resolveDraw) => {
-                    pubSub.subscribe('draw', resolveDraw, 1);
-                  }),
-                  new Promise((resolveDraw) => {
-                    pubSub.subscribe('pointConnectionsDraw', resolveDraw, 1);
-                  }),
-                ]).then(resolve);
-              } else {
-                pubSub.subscribe('draw', resolve, 1);
-              }
-              draw = true;
-              drawReticleOnce = options.showReticleOnce;
             }
-          });
-        }),
+
+            setPoints(newPointsArray, {
+              zDataType,
+              wDataType,
+              preventFilterReset: options.preventFilterReset,
+              spatialIndex: options.spatialIndex,
+            }).then(() => {
+              if (options.hover !== undefined) {
+                hover(options.hover, { preventEvent: true });
+              }
+
+              if (options.select !== undefined) {
+                select(options.select, { preventEvent: true });
+              }
+
+              if (options.filter !== undefined) {
+                filter(options.filter, { preventEvent: true });
+              }
+
+              if (drawPointConnections) {
+                setPointConnections(newPointsArray)
+                  .then(() => {
+                    pubSub.publish('pointConnectionsDraw');
+                    draw = true;
+                    drawReticleOnce = options.showReticleOnce;
+                  })
+                  .then(() => resolve());
+              } else {
+                resolveDraw();
+              }
+            });
+          } else {
+            resolveDraw();
+          }
+        }).then(() => {
+          if (options.transition && pointsCached) {
+            if (drawPointConnections) {
+              Promise.all([
+                new Promise((resolveTransition) => {
+                  pubSub.subscribe(
+                    'transitionEnd',
+                    () => {
+                      // Point connects cannot be transitioned yet so we hide them during
+                      // the transition. Hence, we need to make sure we call `draw()` once
+                      // the transition has ended.
+                      draw = true;
+                      drawReticleOnce = options.showReticleOnce;
+                      resolveTransition();
+                    },
+                    1,
+                  );
+                }),
+                new Promise((resolveDraw) => {
+                  pubSub.subscribe('pointConnectionsDraw', resolveDraw, 1);
+                }),
+              ]).then(() => resolve());
+            } else {
+              pubSub.subscribe(
+                'transitionEnd',
+                () => {
+                  // Point connects cannot be transitioned yet so we hide them during
+                  // the transition. Hence, we need to make sure we call `draw()` once
+                  // the transition has ended.
+                  draw = true;
+                  drawReticleOnce = options.showReticleOnce;
+                  resolve();
+                },
+                1,
+              );
+            }
+            startTransition({
+              duration: options.transitionDuration,
+              easing: options.transitionEasing,
+            });
+          } else {
+            if (drawPointConnections) {
+              Promise.all([
+                new Promise((resolveDraw) => {
+                  pubSub.subscribe('draw', resolveDraw, 1);
+                }),
+                new Promise((resolveDraw) => {
+                  pubSub.subscribe('pointConnectionsDraw', resolveDraw, 1);
+                }),
+              ]).then(() => resolve());
+            } else {
+              pubSub.subscribe('draw', () => resolve(), 1);
+            }
+            draw = true;
+            drawReticleOnce = options.showReticleOnce;
+          }
+        });
+      }).finally(() => {
+        isDrawing = false;
+      }),
     );
   };
 
@@ -2545,7 +2578,7 @@ const createScatterplot = (
    */
   const drawAnnotations = (newAnnotations) => {
     if (isDestroyed) {
-      return Promise.reject(new Error('The instance was already destroyed'));
+      return Promise.reject(new ERROR_INSTANCE_IS_DESTROYED());
     }
 
     isAnnotationsDrawn = false;
@@ -3590,6 +3623,10 @@ const createScatterplot = (
       return isDestroyed;
     }
 
+    if (property === 'isDrawing') {
+      return isDrawing;
+    }
+
     if (property === 'isPointsDrawn') {
       return isPointsDrawn;
     }
@@ -3639,6 +3676,10 @@ const createScatterplot = (
 
   /** @type {(properties: Partial<import('./types').Settable>) => Promise<void>} */
   const set = (properties = {}) => {
+    if (isDestroyed) {
+      return Promise.reject(new Error(ERROR_INSTANCE_IS_DESTROYED));
+    }
+
     checkDeprecations(properties);
 
     if (
@@ -3917,14 +3958,14 @@ const createScatterplot = (
     // all calls async.
     return new Promise((resolve) => {
       window.requestAnimationFrame(() => {
-        if (!canvas) {
+        if (isDestroyed || !canvas) {
           // Instance was destroyed in between
           return;
         }
         updateViewAspectRatio();
         camera.refresh();
         renderer.refresh();
-        draw = true;
+        redraw();
         resolve();
       });
     });
@@ -4096,7 +4137,7 @@ const createScatterplot = (
     renderer.refresh();
 
     await new Promise((resolve) => {
-      pubSub.subscribe('draw', resolve);
+      pubSub.subscribe('draw', resolve, 1);
       redraw();
     });
 
@@ -4114,7 +4155,7 @@ const createScatterplot = (
     setAntiAliasing(currAntiAliasing);
 
     await new Promise((resolve) => {
-      pubSub.subscribe('draw', resolve);
+      pubSub.subscribe('draw', resolve, 1);
       redraw();
     });
 
@@ -4368,6 +4409,12 @@ const createScatterplot = (
     pointConnections.destroy();
     reticleHLine.destroy();
     reticleVLine.destroy();
+    if (colorTex) {
+      colorTex.destroy();
+    }
+    if (encodingTex) {
+      encodingTex.destroy();
+    }
     if (!(initialProperties.renderer || renderer.isDestroyed)) {
       // Since the user did not pass in an externally created renderer we can
       // assume that the renderer is only used by this scatter plot instance.

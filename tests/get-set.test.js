@@ -22,6 +22,7 @@ import {
   DEFAULT_POINT_CONNECTION_SIZE,
   DEFAULT_POINT_CONNECTION_SIZE_ACTIVE,
   DEFAULT_IMAGE_LOAD_TIMEOUT,
+  ERROR_INSTANCE_IS_DESTROYED,
   IMAGE_LOAD_ERROR,
 } from '../src/constants';
 
@@ -648,8 +649,6 @@ test('set({ cameraIsFixed })', async () => {
 
   await nextAnimationFrame();
 
-  console.log('1. camera distance', scatterplot.get('camera').distance[0]);
-
   // We expect the distance to be less than one because we zoomed into the plot
   // via wheeling
   expect(scatterplot.get('camera').distance[0]).toBeLessThan(1);
@@ -694,4 +693,48 @@ test('set({ cameraIsFixed })', async () => {
   expect(scatterplot.get('camera').distance[0]).toBeLessThan(1);
 
   scatterplot.destroy();
+});
+
+test('get("isDestroyed")', async () => {
+  const scatterplot = createScatterplot({ canvas: createCanvas() });
+
+  expect(scatterplot.get('isDestroyed')).toBe(false);
+
+  scatterplot.destroy();
+
+  expect(scatterplot.get('isDestroyed')).toBe(true);
+});
+
+test('get("isDrawing")', async () => {
+  const canvas = createCanvas();
+  const scatterplot = createScatterplot({ canvas });
+
+  expect(scatterplot.get('isDrawing')).toBe(false);
+
+  const whenDrawn = scatterplot.draw([
+    [-1, 1],
+    [1, 1],
+    [0, 0],
+    [-1, -1],
+    [1, -1],
+  ]);
+
+  expect(scatterplot.get('isDrawing')).toBe(true);
+
+  await expect(whenDrawn).resolves.toBe(undefined);
+
+  expect(scatterplot.get('isDrawing')).toBe(false);
+
+  scatterplot.destroy();
+});
+
+
+test('set() after destroy', async () => {
+  const scatterplot = createScatterplot({ canvas: createCanvas() });
+
+  scatterplot.destroy();
+
+  const whenSet = scatterplot.set({ mouseMode: 'lasso' });
+
+  await expect(whenSet).rejects.toThrow(ERROR_INSTANCE_IS_DESTROYED);
 });
