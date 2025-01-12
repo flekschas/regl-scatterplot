@@ -728,7 +728,6 @@ test('get("isDrawing")', async () => {
   scatterplot.destroy();
 });
 
-
 test('set() after destroy', async () => {
   const scatterplot = createScatterplot({ canvas: createCanvas() });
 
@@ -737,4 +736,58 @@ test('set() after destroy', async () => {
   const whenSet = scatterplot.set({ mouseMode: 'lasso' });
 
   await expect(whenSet).rejects.toThrow(ERROR_INSTANCE_IS_DESTROYED);
+});
+
+
+test('get() and set() performance properties', async () => {
+  const scatterplotA = createScatterplot({ canvas: createCanvas() });
+
+  expect(scatterplotA.get('performanceMode')).toBe(false);
+  expect(scatterplotA.get('renderPointsAsSquares')).toBe(false);
+  expect(scatterplotA.get('disableAlphaBlending')).toBe(false);
+
+  scatterplotA.set({
+    'performanceMode': true,
+    'renderPointsAsSquares': true,
+    'disableAlphaBlending': true,
+  });
+
+  expect(scatterplotA.get('performanceMode')).toBe(false);
+  expect(scatterplotA.get('renderPointsAsSquares')).toBe(false);
+  expect(scatterplotA.get('disableAlphaBlending')).toBe(false);
+
+  scatterplotA.destroy();
+
+  const scatterplotB = createScatterplot({
+    canvas: createCanvas(),
+    performanceMode: true,
+  });
+
+  expect(scatterplotB.get('performanceMode')).toBe(true);
+  expect(scatterplotB.get('renderPointsAsSquares')).toBe(true);
+  expect(scatterplotB.get('disableAlphaBlending')).toBe(true);
+
+  scatterplotB.destroy();
+
+  const scatterplotC = createScatterplot({
+    canvas: createCanvas(),
+    renderPointsAsSquares: true,
+  });
+
+  expect(scatterplotC.get('performanceMode')).toBe(false);
+  expect(scatterplotC.get('renderPointsAsSquares')).toBe(true);
+  expect(scatterplotC.get('disableAlphaBlending')).toBe(false);
+
+  scatterplotC.destroy();
+
+  const scatterplotD = createScatterplot({
+    canvas: createCanvas(),
+    disableAlphaBlending: true,
+  });
+
+  expect(scatterplotD.get('performanceMode')).toBe(false);
+  expect(scatterplotD.get('renderPointsAsSquares')).toBe(false);
+  expect(scatterplotD.get('disableAlphaBlending')).toBe(true);
+
+  scatterplotD.destroy();
 });

@@ -310,6 +310,13 @@ const createScatterplot = (
     spatialIndexUseWorker = DEFAULT_SPATIAL_INDEX_USE_WORKER,
   } = initialProperties;
 
+  const renderPointsAsSquares = Boolean(
+    initialProperties.renderPointsAsSquares || performanceMode,
+  );
+  const disableAlphaBlending = Boolean(
+    initialProperties.disableAlphaBlending || performanceMode,
+  );
+
   mouseMode = limit(MOUSE_MODES, MOUSE_MODE_PANZOOM)(mouseMode);
 
   if (!renderer) {
@@ -1596,9 +1603,9 @@ const createScatterplot = (
     let alpha =
       ((opacityByDensityFill * W * H) / (numPointsInView * p * p)) * min(1, s);
 
-    // In performanceMode we use squares, otherwise we use circles, which only
-    // take up (pi r^2) of the unit square
-    alpha *= performanceMode ? 1 : 1 / (0.25 * Math.PI);
+    // Unless `renderPointsAsSquares` is true, we use circles, which only take
+    // up (pi r^2) of the unit square
+    alpha *= renderPointsAsSquares ? 1 : 1 / (0.25 * Math.PI);
 
     // If the pixels shrink below the minimum permitted size, then we adjust the opacity instead
     // and apply clamping of the point size in the vertex shader. Note that we add 0.5 since we
@@ -1641,11 +1648,11 @@ const createScatterplot = (
     getPointOpacityScale = getPointOpacityScaleBase,
   ) =>
     renderer.regl({
-      frag: performanceMode ? POINT_SIMPLE_FS : POINT_FS,
+      frag: renderPointsAsSquares ? POINT_SIMPLE_FS : POINT_FS,
       vert: createVertexShader(globalState),
 
       blend: {
-        enable: !performanceMode,
+        enable: !disableAlphaBlending,
         func: {
           // biome-ignore lint/style/useNamingConvention: Regl specific
           srcRGB: 'src alpha',
@@ -3609,6 +3616,14 @@ const createScatterplot = (
 
     if (property === 'performanceMode') {
       return performanceMode;
+    }
+
+    if (property === 'renderPointsAsSquares') {
+      return renderPointsAsSquares;
+    }
+
+    if (property === 'disableAlphaBlending') {
+      return disableAlphaBlending;
     }
 
     if (property === 'gamma') {

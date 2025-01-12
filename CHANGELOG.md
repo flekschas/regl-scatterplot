@@ -1,3 +1,7 @@
+## 1.13.0
+
+- Feat: expose `renderPointsAsSquares` and `disableAlphaBlending` to allow finer control over performance increasing settings ([#206](https://github.com/flekschas/regl-scatterplot/issues/206))
+
 ## 1.12.1
 
 - Fix: destroy the encoding texture before recreating it
