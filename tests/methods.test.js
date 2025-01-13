@@ -6,6 +6,8 @@ import createScatterplot from '../src';
 
 import {
   DEFAULT_POINT_SCALE_MODE,
+  ERROR_INSTANCE_IS_DESTROYED,
+  ERROR_IS_DRAWING,
   ERROR_POINTS_NOT_DRAWN,
 } from '../src/constants';
 
@@ -122,6 +124,34 @@ test('draw() with preventFilterReset', async () => {
   ).toBe(true);
 
   scatterplot.destroy();
+});
+
+test('draw() prematurely', async () => {
+  const canvas = createCanvas();
+  const scatterplot = createScatterplot({ canvas });
+
+  const whenDrawn1 = scatterplot.draw([[-1, 1], [0, 0], [1, -1]]);
+  const whenDrawn2 = scatterplot.draw([[-1, 1], [0, 0], [1, -1]]);
+  await expect(whenDrawn2).rejects.toThrow(ERROR_IS_DRAWING);
+
+  await expect(whenDrawn1).resolves.toBe(undefined);
+
+  const whenDrawn3 = scatterplot.draw([[-1, 1], [0, 0], [1, -1]]);
+
+  await expect(whenDrawn3).resolves.toBe(undefined);
+
+  scatterplot.destroy();
+});
+
+test('draw() after destroy', async () => {
+  const canvas = createCanvas();
+  const scatterplot = createScatterplot({ canvas });
+
+  scatterplot.destroy();
+
+  const whenDrawn = scatterplot.draw([[-1, 1], [0, 0], [1, -1]]);
+
+  await expect(whenDrawn).rejects.toThrow(ERROR_INSTANCE_IS_DESTROYED);
 });
 
 test('select()', async () => {
