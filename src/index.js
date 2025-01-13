@@ -2270,7 +2270,7 @@ const createScatterplot = (
     const filteredSelectedPoints = [];
 
     for (const pointIdx of pointIdxsArray) {
-      if (pointIdx < 0 || pointIdx >= numPoints) {
+      if (!Number.isFinite(pointIdx) || pointIdx < 0 || pointIdx >= numPoints) {
         // Skip invalid filtered points
         continue;
       }
@@ -4322,7 +4322,8 @@ const createScatterplot = (
         });
       }
 
-      if (isPointsDrawn) {
+      const numPoints = getNormalNumPoints();
+      if (isPointsDrawn && numPoints > 0) {
         drawPointBodies();
       }
 
