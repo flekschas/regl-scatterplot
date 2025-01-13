@@ -823,6 +823,8 @@ can be read and written via [`scatterplot.get()`](#scatterplot.get) and [`scatte
 | annotationHVLineLimit                 | number                                       | `1000`                              | the extent of horizontal or vertical lines                      | `true`   | `false`     |
 | antiAliasing                          | number                                       | `0.5`                               | higher values result in more blurry points                      | `true`   | `false`     |
 | pixelAligned                          | number                                       | `false`                             | if true, points are aligned with the pixel grid                 | `true`   | `false`     |
+| renderPointsAsSquares                 | boolean                                      | `false`                             | true of `performanceMode` is true. can only be set on init!     | `true`   | `false`     |
+| disableAlphaBlending                  | boolean                                      | `false`                             | true of `performanceMode` is true. can only be set on init!     | `true`   | `false`     |
 
 <a name="property-notes" href="#property-notes">#</a> <b>Notes:</b>
 
@@ -863,10 +865,12 @@ can be read and written via [`scatterplot.get()`](#scatterplot.get) and [`scatte
 - If you need to draw more than 2 million points, you might want to set
   `performanceMode` to `true` during the initialization to boost the
   performance. In performance mode, points will be drawn as simple squares and
-  color blending is disabled. This should allow you to draw up to 20 million
+  alpha blending is disabled. This should allow you to draw up to 20 million
   points (or more depending on your hardware). Make sure to reduce the
   `pointSize` as you render more and more points (e.g., `0.25` for 20 million
-  works for me) to ensure good performance.
+  works for me) to ensure good performance. You can also enable squared points
+  and disable alpha blending individually via `renderPointsAsSquares` and
+  `disableAlphaBlending` respectively.
 
 <a name="property-by" href="#property-by">#</a> <b>colorBy, opacityBy, sizeBy:</b>
 

@@ -210,6 +210,8 @@ export type Properties = {
   lassoLongPressIndicatorParentElement: HTMLElement;
   camera: Camera2D;
   performanceMode: boolean;
+  renderPointsAsSquares: boolean;
+  disableAlphaBlending: boolean;
   opacityByDensityDebounceTime: number;
   spatialIndex: ArrayBuffer;
   spatialIndexUseWorker: undefined | boolean;
