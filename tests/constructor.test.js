@@ -11,19 +11,21 @@ import createScatterplot, {
 
 import {
   DEFAULT_CAMERA_IS_FIXED,
-  DEFAULT_COLOR_NORMAL,
   DEFAULT_COLOR_ACTIVE,
-  DEFAULT_COLOR_HOVER,
   DEFAULT_COLOR_BG,
+  DEFAULT_COLOR_HOVER,
+  DEFAULT_COLOR_NORMAL,
+  DEFAULT_GAMMA,
   DEFAULT_HEIGHT,
+  DEFAULT_LASSO_BRUSH_SIZE,
+  DEFAULT_LASSO_TYPE,
+  DEFAULT_OPACITY,
+  DEFAULT_OPACITY_INACTIVE_MAX,
+  DEFAULT_OPACITY_INACTIVE_SCALE,
   DEFAULT_POINT_OUTLINE_WIDTH,
   DEFAULT_POINT_SIZE,
   DEFAULT_POINT_SIZE_SELECTED,
-  DEFAULT_OPACITY_INACTIVE_MAX,
-  DEFAULT_OPACITY_INACTIVE_SCALE,
   DEFAULT_WIDTH,
-  DEFAULT_GAMMA,
-  DEFAULT_OPACITY,
   IMAGE_LOAD_ERROR,
 } from '../src/constants';
 
@@ -75,6 +77,8 @@ test('createScatterplot()', () => {
   expect(scatterplot.get('width')).toBe(DEFAULT_WIDTH);
   expect(scatterplot.get('height')).toBe(DEFAULT_HEIGHT);
   expect(scatterplot.get('cameraIsFixed')).toBe(DEFAULT_CAMERA_IS_FIXED);
+  expect(scatterplot.get('lassoType')).toBe(DEFAULT_LASSO_TYPE);
+  expect(scatterplot.get('lassoBrushSize')).toBe(DEFAULT_LASSO_BRUSH_SIZE);
 
   scatterplot.destroy();
 });
