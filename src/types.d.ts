@@ -245,6 +245,7 @@ export interface ScatterplotMethodOptions {
   }>;
   select: Partial<{
     merge: boolean;
+    remove: boolean;
     preventEvent: boolean;
   }>;
   filter: Partial<{

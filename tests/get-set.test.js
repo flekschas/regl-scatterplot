@@ -738,7 +738,6 @@ test('set() after destroy', async () => {
   await expect(whenSet).rejects.toThrow(ERROR_INSTANCE_IS_DESTROYED);
 });
 
-
 test('get() and set() performance properties', async () => {
   const scatterplotA = createScatterplot({ canvas: createCanvas() });
 
@@ -790,4 +789,32 @@ test('get() and set() performance properties', async () => {
   expect(scatterplotD.get('disableAlphaBlending')).toBe(true);
 
   scatterplotD.destroy();
+});
+
+test('get() and set() lasso types', async () => {
+  const scatterplot = createScatterplot({
+    canvas: createCanvas(),
+    lassoType: 'rectangle',
+    lassoBrushSize: 32,
+  });
+
+  expect(scatterplot.get('lassoType')).toBe('rectangle');
+  expect(scatterplot.get('lassoBrushSize')).toBe(32);
+
+  scatterplot.set({ lassoType: 'brush', lassoBrushSize: 18 });
+
+  expect(scatterplot.get('lassoType')).toBe('brush');
+  expect(scatterplot.get('lassoBrushSize')).toBe(18);
+
+  scatterplot.set({ lassoType: 'freeform' });
+
+  expect(scatterplot.get('lassoType')).toBe('freeform');
+
+  scatterplot.set({ lassoType: 'rectangle' });
+
+  expect(scatterplot.get('lassoType')).toBe('rectangle');
+
+  scatterplot.set({ lassoType: 'invalid' });
+
+  expect(scatterplot.get('lassoType')).toBe('freeform');
 });

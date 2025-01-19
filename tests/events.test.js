@@ -351,8 +351,8 @@ test(
       lassoEndCoordinates = coordinates;
     });
 
-    const [lassoKey] = Object.entries(scatterplot.get('keyMap')).find(
-      (mapping) => mapping[1] === KEY_ACTION_LASSO
+    const [_, lassoKey] = Object.entries(scatterplot.get('keyMap')).find(
+      ([action]) => action === KEY_ACTION_LASSO
     );
 
     // Test multi selections via mousedown + mousemove
@@ -419,7 +419,7 @@ test('disable lasso selection', async () => {
   let lassoStartCount = 0;
   scatterplot.subscribe('lassoStart', () => ++lassoStartCount);
 
-  expect(Object.entries(scatterplot.get('keyMap')).length).toBe(0);
+  expect(Object.entries(scatterplot.get('actionKeyMap')).length).toBe(0);
 
   // Test multi selections via mousedown + mousemove
   canvas.dispatchEvent(
@@ -559,6 +559,129 @@ test('test lasso selection via the initiator', async () => {
   scatterplot.destroy();
 });
 
+test('test brush lasso selection', async () => {
+  const dim = 200;
+  const hdim = dim / 2;
+  const qdim = dim / 4;
+  const canvas = createCanvas(dim, dim);
+  const scatterplot = createScatterplot({
+    canvas,
+    width: dim,
+    height: dim,
+    lassoInitiator: true,
+    lassoType: 'brush',
+  });
+
+  await scatterplot.draw([
+    [0, 0],
+    [1, 1],
+    [1, -1],
+    [-1, -1],
+    [-1, 1],
+    [0, 0.5],
+    [0.5, 0],
+    [0, -0.5],
+    [-0.5, 0],
+  ]);
+
+  const lassoIniatorElement = scatterplot.get('lassoInitiatorElement');
+
+  let selectedPoints = [];
+  scatterplot.subscribe('select', ({ points: newSelectedPoints }) => {
+    selectedPoints = [...newSelectedPoints];
+  });
+
+  canvas.dispatchEvent(createMouseEvent('click', qdim, qdim));
+
+  // We need to wait for the click delay and some extra milliseconds for
+  // the circle to appear
+  await wait(SINGLE_CLICK_DELAY + 50);
+
+  lassoIniatorElement.dispatchEvent(
+    createMouseEvent('mousedown', qdim, qdim, { buttons: 1 })
+  );
+  await wait(0);
+
+  const mousePositions = [
+    [qdim, qdim],
+    [hdim + qdim, qdim],
+    [hdim + qdim, hdim + qdim],
+    [qdim, hdim + qdim],
+    [qdim, qdim],
+  ];
+
+  for (const mousePosition of mousePositions) {
+    window.dispatchEvent(createMouseEvent('mousemove', ...mousePosition));
+    await wait(DEFAULT_LASSO_MIN_DELAY + 5);
+  }
+
+  window.dispatchEvent(createMouseEvent('mouseup'));
+
+  await wait(0);
+
+  expect(selectedPoints).toEqual([5, 6, 7, 8]);
+
+  scatterplot.destroy();
+});
+
+test('test rectangle lasso selection', async () => {
+  const dim = 200;
+  const hdim = dim / 2;
+  const canvas = createCanvas(dim, dim);
+  const scatterplot = createScatterplot({
+    canvas,
+    width: dim,
+    height: dim,
+    lassoInitiator: true,
+    lassoType: 'rectangle',
+  });
+
+  await scatterplot.draw([
+    [0, 0],
+    [1, 1],
+    [1, -1],
+    [0, -1],
+    [-1, -1],
+    [-1, 1],
+  ]);
+
+  const lassoIniatorElement = scatterplot.get('lassoInitiatorElement');
+
+  let selectedPoints = [];
+  scatterplot.subscribe('select', ({ points: newSelectedPoints }) => {
+    selectedPoints = [...newSelectedPoints];
+  });
+
+  canvas.dispatchEvent(createMouseEvent('click', hdim - 10, hdim - 10));
+
+  // We need to wait for the click delay and some extra milliseconds for
+  // the circle to appear
+  await wait(SINGLE_CLICK_DELAY + 50);
+
+  lassoIniatorElement.dispatchEvent(
+    createMouseEvent('mousedown', hdim - 10, hdim - 10, { buttons: 1 })
+  );
+  await wait(0);
+
+  const mousePositions = [
+    [hdim - 10, hdim - 10],
+    [dim + 10, dim + 10],
+  ];
+
+  for (const mousePosition of mousePositions) {
+    window.dispatchEvent(createMouseEvent('mousemove', ...mousePosition));
+    await wait(DEFAULT_LASSO_MIN_DELAY + 5);
+  }
+
+  window.dispatchEvent(createMouseEvent('mouseup'));
+
+  await wait(0);
+
+  expect(selectedPoints).toEqual([0, 2, 3]);
+
+  scatterplot.destroy();
+});
+
 test('test rotation', async () => {
   const dim = 200;
   const hdim = dim / 2;
@@ -567,6 +690,7 @@ test('test rotation', async () => {
     canvas,
     width: dim,
     height: dim,
+    // keyMap: { alt: 'rotate', shift: 'lasso', cmd: 'merge' }
   });
 
   await scatterplot.draw([[0, 0]]);
@@ -580,8 +704,8 @@ test('test rotation', async () => {
   };
   scatterplot.subscribe('view', viewHandler);
 
-  let [rotateKey] = Object.entries(scatterplot.get('keyMap')).find(
-    (mapping) => mapping[1] === KEY_ACTION_ROTATE
+  let [_, rotateKey] = Object.entries(scatterplot.get('actionKeyMap')).find(
+    ([action]) => action === KEY_ACTION_ROTATE
   );
 
   // Test rotation via keydown + mousedown + mousemove + keydown

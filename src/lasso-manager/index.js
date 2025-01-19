@@ -1,6 +1,7 @@
 import {
   assign,
   identity,
+  l2Norm,
   l2PointDist,
   nextAnimationFrame,
   pipe,
@@ -10,9 +11,11 @@ import {
 } from '@flekschas/utils';
 
 import {
+  DEFAULT_BRUSH_SIZE,
   DEFAULT_LASSO_MIN_DELAY,
   DEFAULT_LASSO_MIN_DIST,
   DEFAULT_LASSO_START_INITIATOR_SHOW,
+  DEFAULT_LASSO_TYPE,
   LASSO_HIDE_START_INITIATOR_TIME,
   LASSO_SHOW_START_INITIATOR_TIME,
 } from './constants.js';
@@ -104,6 +107,8 @@ export const createLasso = (
     minDelay: initialMinDelay = DEFAULT_LASSO_MIN_DELAY,
     minDist: initialMinDist = DEFAULT_LASSO_MIN_DIST,
     pointNorm: initialPointNorm = identity,
+    type: initialType = DEFAULT_LASSO_TYPE,
+    brushSize: initialBrushSize = DEFAULT_BRUSH_SIZE,
   } = {},
 ) => {
   let enableInitiator = initialenableInitiator;
@@ -118,6 +123,9 @@ export const createLasso = (
   let minDist = initialMinDist;
 
   let pointNorm = initialPointNorm;
+
+  let type = initialType;
+  let brushSize = initialBrushSize;
 
   const initiator = document.createElement('div');
   const initiatorId =
@@ -147,7 +155,9 @@ export const createLasso = (
   let isLasso = false;
   let lassoPos = [];
   let lassoPosFlat = [];
-  let lassoPrevMousePos;
+  let lassoBrushCenterPos = [];
+  let lassoBrushNormals = [];
+  let prevMousePos;
   let longPressIsStarting = false;
 
   let longPressMainInAnimationRuleIndex = null;
@@ -435,20 +445,123 @@ export const createLasso = (
     onDraw(lassoPos, lassoPosFlat);
   };
 
+  const extendFreeform = (point) => {
+    lassoPos.push(point);
+    lassoPosFlat.push(point[0], point[1]);
+  };
+
+  const extendRectangle = (point) => {
+    const [x, y] = point;
+    const [startX, startY] = lassoPos[0];
+
+    lassoPos[1] = [x, startY];
+    lassoPos[2] = [x, y];
+    lassoPos[3] = [startX, y];
+    lassoPos[4] = [startX, startY];
+
+    lassoPosFlat[2] = x;
+    lassoPosFlat[3] = startY;
+    lassoPosFlat[4] = x;
+    lassoPosFlat[5] = y;
+    lassoPosFlat[6] = startX;
+    lassoPosFlat[7] = y;
+    lassoPosFlat[8] = startX;
+    lassoPosFlat[9] = startY;
+  };
+
+  const startBrush = (point) => {
+    lassoBrushCenterPos.push(point);
+  };
+
+  const getNormalizedBrushSize = () =>
+    Math.abs(pointNorm([0, 0])[0] - pointNorm([brushSize / 2, 0])[0]);
+
+  const getBrushNormal = (point1, point2, w) => {
+    const [x1, y1] = point1;
+    const [x2, y2] = point2;
+
+    const dx = x1 - x2;
+    const dy = y1 - y2;
+    const dn = l2Norm([dx, dy]);
+
+    return [(+dy / dn) * w, (-dx / dn) * w];
+  };
+
+  const extendBrush = (point) => {
+    const prevPoint = lassoBrushCenterPos.at(-1);
+
+    const width = getNormalizedBrushSize();
+    let [nx, ny] = getBrushNormal(point, prevPoint, width);
+
+    const N = lassoBrushCenterPos.length;
+
+    if (N === 1) {
+      // In this special case, we have to add the initial two points upon and
+      // addition of the second point because when the first brush point was set
+      // the direction is undefined.
+      const pl = [prevPoint[0] + nx, prevPoint[1] + ny];
+      const pr = [prevPoint[0] - nx, prevPoint[1] - ny];
+
+      lassoPos.push(pl, pr);
+      lassoPosFlat.push(pl[0], pl[1], pr[0], pr[1]);
+      lassoBrushNormals.push([nx, ny]);
+    } else {
+      // In this case, we have to adjust the previous normal to create a proper
+      // line join by taking the middle between the current and previous normal.
+      const prevPrevPoint = lassoBrushCenterPos.at(-2);
+      const [pnx, pny] = lassoBrushNormals.at(-1);
+
+      // Smoothing the current normal
+      const d = l2PointDist(point[0], point[1], prevPoint[0], prevPoint[1]);
+      const pd = l2PointDist(
+        prevPoint[0],
+        prevPoint[1],
+        prevPrevPoint[0],
+        prevPrevPoint[1],
+      );
+      const easing = Math.max(0, Math.min(1, 2 / 3 / (pd / d)));
+      nx = easing * nx + (1 - easing) * pnx;
+      ny = easing * ny + (1 - easing) * pny;
+
+      const pnx2 = (nx + pnx) / 2;
+      const pny2 = (ny + pny) / 2;
+
+      const pl = [prevPoint[0] + pnx2, prevPoint[1] + pny2];
+      const pr = [prevPoint[0] - pnx2, prevPoint[1] - pny2];
+
+      // We're going to replace the previous left and right points
+      lassoPos.splice(N - 1, 2, pl, pr);
+      lassoPosFlat.splice(2 * (N - 1), 4, pl[0], pl[1], pr[0], pr[1]);
+      lassoBrushNormals.splice(N, 1, [pnx2, pny2]);
+    }
+
+    const pl = [point[0] + nx, point[1] + ny];
+    const pr = [point[0] - nx, point[1] - ny];
+
+    lassoPos.splice(N, 0, pl, pr);
+    lassoPosFlat.splice(2 * N, 0, pl[0], pl[1], pr[0], pr[1]);
+
+    lassoBrushCenterPos.push(point);
+    lassoBrushNormals.push([nx, ny]);
+  };
+
+  let extendLasso = extendFreeform;
+  let startLasso = extendFreeform;
+
   const extend = (currMousePos) => {
-    if (lassoPrevMousePos) {
+    if (prevMousePos) {
       const d = l2PointDist(
         currMousePos[0],
         currMousePos[1],
-        lassoPrevMousePos[0],
-        lassoPrevMousePos[1],
+        prevMousePos[0],
+        prevMousePos[1],
       );
 
-      if (d > DEFAULT_LASSO_MIN_DIST) {
-        lassoPrevMousePos = currMousePos;
-        const point = pointNorm(currMousePos);
-        lassoPos.push(point);
-        lassoPosFlat.push(point[0], point[1]);
+      if (d > minDist) {
+        prevMousePos = currMousePos;
+
+        extendLasso(pointNorm(currMousePos));
+
         if (lassoPos.length > 1) {
           draw();
         }
@@ -458,18 +571,13 @@ export const createLasso = (
         isLasso = true;
         onStart();
       }
-      lassoPrevMousePos = currMousePos;
+      prevMousePos = currMousePos;
       const point = pointNorm(currMousePos);
-      lassoPos = [point];
-      lassoPosFlat = [point[0], point[1]];
+      startLasso(point);
     }
   };
 
-  const extendDb = throttleAndDebounce(
-    extend,
-    DEFAULT_LASSO_MIN_DELAY,
-    DEFAULT_LASSO_MIN_DELAY,
-  );
+  const extendDb = throttleAndDebounce(extend, minDelay, minDelay);
 
   const extendPublic = (event, debounced) => {
     const mousePosition = getMousePosition(event);
@@ -482,7 +590,9 @@ export const createLasso = (
   const clear = () => {
     lassoPos = [];
     lassoPosFlat = [];
-    lassoPrevMousePos = undefined;
+    lassoBrushCenterPos = [];
+    lassoBrushNormals = [];
+    prevMousePos = undefined;
     draw();
   };
 
@@ -501,7 +611,7 @@ export const createLasso = (
     hideInitiator();
   };
 
-  const end = ({ merge = false } = {}) => {
+  const end = ({ merge = false, remove = false } = {}) => {
     isLasso = false;
 
     const currLassoPos = [...lassoPos];
@@ -513,10 +623,66 @@ export const createLasso = (
 
     // When `currLassoPos` is empty the user didn't actually lasso
     if (currLassoPos.length > 0) {
-      onEnd(currLassoPos, currLassoPosFlat, { merge });
+      onEnd(currLassoPos, currLassoPosFlat, { merge, remove });
     }
 
     return currLassoPos;
+  };
+
+  const setExtendLasso = (newType) => {
+    switch (newType) {
+      case 'rectangle': {
+        type = newType;
+        extendLasso = extendRectangle;
+        // This is on purpose. The start of a rectangle & freeform are the same
+        startLasso = extendFreeform;
+        break;
+      }
+
+      case 'brush': {
+        type = newType;
+        extendLasso = extendBrush;
+        startLasso = startBrush;
+        break;
+      }
+
+      default: {
+        type = 'freeform';
+        extendLasso = extendFreeform;
+        startLasso = extendFreeform;
+        break;
+      }
+    }
+  };
+
+  const get = (property) => {
+    if (property === 'onDraw') {
+      return onDraw;
+    }
+    if (property === 'onStart') {
+      return onStart;
+    }
+    if (property === 'onEnd') {
+      return onEnd;
+    }
+    if (property === 'enableInitiator') {
+      return enableInitiator;
+    }
+    if (property === 'minDelay') {
+      return minDelay;
+    }
+    if (property === 'minDist') {
+      return minDist;
+    }
+    if (property === 'pointNorm') {
+      return pointNorm;
+    }
+    if (property === 'type') {
+      return type;
+    }
+    if (property === 'brushSize') {
+      return brushSize;
+    }
   };
 
   const set = ({
@@ -529,6 +695,8 @@ export const createLasso = (
     minDelay: newMinDelay = null,
     minDist: newMinDist = null,
     pointNorm: newPointNorm = null,
+    type: newType = null,
+    brushSize: newBrushSize = null,
   } = {}) => {
     onDraw = ifNotNull(newOnDraw, onDraw);
     onStart = ifNotNull(newOnStart, onStart);
@@ -537,6 +705,7 @@ export const createLasso = (
     minDelay = ifNotNull(newMinDelay, minDelay);
     minDist = ifNotNull(newMinDist, minDist);
     pointNorm = ifNotNull(newPointNorm, pointNorm);
+    brushSize = ifNotNull(newBrushSize, brushSize);
 
     if (
       newInitiatorParentElement !== null &&
@@ -564,6 +733,10 @@ export const createLasso = (
       initiator.removeEventListener('mousedown', initiatorMouseDownHandler);
       initiator.removeEventListener('mouseleave', initiatorMouseLeaveHandler);
     }
+
+    if (newType !== null) {
+      setExtendLasso(newType);
+    }
   };
 
   const destroy = () => {
@@ -581,6 +754,7 @@ export const createLasso = (
       destroy,
       end,
       extend: extendPublic,
+      get,
       set,
       showInitiator,
       hideInitiator,
@@ -597,6 +771,8 @@ export const createLasso = (
     onEnd,
     enableInitiator,
     initiatorParentElement,
+    type,
+    brushSize,
   });
 
   return pipe(

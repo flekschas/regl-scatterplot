@@ -1,6 +1,7 @@
 /* eslint no-console: 0 */
 import { tableFromIPC } from 'apache-arrow';
 import createScatterplot, { createRenderer } from '../src';
+import createMenu from './menu';
 import { showModal, closeModal } from './utils';
 
 /**
@@ -10,7 +11,6 @@ const NUM_COLUMNS = 2;
 const NUM_ROWS = 2;
 const POINT_SIZE = 3;
 const OPACITY = 0.66;
-const LASSO_INITIATOR = true;
 const FASHION_MNIST_CLASS_LABELS = [
   'T-shirt/top',
   'Trouser',
@@ -136,22 +136,6 @@ for (let i = 0; i < NUM_COLUMNS * NUM_ROWS - 1; i++) {
 }
 
 /**
- * Getting references for the menu UI elements
- */
-const numPointsEl = document.querySelector('#num-points');
-const numPointsValEl = document.querySelector('#num-points-value');
-const pointSizeEl = document.querySelector('#point-size');
-const pointSizeValEl = document.querySelector('#point-size-value');
-const opacityEl = document.querySelector('#opacity');
-const opacityValEl = document.querySelector('#opacity-value');
-const clickLassoInitiatorEl = document.querySelector('#click-lasso-initiator');
-const resetEl = document.querySelector('#reset');
-const exampleEl = document.querySelector('#example-multiple-instances');
-
-exampleEl.setAttribute('class', 'active');
-exampleEl.removeAttribute('href');
-
-/**
  * Create a reusable renderer
  */
 const renderer = createRenderer();
@@ -179,52 +163,7 @@ const scatterplots = canvases.map((canvas) =>
 
 console.log(`Scatterplot v${scatterplots[0].get('version')}`);
 
-/**
- * Disable num points setter because we work with fixed data
- */
-numPointsEl.disabled = true;
-
-/**
- * Link menu UI elements to the scatter plot instances
- */
-const setPointSize = (newPointSize) => {
-  pointSizeEl.value = newPointSize;
-  pointSizeValEl.innerHTML = newPointSize;
-  scatterplots.forEach((sp) => sp.set({ pointSize: newPointSize }));
-};
-
-const pointSizeInputHandler = (event) => setPointSize(+event.target.value);
-pointSizeEl.addEventListener('input', pointSizeInputHandler);
-
-setPointSize(scatterplots[0].get('pointSize'));
-
-const setOpacity = (newOpacity) => {
-  opacityEl.value = newOpacity;
-  opacityValEl.innerHTML = newOpacity;
-  scatterplots.forEach((sp) => sp.set({ opacity: newOpacity }));
-};
-
-const opacityInputHandler = (event) => setOpacity(+event.target.value);
-opacityEl.addEventListener('input', opacityInputHandler);
-
-setOpacity(scatterplots[0].get('opacity'));
-
-const clickLassoInitiatorChangeHandler = (event) => {
-  scatterplots.forEach((sp) =>
-    sp.set({ lassoInitiator: event.target.checked })
-  );
-};
-
-clickLassoInitiatorEl.addEventListener(
-  'change',
-  clickLassoInitiatorChangeHandler
-);
-clickLassoInitiatorEl.checked = scatterplots[0].get('lassoInitiator');
-
-const resetClickHandler = () => {
-  scatterplots.forEach((sp) => sp.reset());
-};
-resetEl.addEventListener('click', resetClickHandler);
+createMenu({ scatterplot: scatterplots });
 
 /**
  * Link scatter plots
@@ -277,7 +216,6 @@ whenData
     const columnValues = table.data[0].children.map((data) => data.values);
     const classIds = columnValues[columnValues.length - 1];
 
-    numPointsValEl.innerHTML = table.numRows;
     scatterplots.forEach((sp, i) => {
       sp.draw({
         x: columnValues[i * 2],

@@ -38,6 +38,7 @@
   "dependencies": {
     "@flekschas/utils": "^0.32.2",
     "dom-2d-camera": "^2.2.6",
+    "earcut": "^3.0.1",
     "gl-matrix": "~3.4.3",
     "pub-sub-es": "~3.0.0",
     "regl": "~2.1.1",
@@ -58,6 +59,7 @@
     "@rollup/plugin-json": "^6.0.0",
     "@rollup/plugin-node-resolve": "^15.3.0",
     "@rollup/plugin-terser": "^0.4.3",
+    "@tweakpane/core": "^2.0.5",
     "@types/d3-scale": "^4.0.6",
     "@types/node": "^22.9.3",
     "@vitest/browser": "^2.1.5",
@@ -74,6 +76,7 @@
     "playwright": "^1.49.0",
     "rollup": "^4.27.4",
     "rollup-plugin-filesize": "^10.0.0",
+    "tweakpane": "^4.0.5",
     "typescript": "~5.7.2",
     "vite": "^5.4.11",
     "vite-plugin-virtual-html-template": "^1.1.0",

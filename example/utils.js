@@ -20,7 +20,7 @@ export function saveAsPng(scatterplot) {
   const imageObject = new Image();
   imageObject.onload = () => {
     scatterplot.get('canvas').toBlob((blob) => {
-      downloadBlob(blob, 'scatter.png');
+      downloadBlob(blob, 'regl-scatterplot.png');
     });
   };
   imageObject.src = scatterplot.get('canvas').toDataURL();

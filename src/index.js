@@ -7,6 +7,7 @@ import {
   unionIntegers,
 } from '@flekschas/utils';
 import createDom2dCamera from 'dom-2d-camera';
+import earcut from 'earcut';
 import { mat4, vec4 } from 'gl-matrix';
 import createPubSub from 'pub-sub-es';
 import createLine from 'regl-line';
@@ -34,6 +35,7 @@ import {
   COLOR_NORMAL_IDX,
   COLOR_NUM_STATES,
   CONTINUOUS,
+  DEFAULT_ACTION_KEY_MAP,
   DEFAULT_ANNOTATION_HVLINE_LIMIT,
   DEFAULT_ANNOTATION_LINE_COLOR,
   DEFAULT_ANNOTATION_LINE_WIDTH,
@@ -52,7 +54,7 @@ import {
   DEFAULT_EASING,
   DEFAULT_HEIGHT,
   DEFAULT_IMAGE_LOAD_TIMEOUT,
-  DEFAULT_KEY_MAP,
+  DEFAULT_LASSO_BRUSH_SIZE,
   DEFAULT_LASSO_CLEAR_EVENT,
   DEFAULT_LASSO_COLOR,
   DEFAULT_LASSO_INITIATOR,
@@ -64,6 +66,7 @@ import {
   DEFAULT_LASSO_MIN_DELAY,
   DEFAULT_LASSO_MIN_DIST,
   DEFAULT_LASSO_ON_LONG_PRESS,
+  DEFAULT_LASSO_TYPE,
   DEFAULT_MOUSE_MODE,
   DEFAULT_OPACITY_BY,
   DEFAULT_OPACITY_BY_DENSITY_DEBOUNCE_TIME,
@@ -107,12 +110,14 @@ import {
   KEY_ACTIONS,
   KEY_ACTION_LASSO,
   KEY_ACTION_MERGE,
+  KEY_ACTION_REMOVE,
   KEY_ACTION_ROTATE,
   KEY_ALT,
   KEY_CMD,
   KEY_CTRL,
   KEY_META,
   KEY_SHIFT,
+  LASSO_BRUSH_MIN_MIN_DIST,
   LASSO_CLEAR_EVENTS,
   LASSO_CLEAR_ON_DESELECT,
   LASSO_CLEAR_ON_END,
@@ -123,6 +128,7 @@ import {
   MOUSE_MODE_PANZOOM,
   MOUSE_MODE_ROTATE,
   SINGLE_CLICK_DELAY,
+  SKIP_DEPRECATION_VALUE_TRANSLATION,
   VALUE_ZW_DATA_TYPES,
   W_NAMES,
   Z_NAMES,
@@ -145,7 +151,6 @@ import {
   isPolygon,
   isPositiveNumber,
   isRect,
-  isSameElements,
   isSameRgbas,
   isStrictlyPositiveNumber,
   isString,
@@ -162,8 +167,21 @@ import {
 import { version } from '../package.json';
 
 const deprecations = {
-  showRecticle: 'showReticle',
-  recticleColor: 'reticleColor',
+  showRecticle: {
+    replacement: 'showReticle',
+    removalVersion: '2',
+    translation: identity,
+  },
+  recticleColor: {
+    replacement: 'reticleColor',
+    removalVersion: '2',
+    translation: identity,
+  },
+  keyMap: {
+    replacement: 'actionKeyMap',
+    removalVersion: '2',
+    translation: flipObj,
+  },
 };
 
 const checkDeprecations = (properties) => {
@@ -172,13 +190,19 @@ const checkDeprecations = (properties) => {
   );
 
   for (const prop of deprecatedProps) {
+    const { replacement, removalVersion, translation } = deprecations[prop];
     // biome-ignore lint/suspicious/noConsole: This is a legitimately useful warning
     console.warn(
-      `regl-scatterplot: the "${prop}" property is deprecated. Please use "${deprecations[prop]}" instead.`,
+      `regl-scatterplot: the "${prop}" property is deprecated and will be removed in v${removalVersion}. Please use "${replacement}" instead.`,
     );
-    properties[deprecations[prop]] = properties[prop];
+    properties[deprecations[prop].replacement] =
+      properties[prop] !== SKIP_DEPRECATION_VALUE_TRANSLATION
+        ? translation(properties[prop])
+        : properties[prop];
     delete properties[prop];
   }
+
+  return properties;
 };
 
 const getEncodingType = (
@@ -261,7 +285,9 @@ const createScatterplot = (
     lassoLongPressAfterEffectTime = DEFAULT_LASSO_LONG_PRESS_AFTER_EFFECT_TIME,
     lassoLongPressEffectDelay = DEFAULT_LASSO_LONG_PRESS_EFFECT_DELAY,
     lassoLongPressRevertEffectTime = DEFAULT_LASSO_LONG_PRESS_REVERT_EFFECT_TIME,
-    keyMap = DEFAULT_KEY_MAP,
+    lassoType = DEFAULT_LASSO_TYPE,
+    lassoBrushSize = DEFAULT_LASSO_BRUSH_SIZE,
+    actionKeyMap = DEFAULT_ACTION_KEY_MAP,
     mouseMode = DEFAULT_MOUSE_MODE,
     showReticle = DEFAULT_SHOW_RETICLE,
     reticleColor = DEFAULT_RETICLE_COLOR,
@@ -371,7 +397,6 @@ const createScatterplot = (
   // biome-ignore lint/style/useNamingConvention: VLine stands for VerticalLine
   let reticleVLine;
   let computedPointSizeMouseDetection;
-  let keyActionMap = flipObj(keyMap);
   let lassoInitiatorTimeout;
   let topRightNdc;
   let bottomLeftNdc;
@@ -765,7 +790,10 @@ const createScatterplot = (
    * @param {number | number[]} pointIdxs
    * @param {import('./types').ScatterplotMethodOptions['select']}
    */
-  const select = (pointIdxs, { merge = false, preventEvent = false } = {}) => {
+  const select = (
+    pointIdxs,
+    { merge = false, remove = false, preventEvent = false } = {},
+  ) => {
     const newSelectedPoints = Array.isArray(pointIdxs)
       ? pointIdxs
       : [pointIdxs];
@@ -773,6 +801,15 @@ const createScatterplot = (
 
     if (merge) {
       selectedPoints = unionIntegers(selectedPoints, newSelectedPoints);
+      if (currSelectedPoints.length === selectedPoints.length) {
+        draw = true;
+        return;
+      }
+    } else if (remove) {
+      const newSelectedPointsSet = new Set(newSelectedPoints);
+      selectedPoints = selectedPoints.filter(
+        (point) => !newSelectedPointsSet.has(point),
+      );
       if (currSelectedPoints.length === selectedPoints.length) {
         draw = true;
         return;
@@ -906,11 +943,15 @@ const createScatterplot = (
     pubSub.publish('lassoStart');
   };
 
-  const lassoEnd = (lassoPoints, lassoPointsFlat, { merge = false } = {}) => {
+  const lassoEnd = (
+    lassoPoints,
+    lassoPointsFlat,
+    { merge = false, remove = false } = {},
+  ) => {
     camera.config({ isFixed: cameraIsFixed });
     lassoPointsCurr = [...lassoPoints];
     const pointsInLasso = findPointsInLasso(lassoPointsFlat);
-    select(pointsInLasso, { merge });
+    select(pointsInLasso, { merge, remove });
 
     pubSub.publish('lassoEnd', {
       coordinates: lassoPointsCurr,
@@ -928,12 +969,18 @@ const createScatterplot = (
     initiatorParentElement: lassoInitiatorParentElement,
     longPressIndicatorParentElement: lassoLongPressIndicatorParentElement,
     pointNorm: ([x, y]) => getScatterGlPos(getNdcX(x), getNdcY(y)),
+    minDelay: lassoMinDelay,
+    minDist:
+      lassoType === 'brush'
+        ? Math.max(LASSO_BRUSH_MIN_MIN_DIST, lassoMinDist)
+        : lassoMinDist,
+    type: lassoType,
   });
 
   const checkLassoMode = () => mouseMode === MOUSE_MODE_LASSO;
 
   const checkModKey = (event, action) => {
-    switch (keyActionMap[action]) {
+    switch (actionKeyMap[action]) {
       case KEY_ALT:
         return event.altKey;
 
@@ -999,6 +1046,7 @@ const createScatterplot = (
       lassoActive = false;
       lassoManager.end({
         merge: checkModKey(event, KEY_ACTION_MERGE),
+        remove: checkModKey(event, KEY_ACTION_REMOVE),
       });
     }
 
@@ -1039,6 +1087,7 @@ const createScatterplot = (
         }
         select([clostestPoint], {
           merge: checkModKey(event, KEY_ACTION_MERGE),
+          remove: checkModKey(event, KEY_ACTION_REMOVE),
         });
       } else if (!lassoInitiatorTimeout) {
         // We'll also wait to make sure the user didn't double click
@@ -1368,7 +1417,10 @@ const createScatterplot = (
       pointSize = [+newPointSize];
     }
 
-    if (oldPointSize === pointSize || isSameElements(oldPointSize, pointSize)) {
+    if (
+      oldPointSize === pointSize ||
+      hasSameElements(oldPointSize, pointSize)
+    ) {
       // We don't need to update the encoding texture so we return early
       return;
     }
@@ -1435,7 +1487,7 @@ const createScatterplot = (
       opacity = [+newOpacity];
     }
 
-    if (oldOpacity === opacity || isSameElements(oldOpacity, opacity)) {
+    if (oldOpacity === opacity || hasSameElements(oldOpacity, opacity)) {
       // We don't need to update the encoding texture so we return early
       return;
     }
@@ -1777,7 +1829,7 @@ const createScatterplot = (
     count: 6,
   });
 
-  const drawPolygon2d = renderer.regl({
+  const drawLassoPolygon = renderer.regl({
     vert: `
       precision mediump float;
       uniform mat4 modelViewProjection;
@@ -1816,12 +1868,7 @@ const createScatterplot = (
       color: () => lassoColor,
     },
 
-    elements: () =>
-      Array.from({ length: lassoPointsCurr.length - 2 }, (_, i) => [
-        0,
-        i + 1,
-        i + 2,
-      ]),
+    elements: () => earcut(lasso.getPoints()),
   });
 
   const drawReticle = () => {
@@ -3078,25 +3125,51 @@ const createScatterplot = (
     lassoLongPressRevertEffectTime = Number(newTime);
   };
 
-  const setKeyMap = (newKeyMap) => {
-    keyMap = Object.entries(newKeyMap).reduce((map, [key, value]) => {
-      if (KEYS.includes(key) && KEY_ACTIONS.includes(value)) {
-        map[key] = value;
-      }
-      return map;
-    }, {});
-    keyActionMap = flipObj(keyMap);
+  const setLassoType = (newType) => {
+    if (newType === 'brush') {
+      lassoManager.set({
+        type: newType,
+        minDist: Math.max(LASSO_BRUSH_MIN_MIN_DIST, lassoMinDist),
+      });
+    } else {
+      lassoManager.set({
+        type: newType,
+        minDist: lassoMinDist,
+      });
+    }
+    lassoType = lassoManager.get('type');
+  };
 
-    if (keyActionMap[KEY_ACTION_ROTATE]) {
+  const setLassoBrushSize = (newBrushSize) => {
+    lassoBrushSize = Number(newBrushSize) || lassoBrushSize;
+    lassoManager.set({ brushSize: lassoBrushSize });
+  };
+
+  const updateActionKeyMapChange = () => {
+    if (actionKeyMap[KEY_ACTION_ROTATE]) {
       camera.config({
         isRotate: true,
-        mouseDownMoveModKey: keyActionMap[KEY_ACTION_ROTATE],
+        mouseDownMoveModKey: actionKeyMap[KEY_ACTION_ROTATE],
       });
     } else {
       camera.config({
         isRotate: false,
       });
     }
+  };
+
+  const setActionKeyMap = (newActionKeyMap) => {
+    actionKeyMap = Object.entries(newActionKeyMap).reduce(
+      (map, [action, key]) => {
+        if (KEYS.includes(key) && KEY_ACTIONS.includes(action)) {
+          map[action] = key;
+        }
+        return map;
+      },
+      {},
+    );
+
+    updateActionKeyMapChange();
   };
 
   const setMouseMode = (newMouseMode) => {
@@ -3332,8 +3405,12 @@ const createScatterplot = (
   };
 
   /** @type {<Key extends keyof import('./types').Properties>(property: Key) => import('./types').Properties[Key] } */
-  const get = (property) => {
-    checkDeprecations({ property: true });
+  const get = (prop) => {
+    const [property] = Object.keys(
+      checkDeprecations({
+        [prop]: SKIP_DEPRECATION_VALUE_TRANSLATION,
+      }),
+    );
 
     if (property === 'aspectRatio') {
       return dataAspectRatio;
@@ -3435,8 +3512,16 @@ const createScatterplot = (
       return lassoLongPressIndicatorParentElement;
     }
 
-    if (property === 'keyMap') {
-      return { ...keyMap };
+    if (property === 'lassoOnLongPress') {
+      return lassoOnLongPress;
+    }
+
+    if (property === 'lassoType') {
+      return lassoType;
+    }
+
+    if (property === 'lassoBrushSize') {
+      return lassoBrushSize;
     }
 
     if (property === 'mouseMode') {
@@ -3446,6 +3531,7 @@ const createScatterplot = (
     if (property === 'opacity') {
       return opacity.length === 1 ? opacity[0] : opacity;
     }
+
     if (property === 'opacityBy') {
       return opacityBy;
     }
@@ -3686,6 +3772,10 @@ const createScatterplot = (
       return pixelAligned;
     }
 
+    if (property === 'actionKeyMap') {
+      return { ...actionKeyMap };
+    }
+
     return undefined;
   };
 
@@ -3884,8 +3974,16 @@ const createScatterplot = (
       );
     }
 
-    if (properties.keyMap !== undefined) {
-      setKeyMap(properties.keyMap);
+    if (properties.lassoType !== undefined) {
+      setLassoType(properties.lassoType);
+    }
+
+    if (properties.lassoBrushSize !== undefined) {
+      setLassoBrushSize(properties.lassoBrushSize);
+    }
+
+    if (properties.actionKeyMap !== undefined) {
+      setActionKeyMap(properties.actionKeyMap);
     }
 
     if (properties.mouseMode !== undefined) {
@@ -4265,7 +4363,7 @@ const createScatterplot = (
       backgroundImage,
       width,
       height,
-      keyMap,
+      actionKeyMap,
     });
     updateLassoInitiatorStyle();
     updateLassoLongPressIndicatorStyle();
@@ -4325,7 +4423,7 @@ const createScatterplot = (
       }
 
       if (lassoPointsCurr.length > 2) {
-        drawPolygon2d();
+        drawLassoPolygon();
       }
 
       // The draw order of the following calls is important!

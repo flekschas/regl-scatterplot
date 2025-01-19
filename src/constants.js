@@ -57,6 +57,7 @@ export const VALUE_ZW_DATA_TYPES = [CONTINUOUS, CATEGORICAL];
 export const LASSO_CLEAR_ON_DESELECT = 'deselect';
 export const LASSO_CLEAR_ON_END = 'lassoEnd';
 export const LASSO_CLEAR_EVENTS = [LASSO_CLEAR_ON_DESELECT, LASSO_CLEAR_ON_END];
+export const LASSO_BRUSH_MIN_MIN_DIST = 3;
 export const DEFAULT_LASSO_COLOR = [0, 0.666666667, 1, 1];
 export const DEFAULT_LASSO_LINE_WIDTH = 2;
 export const DEFAULT_LASSO_INITIATOR = false;
@@ -69,15 +70,18 @@ export const DEFAULT_LASSO_LONG_PRESS_TIME = 750;
 export const DEFAULT_LASSO_LONG_PRESS_AFTER_EFFECT_TIME = 500;
 export const DEFAULT_LASSO_LONG_PRESS_EFFECT_DELAY = 100;
 export const DEFAULT_LASSO_LONG_PRESS_REVERT_EFFECT_TIME = 250;
+export const DEFAULT_LASSO_BRUSH_SIZE = 24;
 
 // Key mapping
 export const KEY_ACTION_LASSO = 'lasso';
 export const KEY_ACTION_ROTATE = 'rotate';
 export const KEY_ACTION_MERGE = 'merge';
+export const KEY_ACTION_REMOVE = 'remove';
 export const KEY_ACTIONS = [
   KEY_ACTION_LASSO,
   KEY_ACTION_ROTATE,
   KEY_ACTION_MERGE,
+  KEY_ACTION_REMOVE,
 ];
 export const KEY_ALT = 'alt';
 export const KEY_CMD = 'cmd';
@@ -85,10 +89,11 @@ export const KEY_CTRL = 'ctrl';
 export const KEY_META = 'meta';
 export const KEY_SHIFT = 'shift';
 export const KEYS = [KEY_ALT, KEY_CMD, KEY_CTRL, KEY_META, KEY_SHIFT];
-export const DEFAULT_KEY_MAP = {
-  [KEY_ALT]: KEY_ACTION_ROTATE,
-  [KEY_SHIFT]: KEY_ACTION_LASSO,
-  [KEY_CMD]: KEY_ACTION_MERGE,
+export const DEFAULT_ACTION_KEY_MAP = {
+  [KEY_ACTION_REMOVE]: KEY_ALT,
+  [KEY_ACTION_ROTATE]: KEY_ALT,
+  [KEY_ACTION_LASSO]: KEY_SHIFT,
+  [KEY_ACTION_MERGE]: KEY_CMD,
 };
 
 // Default attribute
@@ -169,6 +174,10 @@ export const DEFAULT_SPATIAL_INDEX_USE_WORKER = undefined;
 export const DEFAULT_CAMERA_IS_FIXED = false;
 export const DEFAULT_ANTI_ALIASING = 0.5;
 export const DEFAULT_PIXEL_ALIGNED = false;
+export const DEFAULT_LASSO_TYPE = 'lasso';
+export const SKIP_DEPRECATION_VALUE_TRANSLATION = Symbol(
+  'SKIP_DEPRECATION_VALUE_TRANSLATION',
+);
 
 // Error messages
 export const ERROR_POINTS_NOT_DRAWN = 'Points have not been drawn';

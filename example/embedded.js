@@ -1,6 +1,5 @@
-/* eslint no-console: 0 */
-
 import createScatterplot from '../src';
+import createMenu from './menu';
 import { saveAsPng, checkSupport } from './utils';
 
 const canvas = document.querySelector('#canvas');
@@ -71,13 +70,15 @@ const generatePoints = (num) =>
     Math.random(), // value
   ]);
 
-const setNumPoint = (newNumPoints) => {
+const setNumPoints = (newNumPoints) => {
   numPoints = newNumPoints;
   numPointsEl.value = numPoints;
   numPointsValEl.innerHTML = numPoints;
   points = generatePoints(numPoints);
   scatterplot.draw(points);
 };
+
+createMenu({ scatterplot, setNumPoints });
 
 const numPointsInputHandler = (event) => {
   numPointsValEl.innerHTML = `${+event.target
@@ -86,7 +87,7 @@ const numPointsInputHandler = (event) => {
 
 numPointsEl.addEventListener('input', numPointsInputHandler);
 
-const numPointsChangeHandler = (event) => setNumPoint(+event.target.value);
+const numPointsChangeHandler = (event) => setNumPoints(+event.target.value);
 
 numPointsEl.addEventListener('change', numPointsChangeHandler);
 
@@ -132,4 +133,4 @@ resetEl.addEventListener('click', resetClickHandler);
 
 setPointSize(pointSize);
 setOpacity(opacity);
-setNumPoint(numPoints);
+setNumPoints(numPoints);

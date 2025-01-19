@@ -1,6 +1,6 @@
 import '@babel/polyfill';
 import { assert, expect, test } from 'vitest';
-import { nextAnimationFrame } from '@flekschas/utils';
+import { nextAnimationFrame, hasSameElements } from '@flekschas/utils';
 
 import createScatterplot from '../src';
 
@@ -11,12 +11,7 @@ import {
   ERROR_POINTS_NOT_DRAWN,
 } from '../src/constants';
 
-import {
-  createCanvas,
-  wait,
-  isSameElements,
-  getPixelSum,
-} from './utils';
+import { createCanvas, wait, getPixelSum } from './utils';
 
 const EPS = 1e-7;
 
@@ -69,7 +64,7 @@ test('draw() with preventFilterReset', async () => {
   await wait(0);
 
   expect(
-    isSameElements(scatterplot.get('filteredPoints'), filteredPoints)
+    hasSameElements(scatterplot.get('filteredPoints'), filteredPoints)
   ).toBe(true);
 
   let img = scatterplot.export();
@@ -91,7 +86,7 @@ test('draw() with preventFilterReset', async () => {
 
   // the filtered points should be the same as before
   expect(
-    isSameElements(scatterplot.get('filteredPoints'), filteredPoints)
+    hasSameElements(scatterplot.get('filteredPoints'), filteredPoints)
   ).toBe(true);
 
   img = scatterplot.export();
@@ -317,7 +312,7 @@ test('filter()', async () => {
   expect(scatterplot.get('isPointsFiltered')).toBe(false);
 
   expect(
-    isSameElements(scatterplot.get('filteredPoints'), [0, 1, 2, 3, 4])
+    hasSameElements(scatterplot.get('filteredPoints'), [0, 1, 2, 3, 4])
   ).toBe(true);
 
   let filteredPoints = [];
@@ -344,17 +339,17 @@ test('filter()', async () => {
   await wait(0);
 
   expect(
-    isSameElements(filteredPoints, [1, 3])
+    hasSameElements(filteredPoints, [1, 3])
   ).toBe(true);
 
   expect(scatterplot.get('isPointsFiltered')).toBe(true);
 
   expect(
-    isSameElements(scatterplot.get('pointsInView'), [1, 3])
+    hasSameElements(scatterplot.get('pointsInView'), [1, 3])
   ).toBe(true);
 
   expect(
-    isSameElements(scatterplot.get('filteredPoints'), [1, 3])
+    hasSameElements(scatterplot.get('filteredPoints'), [1, 3])
   ).toBe(true);
 
   scatterplot.hover(1);
@@ -404,11 +399,11 @@ test('filter()', async () => {
 
   // should have unfiltered the points
   expect(
-    isSameElements(filteredPoints, [0, 1, 2, 3, 4])
+    hasSameElements(filteredPoints, [0, 1, 2, 3, 4])
   ).toBe(true);
 
   expect(
-    isSameElements(scatterplot.get('filteredPoints'), [0, 1, 2, 3, 4])
+    hasSameElements(scatterplot.get('filteredPoints'), [0, 1, 2, 3, 4])
   ).toBe(true);
 
   expect(
@@ -458,7 +453,7 @@ test('filter()', async () => {
 
   // should have filtered down to valid points (0, 2, and 4) only
   expect(
-    isSameElements(filteredPoints, [0, 2, 4])
+    hasSameElements(filteredPoints, [0, 2, 4])
   ).toBe(true);
 
   // We're testing this due to the following bug where we accidentically
@@ -548,7 +543,7 @@ test('test hover, select, and filter options of `draw()`', async () => {
   expect(scatterplot.get('hoveredPoint')).toBe(0);
   expect(scatterplot.get('selectedPoints')).toEqual([2]);
   expect(
-    isSameElements(scatterplot.get('filteredPoints'), [0, 2, 3])
+    hasSameElements(scatterplot.get('filteredPoints'), [0, 2, 3])
   ).toBe(true);
 
   scatterplot.destroy();

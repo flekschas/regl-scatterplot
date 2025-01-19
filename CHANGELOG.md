@@ -1,5 +1,8 @@
 ## 1.13.0
 
+- Feat: add support for two new lasso types: `'rectangle'` and `'brush'`. The lasso type can be changed via `lassoType`. Additionally, for the brush lasso, you can adjust the brush size via `lassoBrushSize`. The default lasso type is `'freeform'`. ([#186](https://github.com/flekschas/regl-scatterplot/issues/186))
+- Feat: replace `keyMap` with `actionKeyMap` to allow triggering multiple actions with the same modifier key.
+- Feat: add `'remove'` key action to allow removing selecting points. By default, to rgitemove selected points hold down `ALT` and then lasso around selected points. ([#105](https://github.com/flekschas/regl-scatterplot/issues/105))
 - Feat: expose `renderPointsAsSquares` and `disableAlphaBlending` to allow finer control over performance increasing settings ([#206](https://github.com/flekschas/regl-scatterplot/issues/206))
 
 ## 1.12.1
