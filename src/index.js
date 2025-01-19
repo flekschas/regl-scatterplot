@@ -7,6 +7,7 @@ import {
   unionIntegers,
 } from '@flekschas/utils';
 import createDom2dCamera from 'dom-2d-camera';
+import earcut from 'earcut';
 import { mat4, vec4 } from 'gl-matrix';
 import createPubSub from 'pub-sub-es';
 import createLine from 'regl-line';
@@ -53,6 +54,7 @@ import {
   DEFAULT_HEIGHT,
   DEFAULT_IMAGE_LOAD_TIMEOUT,
   DEFAULT_KEY_MAP,
+  DEFAULT_LASSO_BRUSH_SIZE,
   DEFAULT_LASSO_CLEAR_EVENT,
   DEFAULT_LASSO_COLOR,
   DEFAULT_LASSO_INITIATOR,
@@ -64,6 +66,7 @@ import {
   DEFAULT_LASSO_MIN_DELAY,
   DEFAULT_LASSO_MIN_DIST,
   DEFAULT_LASSO_ON_LONG_PRESS,
+  DEFAULT_LASSO_TYPE,
   DEFAULT_MOUSE_MODE,
   DEFAULT_OPACITY_BY,
   DEFAULT_OPACITY_BY_DENSITY_DEBOUNCE_TIME,
@@ -113,6 +116,7 @@ import {
   KEY_CTRL,
   KEY_META,
   KEY_SHIFT,
+  LASSO_BRUSH_MIN_MIN_DIST,
   LASSO_CLEAR_EVENTS,
   LASSO_CLEAR_ON_DESELECT,
   LASSO_CLEAR_ON_END,
@@ -145,7 +149,6 @@ import {
   isPolygon,
   isPositiveNumber,
   isRect,
-  isSameElements,
   isSameRgbas,
   isStrictlyPositiveNumber,
   isString,
@@ -261,6 +264,8 @@ const createScatterplot = (
     lassoLongPressAfterEffectTime = DEFAULT_LASSO_LONG_PRESS_AFTER_EFFECT_TIME,
     lassoLongPressEffectDelay = DEFAULT_LASSO_LONG_PRESS_EFFECT_DELAY,
     lassoLongPressRevertEffectTime = DEFAULT_LASSO_LONG_PRESS_REVERT_EFFECT_TIME,
+    lassoType = DEFAULT_LASSO_TYPE,
+    lassoBrushSize = DEFAULT_LASSO_BRUSH_SIZE,
     keyMap = DEFAULT_KEY_MAP,
     mouseMode = DEFAULT_MOUSE_MODE,
     showReticle = DEFAULT_SHOW_RETICLE,
@@ -921,6 +926,12 @@ const createScatterplot = (
     initiatorParentElement: lassoInitiatorParentElement,
     longPressIndicatorParentElement: lassoLongPressIndicatorParentElement,
     pointNorm: ([x, y]) => getScatterGlPos(getNdcX(x), getNdcY(y)),
+    minDelay: lassoMinDelay,
+    minDist:
+      lassoType === 'brush'
+        ? Math.max(LASSO_BRUSH_MIN_MIN_DIST, lassoMinDist)
+        : lassoMinDist,
+    type: lassoType,
   });
 
   const checkLassoMode = () => mouseMode === MOUSE_MODE_LASSO;
@@ -1361,7 +1372,10 @@ const createScatterplot = (
       pointSize = [+newPointSize];
     }
 
-    if (oldPointSize === pointSize || isSameElements(oldPointSize, pointSize)) {
+    if (
+      oldPointSize === pointSize ||
+      hasSameElements(oldPointSize, pointSize)
+    ) {
       // We don't need to update the encoding texture so we return early
       return;
     }
@@ -1428,7 +1442,7 @@ const createScatterplot = (
       opacity = [+newOpacity];
     }
 
-    if (oldOpacity === opacity || isSameElements(oldOpacity, opacity)) {
+    if (oldOpacity === opacity || hasSameElements(oldOpacity, opacity)) {
       // We don't need to update the encoding texture so we return early
       return;
     }
@@ -1770,7 +1784,7 @@ const createScatterplot = (
     count: 6,
   });
 
-  const drawPolygon2d = renderer.regl({
+  const drawLassoPolygon = renderer.regl({
     vert: `
       precision mediump float;
       uniform mat4 modelViewProjection;
@@ -1809,12 +1823,7 @@ const createScatterplot = (
       color: () => lassoColor,
     },
 
-    elements: () =>
-      Array.from({ length: lassoPointsCurr.length - 2 }, (_, i) => [
-        0,
-        i + 1,
-        i + 2,
-      ]),
+    elements: () => earcut(lasso.getPoints()),
   });
 
   const drawReticle = () => {
@@ -3071,6 +3080,26 @@ const createScatterplot = (
     lassoLongPressRevertEffectTime = Number(newTime);
   };
 
+  const setLassoType = (newType) => {
+    if (newType === 'brush') {
+      lassoManager.set({
+        type: newType,
+        minDist: Math.max(LASSO_BRUSH_MIN_MIN_DIST, lassoMinDist),
+      });
+    } else {
+      lassoManager.set({
+        type: newType,
+        minDist: lassoMinDist,
+      });
+    }
+    lassoType = newType;
+  };
+
+  const setLassoBrushSize = (newBrushSize) => {
+    lassoBrushSize = Number(newBrushSize) || lassoBrushSize;
+    lassoManager.set({ brushSize: lassoBrushSize });
+  };
+
   const setKeyMap = (newKeyMap) => {
     keyMap = Object.entries(newKeyMap).reduce((map, [key, value]) => {
       if (KEYS.includes(key) && KEY_ACTIONS.includes(value)) {
@@ -3426,6 +3455,18 @@ const createScatterplot = (
 
     if (property === 'lassoLongPressIndicatorParentElement') {
       return lassoLongPressIndicatorParentElement;
+    }
+
+    if (property === 'lassoOnLongPress') {
+      return lassoOnLongPress;
+    }
+
+    if (property === 'lassoType') {
+      return lassoType;
+    }
+
+    if (property === 'lassoBrushSize') {
+      return lassoBrushSize;
     }
 
     if (property === 'keyMap') {
@@ -3869,6 +3910,14 @@ const createScatterplot = (
       );
     }
 
+    if (properties.lassoType !== undefined) {
+      setLassoType(properties.lassoType);
+    }
+
+    if (properties.lassoBrushSize !== undefined) {
+      setLassoBrushSize(properties.lassoBrushSize);
+    }
+
     if (properties.keyMap !== undefined) {
       setKeyMap(properties.keyMap);
     }
@@ -4310,7 +4359,7 @@ const createScatterplot = (
       }
 
       if (lassoPointsCurr.length > 2) {
-        drawPolygon2d();
+        drawLassoPolygon();
       }
 
       // The draw order of the following calls is important!

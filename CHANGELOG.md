@@ -1,3 +1,7 @@
+## 1.13.0
+
+- Feat: add support for two new lasso types: `'rectangle'` and `'bursh'`. The lasso type can be changed via `lassoType` (for the brush lasso, you can additionally adjust the brush size via `lassoBrushSize`)
+
 ## 1.12.1
 
 - Fix: prevent drawing points if all are filtered out ([#201](https://github.com/flekschas/regl-scatterplot/issues/201))

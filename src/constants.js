@@ -57,6 +57,7 @@ export const VALUE_ZW_DATA_TYPES = [CONTINUOUS, CATEGORICAL];
 export const LASSO_CLEAR_ON_DESELECT = 'deselect';
 export const LASSO_CLEAR_ON_END = 'lassoEnd';
 export const LASSO_CLEAR_EVENTS = [LASSO_CLEAR_ON_DESELECT, LASSO_CLEAR_ON_END];
+export const LASSO_BRUSH_MIN_MIN_DIST = 3;
 export const DEFAULT_LASSO_COLOR = [0, 0.666666667, 1, 1];
 export const DEFAULT_LASSO_LINE_WIDTH = 2;
 export const DEFAULT_LASSO_INITIATOR = false;
@@ -69,6 +70,7 @@ export const DEFAULT_LASSO_LONG_PRESS_TIME = 750;
 export const DEFAULT_LASSO_LONG_PRESS_AFTER_EFFECT_TIME = 500;
 export const DEFAULT_LASSO_LONG_PRESS_EFFECT_DELAY = 100;
 export const DEFAULT_LASSO_LONG_PRESS_REVERT_EFFECT_TIME = 250;
+export const DEFAULT_LASSO_BRUSH_SIZE = 24;
 
 // Key mapping
 export const KEY_ACTION_LASSO = 'lasso';
@@ -169,6 +171,7 @@ export const DEFAULT_SPATIAL_INDEX_USE_WORKER = undefined;
 export const DEFAULT_CAMERA_IS_FIXED = false;
 export const DEFAULT_ANTI_ALIASING = 0.5;
 export const DEFAULT_PIXEL_ALIGNED = false;
+export const DEFAULT_LASSO_TYPE = 'lasso';
 
 // Error messages
 export const ERROR_POINTS_NOT_DRAWN = 'Points have not been drawn';

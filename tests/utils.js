@@ -57,12 +57,6 @@ export const wait = (milliSeconds) =>
 
 export const capitalize = (s) => `${s[0].toUpperCase}${s.slice(1)}`;
 
-export const isSameElements = (a, b) => {
-  if (a.length !== b.length) return false;
-  const aSet = new Set(a);
-  return b.every((value) => aSet.has(value));
-};
-
 export const getPixelSum = (img, xStart, xEnd, yStart, yEnd) => {
   let pixelSum = 0;
   for (let i = yStart; i < yEnd; i++) {
