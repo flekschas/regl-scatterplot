@@ -149,6 +149,10 @@
         background: #fff;
       }
 
+      input[type='radio'] {
+        margin: 0;
+      }
+
       button,
       a.button-like {
         display: inline-block;
@@ -225,6 +229,10 @@
         flex-direction: column;
       }
 
+      .gap-h {
+        gap: 0 0.25rem;
+      }
+
       .no-select {
         -webkit-user-select: none;
         -moz-user-select: none;
@@ -232,34 +240,26 @@
         user-select: none;
       }
 
-      #topbar {
+      .tp-link {
+        padding-left: 4px;
+        line-height: 1.5em;
+      }
+
+      .tp-link a.active {
+        color: #34bbff;
+        font-weight: bold;
+        text-decoration: none;
+      }
+
+      h1 {
         position: absolute;
         z-index: 1;
-        top: 0.5rem;
-        left: 0.5rem;
-        width: 16rem;
-        padding: 0.5rem;
-        font-size: 0.9rem;
-        background: rgba(32, 32, 32, 0.9);
-        border-radius: 0.2rem;
-        transition: background 0.15s cubic-bezier(0.25, 0.1, 0.25, 1);
-      }
-
-      #topbar:focus,
-      #topbar:focus-within {
-        pointer-events: none;
-        outline: none;
-        background: rgba(32, 32, 32, 1);
-      }
-
-      #topbar hr {
-        border-color: rgba(255, 255, 255, 0.1);
-      }
-
-      #title {
+        top: 1rem;
+        left: 1rem;
         padding: 0;
         margin: 0;
-        font-size: 1rem;
+        font-family: 'Roboto Mono', 'Source Code Pro', Menlo, Courier, monospace;
+        font-size: 0.8rem;
         color: white;
         -webkit-touch-callout: none;
         -webkit-user-select: none;
@@ -269,56 +269,12 @@
         user-select: none;
       }
 
-      #topbar:focus #title-wrapper,
-      #topbar:focus-within #title-wrapper {
-        color: #fff;
-        padding-bottom: 0.5rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      }
-
-      #title-wrapper span {
-        color: #666;
-        font-size: 0.7rem;
-        line-height: 1rem;
-        text-transform: uppercase;
-      }
-
-      #topbar:focus #title-wrapper span,
-      #topbar:focus-within #title-wrapper span {
-        color: #fff;
-      }
-
       #controls {
-        display: none;
-      }
-
-      #topbar:focus #controls,
-      #topbar:focus-within #controls {
-        display: block;
-        pointer-events: auto;
-      }
-
-      #controls label {
-        margin: 0.5rem 0;
-      }
-
-      #controls label:last-child {
-        margin-bottom: 0;
-      }
-
-      #controls .label:after {
-        content: ':';
-        margin-right: 0.25rem;
-      }
-
-      #controls .value:after {
-        text-align: center;
-      }
-
-      #controls .value em {
-        color: #666;
-        font-size: 0.7rem;
-        line-height: 0.9rem;
+        position: absolute;
+        z-index: 1;
+        top: 1rem;
+        right: 1rem;
+        width: 18rem;
       }
 
       #footer.hidden {
@@ -395,46 +351,6 @@
         pointer-events: auto;
       }
 
-      #examples {
-        margin: 0;
-        padding: 0 0 0 1.25em;
-      }
-
-      #examples li {
-        margin: 0.125em 0;
-      }
-
-      #examples li:last-child {
-        margin-bottom: 0;
-      }
-
-      #examples li a {
-        color: rgba(255, 255, 255, 0.66);
-        transition: color 0.15s cubic-bezier(0.25, 0.1, 0.25, 1);
-      }
-
-      #examples li a:hover {
-        color: rgba(255, 255, 255, 1);
-      }
-
-      #examples li a.active {
-        color: #34bbff;
-        font-weight: bold;
-        text-decoration: none;
-      }
-
-      #num-points-value {
-        min-width: 5rem;
-      }
-
-      #point-size-value {
-        min-width: 2rem;
-      }
-
-      #opacity-value {
-        min-width: 2rem;
-      }
-
       #parent-wrapper {
         position: absolute;
         top: 0;
@@ -499,10 +415,10 @@
           opacity 0.15s cubic-bezier(0.25, 0.1, 0.25, 1);
       }
     </style>
-    <script type="module" crossorigin src="./assets/multiple-instances-db9b6588.js"></script>
-    <link rel="modulepreload" crossorigin href="./assets/vendor-fecc589d.js">
-    <link rel="modulepreload" crossorigin href="./assets/utils-7421e6bb.js">
-    <link rel="modulepreload" crossorigin href="./assets/apache-arrow-6a943b27.js">
+    <script type="module" crossorigin src="./assets/multiple-instances-BxGutfHt.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/vendor-CWN1LCVq.js">
+    <link rel="modulepreload" crossorigin href="./assets/menu-D496VOBB.js">
+    <link rel="modulepreload" crossorigin href="./assets/apache-arrow-szX3Jr2h.js">
   </head>
 
   <body>
@@ -512,135 +428,8 @@
         <button id="modal-close">Okay</button>
       </div>
     </div>
-    <header id="topbar" tabindex="0">
-      <div id="title-wrapper" class="flex flex-jc-sb">
-        <h1 id="title">Regl Scatterplot</h1>
-        <span class="no-select">Menu</span>
-      </div>
-      <aside id="controls" class="flex flex-v">
-        <label class="flex flex-v">
-          <div class="flex-a-c no-select">
-            <span class="label"
-              ><abbr title="Number of points">Num. PTS</abbr></span
-            >
-            <span id="num-points-value" class="value">1000</span>
-          </div>
-          <input
-            id="num-points"
-            type="range"
-            min="1000"
-            max="2000000"
-            step="1000"
-            value="10000"
-          />
-        </label>
-        <label class="flex flex-v">
-          <div class="flex-a-c no-select">
-            <span class="label"><abbr title="Point size">PT Size</abbr></span>
-            <span id="point-size-value" class="value">5</span>
-          </div>
-          <input
-            id="point-size"
-            type="range"
-            min="1"
-            max="100"
-            step="1"
-            value="5"
-          />
-        </label>
-        <label class="flex flex-v">
-          <div class="flex-a-c no-select">
-            <span class="label">Opacity</span>
-            <span id="opacity-value" class="value">1.0</span>
-          </div>
-          <input
-            id="opacity"
-            type="range"
-            min="0.01"
-            max="1"
-            step="0.01"
-            value="1"
-          />
-        </label>
-        <label class="flex flex-a-c">
-          <input id="click-lasso-initiator" type="checkbox" />
-          <span class="no-select">Click to Lasso Initiator</span>
-        </label>
-        <button id="reset">Reset</button>
-        <hr />
-        <label>Examples:</label>
-        <ul id="examples">
-          <li>
-            <a id="example-basic" href="index.html">Color Encoding</a>
-          </li>
-          <li>
-            <a id="example-size-encoding" href="size-encoding.html"
-              >Size &amp; Opacity Encoding</a
-            >
-          </li>
-          <li>
-            <a id="example-dynamic-opacity" href="dynamic-opacity.html"
-              >Dynamic Opacity</a
-            >
-          </li>
-          <li>
-            <a id="example-background" href="texture-background.html"
-              >Background Image</a
-            >
-          </li>
-          <li>
-            <a id="example-axes" href="axes.html">Axes</a>
-          </li>
-          <li>
-            <a id="example-text-overlay" href="text-labels.html"
-              >Dynamic Text Labels</a
-            >
-          </li>
-          <li>
-            <a id="example-transition" href="transition.html">Transition</a>
-          </li>
-          <li>
-            <a id="example-connected-points" href="connected-points.html"
-              >Point Connections</a
-            >
-          </li>
-          <li>
-            <a
-              id="example-connected-points-by-segment"
-              href="connected-points-by-segments.html"
-              >Point Connections<br /><span class="smaller"
-                >(encoded by line segment)</span
-              ></a
-            >
-          </li>
-          <li>
-            <a id="example-performance-mode" href="performance-mode.html"
-              >Performance Mode (<abbr title="20 million">20M</abbr> points)</a
-            >
-          </li>
-          <li>
-            <a id="example-multiple-instances" href="multiple-instances.html"
-              >Multiple Instances<br /><span class="smaller"
-                >(with linked point selection and animated zoom)</span
-              ></a
-            >
-          </li>
-          <li>
-            <a id="example-annotations" href="annotations.html">Annotations</a>
-          </li>
-        </ul>
-        <hr />
-        <div class="two-button-group">
-          <button id="export">Export as PNG</button>
-          <a
-            class="button-like"
-            href="https://github.com/flekschas/regl-scatterplot"
-            target="_blank"
-            >Source code</a
-          >
-        </div>
-      </aside>
-    </header>
+    <h1>Regl Scatterplot</h1>
+    <aside id="controls" tabindex="0"></aside>
     <div id="parent-wrapper">
       <div id="canvas-wrapper">
         <canvas id="canvas"></canvas>
@@ -652,6 +441,5 @@
         <div id="info-title"></div>
       </div>
     </footer>
-    
 </body>
 </html>

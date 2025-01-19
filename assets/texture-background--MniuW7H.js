@@ -1,0 +1,4 @@
+import{c as l,a as r,b as i}from"./menu-D496VOBB.js";import"./vendor-CWN1LCVq.js";const s=document.querySelector("#canvas"),{width:p,height:d}=s.getBoundingClientRect();let a=[],m=1e5,h=3,u=1,o=[];const g=({points:e})=>{if(console.log("Selected:",e),o=e,o.length===1){const n=a[o[0]];console.log(`X: ${n[0]}
+Y: ${n[1]}
+Category: ${n[2]}
+Value: ${n[3]}`)}},M=()=>{console.log("Deselected:",o),o=[]},t=l({canvas:s,pointSize:h,opacity:u,showReticle:!0,backgroundImage:`https://picsum.photos/${Math.min(640,p)}/${Math.min(640,d)}/?random`,lassoInitiator:!0});r(t);console.log(`Scatterplot v${t.get("version")}`);t.subscribe("select",g);t.subscribe("deselect",M);const $=e=>new Array(e).fill().map(()=>[-1+Math.random()*2,-1+Math.random()*2,Math.round(Math.random()),Math.random()]),c=e=>{a=$(e),t.draw(a)};i({scatterplot:t,setNumPoints:c});t.set({colorBy:"category",pointColor:["#3a78aa","#aa3a99"]});c(m);
