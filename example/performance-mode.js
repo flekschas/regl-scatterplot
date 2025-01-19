@@ -1,8 +1,8 @@
-/* eslint no-console: 0 */
 import { createWorker } from '@flekschas/utils';
 import { saveAsPng, checkSupport } from './utils';
 
 import createScatterplot from '../src';
+import createMenu from './menu';
 import pointWorkerFn from './performance-mode-point-worker';
 
 const modal = document.querySelector('#modal');
@@ -87,7 +87,7 @@ console.log(`Scatterplot v${scatterplot.get('version')}`);
 scatterplot.subscribe('select', selectHandler);
 scatterplot.subscribe('deselect', deselectHandler);
 
-const setNumPoint = (newNumPoints) => {
+const setNumPoints = (newNumPoints) => {
   showModal(
     `Hang tight. Generating ${(numPoints / 1000000).toFixed(
       1
@@ -104,6 +104,8 @@ const setNumPoint = (newNumPoints) => {
   });
 };
 
+createMenu({ scatterplot, setNumPoints });
+
 const numPointsInputHandler = (event) => {
   numPointsValEl.innerHTML = `${+event.target
     .value} <em>release to redraw</em>`;
@@ -111,7 +113,7 @@ const numPointsInputHandler = (event) => {
 
 numPointsEl.addEventListener('input', numPointsInputHandler);
 
-const numPointsChangeHandler = (event) => setNumPoint(+event.target.value);
+const numPointsChangeHandler = (event) => setNumPoints(+event.target.value);
 
 numPointsEl.addEventListener('change', numPointsChangeHandler);
 
@@ -181,4 +183,4 @@ scatterplot.set({ colorBy: 'value', pointColor: colorsScale });
 
 setPointSize(pointSize);
 setOpacity(opacity);
-setNumPoint(numPoints);
+setNumPoints(numPoints);

@@ -1,22 +1,8 @@
-/* eslint no-console: 0 */
-
 import createScatterplot from '../src';
-import { saveAsPng, checkSupport } from './utils';
+import createMenu from './menu';
+import { checkSupport } from './utils';
 
 const canvas = document.querySelector('#canvas');
-const numPointsEl = document.querySelector('#num-points');
-const numPointsValEl = document.querySelector('#num-points-value');
-const pointSizeEl = document.querySelector('#point-size');
-const pointSizeValEl = document.querySelector('#point-size-value');
-const opacityEl = document.querySelector('#opacity');
-const opacityValEl = document.querySelector('#opacity-value');
-const clickLassoInitiatorEl = document.querySelector('#click-lasso-initiator');
-const resetEl = document.querySelector('#reset');
-const exportEl = document.querySelector('#export');
-const exampleEl = document.querySelector('#example-annotations');
-
-exampleEl.setAttribute('class', 'active');
-exampleEl.removeAttribute('href');
 
 let points = { x: [], y: [], z: [], w: [] };
 let numPoints = 100000;
@@ -60,14 +46,13 @@ const scatterplot = createScatterplot({
   lassoMinDelay,
   lassoMinDist,
   pointSize,
+  opacity,
   showReticle,
   reticleColor,
   lassoOnLongPress: true,
 });
 
 checkSupport(scatterplot);
-
-exportEl.addEventListener('click', () => saveAsPng(scatterplot));
 
 console.log(`Scatterplot v${scatterplot.get('version')}`);
 
@@ -122,64 +107,12 @@ const generatePoints = (l) => {
   return { x, y, z, w };
 };
 
-const setNumPoint = (newNumPoints) => {
-  numPoints = newNumPoints;
-  numPointsEl.value = numPoints;
-  numPointsValEl.innerHTML = numPoints;
-  points = generatePoints(numPoints);
+const setNumPoints = (newNumPoints) => {
+  points = generatePoints(newNumPoints);
   scatterplot.draw(points);
 };
 
-const numPointsInputHandler = (event) => {
-  numPointsValEl.innerHTML = `${+event.target
-    .value} <em>release to redraw</em>`;
-};
-
-numPointsEl.addEventListener('input', numPointsInputHandler);
-
-const numPointsChangeHandler = (event) => setNumPoint(+event.target.value);
-
-numPointsEl.addEventListener('change', numPointsChangeHandler);
-
-const setPointSize = (newPointSize) => {
-  pointSize = newPointSize;
-  pointSizeEl.value = pointSize;
-  pointSizeValEl.innerHTML = pointSize;
-  scatterplot.set({ pointSize });
-};
-
-const pointSizeInputHandler = (event) => setPointSize(+event.target.value);
-
-pointSizeEl.addEventListener('input', pointSizeInputHandler);
-
-const setOpacity = (newOpacity) => {
-  opacity = newOpacity;
-  opacityEl.value = opacity;
-  opacityValEl.innerHTML = opacity;
-  scatterplot.set({ opacity });
-};
-
-const opacityInputHandler = (event) => setOpacity(+event.target.value);
-
-opacityEl.addEventListener('input', opacityInputHandler);
-
-const clickLassoInitiatorChangeHandler = (event) => {
-  scatterplot.set({
-    lassoInitiator: event.target.checked,
-  });
-};
-
-clickLassoInitiatorEl.addEventListener(
-  'change',
-  clickLassoInitiatorChangeHandler
-);
-clickLassoInitiatorEl.checked = scatterplot.get('lassoInitiator');
-
-const resetClickHandler = () => {
-  scatterplot.reset();
-};
-
-resetEl.addEventListener('click', resetClickHandler);
+createMenu({ scatterplot, setNumPoints });
 
 const colorsCat = ['#3a78aa', '#aa3a99'];
 scatterplot.set({ colorBy: 'category', pointColor: colorsCat });
@@ -187,9 +120,7 @@ scatterplot.set({ colorBy: 'category', pointColor: colorsCat });
 const colorsScale = ['#009E73', '#CC79A7', '#56B4E9', '#F0E442'];
 scatterplot.set({ colorBy: 'z', pointColor: colorsScale });
 
-setPointSize(pointSize);
-setOpacity(opacity);
-setNumPoint(numPoints);
+setNumPoints(numPoints);
 
 scatterplot.drawAnnotations([
   { x: 0, lineColor: [1, 1, 1, 0.1], lineWidth: 1 },
