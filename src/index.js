@@ -110,6 +110,7 @@ import {
   KEY_ACTIONS,
   KEY_ACTION_LASSO,
   KEY_ACTION_MERGE,
+  KEY_ACTION_REMOVE,
   KEY_ACTION_ROTATE,
   KEY_ALT,
   KEY_CMD,
@@ -763,7 +764,10 @@ const createScatterplot = (
    * @param {number | number[]} pointIdxs
    * @param {import('./types').ScatterplotMethodOptions['select']}
    */
-  const select = (pointIdxs, { merge = false, preventEvent = false } = {}) => {
+  const select = (
+    pointIdxs,
+    { merge = false, remove = false, preventEvent = false } = {},
+  ) => {
     const newSelectedPoints = Array.isArray(pointIdxs)
       ? pointIdxs
       : [pointIdxs];
@@ -771,6 +775,15 @@ const createScatterplot = (
 
     if (merge) {
       selectedPoints = unionIntegers(selectedPoints, newSelectedPoints);
+      if (currSelectedPoints.length === selectedPoints.length) {
+        draw = true;
+        return;
+      }
+    } else if (remove) {
+      const newSelectedPointsSet = new Set(newSelectedPoints);
+      selectedPoints = selectedPoints.filter(
+        (point) => !newSelectedPointsSet.has(point),
+      );
       if (currSelectedPoints.length === selectedPoints.length) {
         draw = true;
         return;
@@ -904,11 +917,15 @@ const createScatterplot = (
     pubSub.publish('lassoStart');
   };
 
-  const lassoEnd = (lassoPoints, lassoPointsFlat, { merge = false } = {}) => {
+  const lassoEnd = (
+    lassoPoints,
+    lassoPointsFlat,
+    { merge = false, remove = false } = {},
+  ) => {
     camera.config({ isFixed: cameraIsFixed });
     lassoPointsCurr = [...lassoPoints];
     const pointsInLasso = findPointsInLasso(lassoPointsFlat);
-    select(pointsInLasso, { merge });
+    select(pointsInLasso, { merge, remove });
 
     pubSub.publish('lassoEnd', {
       coordinates: lassoPointsCurr,
@@ -1003,6 +1020,7 @@ const createScatterplot = (
       lassoActive = false;
       lassoManager.end({
         merge: checkModKey(event, KEY_ACTION_MERGE),
+        remove: checkModKey(event, KEY_ACTION_REMOVE),
       });
     }
 
@@ -1043,6 +1061,7 @@ const createScatterplot = (
         }
         select([clostestPoint], {
           merge: checkModKey(event, KEY_ACTION_MERGE),
+          remove: checkModKey(event, KEY_ACTION_REMOVE),
         });
       } else if (!lassoInitiatorTimeout) {
         // We'll also wait to make sure the user didn't double click
@@ -3092,7 +3111,7 @@ const createScatterplot = (
         minDist: lassoMinDist,
       });
     }
-    lassoType = newType;
+    lassoType = lassoManager.get('type');
   };
 
   const setLassoBrushSize = (newBrushSize) => {

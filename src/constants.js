@@ -76,10 +76,12 @@ export const DEFAULT_LASSO_BRUSH_SIZE = 24;
 export const KEY_ACTION_LASSO = 'lasso';
 export const KEY_ACTION_ROTATE = 'rotate';
 export const KEY_ACTION_MERGE = 'merge';
+export const KEY_ACTION_REMOVE = 'remove';
 export const KEY_ACTIONS = [
   KEY_ACTION_LASSO,
   KEY_ACTION_ROTATE,
   KEY_ACTION_MERGE,
+  KEY_ACTION_REMOVE,
 ];
 export const KEY_ALT = 'alt';
 export const KEY_CMD = 'cmd';
@@ -88,7 +90,7 @@ export const KEY_META = 'meta';
 export const KEY_SHIFT = 'shift';
 export const KEYS = [KEY_ALT, KEY_CMD, KEY_CTRL, KEY_META, KEY_SHIFT];
 export const DEFAULT_KEY_MAP = {
-  [KEY_ALT]: KEY_ACTION_ROTATE,
+  [KEY_ALT]: KEY_ACTION_REMOVE,
   [KEY_SHIFT]: KEY_ACTION_LASSO,
   [KEY_CMD]: KEY_ACTION_MERGE,
 };

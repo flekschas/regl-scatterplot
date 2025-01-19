@@ -567,6 +567,7 @@ test('test rotation', async () => {
     canvas,
     width: dim,
     height: dim,
+    keyMap: { alt: 'rotate', shift: 'lasso', cmd: 'merge' }
   });
 
   await scatterplot.draw([[0, 0]]);

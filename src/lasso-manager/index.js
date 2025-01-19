@@ -611,7 +611,7 @@ export const createLasso = (
     hideInitiator();
   };
 
-  const end = ({ merge = false } = {}) => {
+  const end = ({ merge = false, remove = false } = {}) => {
     isLasso = false;
 
     const currLassoPos = [...lassoPos];
@@ -623,7 +623,7 @@ export const createLasso = (
 
     // When `currLassoPos` is empty the user didn't actually lasso
     if (currLassoPos.length > 0) {
-      onEnd(currLassoPos, currLassoPosFlat, { merge });
+      onEnd(currLassoPos, currLassoPosFlat, { merge, remove });
     }
 
     return currLassoPos;
@@ -652,6 +652,36 @@ export const createLasso = (
         startLasso = extendFreeform;
         break;
       }
+    }
+  };
+
+  const get = (property) => {
+    if (property === 'onDraw') {
+      return onDraw;
+    }
+    if (property === 'onStart') {
+      return onStart;
+    }
+    if (property === 'onEnd') {
+      return onEnd;
+    }
+    if (property === 'enableInitiator') {
+      return enableInitiator;
+    }
+    if (property === 'minDelay') {
+      return minDelay;
+    }
+    if (property === 'minDist') {
+      return minDist;
+    }
+    if (property === 'pointNorm') {
+      return pointNorm;
+    }
+    if (property === 'type') {
+      return type;
+    }
+    if (property === 'brushSize') {
+      return brushSize;
     }
   };
 
@@ -724,6 +754,7 @@ export const createLasso = (
       destroy,
       end,
       extend: extendPublic,
+      get,
       set,
       showInitiator,
       hideInitiator,
@@ -741,6 +772,7 @@ export const createLasso = (
     enableInitiator,
     initiatorParentElement,
     type,
+    brushSize,
   });
 
   return pipe(
