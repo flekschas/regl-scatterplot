@@ -351,8 +351,8 @@ test(
       lassoEndCoordinates = coordinates;
     });
 
-    const [lassoKey] = Object.entries(scatterplot.get('keyMap')).find(
-      (mapping) => mapping[1] === KEY_ACTION_LASSO
+    const [_, lassoKey] = Object.entries(scatterplot.get('keyMap')).find(
+      ([action]) => action === KEY_ACTION_LASSO
     );
 
     // Test multi selections via mousedown + mousemove
@@ -419,7 +419,7 @@ test('disable lasso selection', async () => {
   let lassoStartCount = 0;
   scatterplot.subscribe('lassoStart', () => ++lassoStartCount);
 
-  expect(Object.entries(scatterplot.get('keyMap')).length).toBe(0);
+  expect(Object.entries(scatterplot.get('actionKeyMap')).length).toBe(0);
 
   // Test multi selections via mousedown + mousemove
   canvas.dispatchEvent(
@@ -581,8 +581,8 @@ test('test rotation', async () => {
   };
   scatterplot.subscribe('view', viewHandler);
 
-  let [rotateKey] = Object.entries(scatterplot.get('keyMap')).find(
-    (mapping) => mapping[1] === KEY_ACTION_ROTATE
+  let [_, rotateKey] = Object.entries(scatterplot.get('actionKeyMap')).find(
+    ([action]) => action === KEY_ACTION_ROTATE
   );
 
   // Test rotation via keydown + mousedown + mousemove + keydown

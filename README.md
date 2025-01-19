@@ -813,7 +813,7 @@ can be read and written via [`scatterplot.get()`](#scatterplot.get) and [`scatte
 | reticleColor                          | quadruple                                    | rgba(1, 1, 1, .5)                   | hex, rgb, rgba                                                  | `true`   | `false`     |
 | xScale                                | function                                     | `null`                              | must follow the D3 scale API                                    | `true`   | `true`      |
 | yScale                                | function                                     | `null`                              | must follow the D3 scale API                                    | `true`   | `true`      |
-| keyMap                                | object                                       | `{ alt: 'remove',  cmd: 'merge', shift: 'lasso' }` | See the notes below                                             | `true`   | `false`     |
+| actionKeyMap                          | object                                       | `{ remove: 'alt': rotate: 'alt', merge: 'cmd', lasso: 'shift' }` | See the notes below                | `true`   | `false`     |
 | mouseMode                             | string                                       | `'panZoom'`                         | `'panZoom'`, `'lasso'`, or `'rotate'`                           | `true`   | `false`     |
 | performanceMode                       | boolean                                      | `false`                             | can only be set during initialization!                          | `true`   | `false`     |
 | gamma                                 | float                                        | `1`                                 | to control the opacity blending                                 | `true`   | `false`     |
@@ -909,16 +909,16 @@ You don't like the look of the lasso initiator? No problem. Simple get the DOM
 element via `scatterplot.get('lassoInitiatorElement')` and adjust the style
 via JavaScript. E.g.: `scatterplot.get('lassoInitiatorElement').style.background = 'green'`.
 
-<a name="property-keymap" href="#property-keymap">#</a> <b>KeyMap:</b>
+<a name="property-keymap" href="#property-keymap">#</a> <b>ActionKeyMap:</b>
 
-The `keyMap` property is an object defining which actions are enabled when
-holding down which modifier key. E.g.: `{ shift: 'lasso' }`. Acceptable
-modifier keys are `alt`, `cmd`, `ctrl`, `meta`, `shift`. Acceptable actions
+The `actionKeyMap` property is an object defining which actions are enabled when
+holding down which modifier key. E.g.: `{ lasso: 'shift' }`. Acceptable actions
 are `lasso`, `rotate`, `merge` (for selecting multiple items by merging a series
 of lasso or click selections), and `remove` (for removing selected points).
+Acceptable modifier keys are `alt`, `cmd`, `ctrl`, `meta`, `shift`. 
 
-You can also use the `keyMap` option to disable the lasso selection and rotation
-by setting `keyMap` to an empty object.
+You can also use the `actionKeyMap` option to disable the lasso selection and
+rotation by setting `actionKeyMap` to an empty object.
 
 <a name="property-examples" href="#property-examples">#</a> <b>Examples:</b>
 

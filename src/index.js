@@ -35,6 +35,7 @@ import {
   COLOR_NORMAL_IDX,
   COLOR_NUM_STATES,
   CONTINUOUS,
+  DEFAULT_ACTION_KEY_MAP,
   DEFAULT_ANNOTATION_HVLINE_LIMIT,
   DEFAULT_ANNOTATION_LINE_COLOR,
   DEFAULT_ANNOTATION_LINE_WIDTH,
@@ -53,7 +54,6 @@ import {
   DEFAULT_EASING,
   DEFAULT_HEIGHT,
   DEFAULT_IMAGE_LOAD_TIMEOUT,
-  DEFAULT_KEY_MAP,
   DEFAULT_LASSO_BRUSH_SIZE,
   DEFAULT_LASSO_CLEAR_EVENT,
   DEFAULT_LASSO_COLOR,
@@ -128,6 +128,7 @@ import {
   MOUSE_MODE_PANZOOM,
   MOUSE_MODE_ROTATE,
   SINGLE_CLICK_DELAY,
+  SKIP_DEPRECATION_VALUE_TRANSLATION,
   VALUE_ZW_DATA_TYPES,
   W_NAMES,
   Z_NAMES,
@@ -166,8 +167,21 @@ import {
 import { version } from '../package.json';
 
 const deprecations = {
-  showRecticle: 'showReticle',
-  recticleColor: 'reticleColor',
+  showRecticle: {
+    replacement: 'showReticle',
+    removalVersion: '2',
+    translation: identity,
+  },
+  recticleColor: {
+    replacement: 'reticleColor',
+    removalVersion: '2',
+    translation: identity,
+  },
+  keyMap: {
+    replacement: 'actionKeyMap',
+    removalVersion: '2',
+    translation: flipObj,
+  },
 };
 
 const checkDeprecations = (properties) => {
@@ -176,13 +190,19 @@ const checkDeprecations = (properties) => {
   );
 
   for (const prop of deprecatedProps) {
+    const { replacement, removalVersion, translation } = deprecations[prop];
     // biome-ignore lint/suspicious/noConsole: This is a legitimately useful warning
     console.warn(
-      `regl-scatterplot: the "${prop}" property is deprecated. Please use "${deprecations[prop]}" instead.`,
+      `regl-scatterplot: the "${prop}" property is deprecated and will be removed in v${removalVersion}. Please use "${replacement}" instead.`,
     );
-    properties[deprecations[prop]] = properties[prop];
+    properties[deprecations[prop].replacement] =
+      properties[prop] !== SKIP_DEPRECATION_VALUE_TRANSLATION
+        ? translation(properties[prop])
+        : properties[prop];
     delete properties[prop];
   }
+
+  return properties;
 };
 
 const getEncodingType = (
@@ -267,7 +287,7 @@ const createScatterplot = (
     lassoLongPressRevertEffectTime = DEFAULT_LASSO_LONG_PRESS_REVERT_EFFECT_TIME,
     lassoType = DEFAULT_LASSO_TYPE,
     lassoBrushSize = DEFAULT_LASSO_BRUSH_SIZE,
-    keyMap = DEFAULT_KEY_MAP,
+    actionKeyMap = DEFAULT_ACTION_KEY_MAP,
     mouseMode = DEFAULT_MOUSE_MODE,
     showReticle = DEFAULT_SHOW_RETICLE,
     reticleColor = DEFAULT_RETICLE_COLOR,
@@ -370,7 +390,6 @@ const createScatterplot = (
   // biome-ignore lint/style/useNamingConvention: VLine stands for VerticalLine
   let reticleVLine;
   let computedPointSizeMouseDetection;
-  let keyActionMap = flipObj(keyMap);
   let lassoInitiatorTimeout;
   let topRightNdc;
   let bottomLeftNdc;
@@ -954,7 +973,7 @@ const createScatterplot = (
   const checkLassoMode = () => mouseMode === MOUSE_MODE_LASSO;
 
   const checkModKey = (event, action) => {
-    switch (keyActionMap[action]) {
+    switch (actionKeyMap[action]) {
       case KEY_ALT:
         return event.altKey;
 
@@ -3119,25 +3138,31 @@ const createScatterplot = (
     lassoManager.set({ brushSize: lassoBrushSize });
   };
 
-  const setKeyMap = (newKeyMap) => {
-    keyMap = Object.entries(newKeyMap).reduce((map, [key, value]) => {
-      if (KEYS.includes(key) && KEY_ACTIONS.includes(value)) {
-        map[key] = value;
-      }
-      return map;
-    }, {});
-    keyActionMap = flipObj(keyMap);
-
-    if (keyActionMap[KEY_ACTION_ROTATE]) {
+  const updateActionKeyMapChange = () => {
+    if (actionKeyMap[KEY_ACTION_ROTATE]) {
       camera.config({
         isRotate: true,
-        mouseDownMoveModKey: keyActionMap[KEY_ACTION_ROTATE],
+        mouseDownMoveModKey: actionKeyMap[KEY_ACTION_ROTATE],
       });
     } else {
       camera.config({
         isRotate: false,
       });
     }
+  };
+
+  const setActionKeyMap = (newActionKeyMap) => {
+    actionKeyMap = Object.entries(newActionKeyMap).reduce(
+      (map, [action, key]) => {
+        if (KEYS.includes(key) && KEY_ACTIONS.includes(action)) {
+          map[action] = key;
+        }
+        return map;
+      },
+      {},
+    );
+
+    updateActionKeyMapChange();
   };
 
   const setMouseMode = (newMouseMode) => {
@@ -3373,8 +3398,12 @@ const createScatterplot = (
   };
 
   /** @type {<Key extends keyof import('./types').Properties>(property: Key) => import('./types').Properties[Key] } */
-  const get = (property) => {
-    checkDeprecations({ property: true });
+  const get = (prop) => {
+    const [property] = Object.keys(
+      checkDeprecations({
+        [prop]: SKIP_DEPRECATION_VALUE_TRANSLATION,
+      }),
+    );
 
     if (property === 'aspectRatio') {
       return dataAspectRatio;
@@ -3488,10 +3517,6 @@ const createScatterplot = (
       return lassoBrushSize;
     }
 
-    if (property === 'keyMap') {
-      return { ...keyMap };
-    }
-
     if (property === 'mouseMode') {
       return mouseMode;
     }
@@ -3499,6 +3524,7 @@ const createScatterplot = (
     if (property === 'opacity') {
       return opacity.length === 1 ? opacity[0] : opacity;
     }
+
     if (property === 'opacityBy') {
       return opacityBy;
     }
@@ -3731,6 +3757,10 @@ const createScatterplot = (
       return pixelAligned;
     }
 
+    if (property === 'actionKeyMap') {
+      return { ...actionKeyMap };
+    }
+
     return undefined;
   };
 
@@ -3937,8 +3967,8 @@ const createScatterplot = (
       setLassoBrushSize(properties.lassoBrushSize);
     }
 
-    if (properties.keyMap !== undefined) {
-      setKeyMap(properties.keyMap);
+    if (properties.actionKeyMap !== undefined) {
+      setActionKeyMap(properties.actionKeyMap);
     }
 
     if (properties.mouseMode !== undefined) {
@@ -4318,7 +4348,7 @@ const createScatterplot = (
       backgroundImage,
       width,
       height,
-      keyMap,
+      actionKeyMap,
     });
     updateLassoInitiatorStyle();
     updateLassoLongPressIndicatorStyle();

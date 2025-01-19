@@ -89,10 +89,11 @@ export const KEY_CTRL = 'ctrl';
 export const KEY_META = 'meta';
 export const KEY_SHIFT = 'shift';
 export const KEYS = [KEY_ALT, KEY_CMD, KEY_CTRL, KEY_META, KEY_SHIFT];
-export const DEFAULT_KEY_MAP = {
-  [KEY_ALT]: KEY_ACTION_REMOVE,
-  [KEY_SHIFT]: KEY_ACTION_LASSO,
-  [KEY_CMD]: KEY_ACTION_MERGE,
+export const DEFAULT_ACTION_KEY_MAP = {
+  [KEY_ACTION_REMOVE]: KEY_ALT,
+  [KEY_ACTION_ROTATE]: KEY_ALT,
+  [KEY_ACTION_LASSO]: KEY_SHIFT,
+  [KEY_ACTION_MERGE]: KEY_CMD,
 };
 
 // Default attribute
@@ -174,6 +175,9 @@ export const DEFAULT_CAMERA_IS_FIXED = false;
 export const DEFAULT_ANTI_ALIASING = 0.5;
 export const DEFAULT_PIXEL_ALIGNED = false;
 export const DEFAULT_LASSO_TYPE = 'lasso';
+export const SKIP_DEPRECATION_VALUE_TRANSLATION = Symbol(
+  'SKIP_DEPRECATION_VALUE_TRANSLATION',
+);
 
 // Error messages
 export const ERROR_POINTS_NOT_DRAWN = 'Points have not been drawn';
