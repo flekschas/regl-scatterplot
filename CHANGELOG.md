@@ -1,3 +1,7 @@
+## 1.13.1
+
+- Fix: an issue where new colors wouldn't be set properly ([#214](https://github.com/flekschas/regl-scatterplot/issues/214))
+
 ## 1.13.0
 
 - Feat: add support for two new lasso types: `'rectangle'` and `'brush'`. The lasso type can be changed via `lassoType`. Additionally, for the brush lasso, you can adjust the brush size via `lassoBrushSize`. The default lasso type is `'freeform'`. ([#186](https://github.com/flekschas/regl-scatterplot/issues/186))
