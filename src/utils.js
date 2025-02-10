@@ -323,6 +323,7 @@ export const isSameElements = (a, b) =>
 export const isSameRgbas = (a, b) =>
   Array.isArray(a) &&
   Array.isArray(b) &&
+  a.length === b.length &&
   a.every(([r1, g1, b1, a1], i) => {
     const [r2, g2, b2, a2] = b[i];
     return r1 === r2 && g1 === g2 && b1 === b2 && a1 === a2;
