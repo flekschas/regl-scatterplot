@@ -411,6 +411,18 @@ test(
         )
     ).toBe(true);
 
+    // Add another point color to the existing point colors
+    const newPointColors = [...pointColor, [1, 0, 1, 1]];
+    scatterplot.set({
+      pointColor: newPointColors,
+    });
+
+    expect(
+      scatterplot
+        .get('pointColor')
+        .every((color, i) => color.every((c, j) => c === newPointColors[i][j]))
+    ).toBe(true);
+
     scatterplot.set({
       pointConnectionColor: ['#ff0000', '#ff00ff'],
       pointConnectionColorActive: ['#ffff00', '#0000ff'],
