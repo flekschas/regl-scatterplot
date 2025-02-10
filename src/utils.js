@@ -320,14 +320,25 @@ export const isSameElements = (a, b) =>
 /**
  * Test if two arrays contain the same RGBA quadruples
  */
-export const isSameRgbas = (a, b) =>
-  Array.isArray(a) &&
-  Array.isArray(b) &&
-  a.length === b.length &&
-  a.every(([r1, g1, b1, a1], i) => {
+export const isSameRgbas = (a, b) => {
+  if (!(Array.isArray(a) && Array.isArray(b)) || a.length !== b.length) {
+    return false;
+  }
+
+  if (a.length === 0) {
+    return true;
+  }
+
+  // We need to test whether a and b are arrays of RGBA quadruples
+  if (!(Array.isArray(a[0]) && Array.isArray(b[0]))) {
+    return false;
+  }
+
+  return a.every(([r1, g1, b1, a1], i) => {
     const [r2, g2, b2, a2] = b[i];
     return r1 === r2 && g1 === g2 && b1 === b2 && a1 === a2;
   });
+};
 
 /**
  * Fast version of `Math.max`. Based on

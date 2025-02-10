@@ -5,7 +5,12 @@ import { expect, test } from 'vitest';
 
 import { checkSupport } from '../src';
 
-import { toRgba, isNormFloatArray, isValidBBox } from '../src/utils';
+import {
+  toRgba,
+  isNormFloatArray,
+  isValidBBox,
+  isSameRgbas,
+} from '../src/utils';
 
 const EPS = 1e-7;
 
@@ -50,4 +55,14 @@ test('toRgba()', () => {
 
 test('checkSupport()', () => {
   expect(checkSupport() === true || checkSupport() === false).toBe(true);
+});
+
+test('isSameRgbas()', () => {
+  expect(isSameRgbas('#ff0000', [[0, 1, 1, 1]])).toBe(false);
+  expect(isSameRgbas([[0, 1, 1, 1]], '#ff0000')).toBe(false);
+  expect(isSameRgbas([0, 1, 1, 1], [0, 1, 1, 1])).toBe(false);
+  expect(isSameRgbas([[0, 1, 1, 1], [1, 1, 0, 0]], [[0, 1, 1, 1]])).toBe(false);
+  expect(isSameRgbas([[0, 1, 1, 1]], [[0, 1, 1, 1], [1, 1, 0, 0]])).toBe(false);
+  expect(isSameRgbas([[0, 1, 1, 1]], [[1, 1, 1, 1]])).toBe(false);
+  expect(isSameRgbas([[0, 1, 1, 1]], [[0, 1, 1, 1]])).toBe(true);
 });
