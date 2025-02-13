@@ -2,9 +2,15 @@
 
 ## Description
 
-> What was changed in this pull request?
+### What was changed in this pull request?
 
-> Why is it necessary?
+> Explain in more detail what has changed on a technical level
+
+### Example
+
+> If feasable, add a screenshot or video demonstrating the new feature or bug fix
+
+### Why is this PR necessary?
 
 Fixes #___
 
