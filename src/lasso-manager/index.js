@@ -32,6 +32,7 @@ import {
   createLongPressOutAnimations,
 } from './create-long-press-animations.js';
 import createLongPressElements from './create-long-press-elements.js';
+import { exponentialMovingAverage } from './utils.js';
 
 const ifNotNull = (v, alternative = null) => (v === null ? alternative : v);
 
@@ -496,9 +497,8 @@ export const createLasso = (
     const N = lassoBrushCenterPos.length;
 
     if (N === 1) {
-      // In this special case, we have to add the initial two points upon and
-      // addition of the second point because when the first brush point was set
-      // the direction is undefined.
+      // In this special case, we have to add the initial two points and normal
+      // because when the first brush point was set the direction is undefined.
       const pl = [prevPoint[0] + nx, prevPoint[1] + ny];
       const pr = [prevPoint[0] - nx, prevPoint[1] - ny];
 
@@ -508,20 +508,15 @@ export const createLasso = (
     } else {
       // In this case, we have to adjust the previous normal to create a proper
       // line join by taking the middle between the current and previous normal.
-      const prevPrevPoint = lassoBrushCenterPos.at(-2);
-      const [pnx, pny] = lassoBrushNormals.at(-1);
+      // const prevPrevPoint = lassoBrushCenterPos.at(-2);
+      [nx, ny] = getBrushNormal(point, prevPoint, width);
 
-      // Smoothing the current normal
-      const d = l2PointDist(point[0], point[1], prevPoint[0], prevPoint[1]);
-      const pd = l2PointDist(
-        prevPoint[0],
-        prevPoint[1],
-        prevPrevPoint[0],
-        prevPrevPoint[1],
-      );
-      const easing = Math.max(0, Math.min(1, 2 / 3 / (pd / d)));
-      nx = easing * nx + (1 - easing) * pnx;
-      ny = easing * ny + (1 - easing) * pny;
+      const nextRawBrushNormals = [...lassoBrushNormals, [nx, ny]];
+
+      // However, to avoid jittery lines we're smoothing the normal
+      [nx, ny] = exponentialMovingAverage(nextRawBrushNormals, 1, 10);
+
+      const [pnx, pny] = lassoBrushNormals.at(-1);
 
       const pnx2 = (nx + pnx) / 2;
       const pny2 = (ny + pny) / 2;
