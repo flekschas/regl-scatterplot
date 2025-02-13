@@ -238,28 +238,53 @@ export const isNormFloat = (x) => x >= 0 && x <= 1;
 export const isNormFloatArray = (a) => Array.isArray(a) && a.every(isNormFloat);
 
 /**
- * From: https://wrf.ecse.rpi.edu//Research/Short_Notes/pnpoly.html
- * @param   {Array}  point  Tuple of the form `[x,y]` to be tested.
- * @param   {Array}  polygon  1D list of vertices defining the polygon.
- * @return  {boolean}  If `true` point lies within the polygon.
+ * Computes the cross product to determine the orientation of three points
+ * @param   {number}  x1  X-coordinate of first point
+ * @param   {number}  y1  Y-coordinate of first point
+ * @param   {number}  x2  X-coordinate of second point
+ * @param   {number}  y2  Y-coordinate of second point
+ * @param   {number}  px  X-coordinate of test point
+ * @param   {number}  py  Y-coordinate of test point
+ * @return  {number}  Positive if counterclockwise, negative if clockwise
+ */
+function crossProduct(x1, y1, x2, y2, px, py) {
+  return (x2 - x1) * (py - y1) - (px - x1) * (y2 - y1);
+}
+
+/**
+ * Determines if a point lies within a polygon using the non-zero winding rule.
+ * This handles self-intersecting polygons and overlapping areas correctly.
+ * @param   {Array}  polygon  1D list of vertices defining the polygon [x1,y1,x2,y2,...]
+ * @param   {Array}  point    Tuple of the form [x,y] to be tested
+ * @return  {boolean} True if point lies within the polygon
  */
 export const isPointInPolygon = (polygon, [px, py] = []) => {
-  let x1;
-  let y1;
-  let x2;
-  let y2;
-  let isWithin = false;
+  let winding = 0;
+
   for (let i = 0, j = polygon.length - 2; i < polygon.length; i += 2) {
-    x1 = polygon[i];
-    y1 = polygon[i + 1];
-    x2 = polygon[j];
-    y2 = polygon[j + 1];
-    if (y1 > py !== y2 > py && px < ((x2 - x1) * (py - y1)) / (y2 - y1) + x1) {
-      isWithin = !isWithin;
+    const x1 = polygon[i];
+    const y1 = polygon[i + 1];
+    const x2 = polygon[j];
+    const y2 = polygon[j + 1];
+
+    if (y1 <= py) {
+      if (y2 > py) {
+        const orientation = crossProduct(x1, y1, x2, y2, px, py);
+        if (orientation > 0) {
+          winding++;
+        }
+      }
+    } else if (y2 <= py) {
+      const orientation = crossProduct(x1, y1, x2, y2, px, py);
+      if (orientation < 0) {
+        winding--;
+      }
     }
+
     j = i;
   }
-  return isWithin;
+
+  return winding !== 0;
 };
 
 /**
