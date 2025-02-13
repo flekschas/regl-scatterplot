@@ -1,6 +1,7 @@
 ## 1.13.2
 
 - Fix: replace the even-odd rule based with the non-zero winding rule for `isPointInPolygon()` to correctly handle overlapping/looping selections. Previosuly points that would fall within the overlapping area would falsely be excluded from the selection instead of being included.
+- Fix: Smooth the brush normal to avoid jitter
 
 ## 1.13.1
 
