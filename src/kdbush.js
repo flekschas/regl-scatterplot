@@ -16,13 +16,14 @@ const createWorker = (fn) => {
     `const createWorker = ${fnStr};` +
     'createWorker();';
 
-  return new Worker(
-    window.URL.createObjectURL(
-      new Blob([workerStr], {
-        type: 'text/javascript',
-      }),
-    ),
-  );
+  const blob = new Blob([workerStr], { type: 'text/javascript' });
+  const workerUrl = URL.createObjectURL(blob);
+  const worker = new Worker(workerUrl, { name: 'KDBush' });
+
+  // Clean up URL
+  URL.revokeObjectURL(workerUrl);
+
+  return worker;
 };
 
 /**

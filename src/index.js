@@ -4467,6 +4467,7 @@ const createScatterplot = (
 
     const renderView = {
       view: camera.view,
+      isViewChanged,
       camera,
       xScale,
       yScale,

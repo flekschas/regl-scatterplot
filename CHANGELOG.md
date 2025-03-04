@@ -1,3 +1,8 @@
+## 1.14.0
+
+- Feat: expose a flag indicating a view change for events `draw`, `drawing`, and `view`
+- Fix: clean up worker URL after creation
+
 ## 1.13.2
 
 - Fix: replace the even-odd rule based with the non-zero winding rule for `isPointInPolygon()` to correctly handle overlapping/looping selections. Previosuly points that would fall within the overlapping area would falsely be excluded from the selection instead of being included.

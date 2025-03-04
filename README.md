@@ -1051,26 +1051,26 @@ Render Regl draw instructions into a target canvas using the renderer.
 
 ### Events
 
-| Name                 | Trigger                                    | Payload                            |
-| -------------------- | ------------------------------------------ | ---------------------------------- |
-| init                 | when the scatter plot is initialized       | `undefined`                        |
-| destroy              | when the scatter plot is destroyed         | `undefined`                        |
-| backgroundImageReady | when the background image was loaded       | `undefined`                        |
-| pointOver            | when the mouse cursor is over a point      | pointIndex                         |
-| pointOut             | when the mouse cursor moves out of a point | pointIndex                         |
-| select               | when points are selected                   | `{ points }`                       |
-| deselect             | when points are deselected                 | `undefined`                        |
-| filter               | when points are filtered                   | `{ points }`                       |
-| unfilter             | when the point filter is reset             | `undefined`                        |
-| view                 | when the view has changes                  | `{ camera, view, xScale, yScale }` |
-| draw                 | when the plot was drawn                    | `{ camera, view, xScale, yScale }` |
-| drawing              | when the plot is being drawn               | `{ camera, view, xScale, yScale }` |
-| lassoStart           | when the lasso selection has started       | `undefined`                        |
-| lassoExtend          | when the lasso selection has extended      | `{ coordinates }`                  |
-| lassoEnd             | when the lasso selection has ended         | `{ coordinates }`                  |
-| transitionStart      | when points started to transition          | `undefined`                        |
-| transitionEnd        | when points ended to transition            | `createRegl(canvas)`               |
-| pointConnectionsDraw | when point connections were drawn          | `undefined`                        |
+| Name                 | Trigger                                    | Payload                                           |
+| -------------------- | ------------------------------------------ | ------------------------------------------------- |
+| init                 | when the scatter plot is initialized       | `undefined`                                       |
+| destroy              | when the scatter plot is destroyed         | `undefined`                                       |
+| backgroundImageReady | when the background image was loaded       | `undefined`                                       |
+| pointOver            | when the mouse cursor is over a point      | pointIndex                                        |
+| pointOut             | when the mouse cursor moves out of a point | pointIndex                                        |
+| select               | when points are selected                   | `{ points }`                                      |
+| deselect             | when points are deselected                 | `undefined`                                       |
+| filter               | when points are filtered                   | `{ points }`                                      |
+| unfilter             | when the point filter is reset             | `undefined`                                       |
+| view                 | when the view has changes                  | `{ camera, view, isViewChanged, xScale, yScale }` |
+| draw                 | when the plot was drawn                    | `{ camera, view, isViewChanged, xScale, yScale }` |
+| drawing              | when the plot is being drawn               | `{ camera, view, isViewChanged, xScale, yScale }` |
+| lassoStart           | when the lasso selection has started       | `undefined`                                       |
+| lassoExtend          | when the lasso selection has extended      | `{ coordinates }`                                 |
+| lassoEnd             | when the lasso selection has ended         | `{ coordinates }`                                 |
+| transitionStart      | when points started to transition          | `undefined`                                       |
+| transitionEnd        | when points ended to transition            | `createRegl(canvas)`                              |
+| pointConnectionsDraw | when point connections were drawn          | `undefined`                                       |
 
 ## Trouble Shooting
 
