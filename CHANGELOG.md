@@ -1,6 +1,7 @@
 ## 1.14.0
 
 - Feat: expose a flag indicating a view change for events `draw`, `drawing`, and `view`
+- Fix: clean up worker URL after creation
 
 ## 1.13.2
 
