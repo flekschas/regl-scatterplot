@@ -62,8 +62,8 @@
     "@tweakpane/core": "^2.0.5",
     "@types/d3-scale": "^4.0.6",
     "@types/node": "^22.9.3",
-    "@vitest/browser": "^2.1.5",
-    "@vitest/coverage-v8": "^2.1.5",
+    "@vitest/browser": "^3.0.9",
+    "@vitest/coverage-v8": "^3.0.9",
     "apache-arrow": "^18.0.0",
     "browser-env": "^3.3.0",
     "d3-axis": "^3.0.0",
@@ -78,9 +78,9 @@
     "rollup-plugin-filesize": "^10.0.0",
     "tweakpane": "^4.0.5",
     "typescript": "~5.7.2",
-    "vite": "^5.4.11",
+    "vite": "^6.2.3",
     "vite-plugin-virtual-html-template": "^1.1.0",
-    "vitest": "^2.1.5"
+    "vitest": "^3.0.9"
   },
   "engines": {
     "npm": ">=7.0.0",
