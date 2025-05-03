@@ -1368,12 +1368,14 @@ const createScatterplot = (
     }
   };
 
-  const setCurrentHeight = (newCurrentHeight) => {
+  const setCurrentHeight = (newCurrentHeight, skipScaleUpdates) => {
     currentHeight = Math.max(1, newCurrentHeight);
     canvas.height = Math.floor(currentHeight * window.devicePixelRatio);
     if (yScale) {
       yScale.range([currentHeight, 0]);
-      updateScales();
+      if (!skipScaleUpdates) {
+        updateScales();
+      }
     }
   };
 
@@ -1448,12 +1450,14 @@ const createScatterplot = (
     pointOutlineWidth = +newPointOutlineWidth;
   };
 
-  const setCurrentWidth = (newCurrentWidth) => {
+  const setCurrentWidth = (newCurrentWidth, skipScaleUpdates) => {
     currentWidth = Math.max(1, newCurrentWidth);
     canvas.width = Math.floor(currentWidth * window.devicePixelRatio);
     if (xScale) {
       xScale.range([0, currentWidth]);
-      updateScales();
+      if (!skipScaleUpdates) {
+        updateScales();
+      }
     }
   };
 
@@ -4195,7 +4199,6 @@ const createScatterplot = (
   };
 
   const resizeHandler = () => {
-    camera.refresh();
     const autoWidth = width === AUTO;
     const autoHeight = height === AUTO;
     if (autoWidth || autoHeight) {
@@ -4203,16 +4206,18 @@ const createScatterplot = (
         canvas.getBoundingClientRect();
 
       if (autoWidth) {
-        setCurrentWidth(newWidth);
+        setCurrentWidth(newWidth, true);
       }
 
       if (autoHeight) {
-        setCurrentHeight(newHeight);
+        setCurrentHeight(newHeight, true);
       }
 
       updateViewAspectRatio();
+      updateScales();
       draw = true;
     }
+    camera.refresh();
   };
 
   /**

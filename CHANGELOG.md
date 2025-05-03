@@ -1,3 +1,7 @@
+## 1.14.1
+
+- Fix: ensure view aspect ratio is updated before the scales are updated on resize
+
 ## 1.14.0
 
 - Feat: expose a flag indicating a view change for events `draw`, `drawing`, and `view`
