@@ -498,13 +498,18 @@ Select some points, such that they get visually highlighted. This will trigger a
 
 **Arguments:**
 
-- `points` is an array of point indices referencing the points that you want to select.
+- `points` is either:
+  - An array of point indices referencing the points that you want to select, OR
+  - An array of `[x, y]` coordinate pairs defining a polygon in **data space** (requires `xScale` and `yScale` to be defined). All points within the polygon will be selected using the same lasso selection algorithm as the interactive lasso tool.
 - `options` [optional] is an object with the following properties:
-  - `preventEvent`: if `true` the `select` will not be published.
+  - `preventEvent`: if `true` the `select` event will not be published.
+  - `merge`: if `true` the selected points will be added to the current selection.
+  - `remove`: if `true` the selected points will be removed from the current selection.
 
 **Examples:**
 
 ```javascript
+// Selection by point indices
 // Let's say we have three points
 scatterplot.draw([
   [0.1, 0.1],
@@ -512,9 +517,40 @@ scatterplot.draw([
   [0.3, 0.3],
 ]);
 
-// To select the first and second point we have to do
+// To select the first and second point
 scatterplot.select([0, 1]);
+
+// Programmatic lasso selection (polygon in data space)
+// Requires xScale and yScale to be defined
+const xScale = scaleLinear().domain([0, 100]);
+const yScale = scaleLinear().domain([0, 100]);
+const scatterplot = createScatterplot({ xScale, yScale, ... });
+
+// Select all points within a triangular region
+scatterplot.select([
+  [10, 20],
+  [50, 80],
+  [90, 30]
+]);
+
+// Select points within a rectangle and merge with existing selection
+scatterplot.select([
+  [0, 0],
+  [100, 0],
+  [100, 100],
+  [0, 100]
+], { merge: true });
+
+// Remove points within a circle from the selection
+const cx = 50, cy = 50, radius = 20;
+const circlePolygon = Array.from({ length: 16 }, (_, i) => {
+  const angle = (i / 16) * Math.PI * 2;
+  return [cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius];
+});
+scatterplot.select(circlePolygon, { remove: true });
 ```
+
+[Code Example](example/programmatic-lasso.js) | [Demo](https://flekschas.github.io/regl-scatterplot/programmatic-lasso.html)
 
 <a name="scatterplot.deselect" href="#scatterplot.deselect">#</a> scatterplot.<b>deselect</b>(<i>options = {}</i>)
 

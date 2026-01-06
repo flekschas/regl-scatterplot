@@ -148,7 +148,6 @@ import {
   isHorizontalLine,
   isMultipleColors,
   isPointInPolygon,
-  isPolygon,
   isPositiveNumber,
   isRect,
   isSameRgbas,
@@ -786,14 +785,82 @@ const createScatterplot = (
   };
 
   /**
+   * Check if argument is a polygon (array of [x, y] coordinate pairs)
+   * @param {any} arg - The argument to check
+   * @returns {boolean} True if argument is a valid polygon
+   */
+  const isPolygon = (arg) => {
+    return (
+      Array.isArray(arg) &&
+      arg.length >= 3 &&
+      Array.isArray(arg[0]) &&
+      arg[0].length === 2 &&
+      typeof arg[0][0] === 'number' &&
+      typeof arg[0][1] === 'number'
+    );
+  };
+
+  /**
+   * Convert polygon from data space to GL space for lasso selection
+   * @param {Array<[number, number]>} polygonData - Polygon vertices in data space
+   * @returns {number[] | null} Flat array of GL coordinates or null if scales not defined
+   */
+  const polygonDataToGl = (polygonData) => {
+    // Check if xScale/yScale are defined
+    if (!(xScale && yScale)) {
+      // biome-ignore lint/suspicious/noConsole: User warning for missing configuration
+      console.warn(
+        'xScale and yScale must be defined for programmatic lasso selection',
+      );
+      return null;
+    }
+
+    const polygonGl = [];
+    for (const [x, y] of polygonData) {
+      // Step 1: Data space → normalized [0, 1]
+      const xNorm = (x - xDomainStart) / xDomainSize;
+      const yNorm = (y - yDomainStart) / yDomainSize;
+
+      // Step 2: Normalized [0, 1] → NDC [-1, 1]
+      const xNdc = xNorm * 2 - 1;
+      const yNdc = yNorm * 2 - 1;
+
+      // Step 3: NDC → GL space (camera transform)
+      const [xGl, yGl] = getScatterGlPos(xNdc, yNdc);
+
+      polygonGl.push(xGl, yGl);
+    }
+
+    return polygonGl;
+  };
+
+  /**
    * Select and highlight a set of points
-   * @param {number | number[]} pointIdxs
+   * @param {number | number[] | Array<[number, number]>} pointIdxs - Point indices or polygon vertices
    * @param {import('./types').ScatterplotMethodOptions['select']}
    */
   const select = (
     pointIdxs,
     { merge = false, remove = false, preventEvent = false } = {},
   ) => {
+    // Check if input is a polygon (array of [x, y] coordinate pairs)
+    if (isPolygon(pointIdxs)) {
+      // Convert polygon from data space to GL space
+      const polygonGl = polygonDataToGl(pointIdxs);
+
+      if (!polygonGl) {
+        // Scales not defined, cannot proceed
+        return;
+      }
+
+      // Find points within the polygon using existing lasso logic
+      const pointsInPolygon = findPointsInLasso(polygonGl);
+
+      // Recursively call select with the found point indices
+      select(pointsInPolygon, { merge, remove, preventEvent });
+      return;
+    }
+
     const newSelectedPoints = Array.isArray(pointIdxs)
       ? pointIdxs
       : [pointIdxs];
