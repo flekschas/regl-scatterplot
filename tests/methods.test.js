@@ -232,6 +232,306 @@ test('select()', async () => {
   scatterplot.destroy();
 });
 
+test('lassoSelect() with data space coordinates', async () => {
+  const { scaleLinear } = await import('d3-scale');
+
+  const scatterplot = createScatterplot({
+    canvas: createCanvas(),
+    xScale: scaleLinear().domain([0, 100]),
+    yScale: scaleLinear().domain([0, 100]),
+  });
+
+  // Draw 5 points in data space coordinates
+  // Points at: [10,10], [90,90], [90,10], [10,90], [50,50]
+  const points = [
+    [-0.8, -0.8],  // 10,10
+    [0.8, 0.8],    // 90,90
+    [0.8, -0.8],   // 90,10
+    [-0.8, 0.8],   // 10,90
+    [0, 0],        // 50,50
+  ];
+
+  await scatterplot.draw(points);
+
+  let selectedPoints = [];
+  const selectHandler = ({ points: newSelectedPoints }) => {
+    selectedPoints = [...newSelectedPoints];
+  };
+  scatterplot.subscribe('select', selectHandler);
+
+  // Select bottom-left quadrant in data space coordinates
+  // Should select point 0 (10,10) and point 4 (50,50)
+  scatterplot.lassoSelect([
+    [0, 0],
+    [60, 0],
+    [60, 60],
+    [0, 60],
+  ]);
+
+  await wait(0);
+
+  expect(selectedPoints.sort()).toEqual([0, 4]);
+
+  scatterplot.destroy();
+});
+
+test('lassoSelect() with GL space coordinates', async () => {
+  const { scaleLinear } = await import('d3-scale');
+
+  const scatterplot = createScatterplot({
+    canvas: createCanvas(),
+    xScale: scaleLinear().domain([0, 100]),
+    yScale: scaleLinear().domain([0, 100]),
+  });
+
+  const points = [
+    [-0.8, -0.8],  // bottom-left
+    [0.8, 0.8],    // top-right
+    [0.8, -0.8],   // bottom-right
+    [-0.8, 0.8],   // top-left
+    [0, 0],        // center
+  ];
+
+  await scatterplot.draw(points);
+
+  let selectedPoints = [];
+  const selectHandler = ({ points: newSelectedPoints }) => {
+    selectedPoints = [...newSelectedPoints];
+  };
+  scatterplot.subscribe('select', selectHandler);
+
+  // Select using GL space coordinates (NDC space since no camera transform)
+  // Select left side: points 0, 3, 4
+  scatterplot.lassoSelect(
+    [
+      [-1, -1],
+      [0.1, -1],
+      [0.1, 1],
+      [-1, 1],
+    ],
+    { isGl: true }
+  );
+
+  await wait(0);
+
+  expect(selectedPoints.sort()).toEqual([0, 3, 4]);
+
+  scatterplot.destroy();
+});
+
+test('lassoSelect() with open polygon (auto-closes)', async () => {
+  const { scaleLinear } = await import('d3-scale');
+
+  const scatterplot = createScatterplot({
+    canvas: createCanvas(),
+    xScale: scaleLinear().domain([0, 100]),
+    yScale: scaleLinear().domain([0, 100]),
+  });
+
+  const points = [
+    [-0.5, -0.5],
+    [0.5, 0.5],
+    [0.5, -0.5],
+  ];
+
+  await scatterplot.draw(points);
+
+  let selectedPoints = [];
+  const selectHandler = ({ points: newSelectedPoints }) => {
+    selectedPoints = [...newSelectedPoints];
+  };
+  scatterplot.subscribe('select', selectHandler);
+
+  // Pass open polygon (first and last vertices different)
+  // Should auto-close and still work
+  scatterplot.lassoSelect([
+    [0, 0],
+    [100, 0],
+    [100, 100],
+    [0, 100],
+    // Note: NOT closing back to [0, 0]
+  ]);
+
+  await wait(0);
+
+  // All points should be selected
+  expect(selectedPoints.sort()).toEqual([0, 1, 2]);
+
+  scatterplot.destroy();
+});
+
+test('lassoSelect() with merge and remove options', async () => {
+  const { scaleLinear } = await import('d3-scale');
+
+  const scatterplot = createScatterplot({
+    canvas: createCanvas(),
+    xScale: scaleLinear().domain([0, 100]),
+    yScale: scaleLinear().domain([0, 100]),
+  });
+
+  const points = [
+    [-0.8, -0.8],  // 10,10
+    [0.8, 0.8],    // 90,90
+    [0.8, -0.8],   // 90,10
+    [-0.8, 0.8],   // 10,90
+    [0, 0],        // 50,50
+  ];
+
+  await scatterplot.draw(points);
+
+  let selectedPoints = [];
+  const selectHandler = ({ points: newSelectedPoints }) => {
+    selectedPoints = [...newSelectedPoints];
+  };
+  scatterplot.subscribe('select', selectHandler);
+
+  // Select bottom-left quadrant (points 0, 4)
+  scatterplot.lassoSelect([
+    [0, 0],
+    [60, 0],
+    [60, 60],
+    [0, 60],
+  ]);
+
+  await wait(0);
+  expect(selectedPoints.sort()).toEqual([0, 4]);
+
+  // Merge with top-left quadrant (should add point 3)
+  scatterplot.lassoSelect(
+    [
+      [0, 40],
+      [60, 40],
+      [60, 100],
+      [0, 100],
+    ],
+    { merge: true }
+  );
+
+  await wait(0);
+  expect(selectedPoints.sort()).toEqual([0, 3, 4]);
+
+  // Remove center region (should remove point 4)
+  scatterplot.lassoSelect(
+    [
+      [25, 25],
+      [75, 25],
+      [75, 75],
+      [25, 75],
+    ],
+    { remove: true }
+  );
+
+  await wait(0);
+  expect(selectedPoints.sort()).toEqual([0, 3]);
+
+  scatterplot.destroy();
+});
+
+test('lassoSelect() error: less than 3 vertices', async () => {
+  const { scaleLinear } = await import('d3-scale');
+
+  const scatterplot = createScatterplot({
+    canvas: createCanvas(),
+    xScale: scaleLinear().domain([0, 100]),
+    yScale: scaleLinear().domain([0, 100]),
+  });
+
+  await scatterplot.draw([[0, 0]]);
+
+  // Should throw error with less than 3 vertices
+  expect(() => {
+    scatterplot.lassoSelect([
+      [10, 10],
+      [50, 50],
+      // Only 2 points - invalid
+    ]);
+  }).toThrow('Lasso selection requires at least 3 vertices');
+
+  scatterplot.destroy();
+});
+
+test('lassoSelect() error: invalid vertices format', async () => {
+  const { scaleLinear } = await import('d3-scale');
+
+  const scatterplot = createScatterplot({
+    canvas: createCanvas(),
+    xScale: scaleLinear().domain([0, 100]),
+    yScale: scaleLinear().domain([0, 100]),
+  });
+
+  await scatterplot.draw([[0, 0]]);
+
+  // Should throw error with invalid format
+  expect(() => {
+    scatterplot.lassoSelect([
+      [10, 10],
+      [50], // Invalid: missing y coordinate
+      [90, 90],
+    ]);
+  }).toThrow('Lasso selection requires at least 3 vertices');
+
+  scatterplot.destroy();
+});
+
+test('lassoSelect() error: no scales defined', async () => {
+  const scatterplot = createScatterplot({
+    canvas: createCanvas(),
+    // No xScale/yScale defined
+  });
+
+  await scatterplot.draw([[0, 0]]);
+
+  // Should throw error when trying to use data space without scales
+  expect(() => {
+    scatterplot.lassoSelect([
+      [10, 10],
+      [50, 50],
+      [90, 90],
+    ]);
+  }).toThrow('xScale and yScale must be defined');
+
+  scatterplot.destroy();
+});
+
+test('lassoSelect() works without scales when using isGl: true', async () => {
+  const scatterplot = createScatterplot({
+    canvas: createCanvas(),
+    // No xScale/yScale defined
+  });
+
+  const points = [
+    [-0.5, -0.5],
+    [0.5, 0.5],
+    [0.5, -0.5],
+  ];
+
+  await scatterplot.draw(points);
+
+  let selectedPoints = [];
+  const selectHandler = ({ points: newSelectedPoints }) => {
+    selectedPoints = [...newSelectedPoints];
+  };
+  scatterplot.subscribe('select', selectHandler);
+
+  // Should work with GL coordinates even without scales
+  scatterplot.lassoSelect(
+    [
+      [-1, -1],
+      [1, -1],
+      [1, 1],
+      [-1, 1],
+    ],
+    { isGl: true }
+  );
+
+  await wait(0);
+
+  // All points should be selected
+  expect(selectedPoints.sort()).toEqual([0, 1, 2]);
+
+  scatterplot.destroy();
+});
+
 test('hover() with columnar data', async () => {
   const scatterplot = createScatterplot({ canvas: createCanvas() });
 

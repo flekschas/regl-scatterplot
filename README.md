@@ -516,6 +516,85 @@ scatterplot.draw([
 scatterplot.select([0, 1]);
 ```
 
+<a name="scatterplot.lassoSelect" href="#scatterplot.lassoSelect">#</a> scatterplot.<b>lassoSelect</b>(<i>vertices</i>, <i>options = {}</i>)
+
+Programmatically select points within a polygon region. This enables automated point selection without manual lasso interaction. This will trigger a `select` event (and `lassoEnd` event) unless `options.preventEvent === true`.
+
+**Arguments:**
+
+- `vertices` is an array of `[x, y]` coordinate pairs defining the polygon (minimum 3 vertices required). Coordinates are in **data space** by default (requires `xScale` and `yScale`), or **GL space** if `options.isGl === true`.
+- `options` [optional] is an object with the following properties:
+  - `merge`: if `true`, add the selected points to the current selection instead of replacing it.
+  - `remove`: if `true`, remove the selected points from the current selection.
+  - `isGl`: if `true`, interpret vertices as GL space coordinates (NDC). If `false` (default), interpret vertices as data space coordinates.
+  - `preventEvent`: if `true` the `select` and `lassoEnd` events will not be published.
+
+**Notes:**
+
+- Polygons are automatically closed if the first and last vertices differ.
+- Data space coordinates require `xScale` and `yScale` to be defined during scatterplot initialization.
+- GL space coordinates work without scales and are useful for direct NDC coordinate selection.
+
+**Examples:**
+
+```javascript
+import { scaleLinear } from 'd3-scale';
+
+// Create scatterplot with scales for data space coordinates
+const scatterplot = createScatterplot({
+  canvas,
+  xScale: scaleLinear().domain([0, 100]),
+  yScale: scaleLinear().domain([0, 100]),
+});
+
+// Draw points (internally stored in NDC, but we think in data space)
+scatterplot.draw([
+  [-0.8, -0.8],  // corresponds to data coords ~[10, 10]
+  [0.8, 0.8],    // corresponds to data coords ~[90, 90]
+  [0, 0],        // corresponds to data coords [50, 50]
+]);
+
+// Select points within a triangular region (data space coordinates)
+scatterplot.lassoSelect([
+  [10, 20],
+  [50, 80],
+  [90, 30]
+]);
+
+// Select points within a rectangle, merging with current selection
+scatterplot.lassoSelect(
+  [
+    [0, 0],
+    [100, 0],
+    [100, 100],
+    [0, 100]
+  ],
+  { merge: true }
+);
+
+// Remove points in a polygon from the current selection
+scatterplot.lassoSelect(
+  [
+    [40, 40],
+    [60, 40],
+    [60, 60],
+    [40, 60]
+  ],
+  { remove: true }
+);
+
+// Use GL space coordinates (useful without scales)
+scatterplot.lassoSelect(
+  [
+    [-0.5, -0.5],
+    [0.5, -0.5],
+    [0.5, 0.5],
+    [-0.5, 0.5]
+  ],
+  { isGl: true }
+);
+```
+
 <a name="scatterplot.deselect" href="#scatterplot.deselect">#</a> scatterplot.<b>deselect</b>(<i>options = {}</i>)
 
 Deselect all selected points. This will trigger a `deselect` event unless `options.preventEvent === true`.

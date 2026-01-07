@@ -232,6 +232,13 @@ export function createMenu({
 
   examples.addBlade({
     view: 'link',
+    label: 'Programmatic Lasso',
+    link: 'programmatic-lasso.html',
+    active: pathname === 'programmatic-lasso.html',
+  });
+
+  examples.addBlade({
+    view: 'link',
     label: 'Multiple Instances',
     link: 'multiple-instances.html',
     active: pathname === 'multiple-instances.html',

@@ -15,6 +15,7 @@ const chunks = [
   'transition',
   'multiple-instances',
   'annotations',
+  'programmatic-lasso',
 ];
 
 const pages = Object.fromEntries(

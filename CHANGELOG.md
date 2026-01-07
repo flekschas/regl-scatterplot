@@ -1,3 +1,7 @@
+## 1.15.0
+
+- Feat: add programmatic lasso selection API via new `lassoSelect()` method that accept a polygon in either data or GL space. This enables automated point selection without manual interaction. Supports `merge` and `remove` options. Note, vertices in data space requires `xScale` and `yScale` to be defined.
+
 ## 1.14.1
 
 - Fix: ensure view aspect ratio is updated before the scales are updated on resize

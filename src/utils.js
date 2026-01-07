@@ -578,8 +578,47 @@ export const isRect = (annotation) =>
   Number.isFinite(annotation.x2) &&
   Number.isFinite(annotation.x2);
 
-export const isPolygon = (annotation) =>
+export const isPolygonAnnotation = (annotation) =>
   'vertices' in annotation && annotation.vertices.length > 1;
+
+/**
+ * Check if an array is a valid list of 2D vertices
+ * @param {any} arg - The argument to check
+ * @returns {boolean} True if argument is an array of [x, y] coordinate pairs
+ */
+export const isVertices = (arg) => {
+  if (!Array.isArray(arg) || arg.length < 3) {
+    return false;
+  }
+
+  for (const vertex of arg) {
+    if (
+      !Array.isArray(vertex) ||
+      vertex.length !== 2 ||
+      typeof vertex[0] !== 'number' ||
+      typeof vertex[1] !== 'number'
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+};
+
+/**
+ * Ensure a list of vertices forms a closed polygon
+ * @param {Array<[number, number]>} vertices - Array of [x, y] coordinates
+ * @returns {Array<[number, number]>} Closed polygon (first vertex repeated at end if needed)
+ */
+export const verticesToPolygon = (vertices) => {
+  const polygon = [...vertices];
+  const firstVertex = vertices.at(0);
+  const lastVertex = vertices.at(-1);
+  if (firstVertex[0] !== lastVertex[0] || firstVertex[1] !== lastVertex[1]) {
+    polygon.push(firstVertex);
+  }
+  return polygon;
+};
 
 export const insertionSort = (array) => {
   const end = array.length;
