@@ -189,7 +189,7 @@ const createButton = (label, onClick, wide = false) => {
 // Button 1: Select bottom-left triangle
 buttonContainer.appendChild(
   createButton('△ Bottom-Left', () => {
-    scatterplot.select([
+    scatterplot.lassoSelect([
       [10, 10],
       [40, 10],
       [10, 40],
@@ -214,14 +214,14 @@ buttonContainer.appendChild(
       ]);
     }
 
-    scatterplot.select(polygon);
+    scatterplot.lassoSelect(polygon);
   })
 );
 
 // Button 3: Select center rectangle
 buttonContainer.appendChild(
   createButton('▭ Center', () => {
-    scatterplot.select([
+    scatterplot.lassoSelect([
       [30, 30],
       [70, 30],
       [70, 70],
@@ -233,7 +233,7 @@ buttonContainer.appendChild(
 // Button 4: Add diagonal stripe (merge)
 buttonContainer.appendChild(
   createButton('+ Diagonal (Merge)', () => {
-    scatterplot.select(
+    scatterplot.lassoSelect(
       [
         [0, 40],
         [60, 100],
@@ -248,7 +248,7 @@ buttonContainer.appendChild(
 // Button 5: Remove center square
 buttonContainer.appendChild(
   createButton('− Center (Remove)', () => {
-    scatterplot.select(
+    scatterplot.lassoSelect(
       [
         [40, 40],
         [60, 40],
@@ -279,7 +279,7 @@ buttonContainer.appendChild(
       ]);
     }
 
-    scatterplot.select(polygon);
+    scatterplot.lassoSelect(polygon);
   })
 );
 

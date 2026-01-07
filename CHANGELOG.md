@@ -1,6 +1,6 @@
 ## 1.15.0
 
-- Feat: add programmatic lasso selection API allowing `select()` to accept polygon vertices in data space. This enables automated point selection without manual interaction. Works with `merge` and `remove` options and requires `xScale` and `yScale` to be defined.
+- Feat: add programmatic lasso selection API via new `lassoSelect()` method that accept a polygon in either data or GL space. This enables automated point selection without manual interaction. Supports `merge` and `remove` options. Note, vertices in data space requires `xScale` and `yScale` to be defined.
 
 ## 1.14.1
 

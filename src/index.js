@@ -148,6 +148,7 @@ import {
   isHorizontalLine,
   isMultipleColors,
   isPointInPolygon,
+  isPolygonAnnotation,
   isPositiveNumber,
   isRect,
   isSameRgbas,
@@ -155,12 +156,14 @@ import {
   isString,
   isValidBBox,
   isVerticalLine,
+  isVertices,
   limit,
   max,
   min,
   rgbBrightness,
   toArrayOrientedPoints,
   toRgba,
+  verticesToPolygon,
 } from './utils.js';
 
 import { version } from '../package.json';
@@ -785,27 +788,11 @@ const createScatterplot = (
   };
 
   /**
-   * Check if argument is a polygon (array of [x, y] coordinate pairs)
-   * @param {any} arg - The argument to check
-   * @returns {boolean} True if argument is a valid polygon
-   */
-  const isPolygon = (arg) => {
-    return (
-      Array.isArray(arg) &&
-      arg.length >= 3 &&
-      Array.isArray(arg[0]) &&
-      arg[0].length === 2 &&
-      typeof arg[0][0] === 'number' &&
-      typeof arg[0][1] === 'number'
-    );
-  };
-
-  /**
-   * Convert polygon from data space to GL space for lasso selection
-   * @param {Array<[number, number]>} polygonData - Polygon vertices in data space
+   * Convert vertices from data space to GL space
+   * @param {Array<[number, number]>} vertices - Vertices in data space
    * @returns {number[] | null} Flat array of GL coordinates or null if scales not defined
    */
-  const polygonDataToGl = (polygonData) => {
+  const verticesFromDataToGl = (vertices) => {
     // Check if xScale/yScale are defined
     if (!(xScale && yScale)) {
       // biome-ignore lint/suspicious/noConsole: User warning for missing configuration
@@ -815,8 +802,8 @@ const createScatterplot = (
       return null;
     }
 
-    const polygonGl = [];
-    for (const [x, y] of polygonData) {
+    const verticesGl = [];
+    for (const [x, y] of vertices) {
       // Step 1: Data space → normalized [0, 1]
       const xNorm = (x - xDomainStart) / xDomainSize;
       const yNorm = (y - yDomainStart) / yDomainSize;
@@ -828,39 +815,21 @@ const createScatterplot = (
       // Step 3: NDC → GL space (camera transform)
       const [xGl, yGl] = getScatterGlPos(xNdc, yNdc);
 
-      polygonGl.push(xGl, yGl);
+      verticesGl.push(xGl, yGl);
     }
 
-    return polygonGl;
+    return verticesGl;
   };
 
   /**
    * Select and highlight a set of points
-   * @param {number | number[] | Array<[number, number]>} pointIdxs - Point indices or polygon vertices
+   * @param {number | number[]} pointIdxs
    * @param {import('./types').ScatterplotMethodOptions['select']}
    */
   const select = (
     pointIdxs,
     { merge = false, remove = false, preventEvent = false } = {},
   ) => {
-    // Check if input is a polygon (array of [x, y] coordinate pairs)
-    if (isPolygon(pointIdxs)) {
-      // Convert polygon from data space to GL space
-      const polygonGl = polygonDataToGl(pointIdxs);
-
-      if (!polygonGl) {
-        // Scales not defined, cannot proceed
-        return;
-      }
-
-      // Find points within the polygon using existing lasso logic
-      const pointsInPolygon = findPointsInLasso(polygonGl);
-
-      // Recursively call select with the found point indices
-      select(pointsInPolygon, { merge, remove, preventEvent });
-      return;
-    }
-
     const newSelectedPoints = Array.isArray(pointIdxs)
       ? pointIdxs
       : [pointIdxs];
@@ -936,6 +905,47 @@ const createScatterplot = (
     }
 
     draw = true;
+  };
+
+  /**
+   * Lasso a certain area and select contained points
+   * @param {[number, number][]} vertices - Lasso vertices in either data space (default) or GL space
+   * @param {import('./types').ScatterplotMethodOptions['lasso']}
+   */
+  const lassoSelect = (
+    vertices,
+    { merge = false, remove = false, isGl = false } = {},
+  ) => {
+    if (!isVertices(vertices)) {
+      throw new Error(
+        'Lasso selection requires at least 3 vertices as [x, y] coordinate pairs',
+      );
+    }
+
+    const closedPolygon = verticesToPolygon(vertices);
+
+    let polygonGl;
+    let polygonGlFlat;
+
+    if (isGl) {
+      polygonGl = closedPolygon;
+      polygonGlFlat = closedPolygon.flat();
+    } else {
+      polygonGlFlat = verticesFromDataToGl(closedPolygon);
+
+      if (!polygonGlFlat) {
+        throw new Error(
+          'xScale and yScale must be defined to convert lasso vertices from data space to GL space',
+        );
+      }
+
+      polygonGl = [];
+      for (let i = 0; i < polygonGlFlat.length; i += 2) {
+        polygonGl.push([polygonGlFlat[i], polygonGlFlat[i + 1]]);
+      }
+    }
+
+    lassoEnd(polygonGl, polygonGlFlat, { merge, remove });
   };
 
   /**
@@ -2797,7 +2807,7 @@ const createScatterplot = (
           continue;
         }
 
-        if (isPolygon(annotation)) {
+        if (isPolygonAnnotation(annotation)) {
           newPoints.push(annotation.vertices.flatMap(identity));
           addColorAndWidth(annotation);
         }
@@ -4639,6 +4649,7 @@ const createScatterplot = (
     get,
     getScreenPosition,
     hover,
+    lassoSelect,
     redraw,
     refresh: renderer.refresh,
     reset: withDraw(reset),
