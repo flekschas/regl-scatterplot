@@ -498,18 +498,13 @@ Select some points, such that they get visually highlighted. This will trigger a
 
 **Arguments:**
 
-- `points` is either:
-  - An array of point indices referencing the points that you want to select, OR
-  - An array of `[x, y]` coordinate pairs defining a polygon in **data space** (requires `xScale` and `yScale` to be defined). All points within the polygon will be selected using the same lasso selection algorithm as the interactive lasso tool.
+- `points` is an array of point indices referencing the points that you want to select.
 - `options` [optional] is an object with the following properties:
-  - `preventEvent`: if `true` the `select` event will not be published.
-  - `merge`: if `true` the selected points will be added to the current selection.
-  - `remove`: if `true` the selected points will be removed from the current selection.
+  - `preventEvent`: if `true` the `select` will not be published.
 
 **Examples:**
 
 ```javascript
-// Selection by point indices
 // Let's say we have three points
 scatterplot.draw([
   [0.1, 0.1],
@@ -517,40 +512,88 @@ scatterplot.draw([
   [0.3, 0.3],
 ]);
 
-// To select the first and second point
+// To select the first and second point we have to do
 scatterplot.select([0, 1]);
+```
 
-// Programmatic lasso selection (polygon in data space)
-// Requires xScale and yScale to be defined
-const xScale = scaleLinear().domain([0, 100]);
-const yScale = scaleLinear().domain([0, 100]);
-const scatterplot = createScatterplot({ xScale, yScale, ... });
+<a name="scatterplot.lassoSelect" href="#scatterplot.lassoSelect">#</a> scatterplot.<b>lassoSelect</b>(<i>vertices</i>, <i>options = {}</i>)
 
-// Select all points within a triangular region
-scatterplot.select([
+Programmatically select points within a polygon region. This enables automated point selection without manual lasso interaction. This will trigger a `select` event (and `lassoEnd` event) unless `options.preventEvent === true`.
+
+**Arguments:**
+
+- `vertices` is an array of `[x, y]` coordinate pairs defining the polygon (minimum 3 vertices required). Coordinates are in **data space** by default (requires `xScale` and `yScale`), or **GL space** if `options.isGl === true`.
+- `options` [optional] is an object with the following properties:
+  - `merge`: if `true`, add the selected points to the current selection instead of replacing it.
+  - `remove`: if `true`, remove the selected points from the current selection.
+  - `isGl`: if `true`, interpret vertices as GL space coordinates (NDC). If `false` (default), interpret vertices as data space coordinates.
+  - `preventEvent`: if `true` the `select` and `lassoEnd` events will not be published.
+
+**Notes:**
+
+- Polygons are automatically closed if the first and last vertices differ.
+- Data space coordinates require `xScale` and `yScale` to be defined during scatterplot initialization.
+- GL space coordinates work without scales and are useful for direct NDC coordinate selection.
+
+**Examples:**
+
+```javascript
+import { scaleLinear } from 'd3-scale';
+
+// Create scatterplot with scales for data space coordinates
+const scatterplot = createScatterplot({
+  canvas,
+  xScale: scaleLinear().domain([0, 100]),
+  yScale: scaleLinear().domain([0, 100]),
+});
+
+// Draw points (internally stored in NDC, but we think in data space)
+scatterplot.draw([
+  [-0.8, -0.8],  // corresponds to data coords ~[10, 10]
+  [0.8, 0.8],    // corresponds to data coords ~[90, 90]
+  [0, 0],        // corresponds to data coords [50, 50]
+]);
+
+// Select points within a triangular region (data space coordinates)
+scatterplot.lassoSelect([
   [10, 20],
   [50, 80],
   [90, 30]
 ]);
 
-// Select points within a rectangle and merge with existing selection
-scatterplot.select([
-  [0, 0],
-  [100, 0],
-  [100, 100],
-  [0, 100]
-], { merge: true });
+// Select points within a rectangle, merging with current selection
+scatterplot.lassoSelect(
+  [
+    [0, 0],
+    [100, 0],
+    [100, 100],
+    [0, 100]
+  ],
+  { merge: true }
+);
 
-// Remove points within a circle from the selection
-const cx = 50, cy = 50, radius = 20;
-const circlePolygon = Array.from({ length: 16 }, (_, i) => {
-  const angle = (i / 16) * Math.PI * 2;
-  return [cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius];
-});
-scatterplot.select(circlePolygon, { remove: true });
+// Remove points in a polygon from the current selection
+scatterplot.lassoSelect(
+  [
+    [40, 40],
+    [60, 40],
+    [60, 60],
+    [40, 60]
+  ],
+  { remove: true }
+);
+
+// Use GL space coordinates (useful without scales)
+scatterplot.lassoSelect(
+  [
+    [-0.5, -0.5],
+    [0.5, -0.5],
+    [0.5, 0.5],
+    [-0.5, 0.5]
+  ],
+  { isGl: true }
+);
 ```
-
-[Code Example](example/programmatic-lasso.js) | [Demo](https://flekschas.github.io/regl-scatterplot/programmatic-lasso.html)
 
 <a name="scatterplot.deselect" href="#scatterplot.deselect">#</a> scatterplot.<b>deselect</b>(<i>options = {}</i>)
 
