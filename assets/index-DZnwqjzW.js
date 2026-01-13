@@ -1,4 +1,4 @@
-import{c as u,a as y,b as i}from"./menu-D496VOBB.js";import"./vendor-CWN1LCVq.js";const b=document.querySelector("#canvas");let e={x:[],y:[],z:[],w:[]},$=1e5,d=2,m=.33,c=[];const g=10,f=2,p=!0,v=[1,1,.878431373,.33],w=o=>{const s=e.x[o],a=e.y[o],n=e.z[o],r=e.w[o];console.log(`Out point: ${o}`,`X: ${s}
+import{c as u,a as y,b as i}from"./menu-CKBxhbUC.js";import"./vendor-DRFCw67i.js";const b=document.querySelector("#canvas");let e={x:[],y:[],z:[],w:[]},$=1e5,d=2,m=.33,c=[];const g=10,f=2,p=!0,v=[1,1,.878431373,.33],w=o=>{const s=e.x[o],a=e.y[o],n=e.z[o],r=e.w[o];console.log(`Out point: ${o}`,`X: ${s}
 Y: ${a}
 Category: ${n}
 Value: ${r}`)},x=o=>{const s=e.x[o],a=e.y[o],n=e.z[o],r=e.w[o];console.log(`Out point: ${o}`,`X: ${s}
