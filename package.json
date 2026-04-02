@@ -58,7 +58,7 @@
     "@rollup/plugin-commonjs": "^29.0.0",
     "@rollup/plugin-json": "^6.0.0",
     "@rollup/plugin-node-resolve": "^16.0.3",
-    "@rollup/plugin-terser": "^0.4.3",
+    "@rollup/plugin-terser": "^1.0.0",
     "@tweakpane/core": "^2.0.5",
     "@types/d3-scale": "^4.0.9",
     "@types/node": "^25.0.8",
