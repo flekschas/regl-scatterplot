@@ -1,3 +1,7 @@
+## 1.16.0
+
+- Feat: Added a `pointOrder` property that controls point draw order so users can ensure specific points (e.g., outliers) render on top without pre-sorting their data.
+
 ## 1.15.0
 
 - Feat: add programmatic lasso selection API via new `lassoSelect()` method that accept a polygon in either data or GL space. This enables automated point selection without manual interaction. Supports `merge` and `remove` options. Note, vertices in data space requires `xScale` and `yScale` to be defined.
