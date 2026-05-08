@@ -75,6 +75,7 @@ import {
   DEFAULT_POINT_CONNECTION_SIZE,
   DEFAULT_POINT_CONNECTION_SIZE_ACTIVE,
   DEFAULT_POINT_CONNECTION_SIZE_BY,
+  DEFAULT_POINT_ORDER,
   DEFAULT_POINT_OUTLINE_WIDTH,
   DEFAULT_POINT_SCALE_MODE,
   DEFAULT_POINT_SIZE,
@@ -313,6 +314,7 @@ const createScatterplot = (
     opacityInactiveMax = DEFAULT_OPACITY_INACTIVE_MAX,
     opacityInactiveScale = DEFAULT_OPACITY_INACTIVE_SCALE,
     sizeBy = DEFAULT_SIZE_BY,
+    pointOrder = DEFAULT_POINT_ORDER,
     pointScaleMode = DEFAULT_POINT_SCALE_MODE,
     height = DEFAULT_HEIGHT,
     width = DEFAULT_WIDTH,
@@ -521,6 +523,8 @@ const createScatterplot = (
   let normalPointsIndexBuffer; // Buffer holding the indices pointing to the correct texel
   let selectedPointsIndexBuffer; // Used for pointing to the selected texels
   let hoveredPointIndexBuffer; // Used for pointing to the hovered texels
+  let pointOrderIndices = null; // Validated ordered point indices (Int32Array or null)
+  let pointOrderIndex = null; // Float32Array of tex coords in pointOrder sequence
 
   let cameraZoomTargetStart; // Stores the start (i.e., current) camera target for zooming
   let cameraZoomTargetEnd; // Stores the end camera target for zooming
@@ -1600,6 +1604,44 @@ const createScatterplot = (
   const setSizeBy = (type) => {
     sizeBy = getEncodingType(type, DEFAULT_SIZE_BY);
   };
+  const setPointOrder = (newPointOrder) => {
+    if (newPointOrder === null || newPointOrder === undefined) {
+      pointOrder = null;
+    } else if (Array.isArray(newPointOrder)) {
+      pointOrder = newPointOrder;
+    } else {
+      return;
+    }
+
+    if (isPointsDrawn) {
+      computePointOrderIndex();
+      if (isPointsFiltered) {
+        // Re-apply filter respecting the new point order
+        const filteredPointsBuffer = [];
+        if (pointOrderIndices !== null) {
+          for (let i = 0; i < pointOrderIndices.length; i++) {
+            if (filteredPointsSet.has(pointOrderIndices[i])) {
+              filteredPointsBuffer.push.apply(
+                filteredPointsBuffer,
+                indexToStateTexCoord(pointOrderIndices[i]),
+              );
+            }
+          }
+        } else {
+          const sortedFiltered = insertionSort([...filteredPointsSet]);
+          for (const idx of sortedFiltered) {
+            filteredPointsBuffer.push.apply(
+              filteredPointsBuffer,
+              indexToStateTexCoord(idx),
+            );
+          }
+        }
+        normalPointsIndexBuffer.subdata(filteredPointsBuffer);
+      } else {
+        normalPointsIndexBuffer.subdata(getEffectivePointIndex(numPoints));
+      }
+    }
+  };
   const setPointConnectionColorBy = (type) => {
     pointConnectionColorBy = getEncodingType(
       type,
@@ -1994,6 +2036,51 @@ const createScatterplot = (
     return index;
   };
 
+  const computePointOrderIndex = () => {
+    if (pointOrder === null) {
+      pointOrderIndices = null;
+      pointOrderIndex = null;
+      return;
+    }
+
+    const includedSet = new Set();
+    const orderedIndices = [];
+
+    for (let i = 0; i < pointOrder.length; i++) {
+      const idx = pointOrder[i];
+      if (
+        Number.isFinite(idx) &&
+        idx >= 0 &&
+        idx < numPoints &&
+        !includedSet.has(idx)
+      ) {
+        orderedIndices.push(idx);
+        includedSet.add(idx);
+      }
+    }
+
+    // Append any missing indices in sequential order
+    for (let i = 0; i < numPoints; i++) {
+      if (!includedSet.has(i)) {
+        orderedIndices.push(i);
+      }
+    }
+
+    pointOrderIndices = orderedIndices;
+
+    pointOrderIndex = new Float32Array(orderedIndices.length * 2);
+    let j = 0;
+    for (let i = 0; i < orderedIndices.length; i++) {
+      const texCoord = indexToStateTexCoord(orderedIndices[i]);
+      pointOrderIndex[j] = texCoord[0];
+      pointOrderIndex[j + 1] = texCoord[1];
+      j += 2;
+    }
+  };
+
+  const getEffectivePointIndex = (count) =>
+    pointOrderIndex !== null ? pointOrderIndex : createPointIndex(count);
+
   const createStateTexture = (newPoints, dataTypes = {}) => {
     const numNewPoints = newPoints.length;
     stateTexRes = Math.max(2, Math.ceil(Math.sqrt(numNewPoints)));
@@ -2085,8 +2172,17 @@ const createScatterplot = (
       const preventFilterReset =
         options?.preventFilterReset && newPoints.length === numPoints;
 
+      const prevNumPoints = numPoints;
       numPoints = newPoints.length;
       numPointsInView = numPoints;
+
+      // Reset pointOrder when re-drawing with different-length data
+      // (ordering becomes meaningless). Skip on first draw (prevNumPoints === 0).
+      if (prevNumPoints > 0 && numPoints !== prevNumPoints) {
+        pointOrder = null;
+        pointOrderIndices = null;
+        pointOrderIndex = null;
+      }
 
       if (stateTex) {
         stateTex.destroy();
@@ -2097,10 +2193,11 @@ const createScatterplot = (
       });
 
       if (!preventFilterReset) {
+        computePointOrderIndex();
         normalPointsIndexBuffer({
           usage: 'static',
           type: 'float',
-          data: createPointIndex(numPoints),
+          data: getEffectivePointIndex(numPoints),
         });
       }
 
@@ -2341,7 +2438,7 @@ const createScatterplot = (
   const unfilter = ({ preventEvent = false } = {}) => {
     isPointsFiltered = false;
     filteredPointsSet.clear();
-    normalPointsIndexBuffer.subdata(createPointIndex(numPoints));
+    normalPointsIndexBuffer.subdata(getEffectivePointIndex(numPoints));
 
     return new Promise((resolve) => {
       const finish = () => {
@@ -2400,9 +2497,20 @@ const createScatterplot = (
       }
     }
 
-    const sortedFilteredPoints = insertionSort([...filteredPoints]);
+    let orderedFilteredPoints;
+    if (pointOrderIndices !== null) {
+      // Maintain the custom point order within the filtered set
+      orderedFilteredPoints = [];
+      for (let i = 0; i < pointOrderIndices.length; i++) {
+        if (filteredPointsSet.has(pointOrderIndices[i])) {
+          orderedFilteredPoints.push(pointOrderIndices[i]);
+        }
+      }
+    } else {
+      orderedFilteredPoints = insertionSort([...filteredPoints]);
+    }
 
-    for (const pointIdx of sortedFilteredPoints) {
+    for (const pointIdx of orderedFilteredPoints) {
       filteredPointsBuffer.push.apply(
         filteredPointsBuffer,
         indexToStateTexCoord(pointIdx),
@@ -3522,6 +3630,10 @@ const createScatterplot = (
       return sizeBy;
     }
 
+    if (property === 'pointOrder') {
+      return pointOrder !== null ? [...pointOrder] : null;
+    }
+
     if (property === 'deselectOnDblClick') {
       return deselectOnDblClick;
     }
@@ -3906,6 +4018,10 @@ const createScatterplot = (
 
     if (properties.sizeBy !== undefined) {
       setSizeBy(properties.sizeBy);
+    }
+
+    if (properties.pointOrder !== undefined) {
+      setPointOrder(properties.pointOrder);
     }
 
     if (properties.opacity !== undefined) {

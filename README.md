@@ -843,6 +843,7 @@ can be read and written via [`scatterplot.get()`](#scatterplot.get) and [`scatte
 | colorBy                               | string                                       | `null`                              | See [data encoding](#property-by)                               | `true`   | `true`      |
 | sizeBy                                | string                                       | `null`                              | See [data encoding](#property-by)                               | `true`   | `true`      |
 | opacityBy                             | string                                       | `null`                              | See [data encoding](#property-by)                               | `true`   | `true`      |
+| pointOrder                            | int[]                                        | `null`                              | Array of point indices defining draw order                      | `true`   | `true`      |
 | deselectOnDblClick                    | boolean                                      | `true`                              |                                                                 | `true`   | `false`     |
 | deselectOnEscape                      | boolean                                      | `true`                              |                                                                 | `true`   | `false`     |
 | opacity                               | float                                        | `1`                                 | Must be in ]0, 1]                                               | `true`   | `false`     |
@@ -967,6 +968,20 @@ set based on the point density and zoom level via `opacityBy: 'density'`. As an
 example go to [dynamic-opacity.html](https://flekschas.github.io/regl-scatterplot/dynamic-opacity.html).
 The implementation is an extension of [Ricky Reusser's awesome notebook](https://observablehq.com/@rreusser/selecting-the-right-opacity-for-2d-point-clouds).
 Huuuge kudos Ricky! 🙇‍♂️
+
+<a name="property-point-order" href="#property-point-order">#</a> <b>pointOrder:</b>
+
+By default, points are drawn in the order they appear in the input data. Since depth testing is disabled, later-drawn points render on top of earlier ones. To control the draw order, set `pointOrder` to an array of point indices. Points are drawn in array order, so the last index renders on top. Any indices not included in the array are appended in sequential order.
+
+```javascript
+// Ensure point 3 is drawn on top
+scatterplot.set({ pointOrder: [0, 1, 2, 4, 3] });
+
+// Reset to default input order
+scatterplot.set({ pointOrder: null });
+```
+
+The point order is respected when [filtering](#scatterplot.filter), and resets automatically when `draw()` is called with a different number of points.
 
 <a name="property-point-conntection-by" href="#property-point-conntection-by">#</a> <b>pointConnectionColorBy, pointConnectionOpacityBy, and pointConnectionSizeBy:</b>
 
