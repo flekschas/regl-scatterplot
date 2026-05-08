@@ -1222,6 +1222,169 @@ test('pointScaleMode', async () => {
   scatterplot.destroy();
 });
 
+test('pointOrder controls draw order', async () => {
+  const dim = 64;
+  const scatterplot = createScatterplot({
+    canvas: createCanvas(dim, dim),
+    width: dim,
+    height: dim,
+    pointSize: dim,
+    opacity: 1,
+    pointColor: ['#ff0000', '#0000ff'],
+    colorBy: 'valueA',
+  });
+
+  // Two overlapping points at center: point 0 = red, point 1 = blue
+  await scatterplot.draw([
+    [0, 0, 0],
+    [0, 0, 1],
+  ]);
+  await nextAnimationFrame();
+
+  // Default order: point 1 (blue) drawn last, so it is on top
+  let image = scatterplot.export();
+  const cx = Math.floor(dim / 2);
+  const cy = Math.floor(dim / 2);
+  let pixelIdx = (cy * dim + cx) * 4;
+  let r = image.data[pixelIdx];
+  let b = image.data[pixelIdx + 2];
+  expect(b).toBeGreaterThan(r); // Blue on top
+
+  // Reverse order: point 0 (red) drawn last, so it is on top
+  await scatterplot.set({ pointOrder: [1, 0] });
+  await nextAnimationFrame();
+
+  image = scatterplot.export();
+  pixelIdx = (cy * dim + cx) * 4;
+  r = image.data[pixelIdx];
+  b = image.data[pixelIdx + 2];
+  expect(r).toBeGreaterThan(b); // Red on top
+
+  scatterplot.destroy();
+});
+
+test('pointOrder with filter preserves order within filtered set', async () => {
+  const scatterplot = createScatterplot({ canvas: createCanvas() });
+
+  const points = [
+    [0, 0],
+    [1, 1],
+    [2, 2],
+    [3, 3],
+    [4, 4],
+  ];
+
+  await scatterplot.draw(points);
+
+  // Set a custom order
+  scatterplot.set({ pointOrder: [4, 2, 0, 1, 3] });
+
+  // Filter to a subset
+  await scatterplot.filter([0, 2, 4]);
+  await wait(0);
+
+  expect(scatterplot.get('isPointsFiltered')).toBe(true);
+  expect(
+    hasSameElements(scatterplot.get('filteredPoints'), [0, 2, 4])
+  ).toBe(true);
+
+  // Unfilter restores full set
+  await scatterplot.unfilter();
+  await wait(0);
+
+  expect(scatterplot.get('isPointsFiltered')).toBe(false);
+  expect(scatterplot.get('filteredPoints').length).toBe(5);
+
+  scatterplot.destroy();
+});
+
+test('pointOrder resets when draw() is called with different-length data', async () => {
+  const scatterplot = createScatterplot({ canvas: createCanvas() });
+
+  await scatterplot.draw([
+    [0, 0],
+    [1, 1],
+    [2, 2],
+  ]);
+
+  scatterplot.set({ pointOrder: [2, 0, 1] });
+  expect(scatterplot.get('pointOrder')).toEqual([2, 0, 1]);
+
+  // Draw with different number of points
+  await scatterplot.draw([
+    [0, 0],
+    [1, 1],
+  ]);
+
+  expect(scatterplot.get('pointOrder')).toBe(null);
+
+  scatterplot.destroy();
+});
+
+test('pointOrder is preserved when draw() is called with same-length data', async () => {
+  const scatterplot = createScatterplot({ canvas: createCanvas() });
+
+  await scatterplot.draw([
+    [0, 0],
+    [1, 1],
+    [2, 2],
+  ]);
+
+  scatterplot.set({ pointOrder: [2, 0, 1] });
+  expect(scatterplot.get('pointOrder')).toEqual([2, 0, 1]);
+
+  // Draw with same number of points
+  await scatterplot.draw([
+    [3, 3],
+    [4, 4],
+    [5, 5],
+  ]);
+
+  expect(scatterplot.get('pointOrder')).toEqual([2, 0, 1]);
+
+  scatterplot.destroy();
+});
+
+test('pointOrder via constructor', async () => {
+  const scatterplot = createScatterplot({
+    canvas: createCanvas(),
+    pointOrder: [2, 0, 1],
+  });
+
+  expect(scatterplot.get('pointOrder')).toEqual([2, 0, 1]);
+
+  await scatterplot.draw([
+    [0, 0],
+    [1, 1],
+    [2, 2],
+  ]);
+
+  // pointOrder should still be set after draw
+  expect(scatterplot.get('pointOrder')).toEqual([2, 0, 1]);
+
+  scatterplot.destroy();
+});
+
+test('pointOrder with partial array appends missing indices', async () => {
+  const scatterplot = createScatterplot({ canvas: createCanvas() });
+
+  await scatterplot.draw([
+    [0, 0],
+    [1, 1],
+    [2, 2],
+    [3, 3],
+  ]);
+
+  // Only specify 2 of 4 points
+  scatterplot.set({ pointOrder: [3, 1] });
+  expect(scatterplot.get('pointOrder')).toEqual([3, 1]);
+
+  // All 4 points should still be drawn (missing indices appended)
+  expect(scatterplot.get('filteredPoints').length).toBe(4);
+
+  scatterplot.destroy();
+});
+
 test('export()', async () => {
   const dim = 10;
   const scatterplot = createScatterplot({

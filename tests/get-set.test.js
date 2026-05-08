@@ -830,3 +830,34 @@ test('get() and set() lasso types', async () => {
 
   expect(scatterplot.get('lassoType')).toBe('freeform');
 });
+
+test('set({ pointOrder }) and get("pointOrder")', async () => {
+  const scatterplot = createScatterplot({ canvas: createCanvas() });
+
+  expect(scatterplot.get('pointOrder')).toBe(null);
+
+  await scatterplot.draw([
+    [0, 0],
+    [1, 1],
+    [2, 2],
+    [3, 3],
+  ]);
+
+  scatterplot.set({ pointOrder: [3, 1, 0, 2] });
+  expect(scatterplot.get('pointOrder')).toEqual([3, 1, 0, 2]);
+
+  // Returns a copy, not a reference
+  const order = scatterplot.get('pointOrder');
+  order[0] = 999;
+  expect(scatterplot.get('pointOrder')).toEqual([3, 1, 0, 2]);
+
+  // Reset to null
+  scatterplot.set({ pointOrder: null });
+  expect(scatterplot.get('pointOrder')).toBe(null);
+
+  // Invalid values are ignored
+  scatterplot.set({ pointOrder: 'invalid' });
+  expect(scatterplot.get('pointOrder')).toBe(null);
+
+  scatterplot.destroy();
+});
